@@ -430,36 +430,69 @@ function App() {
 
             {gexError && <div style={{ color: '#ef4444', marginBottom: '1rem', padding: '1rem', background: 'rgba(239,68,68,0.1)', borderRadius: '8px' }}>{gexError}</div>}
 
-            {searchedGex && (
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-                <h4 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: '0.5rem', fontSize: '1.2rem' }}>
-                  {searchedGex.ticker} <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 'normal', marginLeft: '1rem' }}>Spot Price: ${searchedGex.spot_price.toFixed(2)}</span>
-                </h4>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '1rem', maxHeight: '500px', overflowY: 'auto', paddingRight: '1rem' }}>
-                  {searchedGex.gex_profile.map((p, i) => {
-                    const magnitude = Math.min(Math.abs(p.net_gex) / 10000000, 100); 
-                    const isPositive = p.net_gex > 0;
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
-                        <span style={{ width: '80px', textAlign: 'right', paddingRight: '15px', fontWeight: 'bold' }}>${p.strike.toFixed(1)}</span>
-                        <div style={{ flex: 1, height: '14px', background: '#1e293b', borderRadius: '7px', display: 'flex' }}>
-                           <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-                              {!isPositive && <div style={{ width: `${magnitude}%`, background: '#ef4444', borderRadius: '7px 0 0 7px' }}></div>}
-                           </div>
-                           <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-                              {isPositive && <div style={{ width: `${magnitude}%`, background: '#10b981', borderRadius: '0 7px 7px 0' }}></div>}
-                           </div>
+            {searchedGex && (() => {
+              const sortedGex = [...searchedGex.gex_profile].sort((a, b) => b.strike - a.strike);
+              let maxPosIdx = -1;
+              let maxNegIdx = -1;
+              let maxPosVal = 0;
+              let minNegVal = 0;
+              sortedGex.forEach((p, i) => {
+                 if (p.net_gex > maxPosVal) { maxPosVal = p.net_gex; maxPosIdx = i; }
+                 if (p.net_gex < minNegVal) { minNegVal = p.net_gex; maxNegIdx = i; }
+              });
+              const maxMagnitude = Math.max(Math.abs(maxPosVal), Math.abs(minNegVal));
+
+              return (
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
+                  <h4 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: '0.5rem', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{searchedGex.ticker} <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 'normal', marginLeft: '1rem' }}>Spot Price: ${searchedGex.spot_price.toFixed(2)}</span></span>
+                    <span style={{ fontSize: '0.8rem', color: '#a855f7', fontWeight: 'bold' }}>Dark Pool Radar Active</span>
+                  </h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '1rem', maxHeight: '600px', overflowY: 'auto', paddingRight: '1rem', position: 'relative' }}>
+                    {sortedGex.map((p, i) => {
+                      const magnitudePct = (Math.abs(p.net_gex) / (maxMagnitude || 1)) * 100; 
+                      const isPositive = p.net_gex > 0;
+                      
+                      // Check if strike matches a Dark Pool level (within 1%)
+                      const isDarkPool = searchedGex.dark_pool_levels && searchedGex.dark_pool_levels.some(dp => Math.abs(dp - p.strike) / p.strike < 0.01);
+
+                      return (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', fontSize: '0.85rem', position: 'relative', padding: '4px 0', borderBottom: isDarkPool ? '1px dashed #a855f7' : '1px solid transparent', backgroundColor: isDarkPool ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}>
+                          
+                          {/* Label Overlays */}
+                          <div style={{ position: 'absolute', left: '10px', zIndex: 10, fontSize: '0.75rem', fontWeight: 'bold', pointerEvents: 'none' }}>
+                             {i === maxNegIdx && <span style={{ color: '#fca5a5', textShadow: '1px 1px 2px black' }}>🛡️ Repeller / Support</span>}
+                          </div>
+                          <div style={{ position: 'absolute', right: '10px', zIndex: 10, fontSize: '0.75rem', fontWeight: 'bold', pointerEvents: 'none' }}>
+                             {i === maxPosIdx && <span style={{ color: '#6ee7b7', textShadow: '1px 1px 2px black' }}>🧲 Magnet / Resistance</span>}
+                             {isDarkPool && i !== maxPosIdx && <span style={{ color: '#c084fc', textShadow: '1px 1px 2px black' }}>🦇 Dark Pool / HVN</span>}
+                          </div>
+
+                          <span style={{ width: '80px', textAlign: 'right', paddingRight: '15px', fontWeight: 'bold', color: Math.abs(p.strike - searchedGex.spot_price) < 2 ? '#fbbf24' : '#e2e8f0' }}>${p.strike.toFixed(1)}</span>
+                          
+                          {/* Dual-sided Bar Chart */}
+                          <div style={{ flex: 1, height: '18px', background: 'rgba(30, 41, 59, 0.5)', borderRadius: '4px', display: 'flex', borderLeft: '1px solid #334155', borderRight: '1px solid #334155' }}>
+                             {/* Left Side (Negative GEX) */}
+                             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', borderRight: '1px solid #94a3b8' }}>
+                                {!isPositive && <div style={{ width: `${magnitudePct}%`, background: 'linear-gradient(90deg, rgba(239,68,68,0) 0%, rgba(239,68,68,1) 100%)', borderRadius: '4px 0 0 4px' }}></div>}
+                             </div>
+                             {/* Right Side (Positive GEX) */}
+                             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+                                {isPositive && <div style={{ width: `${magnitudePct}%`, background: 'linear-gradient(90deg, rgba(16,185,129,1) 0%, rgba(16,185,129,0) 100%)', borderRadius: '0 4px 4px 0' }}></div>}
+                             </div>
+                          </div>
+                          
+                          <span style={{ width: '80px', textAlign: 'left', paddingLeft: '15px', color: isPositive ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                            {p.net_gex !== 0 ? (p.net_gex / 1000000).toFixed(1) + 'M' : '0'}
+                          </span>
                         </div>
-                        <span style={{ width: '80px', textAlign: 'left', paddingLeft: '15px', color: isPositive ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                          {p.net_gex !== 0 ? (p.net_gex / 1000000).toFixed(1) + 'M' : '0'}
-                        </span>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}

@@ -185,10 +185,24 @@ def get_gex():
                 "put_oi": int(p_oi) if pd.notna(p_oi) else 0
             })
             
+        # Dark Pool / HVN calculation
+        dark_pool_levels = []
+        try:
+            hist_intraday = t.history(period="5d", interval="15m")
+            if not hist_intraday.empty:
+                # Bin prices to nearest whole number or 0.5 depending on price
+                bin_size = 1.0 if spot_price > 50 else 0.5
+                hist_intraday['PriceBin'] = (hist_intraday['Close'] / bin_size).round() * bin_size
+                vp = hist_intraday.groupby('PriceBin')['Volume'].sum().nlargest(3)
+                dark_pool_levels = [float(x) for x in vp.index.tolist()]
+        except Exception as e:
+            print("Dark pool calc error:", e)
+
         return jsonify({
             "ticker": ticker,
             "spot_price": spot_price,
-            "gex_profile": gex_profile
+            "gex_profile": gex_profile,
+            "dark_pool_levels": dark_pool_levels
         })
         
     except Exception as e:
