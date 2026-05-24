@@ -43,12 +43,15 @@ def run_squeeze_engine():
                 call_vol = 0
                 put_vol = 0
                 cp_ratio = 0
+                avg_iv = 0
                 
                 if len(options) > 0:
                     # Fetch nearest chain
                     chain = t.option_chain(options[0])
                     call_vol = chain.calls['volume'].sum()
                     put_vol = chain.puts['volume'].sum()
+                    if 'impliedVolatility' in chain.calls.columns:
+                        avg_iv = chain.calls['impliedVolatility'].mean()
                     
                     if put_vol > 0:
                         cp_ratio = call_vol / put_vol
@@ -84,14 +87,20 @@ def run_squeeze_engine():
                     
                 else:
                     res = base_data.copy()
-                    res["metric"] = f"Short: {short_str} | DTC: {short_ratio}"
+                    # Powder Keg Score: High Days to Cover + High IV + High Put Volume
+                    # If this bounces, market makers must buy back short hedges, exploding the price
+                    powder_keg_score = (short_ratio * 10) + (avg_iv * 100) + (put_vol / 1000)
+                    if pd.isna(powder_keg_score): powder_keg_score = 0
+                    
+                    res["powder_keg_score"] = powder_keg_score
+                    res["metric"] = f"Short: {short_str} | IV: {avg_iv*100:.0f}% | Puts: {int(put_vol)}"
                     results["high_short_interest"].append(res)
                     
         except Exception as e:
             pass
             
     # Sort and slice
-    results["high_short_interest"] = sorted(results["high_short_interest"], key=lambda x: x.get('short_ratio', 0) or 0, reverse=True)[:15]
+    results["high_short_interest"] = sorted(results["high_short_interest"], key=lambda x: x.get('powder_keg_score', 0), reverse=True)[:15]
     results["gamma_squeeze_setup"] = sorted(results["gamma_squeeze_setup"], key=lambda x: x.get('cp_ratio', 0) or 0, reverse=True)[:15]
     
     output_path = '/Users/amitkumar/Desktop/SectorTrackerApp/public/squeeze_results.json'
