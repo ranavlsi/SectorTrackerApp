@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import yfinance as yf
 import pandas as pd
+import math
 import warnings
 import sys
 sys.path.append('/Users/amitkumar')
@@ -115,5 +116,83 @@ def search_stock():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+def calculate_gamma(S, K, T, r, sigma):
+    if T <= 0 or sigma <= 0 or S <= 0 or K <= 0:
+        return 0
+    d1 = (math.log(S / K) + (r + (sigma ** 2) / 2) * T) / (sigma * math.sqrt(T))
+    gamma = math.exp(-0.5 * d1 ** 2) / (math.sqrt(2 * math.pi) * S * sigma * math.sqrt(T))
+    return gamma
+
+@app.route('/api/gex')
+def get_gex():
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker provided"}), 400
+        
+    ticker = ticker.upper()
+    try:
+        t = yf.Ticker(ticker)
+        spot_price = t.fast_info.get('lastPrice', None)
+        if not spot_price:
+            hist = t.history(period="1d")
+            if hist.empty:
+                return jsonify({"error": f"Invalid ticker or no price data for {ticker}"}), 400
+            spot_price = float(hist['Close'].iloc[-1])
+            
+        options = t.options
+        if not options:
+            return jsonify({"error": f"No options chain available for {ticker}"}), 400
+            
+        chain = t.option_chain(options[0])
+        calls = chain.calls
+        puts = chain.puts
+        
+        r = 0.05
+        T = 5 / 365 
+        
+        gex_profile = []
+        strikes = sorted(list(set(calls['strike']).union(set(puts['strike']))))
+        
+        for strike in strikes:
+            if strike < spot_price * 0.9 or strike > spot_price * 1.1:
+                continue
+                
+            call_row = calls[calls['strike'] == strike]
+            put_row = puts[puts['strike'] == strike]
+            
+            c_gamma = 0
+            c_oi = 0
+            if not call_row.empty:
+                iv = call_row.iloc[0]['impliedVolatility']
+                c_oi = call_row.iloc[0]['openInterest']
+                if pd.notna(iv) and pd.notna(c_oi):
+                    c_gamma = calculate_gamma(spot_price, strike, T, r, iv)
+                    
+            p_gamma = 0
+            p_oi = 0
+            if not put_row.empty:
+                iv = put_row.iloc[0]['impliedVolatility']
+                p_oi = put_row.iloc[0]['openInterest']
+                if pd.notna(iv) and pd.notna(p_oi):
+                    p_gamma = calculate_gamma(spot_price, strike, T, r, iv)
+                    
+            net_gex = ((c_gamma * c_oi) - (p_gamma * p_oi)) * 100 * spot_price
+            
+            gex_profile.append({
+                "strike": float(strike),
+                "net_gex": float(net_gex),
+                "call_oi": int(c_oi) if pd.notna(c_oi) else 0,
+                "put_oi": int(p_oi) if pd.notna(p_oi) else 0
+            })
+            
+        return jsonify({
+            "ticker": ticker,
+            "spot_price": spot_price,
+            "gex_profile": gex_profile
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

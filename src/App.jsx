@@ -141,7 +141,10 @@ function App() {
   
   // Advanced Analytics State
   const [correlationData, setCorrelationData] = useState(null)
-  const [gexData, setGexData] = useState(null)
+  const [gexSearch, setGexSearch] = useState('')
+  const [searchedGex, setSearchedGex] = useState(null)
+  const [gexLoading, setGexLoading] = useState(false)
+  const [gexError, setGexError] = useState('')
   
   // Playbook State
   const [playbookContent, setPlaybookContent] = useState('')
@@ -171,17 +174,33 @@ function App() {
       .then(res => res.json())
       .then(data => setCorrelationData(data))
       .catch(err => console.error("Error loading correlation data:", err))
-      
-    fetch('/gex_results.json')
-      .then(res => res.json())
-      .then(data => setGexData(data))
-      .catch(err => console.error("Error loading gex data:", err))
-      
+
     fetch('/ai_playbook.md')
       .then(res => res.text())
       .then(text => setPlaybookContent(text))
       .catch(err => console.error("Error loading playbook:", err))
   }, [])
+
+  const handleGexSearch = async (e) => {
+    e.preventDefault();
+    if (!gexSearch) return;
+    setGexLoading(true);
+    setGexError('');
+    setSearchedGex(null);
+    try {
+      const res = await fetch(`/api/gex?ticker=${gexSearch}`);
+      const data = await res.json();
+      if (data.error) {
+        setGexError(data.error);
+      } else {
+        setSearchedGex(data);
+      }
+    } catch (err) {
+      setGexError("Failed to connect to backend");
+    } finally {
+      setGexLoading(false);
+    }
+  };
 
   if (!data || !data.rrg) {
     return <div className="loading"><RefreshCw size={48} /><h2>Loading Sector Tracker Engine...</h2></div>
@@ -342,16 +361,15 @@ function App() {
         <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
         <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
         <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
-        <button className={activeTab === 'advanced' ? 'tab-active' : ''} onClick={() => setActiveTab('advanced')}><BarChart2 size={18} /> Advanced Analytics</button>
+        <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
+        <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
         <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
       </div>
 
-      {activeTab === 'advanced' && (
+      {activeTab === 'macromatrix' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-          <h2 style={{ marginBottom: '1rem' }}>🔬 Advanced Analytics (Macro & Options GEX)</h2>
-          
           <div className="glass-card" style={{ padding: '2rem' }}>
-            <h3 style={{ marginTop: 0, color: '#4facfe' }}>Cross-Asset Correlation Matrix (90-Day)</h3>
+            <h2 style={{ marginTop: 0, color: '#4facfe' }}>🔬 Cross-Asset Correlation Matrix (90-Day)</h2>
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Track how your portfolio rotates alongside macroeconomic drivers (Yields, Oil, Crypto, DXY).</p>
             {correlationData ? (
               <div style={{ overflowX: 'auto' }}>
@@ -388,43 +406,61 @@ function App() {
               </div>
             ) : <p>Loading Matrix...</p>}
           </div>
+        </div>
+      )}
 
+      {activeTab === 'gexprofiler' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
           <div className="glass-card" style={{ padding: '2rem' }}>
-            <h3 style={{ marginTop: 0, color: '#fbc2eb' }}>Options Gamma Exposure (GEX) Profiler</h3>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Visualizing absolute dealer hedging magnets based on live options chains.</p>
-            {gexData ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                {Object.keys(gexData).map(ticker => (
-                  <div key={ticker} style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-                    <h4 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: '0.5rem' }}>{ticker} <span style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'normal' }}>Spot: ${gexData[ticker].spot_price.toFixed(2)}</span></h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '1rem', maxHeight: '300px', overflowY: 'auto' }}>
-                      {gexData[ticker].gex_profile.map((p, i) => {
-                        const magnitude = Math.min(Math.abs(p.net_gex) / 10000000, 100); // Scale logic for simple visual
-                        const isPositive = p.net_gex > 0;
-                        return (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', fontSize: '0.8rem' }}>
-                            <span style={{ width: '60px', textAlign: 'right', paddingRight: '10px' }}>${p.strike.toFixed(1)}</span>
-                            <div style={{ flex: 1, height: '8px', background: '#1e293b', borderRadius: '4px', display: 'flex' }}>
-                               <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-                                  {!isPositive && <div style={{ width: `${magnitude}%`, background: '#ef4444', borderRadius: '4px 0 0 4px' }}></div>}
-                               </div>
-                               <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-                                  {isPositive && <div style={{ width: `${magnitude}%`, background: '#10b981', borderRadius: '0 4px 4px 0' }}></div>}
-                               </div>
-                            </div>
-                            <span style={{ width: '60px', textAlign: 'left', paddingLeft: '10px', color: isPositive ? '#10b981' : '#ef4444' }}>
-                              {p.net_gex !== 0 ? (p.net_gex / 1000000).toFixed(1) + 'M' : '0'}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : <p>Loading Gamma Exposure...</p>}
-          </div>
+            <h2 style={{ marginTop: 0, color: '#fbc2eb' }}>📉 Options Gamma Exposure (GEX) Profiler</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Visualize absolute dealer hedging magnets by searching any live options chain.</p>
+            
+            <form onSubmit={handleGexSearch} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+              <input 
+                type="text" 
+                placeholder="Enter ticker (e.g., TSLA, SPY, SMCI)..." 
+                value={gexSearch}
+                onChange={(e) => setGexSearch(e.target.value.toUpperCase())}
+                style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: 'rgba(0,0,0,0.2)', color: 'white', flex: 1 }}
+              />
+              <button type="submit" disabled={gexLoading} style={{ padding: '0.75rem 2rem', background: '#3b82f6', borderRadius: '8px', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
+                {gexLoading ? 'Calculating...' : 'Scan GEX'}
+              </button>
+            </form>
 
+            {gexError && <div style={{ color: '#ef4444', marginBottom: '1rem', padding: '1rem', background: 'rgba(239,68,68,0.1)', borderRadius: '8px' }}>{gexError}</div>}
+
+            {searchedGex && (
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
+                <h4 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: '0.5rem', fontSize: '1.2rem' }}>
+                  {searchedGex.ticker} <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 'normal', marginLeft: '1rem' }}>Spot Price: ${searchedGex.spot_price.toFixed(2)}</span>
+                </h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '1rem', maxHeight: '500px', overflowY: 'auto', paddingRight: '1rem' }}>
+                  {searchedGex.gex_profile.map((p, i) => {
+                    const magnitude = Math.min(Math.abs(p.net_gex) / 10000000, 100); 
+                    const isPositive = p.net_gex > 0;
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
+                        <span style={{ width: '80px', textAlign: 'right', paddingRight: '15px', fontWeight: 'bold' }}>${p.strike.toFixed(1)}</span>
+                        <div style={{ flex: 1, height: '14px', background: '#1e293b', borderRadius: '7px', display: 'flex' }}>
+                           <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                              {!isPositive && <div style={{ width: `${magnitude}%`, background: '#ef4444', borderRadius: '7px 0 0 7px' }}></div>}
+                           </div>
+                           <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+                              {isPositive && <div style={{ width: `${magnitude}%`, background: '#10b981', borderRadius: '0 7px 7px 0' }}></div>}
+                           </div>
+                        </div>
+                        <span style={{ width: '80px', textAlign: 'left', paddingLeft: '15px', color: isPositive ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                          {p.net_gex !== 0 ? (p.net_gex / 1000000).toFixed(1) + 'M' : '0'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
