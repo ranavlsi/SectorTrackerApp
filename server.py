@@ -203,7 +203,7 @@ def get_gex():
             if len(hist_daily) >= 2:
                 vol_today = hist_daily['Volume'].iloc[-1]
                 vol_prev_avg = hist_daily['Volume'].iloc[:-1].mean()
-                if vol_today > (vol_prev_avg * 1.5):
+                if vol_today > (vol_prev_avg * 1.2):
                     dark_pool_elevated = True
         except:
             pass
