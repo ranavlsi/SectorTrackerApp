@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area } from 'recharts'
-import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun } from 'lucide-react'
+import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
+import GexHeatmap from './GexHeatmap'
+import VolatilitySurface3D from './VolatilitySurface3D'
+import EarningsEvasionTracker from './EarningsEvasionTracker'
+import ZacksFundamentalReport from './ZacksFundamentalReport'
 import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
@@ -42,7 +46,8 @@ const ScreenerCategories = {
   ipo_avwap: { title: "IPO AVWAP Bounce", icon: <Crosshair color="#ec4899" /> },
   bullish_candlestick: { title: "Bullish Candlestick", icon: <TrendingUp color="#22c55e" /> },
   bearish_candlestick: { title: "Bearish Candlestick", icon: <TrendingUp color="#ef4444" style={{ transform: 'rotate(180deg)' }} /> },
-  reversal: { title: "Oversold Reversal", icon: <RefreshCw color="#ef4444" /> }
+  reversal: { title: "Oversold Reversal", icon: <RefreshCw color="#ef4444" /> },
+  zacks_rank_1: { title: "Zacks Rank #1 (Strong Buy)", icon: <BookOpen color="#10b981" /> }
 }
 
 const ScreenerPill = ({ item, onClick }) => {
@@ -76,7 +81,7 @@ const ScreenerPill = ({ item, onClick }) => {
       <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{item.metric}</span>
       
       {isHovered && (
-        <div style={{ position: 'absolute', top: '-10px', left: '105%', width: '250px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid #4facfe', borderRadius: '8px', padding: '1rem', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'absolute', top: 'calc(100% + 5px)', right: '0', width: '280px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid #4facfe', borderRadius: '8px', padding: '1rem', zIndex: 9999, boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
           <h4 style={{ margin: '0 0 0.5rem 0', color: '#4facfe' }}>Why Picked:</h4>
           <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#fff' }}>{item.metric}</p>
           
@@ -121,7 +126,9 @@ function App() {
   const [hoveredSector, setHoveredSector] = useState(null)
   const [isTop5Isolated, setIsTop5Isolated] = useState(false)
   const [modalData, setModalData] = useState(null)
-  const [collapsedCategories, setCollapsedCategories] = useState({})
+  const [collapsedCategories, setCollapsedCategories] = useState(
+    Object.keys(ScreenerCategories).reduce((acc, key) => { acc[key] = true; return acc; }, {})
+  )
   
   // Full-Stack Search State
   const [searchQuery, setSearchQuery] = useState('')
@@ -406,6 +413,9 @@ function App() {
           <button className={activeTab === 'intraday' ? 'tab-active' : ''} onClick={fetchIntradayAlerts}><Radio size={18} /> Intraday Radar</button>
           <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
           <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
+          <button className={activeTab === 'volsurface' ? 'tab-active' : ''} onClick={() => setActiveTab('volsurface')}><Activity size={18} /> 3D Vol Surface</button>
+          <button className={activeTab === 'earnings' ? 'tab-active' : ''} onClick={() => setActiveTab('earnings')}><User size={18} /> AI Earnings</button>
+          <button className={activeTab === 'zacks' ? 'tab-active' : ''} onClick={() => setActiveTab('zacks')}><BookOpen size={18} /> Zacks Fundamentals</button>
           <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
           <button className={activeTab === 'ask_ai' ? 'tab-active' : ''} onClick={() => setActiveTab('ask_ai')}><Bot size={18} /> Ask AI (Live)</button>
         </div>
@@ -480,88 +490,33 @@ function App() {
       {activeTab === 'gexprofiler' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
           <div className="glass-card" style={{ padding: '2rem' }}>
-            <h2 style={{ marginTop: 0, color: '#fbc2eb' }}>📉 Options Gamma Exposure (GEX) Profiler</h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Visualize absolute dealer hedging magnets by searching any live options chain.</p>
-            
-            <form onSubmit={handleGexSearch} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-              <input 
-                type="text" 
-                placeholder="Enter ticker (e.g., TSLA, SPY, SMCI)..." 
-                value={gexSearch}
-                onChange={(e) => setGexSearch(e.target.value.toUpperCase())}
-                style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: 'rgba(0,0,0,0.2)', color: 'white', flex: 1 }}
-              />
-              <button type="submit" disabled={gexLoading} style={{ padding: '0.75rem 2rem', background: '#3b82f6', borderRadius: '8px', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
-                {gexLoading ? 'Calculating...' : 'Scan GEX'}
-              </button>
+            <form onSubmit={(e) => { e.preventDefault(); setSearchedGex({ticker: gexSearch.toUpperCase()}); }} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+              <input type="text" placeholder="Enter ticker (e.g., TSLA, SPY, SMCI)..." value={gexSearch} onChange={(e) => setGexSearch(e.target.value.toUpperCase())} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: 'rgba(0,0,0,0.2)', color: 'white', flex: 1 }} />
+              <button type="submit" style={{ padding: '0.75rem 2rem', background: '#3b82f6', borderRadius: '8px', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>Scan Ticker</button>
             </form>
-
-            {gexError && <div style={{ color: '#ef4444', marginBottom: '1rem', padding: '1rem', background: 'rgba(239,68,68,0.1)', borderRadius: '8px' }}>{gexError}</div>}
-
-            {searchedGex && (() => {
-              const sortedGex = [...searchedGex.gex_profile].sort((a, b) => a.strike - b.strike);
-              let maxPosIdx = -1;
-              let maxNegIdx = -1;
-              let maxPosVal = 0;
-              let minNegVal = 0;
-              sortedGex.forEach((p, i) => {
-                 if (p.net_gex > maxPosVal) { maxPosVal = p.net_gex; maxPosIdx = i; }
-                 if (p.net_gex < minNegVal) { minNegVal = p.net_gex; maxNegIdx = i; }
-              });
-              const maxMagnitude = Math.max(Math.abs(maxPosVal), Math.abs(minNegVal));
-
-              return (
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-                  <h4 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: '0.5rem', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                    <span>
-                      {searchedGex.ticker} <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 'normal', marginLeft: '1rem' }}>Spot Price: ${searchedGex.spot_price.toFixed(2)}</span>
-                    </span>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      {searchedGex.dark_pool_elevated && <span style={{ fontSize: '0.75rem', color: 'white', background: '#9333ea', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', boxShadow: '0 0 8px #9333ea' }}>🔥 Surge DP Vol</span>}
-                      {searchedGex.options_activity_elevated && <span style={{ fontSize: '0.75rem', color: 'white', background: '#ea580c', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', boxShadow: '0 0 8px #ea580c' }}>🔥 Surge Opt Vol</span>}
-                      <span style={{ fontSize: '0.8rem', color: '#a855f7', fontWeight: 'bold', marginLeft: '10px' }}>Dark Pool Radar Active</span>
-                    </div>
-                  </h4>
-                  
-                  <div style={{ overflowX: 'auto', paddingBottom: '2rem', marginTop: '2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', height: '400px', minWidth: `${sortedGex.length * 40}px` }}>
-                      {sortedGex.map((p, i) => {
-                        const magnitudePct = (Math.abs(p.net_gex) / (maxMagnitude || 1)) * 100; 
-                        const isPositive = p.net_gex > 0;
-                        const isDarkPool = searchedGex.dark_pool_levels && searchedGex.dark_pool_levels.some(dp => Math.abs(dp - p.strike) / p.strike < 0.01);
-
-                        return (
-                          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', borderLeft: isDarkPool ? '1px dashed #a855f7' : '1px solid transparent', backgroundColor: isDarkPool ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}>
-                            
-                            {/* Top Half (Positive GEX) */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', borderBottom: '2px solid #334155', paddingTop: '20px' }}>
-                               {i === maxPosIdx && <span style={{ fontSize: '0.7rem', color: '#6ee7b7', writingMode: 'vertical-rl', transform: 'rotate(180deg)', paddingBottom: '8px', fontWeight: 'bold' }}>🧲 Magnet</span>}
-                               {isPositive && <div style={{ width: '80%', height: `${magnitudePct}%`, background: 'linear-gradient(0deg, rgba(16,185,129,1) 0%, rgba(16,185,129,0.4) 100%)', borderRadius: '4px 4px 0 0', cursor: 'pointer' }} title={`$${p.strike}: ${(p.net_gex/1000000).toFixed(1)}M`}></div>}
-                            </div>
-                            
-                            {/* Bottom Half (Negative GEX) */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', paddingBottom: '20px' }}>
-                               {!isPositive && <div style={{ width: '80%', height: `${magnitudePct}%`, background: 'linear-gradient(180deg, rgba(239,68,68,1) 0%, rgba(239,68,68,0.4) 100%)', borderRadius: '0 0 4px 4px', cursor: 'pointer' }} title={`$${p.strike}: ${(p.net_gex/1000000).toFixed(1)}M`}></div>}
-                               {i === maxNegIdx && <span style={{ fontSize: '0.7rem', color: '#fca5a5', writingMode: 'vertical-rl', transform: 'rotate(180deg)', paddingTop: '8px', fontWeight: 'bold' }}>🛡️ Repel</span>}
-                            </div>
-                            
-                            {/* X-Axis Strike Label */}
-                            <div style={{ position: 'absolute', bottom: '-25px', width: '100%', textAlign: 'center', fontSize: '0.7rem', fontWeight: 'bold', color: Math.abs(p.strike - searchedGex.spot_price) < 2 ? '#fbbf24' : '#94a3b8' }}>
-                               ${p.strike}
-                            </div>
-                            
-                            {/* Dark Pool Vertical Label */}
-                            {isDarkPool && <div style={{ position: 'absolute', top: '40%', width: '100%', textAlign: 'center', fontSize: '0.7rem', color: '#c084fc', zIndex: 10, fontWeight: 'bold' }}>🦇 DP</div>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
+            <GexHeatmap ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
           </div>
         </div>
+      )}
+
+      {activeTab === 'volsurface' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+          <div className="glass-card" style={{ padding: '2rem' }}>
+            <form onSubmit={(e) => { e.preventDefault(); setSearchedGex({ticker: gexSearch.toUpperCase()}); }} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+              <input type="text" placeholder="Enter ticker (e.g., TSLA, SPY, SMCI)..." value={gexSearch} onChange={(e) => setGexSearch(e.target.value.toUpperCase())} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: 'rgba(0,0,0,0.2)', color: 'white', flex: 1 }} />
+              <button type="submit" style={{ padding: '0.75rem 2rem', background: '#3b82f6', borderRadius: '8px', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>Map Surface</button>
+            </form>
+            <VolatilitySurface3D ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'zacks' && (
+        <ZacksFundamentalReport initialTicker={searchQuery || 'NVDA'} />
+      )}
+
+      {activeTab === 'earnings' && (
+        <EarningsEvasionTracker ticker={(searchedGex?.ticker) || expertTickerData?.ticker || null} />
       )}
 
       {activeTab === 'analysis' && (

@@ -291,6 +291,75 @@ def chat():
     time.sleep(1.0)
     return jsonify({"response": response})
 
+@app.route('/api/volatility_surface')
+def get_vol_surface():
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker provided"}), 400
+        
+    try:
+        t = yf.Ticker(ticker.upper())
+        options = t.options
+        if not options:
+            return jsonify({"error": "No options available"}), 400
+            
+        spot = t.fast_info.get('lastPrice', None)
+        if not spot:
+            hist = t.history(period="1d")
+            spot = float(hist['Close'].iloc[-1])
+            
+        surface_data = []
+        # Pull first 4 expirations to build surface
+        for expiry in options[:4]:
+            chain = t.option_chain(expiry)
+            calls = chain.calls
+            # Filter to strikes within +/- 20% of spot
+            calls = calls[(calls['strike'] > spot * 0.8) & (calls['strike'] < spot * 1.2)]
+            for _, row in calls.iterrows():
+                if pd.notna(row['impliedVolatility']) and row['impliedVolatility'] > 0:
+                    surface_data.append({
+                        "expiry": expiry,
+                        "strike": row['strike'],
+                        "iv": row['impliedVolatility']
+                    })
+        
+        return jsonify({
+            "spot": spot,
+            "surface": surface_data
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/earnings_sentiment')
+def get_earnings_sentiment():
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker provided"}), 400
+        
+    # Simulated Local NLP Engine Logic for Prototype
+    import random
+    
+    transcripts = [
+        {"time": "09:05", "speaker": "CEO", "text": "We are incredibly confident in our Q3 pipeline.", "sentiment": 0.9, "evasion": 0.1},
+        {"time": "09:12", "speaker": "CFO", "text": "Margins contracted slightly due to macroeconomic headwinds.", "sentiment": -0.3, "evasion": 0.2},
+        {"time": "09:25", "speaker": "Analyst", "text": "Can you provide specific guidance for next year's CapEx?", "sentiment": 0.0, "evasion": 0.0},
+        {"time": "09:26", "speaker": "CEO", "text": "We're looking at various scenarios and remain flexible. It's too early to commit to hard numbers.", "sentiment": 0.1, "evasion": 0.85},
+        {"time": "09:35", "speaker": "CEO", "text": "Our AI integration has already boosted active users by 40%.", "sentiment": 0.95, "evasion": 0.05}
+    ]
+    
+    variance = random.uniform(-0.1, 0.1)
+    for t in transcripts:
+        t["sentiment"] = round(max(-1.0, min(1.0, t["sentiment"] + variance)), 2)
+        if t["evasion"] > 0.5:
+            t["evasion"] = round(max(0.5, min(1.0, t["evasion"] + variance)), 2)
+            
+    return jsonify({
+        "ticker": ticker.upper(),
+        "overall_sentiment": round(0.65 + variance, 2),
+        "overall_evasion": round(0.3 + (variance * 0.5), 2),
+        "transcript": transcripts
+    })
+
 @app.route('/api/search')
 def search_stock():
     ticker = request.args.get('ticker')
@@ -773,6 +842,184 @@ def premarket_council_worker():
             has_run_today = False
             
         time.sleep(60)
+
+@app.route('/api/fundamentals')
+def get_fundamentals():
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker provided"}), 400
+        
+    try:
+        t = yf.Ticker(ticker.upper())
+        info = t.info
+        
+        # Core Valuation Metrics
+        peg = info.get("pegRatio")
+        revenue_growth = info.get("revenueGrowth")
+        
+        # Safe defaults for ranking math
+        safe_peg = peg if peg is not None else 999
+        safe_rev = revenue_growth if revenue_growth is not None else 0
+        
+        # Calculate Simulated Zacks Rank (1-5) via a balanced scoring system
+        score = 0
+        reasoning = []
+        
+        # Revenue Growth Scoring
+        if safe_rev > 0.15:
+            score += 2
+            reasoning.append(f"Exceptional revenue growth of {safe_rev*100:.1f}%.")
+        elif safe_rev > 0.05:
+            score += 1
+            reasoning.append(f"Solid revenue growth of {safe_rev*100:.1f}%.")
+        elif safe_rev < 0:
+            score -= 2
+            reasoning.append(f"Negative revenue growth of {safe_rev*100:.1f}%.")
+        else:
+            reasoning.append(f"Flat revenue growth of {safe_rev*100:.1f}%.")
+            
+        # PEG Ratio Scoring
+        if safe_peg < 1.0:
+            score += 2
+            reasoning.append(f"Highly undervalued PEG ratio of {safe_peg}.")
+        elif safe_peg <= 2.0:
+            score += 1
+            reasoning.append(f"Reasonable PEG ratio of {safe_peg}.")
+        elif safe_peg > 4.0 and safe_peg != 999:
+            score -= 2
+            reasoning.append(f"Massively overvalued PEG ratio of {safe_peg}.")
+        elif safe_peg > 3.0 and safe_peg != 999:
+            score -= 1
+            reasoning.append(f"Overvalued PEG ratio of {safe_peg}.")
+        elif safe_peg == 999:
+            reasoning.append("PEG ratio is unavailable (likely due to negative earnings).")
+            score -= 1
+            
+        # Analyst Sentiment Scoring (Crucial for true Zacks mimicking)
+        rec = info.get("recommendationKey", "none").lower()
+        if "buy" in rec:
+            score += 1
+            reasoning.append("Wall Street analysts are issuing Buy recommendations.")
+        elif "sell" in rec or "underperform" in rec:
+            score -= 2
+            reasoning.append("Wall Street analysts have issued Sell downgrades.")
+        elif "hold" in rec:
+            score -= 1
+            reasoning.append("Wall Street consensus is stuck at a Hold, indicating lack of near-term catalysts or recent estimate downgrades.")
+            
+        # Map score (-5 to +5) to Zacks Rank (1 to 5)
+        if score >= 3:
+            zacks_rank = 1
+        elif score >= 1:
+            zacks_rank = 2
+        elif score == 0 or score == -1:
+            zacks_rank = 3
+        elif score >= -3:
+            zacks_rank = 4
+        else:
+            zacks_rank = 5
+
+        # Calculate Value Score (A-F)
+        v_points = 0
+        forward_pe = info.get("forwardPE", 999) or 999
+        pb = info.get("priceToBook", 999) or 999
+        if forward_pe < 15 and pb < 2: v_points = 4
+        elif forward_pe < 20 and pb < 3: v_points = 3
+        elif forward_pe < 25 and pb < 4: v_points = 2
+        elif forward_pe < 35 and pb < 6: v_points = 1
+        else: v_points = 0
+        
+        # Calculate Growth Score (A-F)
+        g_points = 0
+        earnings_growth = info.get("earningsGrowth", 0) or 0
+        if safe_rev > 0.20 and earnings_growth > 0.20: g_points = 4
+        elif safe_rev > 0.10 and earnings_growth > 0.10: g_points = 3
+        elif safe_rev > 0.05 and earnings_growth > 0.05: g_points = 2
+        elif safe_rev > 0.0 and earnings_growth > 0: g_points = 1
+        else: g_points = 0
+        
+        # Calculate Momentum Score (A-F)
+        m_points = 0
+        week_52 = info.get("52WeekChange", 0) or 0
+        current_price = info.get("currentPrice") or info.get("previousClose") or 0
+        ma_50 = info.get("fiftyDayAverage", 999999) or 999999
+        if week_52 > 0.30 and current_price > ma_50: m_points = 4
+        elif week_52 > 0.15 and current_price > ma_50: m_points = 3
+        elif week_52 > 0 and current_price > ma_50: m_points = 2
+        elif week_52 > -0.15: m_points = 1
+        else: m_points = 0
+        
+        # Blend for VGM Score
+        total_vgm = v_points + g_points + m_points
+        if total_vgm >= 9: vgm_points = 4
+        elif total_vgm >= 6: vgm_points = 3
+        elif total_vgm >= 4: vgm_points = 2
+        elif total_vgm >= 2: vgm_points = 1
+        else: vgm_points = 0
+        
+        letter_map = {4: 'A', 3: 'B', 2: 'C', 1: 'D', 0: 'F'}
+        style_scores = {
+            "value": letter_map[v_points],
+            "growth": letter_map[g_points],
+            "momentum": letter_map[m_points],
+            "vgm": letter_map[vgm_points]
+        }
+
+        fundamental_data = {
+            "pegRatio": peg,
+            "style_scores": style_scores,
+            "trailingPE": info.get("trailingPE"),
+            "forwardPE": info.get("forwardPE"),
+            "priceToBook": info.get("priceToBook"),
+            "profitMargins": info.get("profitMargins"),
+            "revenueGrowth": revenue_growth,
+            "operatingMargins": info.get("operatingMargins"),
+            "returnOnEquity": info.get("returnOnEquity"),
+            "zacks_rank": zacks_rank,
+            "spot": info.get("currentPrice") or info.get("previousClose"),
+            "targetHighPrice": info.get("targetHighPrice"),
+            "targetLowPrice": info.get("targetLowPrice"),
+            "targetMeanPrice": info.get("targetMeanPrice"),
+            "recommendationKey": info.get("recommendationKey", "N/A"),
+            "numberOfAnalystOpinions": info.get("numberOfAnalystOpinions")
+        }
+
+        # Quarterly History
+        eps_history = []
+        try:
+            inc = t.quarterly_income_stmt
+            if inc is not None and not inc.empty:
+                for date in inc.columns[:8]: # Last 8 quarters
+                    try:
+                        eps = inc.loc['Basic EPS', date]
+                        rev = inc.loc['Total Revenue', date]
+                        if pd.notna(eps) and pd.notna(rev):
+                            eps_history.append({
+                                "date": date.strftime("%Y-%m-%d"), 
+                                "eps": float(eps), 
+                                "revenue": float(rev)
+                            })
+                    except:
+                        continue
+        except Exception as e:
+            print(f"Error fetching income stmt: {e}")
+            
+        # Sort history chronologically
+        eps_history.sort(key=lambda x: x["date"])
+        
+        fundamental_data["history"] = eps_history
+        
+        # AI Report Text Generation
+        rank_names = {1: "Strong Buy", 2: "Buy", 3: "Hold", 4: "Sell", 5: "Strong Sell"}
+        
+        report = f"Zacks Rank #{zacks_rank} ({rank_names[zacks_rank]}). Reasoning: " + " ".join(reasoning)
+
+        fundamental_data["report"] = report
+
+        return jsonify(fundamental_data)
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/stream')
 def stream():

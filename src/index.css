@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   font-family: 'Inter', system-ui, sans-serif;
   line-height: 1.5;
@@ -116,8 +120,10 @@ h1 {
 .main-content {
   flex: 1;
   overflow-y: auto;
+  min-width: 0;
   padding: 2rem;
   position: relative;
+  z-index: 20;
 }
 
 /* Top Header */

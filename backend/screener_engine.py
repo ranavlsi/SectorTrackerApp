@@ -125,7 +125,8 @@ def run_screener():
         "post_earning_reaction": [],
         "post_earning_consolidation": [],
         "weekly_cup_handle": [],
-        "monthly_cup_handle": []
+        "monthly_cup_handle": [],
+        "zacks_rank_1": []
     }
     
     for ticker in UNIVERSE:
@@ -297,9 +298,44 @@ def run_screener():
         except Exception as e:
             pass
 
+        # 13. Zacks Rank #1 (Strong Buy)
+        try:
+            t = yf.Ticker(ticker)
+            info = t.info
+            peg = info.get("pegRatio")
+            revenue_growth = info.get("revenueGrowth")
+            
+            safe_peg = peg if peg is not None else 999
+            safe_rev = revenue_growth if revenue_growth is not None else 0
+            
+            score = 0
+            if safe_rev > 0.15: score += 2
+            elif safe_rev > 0.05: score += 1
+            elif safe_rev < 0: score -= 2
+            
+            if safe_peg < 1.0: score += 2
+            elif safe_peg <= 2.0: score += 1
+            elif safe_peg > 4.0 and safe_peg != 999: score -= 2
+            elif safe_peg > 3.0 and safe_peg != 999: score -= 1
+            elif safe_peg == 999: score -= 1
+                
+            rec = info.get("recommendationKey", "none").lower()
+            if "buy" in rec: score += 1
+            elif "sell" in rec or "underperform" in rec: score -= 2
+            elif "hold" in rec: score -= 1
+            
+            if score >= 3:
+                results["zacks_rank_1"].append({"ticker": ticker, "metric": f"Score: {score} | PEG: {safe_peg}"})
+        except Exception as e:
+            pass
+
     # Sort results to only keep top 10 per category to keep UI clean
     for key in results:
-        results[key] = results[key][:10]
+        if key == "zacks_rank_1":
+            # Keep top 20 for Zacks Rank 1
+            results[key] = sorted(results[key], key=lambda x: x["metric"], reverse=True)[:20]
+        else:
+            results[key] = results[key][:10]
         
     output_path = '/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_results.json'
     with open(output_path, 'w') as f:

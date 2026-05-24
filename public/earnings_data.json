@@ -1,0 +1,2366 @@
+[
+    {
+        "ticker": "NVDA",
+        "current_price": 215.33,
+        "next_earnings_date": "2026-05-20",
+        "options_data": {
+            "expiration": "2026-05-26",
+            "pcr_oi": 0.41,
+            "max_pain_strike": 220.0,
+            "atm_strike": 215.0,
+            "implied_move_usd": 4.51,
+            "implied_move_pct": 2.09
+        },
+        "eps_trend": {
+            "current_est": 2.09,
+            "d30_est": 1.95,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-02-25",
+                "timing": "AMC",
+                "gap_pct": -0.66,
+                "t0_close_pct": -5.46,
+                "t1_close_pct": -9.39,
+                "t5_close_pct": -6.25,
+                "eps_surprise_pct": 532.0
+            },
+            {
+                "date": "2025-11-19",
+                "timing": "AMC",
+                "gap_pct": 5.06,
+                "t0_close_pct": -3.15,
+                "t1_close_pct": -4.1,
+                "t5_close_pct": -5.1,
+                "eps_surprise_pct": 346.0
+            },
+            {
+                "date": "2025-08-27",
+                "timing": "AMC",
+                "gap_pct": -0.43,
+                "t0_close_pct": -0.79,
+                "t1_close_pct": -4.09,
+                "t5_close_pct": -8.03,
+                "eps_surprise_pct": 410.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 1.22,
+            "short_ratio": 1.84,
+            "forward_pe": 17.03,
+            "peg_ratio": 0.66,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-21",
+                    "firm": "UBS",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "DA Davidson",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Truist Securities",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "RBC Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Cantor Fitzgerald",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Stifel",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "JP Morgan",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Jefferies",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Morgan Stanley",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Keybanc",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Benchmark",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "B of A Securities",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Baird",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-21",
+                    "firm": "Needham",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-19",
+                    "firm": "HSBC",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-18",
+                    "firm": "DA Davidson",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-18",
+                    "firm": "Morgan Stanley",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-18",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-18",
+                    "firm": "Keybanc",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-15",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-14",
+                    "firm": "UBS",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-14",
+                    "firm": "RBC Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-14",
+                    "firm": "Cantor Fitzgerald",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-12",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "AAPL",
+        "current_price": 308.82,
+        "next_earnings_date": "2026-07-30",
+        "options_data": {
+            "expiration": "2026-05-26",
+            "pcr_oi": 0.69,
+            "max_pain_strike": 300.0,
+            "atm_strike": 310.0,
+            "implied_move_usd": 3.54,
+            "implied_move_pct": 1.15
+        },
+        "eps_trend": {
+            "current_est": 1.9,
+            "d30_est": 1.73,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-30",
+                "timing": "AMC",
+                "gap_pct": 2.77,
+                "t0_close_pct": 3.24,
+                "t1_close_pct": 2.02,
+                "t5_close_pct": 8.1,
+                "eps_surprise_pct": 349.0
+            },
+            {
+                "date": "2026-01-29",
+                "timing": "AMC",
+                "gap_pct": -1.2,
+                "t0_close_pct": 0.46,
+                "t1_close_pct": 4.54,
+                "t5_close_pct": 7.68,
+                "eps_surprise_pct": 625.0
+            },
+            {
+                "date": "2025-10-30",
+                "timing": "AMC",
+                "gap_pct": 2.06,
+                "t0_close_pct": -0.38,
+                "t1_close_pct": -0.87,
+                "t5_close_pct": -1.08,
+                "eps_surprise_pct": 452.0
+            },
+            {
+                "date": "2025-07-31",
+                "timing": "AMC",
+                "gap_pct": 1.59,
+                "t0_close_pct": -2.5,
+                "t1_close_pct": -2.03,
+                "t5_close_pct": 10.49,
+                "eps_surprise_pct": 948.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 0.92,
+            "short_ratio": 3.11,
+            "forward_pe": 32.16,
+            "peg_ratio": 2.69,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-14",
+                    "firm": "Tigress Financial",
+                    "to_grade": "Strong Buy",
+                    "from_grade": "Strong Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-14",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-08",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "UBS",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Barclays",
+                    "to_grade": "Underweight",
+                    "from_grade": "Underweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "DA Davidson",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Morgan Stanley",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Needham",
+                    "to_grade": "Hold",
+                    "from_grade": "Hold",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-04-28",
+                    "firm": "UBS",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "MSFT",
+        "current_price": 418.57,
+        "next_earnings_date": "2026-07-29",
+        "options_data": {
+            "expiration": "2026-05-26",
+            "pcr_oi": 0.6,
+            "max_pain_strike": 412.5,
+            "atm_strike": 417.5,
+            "implied_move_usd": 5.9,
+            "implied_move_pct": 1.41
+        },
+        "eps_trend": {
+            "current_est": 4.24,
+            "d30_est": 4.25,
+            "bar_lowered": true
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-29",
+                "timing": "AMC",
+                "gap_pct": -3.22,
+                "t0_close_pct": -3.93,
+                "t1_close_pct": -2.36,
+                "t5_close_pct": -0.87,
+                "eps_surprise_pct": 522.0
+            },
+            {
+                "date": "2026-01-28",
+                "timing": "AMC",
+                "gap_pct": -8.65,
+                "t0_close_pct": -9.99,
+                "t1_close_pct": -10.66,
+                "t5_close_pct": -18.26,
+                "eps_surprise_pct": 569.0
+            },
+            {
+                "date": "2025-10-29",
+                "timing": "AMC",
+                "gap_pct": -2.04,
+                "t0_close_pct": -2.92,
+                "t1_close_pct": -4.38,
+                "t5_close_pct": -8.21,
+                "eps_surprise_pct": 1273.0
+            },
+            {
+                "date": "2025-07-30",
+                "timing": "AMC",
+                "gap_pct": 8.18,
+                "t0_close_pct": 3.95,
+                "t1_close_pct": 2.12,
+                "t5_close_pct": 1.48,
+                "eps_surprise_pct": 809.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 1.07,
+            "short_ratio": 2.26,
+            "forward_pe": 21.65,
+            "peg_ratio": 1.29,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-13",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Tigress Financial",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Stifel",
+                    "to_grade": "Hold",
+                    "from_grade": "Hold",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Bernstein",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Guggenheim",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Barclays",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Benchmark",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Cantor Fitzgerald",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Truist Securities",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Scotiabank",
+                    "to_grade": "Sector Outperform",
+                    "from_grade": "Sector Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Piper Sandler",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-28",
+                    "firm": "Benchmark",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-04-28",
+                    "firm": "BMO Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-27",
+                    "firm": "Oppenheimer",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "reit"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "GOOGL",
+        "current_price": 382.97,
+        "next_earnings_date": "2026-07-23",
+        "options_data": {
+            "expiration": "2026-05-26",
+            "pcr_oi": 0.59,
+            "max_pain_strike": 387.5,
+            "atm_strike": 385.0,
+            "implied_move_usd": 5.96,
+            "implied_move_pct": 1.55
+        },
+        "eps_trend": {
+            "current_est": 2.88,
+            "d30_est": 2.77,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-29",
+                "timing": "AMC",
+                "gap_pct": 6.9,
+                "t0_close_pct": 9.96,
+                "t1_close_pct": 10.22,
+                "t5_close_pct": 13.73,
+                "eps_surprise_pct": 9430.0
+            },
+            {
+                "date": "2026-02-04",
+                "timing": "AMC",
+                "gap_pct": -6.25,
+                "t0_close_pct": -0.54,
+                "t1_close_pct": -3.06,
+                "t5_close_pct": -7.22,
+                "eps_surprise_pct": 678.0
+            },
+            {
+                "date": "2025-10-29",
+                "timing": "AMC",
+                "gap_pct": 6.2,
+                "t0_close_pct": 2.52,
+                "t1_close_pct": 2.41,
+                "t5_close_pct": 3.71,
+                "eps_surprise_pct": 2688.0
+            },
+            {
+                "date": "2025-07-23",
+                "timing": "AMC",
+                "gap_pct": 3.57,
+                "t0_close_pct": 1.02,
+                "t1_close_pct": 1.55,
+                "t5_close_pct": 0.88,
+                "eps_surprise_pct": 509.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 1.3,
+            "short_ratio": 2.7,
+            "forward_pe": 26.5,
+            "peg_ratio": 1.51,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-21",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-20",
+                    "firm": "Keybanc",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-20",
+                    "firm": "Citizens",
+                    "to_grade": "Market Outperform",
+                    "from_grade": "Market Outperform",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-20",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-20",
+                    "firm": "Needham",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-04",
+                    "firm": "Citizens",
+                    "to_grade": "Market Outperform",
+                    "from_grade": "Market Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-04",
+                    "firm": "Freedom Broker",
+                    "to_grade": "Hold",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "down"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Stifel",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Canaccord Genuity",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "UBS",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Bernstein",
+                    "to_grade": "Market Perform",
+                    "from_grade": "Market Perform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Morgan Stanley",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Susquehanna",
+                    "to_grade": "Positive",
+                    "from_grade": "Positive",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Piper Sandler",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "RBC Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Guggenheim",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Barclays",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Cantor Fitzgerald",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Keybanc",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Truist Securities",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Needham",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "AMZN",
+        "current_price": 266.32,
+        "next_earnings_date": "2026-07-30",
+        "options_data": {
+            "expiration": "2026-05-26",
+            "pcr_oi": 0.88,
+            "max_pain_strike": 262.5,
+            "atm_strike": 267.5,
+            "implied_move_usd": 4.14,
+            "implied_move_pct": 1.56
+        },
+        "eps_trend": {
+            "current_est": 1.82,
+            "d30_est": 1.78,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-29",
+                "timing": "AMC",
+                "gap_pct": 3.85,
+                "t0_close_pct": 0.77,
+                "t1_close_pct": 1.98,
+                "t5_close_pct": 3.09,
+                "eps_surprise_pct": 6902.0
+            },
+            {
+                "date": "2026-02-05",
+                "timing": "AMC",
+                "gap_pct": -8.98,
+                "t0_close_pct": -5.55,
+                "t1_close_pct": -6.27,
+                "t5_close_pct": -10.73,
+                "eps_surprise_pct": 22.0
+            },
+            {
+                "date": "2025-10-30",
+                "timing": "AMC",
+                "gap_pct": 12.22,
+                "t0_close_pct": 9.58,
+                "t1_close_pct": 13.97,
+                "t5_close_pct": 9.67,
+                "eps_surprise_pct": 2520.0
+            },
+            {
+                "date": "2025-07-31",
+                "timing": "AMC",
+                "gap_pct": -7.22,
+                "t0_close_pct": -8.27,
+                "t1_close_pct": -9.59,
+                "t5_close_pct": -4.88,
+                "eps_surprise_pct": 2719.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 0.93,
+            "short_ratio": 1.84,
+            "forward_pe": 27.04,
+            "peg_ratio": 1.83,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-20",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-12",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "Stifel",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Telsey Advisory Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Canaccord Genuity",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "JP Morgan",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Bernstein",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Morgan Stanley",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Susquehanna",
+                    "to_grade": "Positive",
+                    "from_grade": "Positive",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "RBC Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Piper Sandler",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Guggenheim",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Barclays",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Benchmark",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Cantor Fitzgerald",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Keybanc",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Truist Securities",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Scotiabank",
+                    "to_grade": "Sector Outperform",
+                    "from_grade": "Sector Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Needham",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-28",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "META",
+        "current_price": 610.26,
+        "next_earnings_date": "2026-07-29",
+        "options_data": {
+            "expiration": "2026-05-26",
+            "pcr_oi": 0.37,
+            "max_pain_strike": 602.5,
+            "atm_strike": 610.0,
+            "implied_move_usd": 9.07,
+            "implied_move_pct": 1.49
+        },
+        "eps_trend": {
+            "current_est": 7.2,
+            "d30_est": 7.13,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-29",
+                "timing": "AMC",
+                "gap_pct": -7.44,
+                "t0_close_pct": -8.55,
+                "t1_close_pct": -9.02,
+                "t5_close_pct": -7.82,
+                "eps_surprise_pct": 720.0
+            },
+            {
+                "date": "2026-01-28",
+                "timing": "AMC",
+                "gap_pct": 10.27,
+                "t0_close_pct": 10.4,
+                "t1_close_pct": 7.14,
+                "t5_close_pct": 0.22,
+                "eps_surprise_pct": 860.0
+            },
+            {
+                "date": "2025-10-29",
+                "timing": "AMC",
+                "gap_pct": -10.98,
+                "t0_close_pct": -11.33,
+                "t1_close_pct": -13.75,
+                "t5_close_pct": -17.66,
+                "eps_surprise_pct": 866.0
+            },
+            {
+                "date": "2025-07-30",
+                "timing": "AMC",
+                "gap_pct": 11.51,
+                "t0_close_pct": 11.25,
+                "t1_close_pct": 7.88,
+                "t5_close_pct": 9.58,
+                "eps_surprise_pct": 2182.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 1.32,
+            "short_ratio": 1.69,
+            "forward_pe": 16.95,
+            "peg_ratio": 0.88,
+            "analyst_revisions": []
+        }
+    },
+    {
+        "ticker": "TSLA",
+        "current_price": 426.01,
+        "next_earnings_date": "2026-07-22",
+        "options_data": {
+            "expiration": "2026-05-26",
+            "pcr_oi": 0.63,
+            "max_pain_strike": 415.0,
+            "atm_strike": 425.0,
+            "implied_move_usd": 9.85,
+            "implied_move_pct": 2.31
+        },
+        "eps_trend": {
+            "current_est": 0.45,
+            "d30_est": 0.45,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-22",
+                "timing": "AMC",
+                "gap_pct": -3.16,
+                "t0_close_pct": -3.56,
+                "t1_close_pct": -2.89,
+                "t5_close_pct": -1.52,
+                "eps_surprise_pct": -3654.0
+            },
+            {
+                "date": "2026-01-28",
+                "timing": "AMC",
+                "gap_pct": 1.47,
+                "t0_close_pct": -3.45,
+                "t1_close_pct": -0.24,
+                "t5_close_pct": -7.94,
+                "eps_surprise_pct": 1096.0
+            },
+            {
+                "date": "2025-10-22",
+                "timing": "AMC",
+                "gap_pct": -4.32,
+                "t0_close_pct": 2.28,
+                "t1_close_pct": -1.2,
+                "t5_close_pct": 0.26,
+                "eps_surprise_pct": -1053.0
+            },
+            {
+                "date": "2025-07-23",
+                "timing": "AMC",
+                "gap_pct": -6.78,
+                "t0_close_pct": -8.2,
+                "t1_close_pct": -4.96,
+                "t5_close_pct": -7.3,
+                "eps_surprise_pct": 1049.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 2.3,
+            "short_ratio": 1.13,
+            "forward_pe": 169.75,
+            "peg_ratio": 5.87,
+            "analyst_revisions": []
+        }
+    },
+    {
+        "ticker": "AMD",
+        "current_price": 467.51,
+        "next_earnings_date": "2026-08-04",
+        "options_data": {
+            "expiration": "2026-05-29",
+            "pcr_oi": 1.09,
+            "max_pain_strike": 400.0,
+            "atm_strike": 467.5,
+            "implied_move_usd": 33.2,
+            "implied_move_pct": 7.1
+        },
+        "eps_trend": {
+            "current_est": 1.61,
+            "d30_est": 1.42,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-05-05",
+                "timing": "AMC",
+                "gap_pct": 15.26,
+                "t0_close_pct": 18.61,
+                "t1_close_pct": 14.97,
+                "t5_close_pct": 25.4,
+                "eps_surprise_pct": 582.0
+            },
+            {
+                "date": "2026-02-03",
+                "timing": "AMC",
+                "gap_pct": -11.2,
+                "t0_close_pct": -17.31,
+                "t1_close_pct": -20.49,
+                "t5_close_pct": -11.78,
+                "eps_surprise_pct": 1598.0
+            },
+            {
+                "date": "2025-11-04",
+                "timing": "AMC",
+                "gap_pct": -2.72,
+                "t0_close_pct": 2.51,
+                "t1_close_pct": -4.94,
+                "t5_close_pct": 3.54,
+                "eps_surprise_pct": 1004.0
+            },
+            {
+                "date": "2025-08-05",
+                "timing": "AMC",
+                "gap_pct": -5.31,
+                "t0_close_pct": -6.42,
+                "t1_close_pct": -1.1,
+                "t5_close_pct": 5.8,
+                "eps_surprise_pct": 124020.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 2.23,
+            "short_ratio": 0.9,
+            "forward_pe": 36.07,
+            "peg_ratio": 1.12,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-19",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-18",
+                    "firm": "Citigroup",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-13",
+                    "firm": "Daiwa Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "down"
+                },
+                {
+                    "date": "2026-05-12",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Citigroup",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "JP Morgan",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Bernstein",
+                    "to_grade": "Outperform",
+                    "from_grade": "Market Perform",
+                    "price_target": 0,
+                    "action": "up"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Cantor Fitzgerald",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "RBC Capital",
+                    "to_grade": "Sector Perform",
+                    "from_grade": "Sector Perform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Barclays",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Susquehanna",
+                    "to_grade": "Positive",
+                    "from_grade": "Positive",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Benchmark",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Keybanc",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "DA Davidson",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Seaport Global",
+                    "to_grade": "Buy",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "up"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Stifel",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Morgan Stanley",
+                    "to_grade": "Equal-Weight",
+                    "from_grade": "Equal-Weight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Goldman Sachs",
+                    "to_grade": "Buy",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "up"
+                },
+                {
+                    "date": "2026-05-04",
+                    "firm": "HSBC",
+                    "to_grade": "Hold",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "down"
+                },
+                {
+                    "date": "2026-05-04",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "RBC Capital",
+                    "to_grade": "Sector Perform",
+                    "from_grade": "Sector Perform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-29",
+                    "firm": "Susquehanna",
+                    "to_grade": "Positive",
+                    "from_grade": "Positive",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-27",
+                    "firm": "Northland Capital Markets",
+                    "to_grade": "Market Perform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "down"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "AVGO",
+        "current_price": 414.14,
+        "next_earnings_date": "2026-06-03",
+        "options_data": {
+            "expiration": "2026-05-26",
+            "pcr_oi": 0.62,
+            "max_pain_strike": 420.0,
+            "atm_strike": 415.0,
+            "implied_move_usd": 11.88,
+            "implied_move_pct": 2.87
+        },
+        "eps_trend": {
+            "current_est": 2.39,
+            "d30_est": 0.0,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-03-04",
+                "timing": "AMC",
+                "gap_pct": 3.98,
+                "t0_close_pct": 4.8,
+                "t1_close_pct": 4.08,
+                "t5_close_pct": 5.81,
+                "eps_surprise_pct": 561.0
+            },
+            {
+                "date": "2025-12-11",
+                "timing": "AMC",
+                "gap_pct": -6.5,
+                "t0_close_pct": -11.43,
+                "t1_close_pct": -16.38,
+                "t5_close_pct": -16.24,
+                "eps_surprise_pct": 5545.0
+            },
+            {
+                "date": "2025-09-04",
+                "timing": "AMC",
+                "gap_pct": 16.23,
+                "t0_close_pct": 9.41,
+                "t1_close_pct": 12.92,
+                "t5_close_pct": 17.57,
+                "eps_surprise_pct": 160.0
+            },
+            {
+                "date": "2025-06-05",
+                "timing": "AMC",
+                "gap_pct": -3.38,
+                "t0_close_pct": -5.0,
+                "t1_close_pct": -6.02,
+                "t5_close_pct": -4.32,
+                "eps_surprise_pct": 59.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 1.1,
+            "short_ratio": 2.28,
+            "forward_pe": 22.68,
+            "peg_ratio": 0.9,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-18",
+                    "firm": "UBS",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-15",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-14",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-12",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "TSM",
+        "current_price": 404.52,
+        "next_earnings_date": "2026-07-16",
+        "options_data": {
+            "expiration": "2026-05-29",
+            "pcr_oi": 1.77,
+            "max_pain_strike": 397.5,
+            "atm_strike": 405.0,
+            "implied_move_usd": 17.35,
+            "implied_move_pct": 4.29
+        },
+        "eps_trend": {
+            "current_est": 3.74,
+            "d30_est": 3.56,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-15",
+                "timing": "AMC",
+                "gap_pct": -1.66,
+                "t0_close_pct": -3.13,
+                "t1_close_pct": -1.23,
+                "t5_close_pct": 2.02,
+                "eps_surprise_pct": 468.0
+            },
+            {
+                "date": "2026-01-15",
+                "timing": "BMO",
+                "gap_pct": 4.8,
+                "t0_close_pct": 4.44,
+                "t1_close_pct": 4.67,
+                "t5_close_pct": 2.37,
+                "eps_surprise_pct": 553.0
+            },
+            {
+                "date": "2025-10-15",
+                "timing": "AMC",
+                "gap_pct": 2.04,
+                "t0_close_pct": -1.6,
+                "t1_close_pct": -3.16,
+                "t5_close_pct": -4.59,
+                "eps_surprise_pct": 1123.0
+            },
+            {
+                "date": "2025-07-17",
+                "timing": "BMO",
+                "gap_pct": 3.46,
+                "t0_close_pct": 3.38,
+                "t1_close_pct": 1.2,
+                "t5_close_pct": 1.7,
+                "eps_surprise_pct": 679.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 0.55,
+            "short_ratio": 1.93,
+            "forward_pe": 20.73,
+            "peg_ratio": 1.26,
+            "analyst_revisions": []
+        }
+    },
+    {
+        "ticker": "ASML",
+        "current_price": 1632.9,
+        "next_earnings_date": "2026-07-15",
+        "options_data": null,
+        "eps_trend": {
+            "current_est": 6.86,
+            "d30_est": 6.8,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-14",
+                "timing": "AMC",
+                "gap_pct": -2.95,
+                "t0_close_pct": -2.41,
+                "t1_close_pct": -7.08,
+                "t5_close_pct": -4.92,
+                "eps_surprise_pct": 799.0
+            },
+            {
+                "date": "2026-01-27",
+                "timing": "AMC",
+                "gap_pct": 2.64,
+                "t0_close_pct": -2.18,
+                "t1_close_pct": 0.04,
+                "t5_close_pct": -7.94,
+                "eps_surprise_pct": -272.0
+            },
+            {
+                "date": "2025-10-15",
+                "timing": "BMO",
+                "gap_pct": 4.78,
+                "t0_close_pct": 2.71,
+                "t1_close_pct": 3.7,
+                "t5_close_pct": 2.89,
+                "eps_surprise_pct": 214.0
+            },
+            {
+                "date": "2025-07-16",
+                "timing": "BMO",
+                "gap_pct": -8.34,
+                "t0_close_pct": -8.33,
+                "t1_close_pct": -9.49,
+                "t5_close_pct": -12.89,
+                "eps_surprise_pct": 1236.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 0.19,
+            "short_ratio": 0.4,
+            "forward_pe": 34.38,
+            "peg_ratio": 2.45,
+            "analyst_revisions": []
+        }
+    },
+    {
+        "ticker": "PLTR",
+        "current_price": 136.88,
+        "next_earnings_date": "2026-08-03",
+        "options_data": {
+            "expiration": "2026-05-29",
+            "pcr_oi": 0.48,
+            "max_pain_strike": 135.0,
+            "atm_strike": 137.0,
+            "implied_move_usd": 6.08,
+            "implied_move_pct": 4.45
+        },
+        "eps_trend": {
+            "current_est": 0.34,
+            "d30_est": 0.3,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-05-04",
+                "timing": "AMC",
+                "gap_pct": -3.93,
+                "t0_close_pct": -6.93,
+                "t1_close_pct": -8.38,
+                "t5_close_pct": -6.87,
+                "eps_surprise_pct": 1808.0
+            },
+            {
+                "date": "2026-02-02",
+                "timing": "AMC",
+                "gap_pct": 11.7,
+                "t0_close_pct": 6.85,
+                "t1_close_pct": -5.56,
+                "t5_close_pct": -5.58,
+                "eps_surprise_pct": 3203.0
+            },
+            {
+                "date": "2025-11-03",
+                "timing": "AMC",
+                "gap_pct": -7.29,
+                "t0_close_pct": -7.94,
+                "t1_close_pct": -9.31,
+                "t5_close_pct": -7.83,
+                "eps_surprise_pct": 2546.0
+            },
+            {
+                "date": "2025-08-04",
+                "timing": "AMC",
+                "gap_pct": 6.94,
+                "t0_close_pct": 7.85,
+                "t1_close_pct": 11.75,
+                "t5_close_pct": 16.38,
+                "eps_surprise_pct": 1557.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 2.77,
+            "short_ratio": 1.26,
+            "forward_pe": 65.99,
+            "peg_ratio": 1.98,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-21",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Argus Research",
+                    "to_grade": "Buy",
+                    "from_grade": "Hold",
+                    "price_target": 0,
+                    "action": "up"
+                },
+                {
+                    "date": "2026-05-05",
+                    "firm": "RBC Capital",
+                    "to_grade": "Underperform",
+                    "from_grade": "Underperform",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-05",
+                    "firm": "Wedbush",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-05-05",
+                    "firm": "DA Davidson",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-05",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-01",
+                    "firm": "HSBC",
+                    "to_grade": "Hold",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "down"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Oppenheimer",
+                    "to_grade": "Outperform",
+                    "from_grade": "",
+                    "price_target": 0,
+                    "action": "init"
+                },
+                {
+                    "date": "2026-04-28",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "SMCI",
+        "current_price": 35.58,
+        "next_earnings_date": "2026-08-04",
+        "options_data": {
+            "expiration": "2026-05-29",
+            "pcr_oi": 0.81,
+            "max_pain_strike": 31.0,
+            "atm_strike": 35.5,
+            "implied_move_usd": 2.83,
+            "implied_move_pct": 7.97
+        },
+        "eps_trend": {
+            "current_est": 0.71,
+            "d30_est": 0.56,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-05-05",
+                "timing": "AMC",
+                "gap_pct": 12.97,
+                "t0_close_pct": 24.54,
+                "t1_close_pct": 20.8,
+                "t5_close_pct": 14.98,
+                "eps_surprise_pct": 3451.0
+            },
+            {
+                "date": "2026-02-03",
+                "timing": "AMC",
+                "gap_pct": 11.05,
+                "t0_close_pct": 13.78,
+                "t1_close_pct": 3.98,
+                "t5_close_pct": 7.99,
+                "eps_surprise_pct": 4143.0
+            },
+            {
+                "date": "2025-11-04",
+                "timing": "AMC",
+                "gap_pct": -5.11,
+                "t0_close_pct": -11.33,
+                "t1_close_pct": -14.89,
+                "t5_close_pct": -20.02,
+                "eps_surprise_pct": -1008.0
+            },
+            {
+                "date": "2025-08-05",
+                "timing": "AMC",
+                "gap_pct": -17.34,
+                "t0_close_pct": -18.29,
+                "t1_close_pct": -18.49,
+                "t5_close_pct": -19.54,
+                "eps_surprise_pct": -658.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 17.94,
+            "short_ratio": 2.65,
+            "forward_pe": 11.05,
+            "peg_ratio": 0.91,
+            "analyst_revisions": []
+        }
+    },
+    {
+        "ticker": "ARM",
+        "current_price": 306.51,
+        "next_earnings_date": "2026-07-29",
+        "options_data": null,
+        "eps_trend": {
+            "current_est": 0.4,
+            "d30_est": 0.37,
+            "bar_lowered": false
+        },
+        "historical_action": [
+            {
+                "date": "2026-05-05",
+                "timing": "AMC",
+                "gap_pct": 11.09,
+                "t0_close_pct": 13.63,
+                "t1_close_pct": 2.14,
+                "t5_close_pct": 5.92,
+                "eps_surprise_pct": 357.0
+            },
+            {
+                "date": "2026-02-04",
+                "timing": "AMC",
+                "gap_pct": -0.4,
+                "t0_close_pct": 5.7,
+                "t1_close_pct": 17.92,
+                "t5_close_pct": 16.48,
+                "eps_surprise_pct": 509.0
+            },
+            {
+                "date": "2025-11-05",
+                "timing": "AMC",
+                "gap_pct": 4.25,
+                "t0_close_pct": -1.21,
+                "t1_close_pct": -4.88,
+                "t5_close_pct": -12.41,
+                "eps_surprise_pct": 1770.0
+            },
+            {
+                "date": "2025-07-30",
+                "timing": "AMC",
+                "gap_pct": -9.17,
+                "t0_close_pct": -13.44,
+                "t1_close_pct": -15.76,
+                "t5_close_pct": -16.99,
+                "eps_surprise_pct": -31.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 11.41,
+            "short_ratio": 1.87,
+            "forward_pe": 100.33,
+            "peg_ratio": 2.59,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-18",
+                    "firm": "Bernstein",
+                    "to_grade": "Outperform",
+                    "from_grade": "",
+                    "price_target": 0,
+                    "action": "init"
+                },
+                {
+                    "date": "2026-05-08",
+                    "firm": "Barclays",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "RBC Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Goldman Sachs",
+                    "to_grade": "Sell",
+                    "from_grade": "Sell",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Guggenheim",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Keybanc",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-07",
+                    "firm": "Needham",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-06",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-29",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "QCOM",
+        "current_price": 238.16,
+        "next_earnings_date": "2026-07-29",
+        "options_data": {
+            "expiration": "2026-05-29",
+            "pcr_oi": 0.45,
+            "max_pain_strike": 187.5,
+            "atm_strike": 237.5,
+            "implied_move_usd": 20.57,
+            "implied_move_pct": 8.64
+        },
+        "eps_trend": {
+            "current_est": 2.23,
+            "d30_est": 2.44,
+            "bar_lowered": true
+        },
+        "historical_action": [
+            {
+                "date": "2026-04-29",
+                "timing": "AMC",
+                "gap_pct": 10.29,
+                "t0_close_pct": 15.12,
+                "t1_close_pct": 13.47,
+                "t5_close_pct": 29.84,
+                "eps_surprise_pct": 358.0
+            },
+            {
+                "date": "2026-02-04",
+                "timing": "AMC",
+                "gap_pct": -10.73,
+                "t0_close_pct": -8.46,
+                "t1_close_pct": -7.76,
+                "t5_close_pct": -7.0,
+                "eps_surprise_pct": 287.0
+            },
+            {
+                "date": "2025-11-05",
+                "timing": "AMC",
+                "gap_pct": -1.07,
+                "t0_close_pct": -3.63,
+                "t1_close_pct": -4.91,
+                "t5_close_pct": -2.9,
+                "eps_surprise_pct": 432.0
+            },
+            {
+                "date": "2025-07-30",
+                "timing": "AMC",
+                "gap_pct": -3.74,
+                "t0_close_pct": -7.73,
+                "t1_close_pct": -6.83,
+                "t5_close_pct": -8.27,
+                "eps_surprise_pct": 205.0
+            }
+        ],
+        "institutional": {
+            "short_percent": 5.26,
+            "short_ratio": 3.11,
+            "forward_pe": 22.39,
+            "peg_ratio": 1.01,
+            "analyst_revisions": [
+                {
+                    "date": "2026-05-08",
+                    "firm": "Tigress Financial",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-05-08",
+                    "firm": "Daiwa Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "up"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "JP Morgan",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "UBS",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Citigroup",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Susquehanna",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "RBC Capital",
+                    "to_grade": "Sector Perform",
+                    "from_grade": "Sector Perform",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "In-Line",
+                    "from_grade": "In-Line",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Barclays",
+                    "to_grade": "Underweight",
+                    "from_grade": "Underweight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Benchmark",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Equal-Weight",
+                    "from_grade": "Equal-Weight",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Cantor Fitzgerald",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-04-30",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 0,
+                    "action": "main"
+                }
+            ]
+        }
+    }
+]
