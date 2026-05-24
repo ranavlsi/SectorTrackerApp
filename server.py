@@ -190,19 +190,40 @@ def get_gex():
         try:
             hist_intraday = t.history(period="5d", interval="15m")
             if not hist_intraday.empty:
-                # Bin prices to nearest whole number or 0.5 depending on price
                 bin_size = 1.0 if spot_price > 50 else 0.5
                 hist_intraday['PriceBin'] = (hist_intraday['Close'] / bin_size).round() * bin_size
                 vp = hist_intraday.groupby('PriceBin')['Volume'].sum().nlargest(3)
                 dark_pool_levels = [float(x) for x in vp.index.tolist()]
         except Exception as e:
             print("Dark pool calc error:", e)
+            
+        dark_pool_elevated = False
+        try:
+            hist_daily = t.history(period="6d")
+            if len(hist_daily) >= 2:
+                vol_today = hist_daily['Volume'].iloc[-1]
+                vol_prev_avg = hist_daily['Volume'].iloc[:-1].mean()
+                if vol_today > (vol_prev_avg * 1.5):
+                    dark_pool_elevated = True
+        except:
+            pass
+
+        options_activity_elevated = False
+        try:
+            total_vol = calls['volume'].sum() + puts['volume'].sum()
+            total_oi = calls['openInterest'].sum() + puts['openInterest'].sum()
+            if total_vol > total_oi:
+                options_activity_elevated = True
+        except:
+            pass
 
         return jsonify({
             "ticker": ticker,
             "spot_price": spot_price,
             "gex_profile": gex_profile,
-            "dark_pool_levels": dark_pool_levels
+            "dark_pool_levels": dark_pool_levels,
+            "dark_pool_elevated": dark_pool_elevated,
+            "options_activity_elevated": options_activity_elevated
         })
         
     except Exception as e:

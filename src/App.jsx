@@ -444,9 +444,15 @@ function App() {
 
               return (
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-                  <h4 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: '0.5rem', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{searchedGex.ticker} <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 'normal', marginLeft: '1rem' }}>Spot Price: ${searchedGex.spot_price.toFixed(2)}</span></span>
-                    <span style={{ fontSize: '0.8rem', color: '#a855f7', fontWeight: 'bold' }}>Dark Pool Radar Active</span>
+                  <h4 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: '0.5rem', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <span>
+                      {searchedGex.ticker} <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 'normal', marginLeft: '1rem' }}>Spot Price: ${searchedGex.spot_price.toFixed(2)}</span>
+                    </span>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      {searchedGex.dark_pool_elevated && <span style={{ fontSize: '0.75rem', color: 'white', background: '#9333ea', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', boxShadow: '0 0 8px #9333ea' }}>🔥 Surge DP Vol</span>}
+                      {searchedGex.options_activity_elevated && <span style={{ fontSize: '0.75rem', color: 'white', background: '#ea580c', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', boxShadow: '0 0 8px #ea580c' }}>🔥 Surge Opt Vol</span>}
+                      <span style={{ fontSize: '0.8rem', color: '#a855f7', fontWeight: 'bold', marginLeft: '10px' }}>Dark Pool Radar Active</span>
+                    </div>
                   </h4>
                   
                   <div style={{ overflowX: 'auto', paddingBottom: '2rem', marginTop: '2rem' }}>
