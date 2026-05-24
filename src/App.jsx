@@ -139,6 +139,10 @@ function App() {
   // Squeeze State
   const [squeezeData, setSqueezeData] = useState(null)
   
+  // Advanced Analytics State
+  const [correlationData, setCorrelationData] = useState(null)
+  const [gexData, setGexData] = useState(null)
+  
   // Playbook State
   const [playbookContent, setPlaybookContent] = useState('')
 
@@ -162,6 +166,16 @@ function App() {
       .then(res => res.json())
       .then(data => setSqueezeData(data))
       .catch(err => console.error("Error loading squeeze data:", err))
+      
+    fetch('/correlation_results.json')
+      .then(res => res.json())
+      .then(data => setCorrelationData(data))
+      .catch(err => console.error("Error loading correlation data:", err))
+      
+    fetch('/gex_results.json')
+      .then(res => res.json())
+      .then(data => setGexData(data))
+      .catch(err => console.error("Error loading gex data:", err))
       
     fetch('/ai_playbook.md')
       .then(res => res.text())
@@ -328,8 +342,91 @@ function App() {
         <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
         <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
         <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
+        <button className={activeTab === 'advanced' ? 'tab-active' : ''} onClick={() => setActiveTab('advanced')}><BarChart2 size={18} /> Advanced Analytics</button>
         <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
       </div>
+
+      {activeTab === 'advanced' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+          <h2 style={{ marginBottom: '1rem' }}>🔬 Advanced Analytics (Macro & Options GEX)</h2>
+          
+          <div className="glass-card" style={{ padding: '2rem' }}>
+            <h3 style={{ marginTop: 0, color: '#4facfe' }}>Cross-Asset Correlation Matrix (90-Day)</h3>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Track how your portfolio rotates alongside macroeconomic drivers (Yields, Oil, Crypto, DXY).</p>
+            {correlationData ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #334155' }}>Ticker</th>
+                      {correlationData.macro_drivers.map(driver => (
+                        <th key={driver} style={{ textAlign: 'center', padding: '0.75rem', borderBottom: '1px solid #334155' }}>{driver}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {correlationData.stocks.map(stock => (
+                      <tr key={stock.ticker}>
+                        <td style={{ padding: '0.75rem', borderBottom: '1px solid #1e293b', fontWeight: 'bold' }}>{stock.ticker}</td>
+                        {correlationData.macro_drivers.map(driver => {
+                          const val = stock.correlations[driver];
+                          let bgColor = 'transparent';
+                          if (val > 0.5) bgColor = 'rgba(16, 185, 129, 0.2)';
+                          else if (val > 0.2) bgColor = 'rgba(16, 185, 129, 0.05)';
+                          else if (val < -0.5) bgColor = 'rgba(239, 68, 68, 0.2)';
+                          else if (val < -0.2) bgColor = 'rgba(239, 68, 68, 0.05)';
+                          return (
+                            <td key={driver} style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '1px solid #1e293b', backgroundColor: bgColor }}>
+                              {val ? val.toFixed(2) : '-'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p>Loading Matrix...</p>}
+          </div>
+
+          <div className="glass-card" style={{ padding: '2rem' }}>
+            <h3 style={{ marginTop: 0, color: '#fbc2eb' }}>Options Gamma Exposure (GEX) Profiler</h3>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Visualizing absolute dealer hedging magnets based on live options chains.</p>
+            {gexData ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                {Object.keys(gexData).map(ticker => (
+                  <div key={ticker} style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px' }}>
+                    <h4 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: '0.5rem' }}>{ticker} <span style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'normal' }}>Spot: ${gexData[ticker].spot_price.toFixed(2)}</span></h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '1rem', maxHeight: '300px', overflowY: 'auto' }}>
+                      {gexData[ticker].gex_profile.map((p, i) => {
+                        const magnitude = Math.min(Math.abs(p.net_gex) / 10000000, 100); // Scale logic for simple visual
+                        const isPositive = p.net_gex > 0;
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', fontSize: '0.8rem' }}>
+                            <span style={{ width: '60px', textAlign: 'right', paddingRight: '10px' }}>${p.strike.toFixed(1)}</span>
+                            <div style={{ flex: 1, height: '8px', background: '#1e293b', borderRadius: '4px', display: 'flex' }}>
+                               <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                                  {!isPositive && <div style={{ width: `${magnitude}%`, background: '#ef4444', borderRadius: '4px 0 0 4px' }}></div>}
+                               </div>
+                               <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+                                  {isPositive && <div style={{ width: `${magnitude}%`, background: '#10b981', borderRadius: '0 4px 4px 0' }}></div>}
+                               </div>
+                            </div>
+                            <span style={{ width: '60px', textAlign: 'left', paddingLeft: '10px', color: isPositive ? '#10b981' : '#ef4444' }}>
+                              {p.net_gex !== 0 ? (p.net_gex / 1000000).toFixed(1) + 'M' : '0'}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : <p>Loading Gamma Exposure...</p>}
+          </div>
+
+        </div>
+      )}
 
       {activeTab === 'analysis' && (
         <div className="glass-card analysis-container" style={{ padding: '2rem' }}>
