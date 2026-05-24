@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area } from 'recharts'
-import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse } from 'lucide-react'
+import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-
+import CustomTradingChart from './CustomTradingChart'
+import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -127,9 +128,17 @@ function App() {
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState(null)
   const [expertTickerData, setExpertTickerData] = useState(null)
+  const [briefingData, setBriefingData] = useState(null)
+  const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false)
+  const [chartMode, setChartMode] = useState('advanced') // Default to advanced with drawing tools
+  
+  // Live Agent Chat State
+  const [chatHistory, setChatHistory] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [agentPersona, setAgentPersona] = useState('quant') // quant, options, macro
+  const [isChatLoading, setIsChatLoading] = useState(false)
   
   // Intraday State
-  const [showIntraday, setShowIntraday] = useState(false)
   const [intradayData, setIntradayData] = useState(null)
   const [intradayLoading, setIntradayLoading] = useState(false)
   
@@ -179,6 +188,29 @@ function App() {
       .then(res => res.text())
       .then(text => setPlaybookContent(text))
       .catch(err => console.error("Error loading playbook:", err))
+      
+    // Live Agent Slack-Channel Integration
+    const eventSource = new EventSource('/api/stream');
+    eventSource.onmessage = (event) => {
+      try {
+        const alert = JSON.parse(event.data);
+        const slackMessage = {
+          role: 'agent',
+          isBroadcast: true,
+          council: alert.council,
+          text: alert.council.includes('PREMARKET') ? `[MORNING BRIEFING] ${alert.setup} - ${alert.timestamp}` : `[LIVE ALERT] ${alert.ticker}: ${alert.setup} - ${alert.timestamp}`,
+          color: alert.color,
+          ticker: alert.ticker,
+          payload: alert.payload
+        };
+        // Append the live broadcast to the global chat history
+        setChatHistory(prev => [...prev, slackMessage]);
+      } catch (err) {
+        console.error("SSE Parse Error", err);
+      }
+    };
+    
+    return () => eventSource.close();
   }, [])
 
   const handleGexSearch = async (e) => {
@@ -233,6 +265,8 @@ function App() {
     setSearchError(null);
     setExpertTickerData(null);
     setModalData(null);
+    setActiveTab('chart');
+    setIsRightDrawerOpen(true);
     
     try {
       const res = await fetch(`/api/search?ticker=${ticker}`);
@@ -254,9 +288,38 @@ function App() {
     if (!searchQuery.trim()) return;
     fetchTickerData(searchQuery.trim().toUpperCase());
   }
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    
+    const userMessage = { role: 'user', text: chatInput };
+    setChatHistory(prev => [...prev, userMessage]);
+    setChatInput('');
+    setIsChatLoading(true);
+    
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt: chatInput, 
+          ticker: expertTickerData ? expertTickerData.ticker : 'UNKNOWN',
+          persona: agentPersona,
+          context: expertTickerData || {}
+        })
+      });
+      const data = await res.json();
+      setChatHistory(prev => [...prev, { role: 'agent', text: data.response }]);
+    } catch (err) {
+      setChatHistory(prev => [...prev, { role: 'agent', text: 'Sorry, my connection to the mainframe dropped. Please try again.' }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  }
   
   const fetchIntradayAlerts = async () => {
-    setShowIntraday(true);
+    setActiveTab('intraday');
     setIntradayLoading(true);
     try {
       const res = await fetch(`/intraday_results.json`);
@@ -324,47 +387,52 @@ function App() {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1>Sector Tracker Super App</h1>
-          <p className="subtitle">Universal Search, Expert Screeners & Multi-Horizon Momentum</p>
+    <div className="app-layout">
+      {/* Neo-Brutalist Sidebar */}
+      <div className="sidebar-nav">
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid #1e293b', marginBottom: '1rem' }}>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Activity color="#4facfe" /> SectorTracker
+          </h1>
+          <p style={{ margin: '0.5rem 0 0 0', color: '#94a3b8', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Institutional Terminal</p>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, maxWidth: '400px', alignItems: 'flex-end' }}>
-          <form onSubmit={handleSearch} style={{ width: '100%', position: 'relative' }}>
+        <div className="sidebar-menu">
+          <button className={activeTab === 'dashboard' ? 'tab-active' : ''} onClick={() => setActiveTab('dashboard')}><Activity size={18} /> RRG Dashboard</button>
+          <button className={activeTab === 'chart' ? 'tab-active' : ''} onClick={() => setActiveTab('chart')}><BarChart2 size={18} /> Deep Charting</button>
+          <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
+          <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
+          <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
+          <button className={activeTab === 'intraday' ? 'tab-active' : ''} onClick={fetchIntradayAlerts}><Radio size={18} /> Intraday Radar</button>
+          <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
+          <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
+          <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
+          <button className={activeTab === 'ask_ai' ? 'tab-active' : ''} onClick={() => setActiveTab('ask_ai')}><Bot size={18} /> Ask AI (Live)</button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="main-content">
+        {/* Top Navbar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid #1e293b' }}>
+          <form onSubmit={handleSearch} style={{ display: 'flex', width: '400px', position: 'relative' }}>
             <input 
               type="text" placeholder="Search any US Ticker (e.g., AAPL)..."
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
+              className="search-input" style={{ width: '100%' }}
             />
             <button type="submit" className="search-btn" disabled={isSearching}>
               {isSearching ? <Loader size={18} className="spin" /> : <Search size={18} />}
             </button>
-            {searchError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '5px', position: 'absolute' }}>{searchError}</div>}
           </form>
 
           {marketMeter && (
-            <div className="glass-card" style={{ padding: '0.75rem 1rem', borderLeft: `5px solid ${marketMeter.color}`, display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-              <Compass size={24} color={marketMeter.color} />
-              <div>
-                <h3 style={{ margin: 0, color: marketMeter.color, fontSize: '1.1rem' }}>
-                  Market Trend: {marketMeter.status}
-                </h3>
-              </div>
+            <div className="glass-card" style={{ padding: '0.5rem 1rem', borderLeft: `4px solid ${marketMeter.color}`, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+              <Compass size={18} color={marketMeter.color} />
+              <strong style={{ margin: 0, color: marketMeter.color, fontSize: '0.9rem' }}>Market Trend: {marketMeter.status}</strong>
             </div>
           )}
         </div>
-      </div>
-      
-      <div className="main-tabs" style={{ marginTop: '2rem' }}>
-        <button className={activeTab === 'dashboard' ? 'tab-active' : ''} onClick={() => setActiveTab('dashboard')}><Activity size={18} /> RRG Dashboard</button>
-        <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
-        <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
-        <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
-        <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
-        <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
-        <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
-      </div>
 
       {activeTab === 'macromatrix' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
@@ -761,7 +829,7 @@ function App() {
       )}
 
       {/* Sector Components Modal */}
-      {modalData && !expertTickerData && (
+      {modalData && (
         <div className="modal-overlay" onClick={() => setModalData(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setModalData(null)}><X size={24} /></button>
@@ -782,107 +850,134 @@ function App() {
         </div>
       )}
 
-      {/* Unified Expert Ticker Card (Used for both Sector Components AND Live API Search AND Screeners) */}
-      {expertTickerData && (
-        <div className="modal-overlay" onClick={() => setExpertTickerData(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', borderTop: `5px solid ${expertTickerData.technicals.momentum_color === 'bullish' ? '#10b981' : expertTickerData.technicals.momentum_color === 'bearish' ? '#ef4444' : '#f59e0b'}` }}>
-            <button className="modal-close" onClick={() => setExpertTickerData(null)}><X size={24} /></button>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '2.5rem', color: '#fff' }}>{expertTickerData.ticker}</h1>
-                <h3 style={{ margin: 0, color: '#94a3b8' }}>{expertTickerData.name}</h3>
-              </div>
-              {expertTickerData.score !== null && (
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '3rem', fontWeight: 'bold', color: expertTickerData.score >= 70 ? '#10b981' : expertTickerData.score >= 40 ? '#f59e0b' : '#ef4444', lineHeight: '1' }}>
-                    {expertTickerData.score}
-                  </div>
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Master Rank</span>
-                </div>
-              )}
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: expertTickerData.fundamentals ? '1fr 1fr' : '1fr', gap: '2rem', marginTop: '1.5rem' }}>
-              
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-                <h3 style={{ margin: '0 0 1rem 0', color: '#4facfe', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Technical Health</h3>
-                
-                <div style={{ marginBottom: '1rem' }}>
-                  <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Stan Weinstein Phase</p>
-                  <strong style={{ fontSize: '1.2rem', color: expertTickerData.technicals.stage.includes('Stage 2') ? '#10b981' : expertTickerData.technicals.stage.includes('Stage 4') ? '#ef4444' : '#f59e0b' }}>
-                    {expertTickerData.technicals.stage}
-                  </strong>
-                </div>
+      {/* Charting Engine (Center Pane) */}
+      {activeTab === 'chart' && (
+        <div style={{ width: '100%', height: 'calc(100vh - 120px)' }}>
+            {expertTickerData ? (
+               <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div>
+                      <h1 style={{ margin: 0, fontSize: '2.5rem', color: '#fff' }}>{expertTickerData.ticker}</h1>
+                      <h3 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>{expertTickerData.name}</h3>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        onClick={() => setChartMode('advanced')} 
+                        style={{ background: chartMode === 'advanced' ? 'rgba(79, 172, 254, 0.2)' : 'transparent', border: `1px solid ${chartMode === 'advanced' ? '#4facfe' : 'rgba(255,255,255,0.1)'}`, padding: '8px 16px', borderRadius: '4px', color: chartMode === 'advanced' ? '#4facfe' : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      >
+                        <Compass size={16} /> Drawing Tools
+                      </button>
+                      <button 
+                        onClick={() => setChartMode('institutional')} 
+                        style={{ background: chartMode === 'institutional' ? 'rgba(16, 185, 129, 0.2)' : 'transparent', border: `1px solid ${chartMode === 'institutional' ? '#10b981' : 'rgba(255,255,255,0.1)'}`, padding: '8px 16px', borderRadius: '4px', color: chartMode === 'institutional' ? '#10b981' : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      >
+                        <Activity size={16} /> Dark Pool Levels
+                      </button>
+                    </div>
+                 </div>
+                 <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+                   <div style={{ height: '100%' }}>
+                     {chartMode === 'advanced' ? (
+                       <AdvancedRealTimeChart theme="dark" symbol={expertTickerData.ticker} autosize />
+                     ) : (
+                       <CustomTradingChart ticker={expertTickerData.ticker} />
+                     )}
+                   </div>
+                   <div style={{ overflowY: 'auto', paddingRight: '10px' }}>
+                     {expertTickerData.score !== null && (
+                       <div className="glass-card" style={{ marginBottom: '2rem', textAlign: 'center', padding: '1.5rem', background: 'rgba(15, 23, 42, 0.6)' }}>
+                         <span style={{ color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Master Algorithm Score</span>
+                         <div style={{ fontSize: '4rem', fontWeight: 'bold', color: expertTickerData.score >= 70 ? '#10b981' : expertTickerData.score >= 40 ? '#f59e0b' : '#ef4444', lineHeight: '1', margin: '0.5rem 0' }}>
+                           {expertTickerData.score}
+                         </div>
+                       </div>
+                     )}
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>MACD / RSI Trajectory</p>
-                  <strong style={{ fontSize: '1.1rem', color: expertTickerData.technicals.momentum_color === 'bullish' ? '#10b981' : expertTickerData.technicals.momentum_color === 'bearish' ? '#ef4444' : '#f59e0b' }}>
-                    {expertTickerData.technicals.momentum_text}
-                  </strong>
-                </div>
+                     <div className="neo-panel" style={{ marginBottom: '1.5rem' }}>
+                       <h3 style={{ margin: '0 0 1rem 0', color: '#4facfe', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem' }}>Technical Health</h3>
+                       <div style={{ marginBottom: '1rem' }}>
+                         <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Stan Weinstein Phase</p>
+                         <strong style={{ fontSize: '1.1rem', color: expertTickerData.technicals.stage.includes('Stage 2') ? '#10b981' : expertTickerData.technicals.stage.includes('Stage 4') ? '#ef4444' : '#f59e0b' }}>
+                           {expertTickerData.technicals.stage}
+                         </strong>
+                       </div>
+                       <div style={{ marginBottom: '1rem' }}>
+                         <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>MACD / RSI Trajectory</p>
+                         <strong style={{ fontSize: '1rem', color: expertTickerData.technicals.momentum_color === 'bullish' ? '#10b981' : expertTickerData.technicals.momentum_color === 'bearish' ? '#ef4444' : '#f59e0b' }}>
+                           {expertTickerData.technicals.momentum_text}
+                         </strong>
+                       </div>
+                       <div>
+                         <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Relative Strength vs SPY (1 Mo)</p>
+                         <strong style={{ fontSize: '1.1rem', color: expertTickerData.technicals.rs_spy_1mo > 0 ? '#10b981' : '#ef4444' }}>
+                           {expertTickerData.technicals.rs_spy_1mo > 0 ? '+' : ''}{expertTickerData.technicals.rs_spy_1mo.toFixed(2)}%
+                         </strong>
+                       </div>
+                     </div>
 
-                <div>
-                  <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Relative Strength vs SPY (1 Month)</p>
-                  <strong style={{ fontSize: '1.2rem', color: expertTickerData.technicals.rs_spy_1mo > 0 ? '#10b981' : '#ef4444' }}>
-                    {expertTickerData.technicals.rs_spy_1mo > 0 ? '+' : ''}{expertTickerData.technicals.rs_spy_1mo.toFixed(2)}%
-                  </strong>
-                </div>
-              </div>
+                     {expertTickerData.fundamentals && (
+                       <div className="neo-panel">
+                         <h3 style={{ margin: '0 0 1rem 0', color: '#f59e0b', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem' }}>Fundamental Health</h3>
+                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                           <div>
+                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Rev Growth</p>
+                             <strong style={{ fontSize: '1rem', color: expertTickerData.fundamentals.revenue_growth > 20 ? '#10b981' : '#fff' }}>
+                               {expertTickerData.fundamentals.revenue_growth.toFixed(1)}%
+                             </strong>
+                           </div>
+                           <div>
+                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Profit Margin</p>
+                             <strong style={{ fontSize: '1rem', color: expertTickerData.fundamentals.profit_margin > 15 ? '#10b981' : '#fff' }}>
+                               {expertTickerData.fundamentals.profit_margin.toFixed(1)}%
+                             </strong>
+                           </div>
+                           <div>
+                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>ROE</p>
+                             <strong style={{ fontSize: '1rem', color: expertTickerData.fundamentals.roe > 15 ? '#10b981' : '#fff' }}>
+                               {expertTickerData.fundamentals.roe.toFixed(1)}%
+                             </strong>
+                           </div>
+                           <div>
+                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>PEG Ratio</p>
+                             <strong style={{ fontSize: '1rem', color: (expertTickerData.fundamentals.peg_ratio > 0 && expertTickerData.fundamentals.peg_ratio < 1.5) ? '#10b981' : expertTickerData.fundamentals.peg_ratio > 3 ? '#ef4444' : '#fff' }}>
+                               {expertTickerData.fundamentals.peg_ratio ? expertTickerData.fundamentals.peg_ratio.toFixed(2) : 'N/A'}
+                             </strong>
+                           </div>
+                         </div>
+                       </div>
+                     )}
 
-              {expertTickerData.fundamentals && (
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-                  <h3 style={{ margin: '0 0 1rem 0', color: '#f59e0b', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Fundamental Health</h3>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                      <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Revenue Growth</p>
-                      <strong style={{ fontSize: '1.1rem', color: expertTickerData.fundamentals.revenue_growth > 20 ? '#10b981' : '#fff' }}>
-                        {expertTickerData.fundamentals.revenue_growth.toFixed(1)}%
-                      </strong>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Profit Margin</p>
-                      <strong style={{ fontSize: '1.1rem', color: expertTickerData.fundamentals.profit_margin > 15 ? '#10b981' : '#fff' }}>
-                        {expertTickerData.fundamentals.profit_margin.toFixed(1)}%
-                      </strong>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Return on Equity</p>
-                      <strong style={{ fontSize: '1.1rem', color: expertTickerData.fundamentals.roe > 15 ? '#10b981' : '#fff' }}>
-                        {expertTickerData.fundamentals.roe.toFixed(1)}%
-                      </strong>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>PEG Ratio</p>
-                      <strong style={{ fontSize: '1.1rem', color: (expertTickerData.fundamentals.peg_ratio > 0 && expertTickerData.fundamentals.peg_ratio < 1.5) ? '#10b981' : expertTickerData.fundamentals.peg_ratio > 3 ? '#ef4444' : '#fff' }}>
-                        {expertTickerData.fundamentals.peg_ratio ? expertTickerData.fundamentals.peg_ratio.toFixed(2) : 'N/A'}
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-            </div>
-            
-          </div>
+                     {expertTickerData.news && expertTickerData.news.length > 0 && (
+                       <div className="neo-panel" style={{ marginTop: '1.5rem' }}>
+                         <h3 style={{ margin: '0 0 1rem 0', color: '#ec4899', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                           <Radio size={18} className="pulse" /> Live News Feed
+                         </h3>
+                         <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                           {expertTickerData.news.map((headline, i) => (
+                             <li key={i} style={{ marginBottom: '1rem', color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.4', borderBottom: i !== expertTickerData.news.length - 1 ? '1px dashed rgba(255,255,255,0.1)' : 'none', paddingBottom: i !== expertTickerData.news.length - 1 ? '1rem' : 0 }}>
+                               <span style={{ color: '#ec4899', marginRight: '5px' }}>▶</span> {headline}
+                             </li>
+                           ))}
+                         </ul>
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               </div>
+            ) : (
+               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#4facfe', width: '100%' }} className="glass-card">
+                 <Search size={48} style={{marginBottom: '1rem', opacity: 0.5}} />
+                 <h3>No Ticker Selected</h3>
+                 <p style={{color: '#94a3b8'}}>Click on an alert in the Live Feed or use the search bar to load a chart.</p>
+               </div>
+            )}
         </div>
       )}
 
-      {/* Floating Radar Button */}
-      <button 
-        className="live-radar-btn pulse"
-        onClick={fetchIntradayAlerts}
-        title="Live Intraday ORB Scanner"
-      >
-        <Radio size={24} color="#fff" />
-      </button>
-
-      {/* Intraday Options Popup Window */}
-      {showIntraday && (
-        <div className="modal-overlay" onClick={() => setShowIntraday(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px', borderTop: '5px solid #ec4899' }}>
-            <button className="modal-close" onClick={() => setShowIntraday(false)}><X size={24} /></button>
+      {activeTab === 'intraday' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+          <div className="glass-card" style={{ padding: '2rem', borderTop: '5px solid #ec4899' }}>
             <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ec4899' }}>
               <Radio className="spin-slow" /> Live Intraday Options Radar
             </h2>
@@ -896,9 +991,9 @@ function App() {
                 <h3>Scanning Options Chains... (This takes a few seconds)</h3>
               </div>
             ) : intradayData && intradayData.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
                 {intradayData.map((alert, i) => (
-                  <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #10b981' }}>
+                  <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #10b981', cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => fetchTickerData(alert.ticker)} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
                     <div>
                       <h2 style={{ margin: '0 0 0.5rem 0', color: '#fff', fontSize: '2rem' }}>{alert.ticker}</h2>
                       <div style={{ color: '#10b981', fontWeight: 'bold' }}>
@@ -932,6 +1027,186 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Morning Briefing Tab */}
+      {activeTab === 'briefing' && briefingData && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+          <div className="glass-card" style={{ padding: '2rem', borderTop: '5px solid #DFFF00' }}>
+            <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#DFFF00' }}>
+              <Sun size={24} /> Daily Morning Briefing
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '1rem', marginBottom: '2rem' }}>
+              Your pre-market breakdown of the top gap-up/down movers and macro catalysts.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              <div>
+                <h3 style={{ color: '#f59e0b', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Top Pre-Market Movers</h3>
+                {briefingData.top_movers && briefingData.top_movers.map((mover, i) => (
+                  <div key={i} style={{ padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', marginBottom: '1rem', borderLeft: `4px solid ${mover.change && mover.change.startsWith('+') ? '#10b981' : '#ef4444'}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <strong style={{ fontSize: '1.2rem', color: '#fff' }}>{mover.ticker}</strong>
+                      <strong style={{ fontSize: '1.1rem', color: mover.change && mover.change.startsWith('+') ? '#10b981' : '#ef4444' }}>{mover.change}</strong>
+                    </div>
+                    <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem', marginBottom: '10px' }}>{mover.reason}</p>
+                    <button onClick={() => fetchTickerData(mover.ticker)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Search size={14} /> Analyze Setup
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <h3 style={{ color: '#4facfe', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Macro Catalysts (SPY)</h3>
+                {briefingData.macro_news && briefingData.macro_news.map((news, i) => (
+                  <div key={i} style={{ padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', marginBottom: '1rem' }}>
+                    <p style={{ margin: 0, color: '#e2e8f0', fontSize: '0.95rem' }}>{news}</p>
+                  </div>
+                ))}
+                
+                <h3 style={{ color: '#ec4899', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', marginTop: '2rem' }}>Big Tech Earnings (QQQ)</h3>
+                {briefingData.earnings && briefingData.earnings.map((news, i) => (
+                  <div key={i} style={{ padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', marginBottom: '1rem' }}>
+                    <p style={{ margin: 0, color: '#e2e8f0', fontSize: '0.95rem' }}>{news}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dedicated Ask AI Full-Screen Tab */}
+      {activeTab === 'ask_ai' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', height: '80vh' }}>
+          <div className="neo-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2rem', background: 'rgba(15, 23, 42, 0.8)', borderTop: '5px solid #8b5cf6' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+              <div>
+                <h2 style={{ margin: 0, color: '#8b5cf6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Bot size={28} /> Full-Screen Live Agent Feed
+                </h2>
+                <p style={{ margin: '0.5rem 0 0 0', color: '#94a3b8', fontSize: '0.9rem' }}>Chat directly with autonomous quant agents and monitor live market sweeps.</p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => setAgentPersona('quant')} style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '4px', background: agentPersona === 'quant' ? '#8b5cf6' : 'transparent', color: agentPersona === 'quant' ? '#fff' : '#94a3b8', border: '1px solid #8b5cf6', cursor: 'pointer' }}>Quant Agent</button>
+                <button onClick={() => setAgentPersona('options')} style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '4px', background: agentPersona === 'options' ? '#ec4899' : 'transparent', color: agentPersona === 'options' ? '#fff' : '#94a3b8', border: '1px solid #ec4899', cursor: 'pointer' }}>Options Agent</button>
+                <button onClick={() => setAgentPersona('macro')} style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '4px', background: agentPersona === 'macro' ? '#10b981' : 'transparent', color: agentPersona === 'macro' ? '#fff' : '#94a3b8', border: '1px solid #10b981', cursor: 'pointer' }}>Macro Agent</button>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '15px', paddingRight: '10px' }}>
+              {chatHistory.filter(msg => !msg.isBroadcast).length === 0 && (
+                <div style={{ color: '#94a3b8', fontSize: '1rem', textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' }}>
+                  <Bot size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+                  <p style={{ margin: 0 }}>Waiting for questions... Ask the AI anything about technicals, fundamentals, options flow, or SEC filings!</p>
+                </div>
+              )}
+              
+              {chatHistory.filter(msg => !msg.isBroadcast).map((msg, idx) => (
+                <div key={idx} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', background: msg.role === 'user' ? 'rgba(79, 172, 254, 0.2)' : msg.isBroadcast ? `rgba(${msg.color === '#10b981' ? '16, 185, 129' : msg.color === '#ef4444' ? '239, 68, 68' : '139, 92, 246'}, 0.1)` : 'rgba(255,255,255,0.05)', border: `1px solid ${msg.role === 'user' ? '#4facfe' : msg.isBroadcast ? msg.color : 'rgba(255,255,255,0.1)'}`, padding: '12px 16px', borderRadius: '8px', maxWidth: '80%' }}>
+                  <p style={{ margin: 0, fontSize: '1rem', color: msg.role === 'user' ? '#fff' : '#e2e8f0', lineHeight: '1.5' }}>
+                    {msg.role === 'user' ? null : (
+                      <strong style={{ color: msg.isBroadcast ? msg.color : '#8b5cf6', display: 'block', marginBottom: '6px', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        {msg.isBroadcast ? msg.council : `${agentPersona} Agent`}
+                      </strong>
+                    )}
+                    {msg.text}
+                  </p>
+                  {msg.payload ? (
+                    <button 
+                      onClick={() => { setBriefingData(msg.payload); setActiveTab('briefing'); }}
+                      style={{ marginTop: '12px', padding: '8px 16px', background: '#DFFF00', color: '#000', border: 'none', borderRadius: '4px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}
+                    >
+                      <Maximize size={16} /> Expand Morning Briefing
+                    </button>
+                  ) : (
+                    msg.isBroadcast && msg.ticker && msg.ticker !== 'BRIEFING' && (
+                      <button 
+                        onClick={() => fetchTickerData(msg.ticker)}
+                        style={{ marginTop: '12px', padding: '6px 16px', background: 'transparent', color: msg.color, border: `1px solid ${msg.color}`, borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}
+                      >
+                        <Search size={14} /> Analyze {msg.ticker}
+                      </button>
+                    )
+                  )}
+                </div>
+              ))}
+              
+              {isChatLoading && (
+                <div style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: '8px' }}>
+                  <Loader size={24} className="spin" color="#8b5cf6" />
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '12px' }}>
+              <input 
+                type="text" 
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask the AI Agents about any ticker, macro event, or strategy..."
+                style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '12px 16px', borderRadius: '6px', outline: 'none', fontSize: '1rem' }}
+              />
+              <button type="submit" disabled={isChatLoading || !chatInput.trim()} style={{ background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', padding: '12px 24px', cursor: (isChatLoading || !chatInput.trim()) ? 'not-allowed' : 'pointer', opacity: (isChatLoading || !chatInput.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', fontWeight: 'bold' }}>
+                <Send size={18} /> Send
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      </div> {/* End main-content */}
+
+      {/* Static Right Pane (Live Agents & Ask AI) */}
+      <div className="right-pane" style={{ padding: '1.5rem' }}>
+        
+        {/* Live Agent / Sweeps Feed - ALWAYS VISIBLE */}
+        <div className="neo-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '1rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+            <h3 style={{ margin: 0, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+              <Radio size={18} className="pulse" /> Live Market Updates
+            </h3>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '5px' }}>
+            {chatHistory.filter(m => m.isBroadcast).length === 0 && (
+              <div style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' }}>
+                <Activity size={32} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
+                <p style={{ margin: 0 }}>Waiting for live agent broadcasts...</p>
+              </div>
+            )}
+            
+            {chatHistory.filter(m => m.isBroadcast).map((msg, idx) => (
+              <div key={idx} style={{ alignSelf: 'flex-start', background: `rgba(${msg.color === '#10b981' ? '16, 185, 129' : msg.color === '#ef4444' ? '239, 68, 68' : '139, 92, 246'}, 0.1)`, border: `1px solid ${msg.color}`, padding: '8px 12px', borderRadius: '8px', width: '100%' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#e2e8f0', lineHeight: '1.4' }}>
+                  <strong style={{ color: msg.color, display: 'block', marginBottom: '4px', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                    {msg.council}
+                  </strong>
+                  {msg.text}
+                </p>
+                {msg.payload ? (
+                  <button 
+                    onClick={() => { setBriefingData(msg.payload); setActiveTab('briefing'); }}
+                    style={{ marginTop: '8px', padding: '6px 12px', background: '#DFFF00', color: '#000', border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', width: '100%', justifyContent: 'center' }}
+                  >
+                    <Maximize size={14} /> Expand Morning Briefing
+                  </button>
+                ) : (
+                  msg.ticker && msg.ticker !== 'BRIEFING' && (
+                    <button 
+                      onClick={() => fetchTickerData(msg.ticker)}
+                      style={{ marginTop: '8px', padding: '4px 12px', background: 'transparent', color: msg.color, border: `1px solid ${msg.color}`, borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}
+                    >
+                      <Search size={12} /> Analyze {msg.ticker}
+                    </button>
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+    </div> {/* End app-layout */}
     </>
   )
 }
