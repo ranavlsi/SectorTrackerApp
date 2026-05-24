@@ -53,7 +53,7 @@ const ScreenerPill = ({ item, onClick }) => {
     setIsHovered(true);
     if (!healthData && !loading) {
       setLoading(true);
-      fetch(`http://localhost:5000/api/search?ticker=${item.ticker}`)
+      fetch(`/api/search?ticker=${item.ticker}`)
         .then(res => res.json())
         .then(data => {
           if (!data.error) setHealthData(data);
@@ -202,7 +202,7 @@ function App() {
     setModalData(null);
     
     try {
-      const res = await fetch(`http://localhost:5000/api/search?ticker=${ticker}`);
+      const res = await fetch(`/api/search?ticker=${ticker}`);
       const json = await res.json();
       if (!res.ok) {
         setSearchError(json.error || "Failed to fetch data.");
