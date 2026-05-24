@@ -466,15 +466,15 @@ function App() {
                           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', borderLeft: isDarkPool ? '1px dashed #a855f7' : '1px solid transparent', backgroundColor: isDarkPool ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}>
                             
                             {/* Top Half (Positive GEX) */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', borderBottom: '2px solid #334155' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', borderBottom: '2px solid #334155', paddingTop: '20px' }}>
+                               {i === maxPosIdx && <span style={{ fontSize: '0.7rem', color: '#6ee7b7', writingMode: 'vertical-rl', transform: 'rotate(180deg)', paddingBottom: '8px', fontWeight: 'bold' }}>🧲 Magnet</span>}
                                {isPositive && <div style={{ width: '80%', height: `${magnitudePct}%`, background: 'linear-gradient(0deg, rgba(16,185,129,1) 0%, rgba(16,185,129,0.4) 100%)', borderRadius: '4px 4px 0 0', cursor: 'pointer' }} title={`$${p.strike}: ${(p.net_gex/1000000).toFixed(1)}M`}></div>}
-                               {i === maxPosIdx && <span style={{ position: 'absolute', top: '-15px', fontSize: '0.6rem', color: '#6ee7b7', width: '100%', textAlign: 'center' }}>🧲 Magnet</span>}
                             </div>
                             
                             {/* Bottom Half (Negative GEX) */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', paddingBottom: '20px' }}>
                                {!isPositive && <div style={{ width: '80%', height: `${magnitudePct}%`, background: 'linear-gradient(180deg, rgba(239,68,68,1) 0%, rgba(239,68,68,0.4) 100%)', borderRadius: '0 0 4px 4px', cursor: 'pointer' }} title={`$${p.strike}: ${(p.net_gex/1000000).toFixed(1)}M`}></div>}
-                               {i === maxNegIdx && <span style={{ position: 'absolute', bottom: '0px', fontSize: '0.6rem', color: '#fca5a5', width: '100%', textAlign: 'center' }}>🛡️ Repel</span>}
+                               {i === maxNegIdx && <span style={{ fontSize: '0.7rem', color: '#fca5a5', writingMode: 'vertical-rl', transform: 'rotate(180deg)', paddingTop: '8px', fontWeight: 'bold' }}>🛡️ Repel</span>}
                             </div>
                             
                             {/* X-Axis Strike Label */}
