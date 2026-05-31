@@ -135,17 +135,18 @@ def run_rs_scanner():
     
     total = len(grouped)
     idx = 0
+    
     for ticker, df in grouped:
         idx += 1
         if idx % 1000 == 0: print(f"Processed {idx}/{total}...")
-        
-        if len(df) < 52: continue
         
         df = df.copy()
         df.set_index('date', inplace=True)
         weekly = df
         
-        if len(weekly) < 52: continue
+        # FILTER 1: Skip stocks with less than 52 weeks of data
+        if len(weekly) < 52:
+            continue
         
         # Limit to last 52 weeks
         weekly_52 = weekly.iloc[-52:]
@@ -167,11 +168,14 @@ def run_rs_scanner():
         high_52_idx = weekly_52['high'].argmax()
         weeks_since_high = len(weekly_52) - 1 - high_52_idx
         
+        # Ensure the 52-week high is at least 3 weeks old (avoid active breakouts)
+        if weeks_since_high < 3:
+            continue
+            
         # FILTER: Skip stocks that have already broken out (>99% of high) or are too far away (<80% of high)
         if price_vs_high >= 99.0 or price_vs_high < 80.0:
             continue
             
-        # FILTER 2: Ensure it hasn't already broken out in the last 3 weeks
         if weeks_since_high < 3:
             continue
             
@@ -192,18 +196,21 @@ def run_rs_scanner():
         recent_20 = weekly_52.iloc[-20:]
         adr_pct = calculate_adr(recent_20['high'], recent_20['low'])
         
-        # Determine Badge Status
-        if rs_vs_high >= 99.5:
+        # Determine Badge Status (Strict Fresh High Constraint)
+        if rs_vs_high >= 99.0:
             rs_badge = "New High"
-        elif rs_vs_high >= 98.0:
-            rs_badge = "Near High"
-        elif rs_vs_high >= 95.0:
-            rs_badge = "Watch"
         else:
             rs_badge = "None"
             
-        # Cup and Handle Detection on RS Line
-        ch_analysis = detect_rs_cup_and_handle(rs_ratio_normalized)
+        # USER CONSTRAINT 1: RS Line MUST be at a fresh high
+        if rs_badge != "New High":
+            continue
+            
+        # USER CONSTRAINT 2: Cup and Handle Detection on STOCK PRICE (Not RS Line)
+        ch_analysis = detect_rs_cup_and_handle(weekly_52['close'])
+        
+        if ch_analysis['status'] == 'none':
+            continue
         
         rs_results.append({
             "ticker": ticker,
