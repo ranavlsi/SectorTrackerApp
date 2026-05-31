@@ -11,7 +11,7 @@ export default function RsSparkline({ data, status }) {
     else if (status === 'cup') color = '#f59e0b'; // Amber for forming cup
     
     return (
-        <div style={{ width: '120px', height: '40px' }}>
+        <div style={{ width: '120px', height: '40px', pointerEvents: 'none' }}>
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                     <YAxis domain={['auto', 'auto']} hide />
