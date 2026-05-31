@@ -164,8 +164,15 @@ def run_rs_scanner():
         high_52_price = weekly_52['high'].max()
         price_vs_high = (current_price / high_52_price) * 100
         
+        high_52_idx = weekly_52['high'].argmax()
+        weeks_since_high = len(weekly_52) - 1 - high_52_idx
+        
         # FILTER: Skip stocks that have already broken out (>99% of high) or are too far away (<80% of high)
         if price_vs_high >= 99.0 or price_vs_high < 80.0:
+            continue
+            
+        # FILTER 2: Ensure it hasn't already broken out in the last 3 weeks
+        if weeks_since_high < 3:
             continue
         
         # ADR% (over 20 weeks)
