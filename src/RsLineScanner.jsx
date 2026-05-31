@@ -2,6 +2,70 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Mail, Star, AlertCircle, Coffee, ChevronDown, ChevronUp, Loader } from 'lucide-react';
 import RsSparkline from './RsSparkline';
 
+const TickerCell = ({ ticker, onClick }) => {
+    const [hoverInfo, setHoverInfo] = useState(null);
+    const [healthData, setHealthData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState(null);
+
+    const handleMouseEnter = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setHoverInfo({ x: rect.left, y: rect.bottom });
+        
+        if (!healthData && !loading && !errorMsg) {
+            setLoading(true);
+            fetch(`/api/search?ticker=${ticker}&t=${new Date().getTime()}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) setErrorMsg(data.error);
+                    else setHealthData(data);
+                    setLoading(false);
+                })
+                .catch(() => {
+                    setErrorMsg("Network error");
+                    setLoading(false);
+                });
+        }
+    };
+
+    return (
+        <td 
+            style={{ padding: '10px', cursor: 'pointer', color: '#60a5fa', fontWeight: 'bold' }} 
+            onClick={() => onClick(ticker)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={() => setHoverInfo(null)}
+        >
+            {ticker}
+            {hoverInfo && (
+                <div style={{ position: 'fixed', top: hoverInfo.y + 5, left: hoverInfo.x, width: '280px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid #4facfe', borderRadius: '8px', padding: '1rem', zIndex: 99999, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', cursor: 'default', pointerEvents: 'none' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#4facfe' }}>{ticker} Health</h4>
+                    {loading ? (
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>Loading live data...</p>
+                    ) : healthData && healthData.technicals ? (
+                        <div>
+                            <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem', color: '#fff', fontWeight: 'normal' }}>Stage: <strong style={{ color: healthData.technicals.stage?.includes('2') ? '#10b981' : healthData.technicals.stage?.includes('4') ? '#ef4444' : '#f59e0b' }}>{healthData.technicals.stage}</strong></p>
+                            <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem', color: '#fff', fontWeight: 'normal' }}>Mom: <strong style={{ color: healthData.technicals.momentum_color === 'bullish' ? '#10b981' : '#ef4444' }}>{healthData.technicals.momentum_text}</strong></p>
+                            {healthData.score && <p style={{ margin: 0, fontSize: '0.9rem', color: '#fff', fontWeight: 'normal' }}>Master Score: <strong style={{ color: healthData.score >= 70 ? '#10b981' : healthData.score >= 40 ? '#f59e0b' : '#ef4444' }}>{healthData.score}/100</strong></p>}
+                            
+                            {healthData.trade_plan && (
+                                <>
+                                    <h4 style={{ margin: '1rem 0 0.5rem 0', color: '#f59e0b', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem' }}>Trade Plan (ATR)</h4>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem' }}>
+                                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', fontWeight: 'normal' }}>Entry: <strong style={{ color: '#fff' }}>${healthData.trade_plan.entry}</strong></p>
+                                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', fontWeight: 'normal' }}>Stop: <strong style={{ color: '#ef4444' }}>${healthData.trade_plan.stop_loss}</strong></p>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#ef4444' }}>{errorMsg || 'Data unavailable'}</p>
+                    )}
+                </div>
+            )}
+        </td>
+    );
+};
+
 export default function RsLineScanner({ onTickerClick }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -203,9 +267,7 @@ export default function RsLineScanner({ onTickerClick }) {
                                         <td style={{ padding: '10px', cursor: 'pointer', color: isSaved ? '#f59e0b' : '#475569' }} onClick={() => toggleWatchlist(item)}>
                                             <Star size={16} fill={isSaved ? '#f59e0b' : 'none'} />
                                         </td>
-                                        <td style={{ padding: '10px', cursor: 'pointer', color: '#60a5fa', fontWeight: 'bold' }} onClick={() => onTickerClick(item.ticker)}>
-                                            {item.ticker}
-                                        </td>
+                                        <TickerCell ticker={item.ticker} onClick={onTickerClick} />
                                         <td style={{ padding: '10px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 <span style={{ color: rsColor, fontWeight: 'bold', width: '25px' }}>{item.rs_rating}</span>
