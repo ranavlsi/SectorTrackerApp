@@ -32,7 +32,7 @@ def detect_rs_cup_and_handle(rs_line):
         return {"status": "none", "score": 0, "details": {}}
         
     cup_depth = float((peak_val - trough_val) / peak_val)
-    if not (0.10 <= cup_depth <= 0.40):
+    if not (0.10 <= cup_depth <= 0.55): # RELAXED: Max cup depth 55%
         return {"status": "none", "score": 0, "details": {}}
         
     cup_duration = int(trough_idx - peak_idx)
@@ -46,8 +46,8 @@ def detect_rs_cup_and_handle(rs_line):
     right_rim_val = right_side_data.max()
     right_rim_idx = right_side_data.argmax() + trough_idx + 1
     
-    # Right rim must recover to >= 85% of left rim (peak)
-    if right_rim_val < peak_val * 0.85:
+    # Right rim must recover to >= 65% of left rim (peak) - RELAXED
+    if right_rim_val < peak_val * 0.65:
         return {"status": "none", "score": 0, "details": {}}
         
     handle_data = rs_line.iloc[right_rim_idx:]
@@ -61,8 +61,8 @@ def detect_rs_cup_and_handle(rs_line):
         
     handle_low = handle_data.min()
     
-    # Handle must be in upper half of the cup
-    cup_midpoint = trough_val + (peak_val - trough_val) * 0.5
+    # Handle must be in upper 75% of the cup - RELAXED
+    cup_midpoint = trough_val + (peak_val - trough_val) * 0.25
     if handle_low < cup_midpoint:
         return {"status": "none", "score": 0, "details": {}}
         
@@ -172,8 +172,8 @@ def run_rs_scanner():
         if weeks_since_high < 3:
             continue
             
-        # FILTER: Skip stocks that have already broken out (>99% of high) or are too far away (<80% of high)
-        if price_vs_high >= 99.0 or price_vs_high < 80.0:
+        # FILTER: Skip stocks that have already broken out (>99% of high) or are too far away (<45% of high)
+        if price_vs_high >= 99.0 or price_vs_high < 45.0:
             continue
             
         if weeks_since_high < 3:
@@ -206,7 +206,11 @@ def run_rs_scanner():
         else:
             rs_badge = "None"
             
-        # USER CONSTRAINT: Cup and Handle Detection on STOCK PRICE
+        # USER CONSTRAINT 1: RS Line MUST be at a fresh high
+        if rs_badge != "New High":
+            continue
+            
+        # USER CONSTRAINT 2: Cup and Handle Detection on STOCK PRICE
         ch_analysis = detect_rs_cup_and_handle(weekly_52['close'])
         
         if ch_analysis['status'] == 'none':
