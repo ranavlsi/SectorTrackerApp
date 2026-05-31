@@ -6,10 +6,12 @@ By cross-referencing all Desktop scan results and backend algorithmic output, he
 ---
 
 ### 1. IBM
-* **Confluence Score:** 5 (Found in: intraday_results.json, earnings_gap_alerts.md, squeeze_results.json, screener_results.json)
-* **Entry Price:** $267.13
-* **Stop Loss:** $250.48
-* **Profit Target:** $308.75
+* **Confluence Score:** 5 (Found in: intraday_results.json, screener_results.json, earnings_gap_alerts.md, squeeze_results.json)
+**🎯 Algorithmic Trade Plan:**
+- Ideal Entry: $267.13
+- Target (3 ATR): $308.75
+- Stop Loss (1.5 ATR): $250.48
+- Risk %: 6.2%
 
 **📊 Fundamentals:**
 - Trailing P/E: 26.377323
@@ -26,10 +28,12 @@ By cross-referencing all Desktop scan results and backend algorithmic output, he
 - Here's why Wall Street is so chuffed about Trump investing $2 billion in quantum computing companies (Moneywise)
 
 ### 2. BA
-* **Confluence Score:** 5 (Found in: intraday_results.json, darvas_box_alerts.md, screener_results.json, correlation_results.json)
-* **Entry Price:** $226.82
-* **Stop Loss:** $216.01
-* **Profit Target:** $253.83
+* **Confluence Score:** 5 (Found in: intraday_results.json, screener_results.json, darvas_box_alerts.md, correlation_results.json)
+**🎯 Algorithmic Trade Plan:**
+- Ideal Entry: $226.82
+- Target (3 ATR): $253.83
+- Stop Loss (1.5 ATR): $216.01
+- Risk %: 4.8%
 
 **📊 Fundamentals:**
 - Trailing P/E: 91.72619
@@ -46,10 +50,12 @@ By cross-referencing all Desktop scan results and backend algorithmic output, he
 - Boeing Ramps 737 MAX Output As China Order And Defense Wins Build (Simply Wall St.)
 
 ### 3. SEDG
-* **Confluence Score:** 5 (Found in: tv_watchlist_results.json, squeeze_results.json, screener_results.json, canslim_minervini_alerts.csv)
-* **Entry Price:** $62.25
-* **Stop Loss:** $57.27
-* **Profit Target:** $81.25
+* **Confluence Score:** 5 (Found in: canslim_minervini_alerts.csv, screener_results.json, tv_watchlist_results.json, squeeze_results.json)
+**🎯 Algorithmic Trade Plan:**
+- Ideal Entry: $62.25
+- Target (3 ATR): $81.25
+- Stop Loss (1.5 ATR): $57.27
+- Risk %: 8.0%
 
 **📊 Fundamentals:**
 - Trailing P/E: N/A

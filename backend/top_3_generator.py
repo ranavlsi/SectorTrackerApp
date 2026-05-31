@@ -99,9 +99,12 @@ def generate_top_3():
             
             md_content += f"### {i}. {ticker}\n"
             md_content += f"* **Confluence Score:** {score} (Found in: {reasons})\n"
-            md_content += f"* **Entry Price:** ${plan['entry']:.2f}\n"
-            md_content += f"* **Stop Loss:** ${plan['stop_loss']:.2f}\n"
-            md_content += f"* **Profit Target:** ${plan['profit_target']:.2f}\n\n"
+            risk_pct = ((plan['entry'] - plan['stop_loss']) / plan['entry']) * 100
+            md_content += f"**🎯 Algorithmic Trade Plan:**\n"
+            md_content += f"- Ideal Entry: ${plan['entry']:.2f}\n"
+            md_content += f"- Target (3 ATR): ${plan['profit_target']:.2f}\n"
+            md_content += f"- Stop Loss (1.5 ATR): ${plan['stop_loss']:.2f}\n"
+            md_content += f"- Risk %: {risk_pct:.1f}%\n\n"
             
             # --- NEW DATA AGGREGATION ---
             
