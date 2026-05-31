@@ -8,6 +8,7 @@ export default function RsLineScanner({ onTickerClick }) {
     const [watchlist, setWatchlist] = useState([]);
     const [showWatchlist, setShowWatchlist] = useState(false);
     const [hoveredItem, setHoveredItem] = useState(null);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     
     // Filters
     const [minRating, setMinRating] = useState(80);
@@ -223,25 +224,13 @@ export default function RsLineScanner({ onTickerClick }) {
                                             {item.pattern_status === 'c_and_h' && <span style={{ color: '#c47aff', padding: '2px 8px', background: 'rgba(196,122,255,0.1)', borderRadius: '12px', fontSize: '0.85rem' }}>☕ C&H ({item.pattern_score})</span>}
                                             {item.pattern_status === 'cup' && <span style={{ color: '#f59e0b', padding: '2px 8px', background: 'rgba(245,158,11,0.1)', borderRadius: '12px', fontSize: '0.85rem' }}>◡ Cup</span>}
                                         </td>
-                                        <td style={{ padding: '10px', position: 'relative' }} onMouseEnter={() => setHoveredItem(item.ticker)} onMouseLeave={() => setHoveredItem(null)}>
+                                        <td 
+                                            style={{ padding: '10px', cursor: 'pointer' }} 
+                                            onMouseEnter={(e) => { setHoveredItem(item); setMousePos({ x: e.clientX, y: e.clientY }); }} 
+                                            onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })} 
+                                            onMouseLeave={() => setHoveredItem(null)}
+                                        >
                                             <RsSparkline data={item.sparkline} status={item.pattern_status} />
-                                            {hoveredItem === item.ticker && (
-                                                <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#1e293b', border: '1px solid #334155', padding: '10px', borderRadius: '8px', zIndex: 100, width: '180px', boxShadow: '0 4px 6px rgba(0,0,0,0.5)' }}>
-                                                    <h4 style={{ margin: '0 0 8px 0', color: '#60a5fa', textAlign: 'center', fontSize: '0.9rem' }}>{item.ticker} RS Stats</h4>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                                                        <span style={{ color: '#94a3b8' }}>52w High:</span>
-                                                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>{Math.max(...item.sparkline).toFixed(3)}</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '5px' }}>
-                                                        <span style={{ color: '#94a3b8' }}>52w Low:</span>
-                                                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{Math.min(...item.sparkline).toFixed(3)}</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '5px', borderTop: '1px solid #334155', paddingTop: '5px' }}>
-                                                        <span style={{ color: '#94a3b8' }}>Current:</span>
-                                                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{item.sparkline[item.sparkline.length-1].toFixed(3)}</span>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </td>
                                         <td style={{ padding: '10px', color: (item.adr_pct < 3 || item.adr_pct > 15) ? '#ef4444' : '#10b981' }}>
                                             {item.adr_pct ? item.adr_pct.toFixed(1) + '%' : '-'}
@@ -262,6 +251,37 @@ export default function RsLineScanner({ onTickerClick }) {
                             No stocks matched the current filter criteria.
                         </div>
                     )}
+                </div>
+            )}
+            
+            {/* Global Fixed Tooltip */}
+            {hoveredItem && (
+                <div style={{ 
+                    position: 'fixed', 
+                    top: mousePos.y - 120, 
+                    left: mousePos.x + 20, 
+                    background: '#1e293b', 
+                    border: '1px solid #334155', 
+                    padding: '10px', 
+                    borderRadius: '8px', 
+                    zIndex: 999999, 
+                    width: '180px', 
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.6)',
+                    pointerEvents: 'none'
+                }}>
+                    <h4 style={{ margin: '0 0 8px 0', color: '#60a5fa', textAlign: 'center', fontSize: '0.9rem' }}>{hoveredItem.ticker} RS Stats</h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <span style={{ color: '#94a3b8' }}>52w High:</span>
+                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>{Math.max(...hoveredItem.sparkline).toFixed(3)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '5px' }}>
+                        <span style={{ color: '#94a3b8' }}>52w Low:</span>
+                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{Math.min(...hoveredItem.sparkline).toFixed(3)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '5px', borderTop: '1px solid #334155', paddingTop: '5px' }}>
+                        <span style={{ color: '#94a3b8' }}>Current:</span>
+                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{hoveredItem.sparkline[hoveredItem.sparkline.length-1].toFixed(3)}</span>
+                    </div>
                 </div>
             )}
         </div>
