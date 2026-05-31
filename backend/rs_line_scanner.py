@@ -174,6 +174,19 @@ def run_rs_scanner():
         # FILTER 2: Ensure it hasn't already broken out in the last 3 weeks
         if weeks_since_high < 3:
             continue
+            
+        # Moving Average Extensions
+        sma_10 = weekly_52['close'].rolling(10).mean().iloc[-1]
+        sma_40 = weekly_52['close'].rolling(40).mean().iloc[-1]
+        
+        # FILTER 3: Prevent Over-Extended Setups
+        # Must be tightly resting near 10-week MA (max 10% above)
+        if pd.isna(sma_10) or (current_price / sma_10) > 1.10:
+            continue
+            
+        # Must not be in a climax run above 40-week MA (max 40% above)
+        if pd.isna(sma_40) or (current_price / sma_40) > 1.40:
+            continue
         
         # ADR% (over 20 weeks)
         recent_20 = weekly_52.iloc[-20:]
