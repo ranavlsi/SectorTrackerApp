@@ -196,17 +196,17 @@ def run_rs_scanner():
         recent_20 = weekly_52.iloc[-20:]
         adr_pct = calculate_adr(recent_20['high'], recent_20['low'])
         
-        # Determine Badge Status (Strict Fresh High Constraint)
+        # Determine Badge Status (For Visual Tagging in UI)
         if rs_vs_high >= 99.0:
             rs_badge = "New High"
+        elif rs_vs_high >= 95.0:
+            rs_badge = "Near High"
+        elif rs_vs_high >= 90.0:
+            rs_badge = "Watch"
         else:
             rs_badge = "None"
             
-        # USER CONSTRAINT 1: RS Line MUST be at a fresh high
-        if rs_badge != "New High":
-            continue
-            
-        # USER CONSTRAINT 2: Cup and Handle Detection on STOCK PRICE (Not RS Line)
+        # USER CONSTRAINT: Cup and Handle Detection on STOCK PRICE
         ch_analysis = detect_rs_cup_and_handle(weekly_52['close'])
         
         if ch_analysis['status'] == 'none':
