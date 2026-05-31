@@ -1,73 +1,69 @@
-# 🤖 Quantitative AI Playbook
+# 🏆 Master Analyst: Top 3 Trade Plans
+**Date:** May 31, 2026
 
-**Date:** Saturday, May 30, 2026
-
-Welcome to the Daily AI Playbook. Based on the overnight convergence of technical setups, fundamental momentum, and breakout scanners, here are the top high-probability trade setups for today.
-
----
-
-### 1. ROKU - High Confluence Setup
-**Confluence Score:** 6 points
-
-**Quantitative Reasoning:**
-*   **Fresh 52W High**: At High: $130.18
-*   **Bearish Candlestick**: Bearish Hikkake
-*   **Breakout Retest**: Retesting Pivot: $131.39
-*   **Zacks Rank 1**: Score: 5 | PEG: 0.95
-
-**Algorithmic Trade Plan:**
-*   **Entry Zone:** $134.79 (Current Market Price)
-*   **Stop Loss:** $128.74 (Dynamic trailing support)
-*   **Profit Target:** $149.94 (2.5R Risk/Reward)
-
-**Technical Health Card:**
-*   **Structural Stage:** Stage 2 (Advancing)
-*   **Momentum:** 🔥 Momentum Building (Bullish)
-*   **RSI:** 51.4
+By cross-referencing all Desktop scan results and backend algorithmic output, here are the absolute best 3 setups for today based on extreme multi-scanner confluence:
 
 ---
 
-### 2. ZETA - High Confluence Setup
-**Confluence Score:** 5 points
+### 1. IBM
+* **Confluence Score:** 5 (Found in: intraday_results.json, earnings_gap_alerts.md, squeeze_results.json, screener_results.json)
+* **Entry Price:** $267.13
+* **Stop Loss:** $250.48
+* **Profit Target:** $308.75
 
-**Quantitative Reasoning:**
-*   **Relative Strength**: +17.2% vs SPY
-*   **Bearish Candlestick**: Bearish Hikkake
-*   **Early Stage 2**: Crossed 200 SMA ($18.57)
-*   **Zacks Rank 1**: Score: 5 | PEG: 0.77
+**📊 Fundamentals:**
+- Trailing P/E: 26.377323
+- Net Profit Margin: 15.6%
+- YoY Revenue Growth: 9.5%
 
-**Algorithmic Trade Plan:**
-*   **Entry Zone:** $18.7 (Current Market Price)
-*   **Stop Loss:** $17.2 (Dynamic trailing support)
-*   **Profit Target:** $24.9 (2.5R Risk/Reward)
+**🔥 Options Flow (Exp: 2026-06-05):**
+- Max Pain: $245.0
+- Put/Call Ratio: 0.21
 
-**Technical Health Card:**
-*   **Structural Stage:** Stage 2 (Advancing)
-*   **Momentum:** 🔥 Momentum Building (Bullish)
-*   **RSI:** 76.9
+**📰 Social Sentiment & Catalysts:**
+- Trump praised IBM's 'legend' CEO, government floated a $1B quantum award — is the stock still a 'very nice price'? (Moneywise)
+- Quantum Computing Just Hit Commercial Viability and These 3 ETFs Sit on Top of the Compute Transition (24/7 Wall St.)
+- Here's why Wall Street is so chuffed about Trump investing $2 billion in quantum computing companies (Moneywise)
+
+### 2. BA
+* **Confluence Score:** 5 (Found in: intraday_results.json, darvas_box_alerts.md, screener_results.json, correlation_results.json)
+* **Entry Price:** $226.82
+* **Stop Loss:** $216.01
+* **Profit Target:** $253.83
+
+**📊 Fundamentals:**
+- Trailing P/E: 91.72619
+- Net Profit Margin: 2.5%
+- YoY Revenue Growth: 14.0%
+
+**🔥 Options Flow (Exp: 2026-06-05):**
+- Max Pain: $225.0
+- Put/Call Ratio: 0.35
+
+**📰 Social Sentiment & Catalysts:**
+- President Xi Jinping Has Promised China Will Buy 200 Boeing 737s. Here Is One More Big Reason the Stock Is a Buy in 2026. (Motley Fool)
+- Why Did South Korea Just Order $4.2 Billion in Military Helicopters From Boeing and Lockheed? (Motley Fool)
+- Boeing Ramps 737 MAX Output As China Order And Defense Wins Build (Simply Wall St.)
+
+### 3. SEDG
+* **Confluence Score:** 5 (Found in: tv_watchlist_results.json, squeeze_results.json, screener_results.json, canslim_minervini_alerts.csv)
+* **Entry Price:** $62.25
+* **Stop Loss:** $57.27
+* **Profit Target:** $81.25
+
+**📊 Fundamentals:**
+- Trailing P/E: N/A
+- Net Profit Margin: -28.6%
+- YoY Revenue Growth: 41.5%
+
+**🔥 Options Flow (Exp: 2026-06-05):**
+- Max Pain: $55.0
+- Put/Call Ratio: 0.88
+
+**📰 Social Sentiment & Catalysts:**
+- SolarEdge (SEDG) Stock Trades Up, Here Is Why (StockStory)
+- Solar Stocks To Watch As AI Drives Energy Demand (Investor's Business Daily)
+- Add Solar to Your Subscription Bill? These Companies Are Banking On It. (Barrons.com)
 
 ---
-
-### 3. FSLR - High Confluence Setup
-**Confluence Score:** 5 points
-
-**Quantitative Reasoning:**
-*   **Relative Strength**: +38.0% vs SPY
-*   **Fresh 52W High**: At High: $306.79
-*   **All Time High**: ATH: $317.00
-*   **Zacks Rank 1**: Score: 5 | PEG: 0.8
-
-**Algorithmic Trade Plan:**
-*   **Entry Zone:** $245.66 (Current Market Price)
-*   **Stop Loss:** $226.01 (Dynamic trailing support)
-*   **Profit Target:** $313.75 (2.5R Risk/Reward)
-
-**Technical Health Card:**
-*   **Structural Stage:** Stage 2 (Advancing)
-*   **Momentum:** 🔥 Momentum Building (Bullish)
-*   **RSI:** 84.2
-
----
-
-> [!IMPORTANT]
-> Always adhere to your stop losses. These trade plans are quantitatively generated and assume a 1% portfolio risk per trade.
+*Generated automatically before market open.*

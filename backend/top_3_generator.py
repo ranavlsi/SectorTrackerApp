@@ -102,6 +102,61 @@ def generate_top_3():
             md_content += f"* **Entry Price:** ${plan['entry']:.2f}\n"
             md_content += f"* **Stop Loss:** ${plan['stop_loss']:.2f}\n"
             md_content += f"* **Profit Target:** ${plan['profit_target']:.2f}\n\n"
+            
+            # --- NEW DATA AGGREGATION ---
+            
+            # 1. Fundamentals
+            info = t.info
+            f_pe = info.get('trailingPE', 'N/A')
+            f_marg = info.get('profitMargins', 0)
+            f_marg_str = f"{(f_marg * 100):.1f}%" if f_marg else 'N/A'
+            f_rev = info.get('revenueGrowth', 0)
+            f_rev_str = f"{(f_rev * 100):.1f}%" if f_rev else 'N/A'
+            
+            md_content += f"**📊 Fundamentals:**\n"
+            md_content += f"- Trailing P/E: {f_pe}\n"
+            md_content += f"- Net Profit Margin: {f_marg_str}\n"
+            md_content += f"- YoY Revenue Growth: {f_rev_str}\n\n"
+            
+            # 2. Options Max Pain (Nearest Expiration)
+            try:
+                opts = t.options
+                if opts:
+                    chain = t.option_chain(opts[0])
+                    calls, puts = chain.calls, chain.puts
+                    
+                    def calc_pain(strike):
+                        call_loss = sum(calls[calls['strike'] < strike]['openInterest'].fillna(0) * (strike - calls[calls['strike'] < strike]['strike']))
+                        put_loss = sum(puts[puts['strike'] > strike]['openInterest'].fillna(0) * (puts[puts['strike'] > strike]['strike'] - strike))
+                        return call_loss + put_loss
+
+                    strikes = sorted(list(set(calls['strike']).union(set(puts['strike']))))
+                    max_pain = min(strikes, key=calc_pain)
+                    put_vol = puts['volume'].sum()
+                    call_vol = calls['volume'].sum()
+                    pc_ratio = (put_vol / call_vol) if call_vol > 0 else 0
+                    
+                    md_content += f"**🔥 Options Flow (Exp: {opts[0]}):**\n"
+                    md_content += f"- Max Pain: ${max_pain}\n"
+                    md_content += f"- Put/Call Ratio: {pc_ratio:.2f}\n\n"
+            except Exception as e:
+                pass
+                
+            # 3. Social Sentiment / Recent News
+            md_content += f"**📰 Social Sentiment & Catalysts:**\n"
+            try:
+                news = t.news[:3]
+                if news:
+                    for n in news:
+                        title = n.get('content', {}).get('title', 'Headline')
+                        prov = n.get('content', {}).get('provider', {}).get('displayName', 'News')
+                        md_content += f"- {title} ({prov})\n"
+                else:
+                    md_content += "- No major recent news catalysts found.\n"
+            except:
+                md_content += "- No major recent news catalysts found.\n"
+            
+            md_content += "\n"
         except Exception as e:
             print(f"Error building plan for {ticker}: {e}")
             
