@@ -159,6 +159,15 @@ def run_rs_scanner():
         high_52_rs = rs_ratio_normalized.max()
         rs_vs_high = (current_rs / high_52_rs) * 100
         
+        # Price Proximity to 52w High
+        current_price = weekly_52['close'].iloc[-1]
+        high_52_price = weekly_52['high'].max()
+        price_vs_high = (current_price / high_52_price) * 100
+        
+        # FILTER: Skip stocks that have already broken out (>99% of high) or are too far away (<80% of high)
+        if price_vs_high >= 99.0 or price_vs_high < 80.0:
+            continue
+        
         # ADR% (over 20 weeks)
         recent_20 = weekly_52.iloc[-20:]
         adr_pct = calculate_adr(recent_20['high'], recent_20['low'])

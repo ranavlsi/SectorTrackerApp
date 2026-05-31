@@ -77,7 +77,7 @@ export default function RsLineScanner({ onTickerClick }) {
         if (item.adr_pct < minAdr || item.adr_pct > maxAdr) return false;
         if (item.market_cap > 0 && (item.market_cap / 1e9) < minMcap) return false;
         return true;
-    });
+    }).sort((a, b) => b.rs_rating - a.rs_rating);
 
     const formatMcap = (val) => {
         if (!val || val === 0) return 'N/A';
