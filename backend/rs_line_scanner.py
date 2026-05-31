@@ -91,7 +91,8 @@ def detect_rs_cup_and_handle(rs_line):
             "cup_depth": cup_depth,
             "handle_depth": handle_depth,
             "cup_duration": cup_duration,
-            "handle_duration": handle_duration
+            "handle_duration": handle_duration,
+            "breakout_trigger": float(right_rim_val)
         }
     }
 
@@ -272,11 +273,33 @@ def run_rs_scanner():
                 details = yq.summary_detail
                 cal = yq.calendar_events
                 quote_types = yq.quote_type
+                fin_data = yq.financial_data
                 
                 for t in chunk:
                     mcap = 0
                     earnings_days = 999
                     is_etf = False
+                    zacks_rank = 5
+                    
+                    if isinstance(fin_data, dict) and t in fin_data and isinstance(fin_data[t], dict):
+                        rev_growth = fin_data[t].get('revenueGrowth', 0)
+                        if rev_growth is None: rev_growth = 0
+                        
+                    if isinstance(details, dict) and t in details and isinstance(details[t], dict):
+                        peg_ratio = details[t].get('pegRatio', 1.5)
+                        if peg_ratio is None: peg_ratio = 1.5
+                        
+                        # Calculate Zacks Rank Proxy
+                        if rev_growth > 0.15 and peg_ratio < 1.5:
+                            zacks_rank = 1
+                        elif rev_growth > 0.05 and peg_ratio < 2.5:
+                            zacks_rank = 2
+                        elif rev_growth > -0.05 and peg_ratio < 3.5:
+                            zacks_rank = 3
+                        elif rev_growth > -0.15 and peg_ratio < 5:
+                            zacks_rank = 4
+                        else:
+                            zacks_rank = 5
                     
                     if isinstance(quote_types, dict) and t in quote_types and isinstance(quote_types[t], dict):
                         if quote_types[t].get('quoteType', '') == 'ETF':
@@ -304,6 +327,7 @@ def run_rs_scanner():
                             c['market_cap'] = mcap
                             c['earnings_days'] = earnings_days
                             c['is_etf'] = is_etf
+                            c['zacks_rank'] = zacks_rank
                             break
             except Exception as e:
                 print(f"Error fetching fundamental chunk: {e}")

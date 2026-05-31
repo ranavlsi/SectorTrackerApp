@@ -1,1 +1,1 @@
-{"last_updated": "2026-05-31T16:17:11.955630", "alerts": [{"ticker": "KWMWW", "time": "2026-01-26T15:29:00+00:00", "price": 0.068, "pct_move": 23.636363636363644, "volume_1m": 67000, "type": "Momentum Spike"}]}
+{"last_updated": "2026-05-31T16:32:25.460522", "alerts": [{"ticker": "AAPL", "time": "2026-05-29T20:16:00+00:00", "price": 311.48, "trigger_price": 50.0, "pct_above": 522.96, "volume_1m": 80, "type": "\ud83d\ude80 Handle Breakout"}]}

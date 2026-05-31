@@ -79,10 +79,12 @@ export default function RsLineScanner({ onTickerClick }) {
     const [watchlist, setWatchlist] = useState([]);
     const [showWatchlist, setShowWatchlist] = useState(false);
     const [hoverInfo, setHoverInfo] = useState(null);
+    const [liveAlerts, setLiveAlerts] = useState([]);
     
     // Filters
     const [minRating, setMinRating] = useState(80);
     const [chOnly, setChOnly] = useState(false);
+    const [zacksOnly, setZacksOnly] = useState(false);
     const [skipEarnings, setSkipEarnings] = useState(false);
     const [minAdr, setMinAdr] = useState(3);
     const [maxAdr, setMaxAdr] = useState(15);
@@ -93,6 +95,20 @@ export default function RsLineScanner({ onTickerClick }) {
         const saved = localStorage.getItem('rsWatchlist');
         if (saved) setWatchlist(JSON.parse(saved));
         fetchData();
+
+        // Intraday Breakout Alert Polling
+        const pollAlerts = async () => {
+            try {
+                const res = await fetch('/live_market_alerts.json?t=' + new Date().getTime());
+                if (res.ok) {
+                    const json = await res.json();
+                    setLiveAlerts(json.alerts || []);
+                }
+            } catch (err) {}
+        };
+        pollAlerts();
+        const interval = setInterval(pollAlerts, 10000);
+        return () => clearInterval(interval);
     }, []);
 
     const fetchData = async () => {
@@ -145,6 +161,7 @@ export default function RsLineScanner({ onTickerClick }) {
     const filteredData = data.filter(item => {
         if (item.rs_rating < minRating) return false;
         if (chOnly && item.pattern_status !== 'c_and_h') return false;
+        if (zacksOnly && item.zacks_rank > 2) return false;
         if (skipEarnings && item.earnings_days !== 999 && item.earnings_days <= 14) return false;
         if (item.adr_pct < minAdr || item.adr_pct > maxAdr) return false;
         if (item.market_cap > 0 && (item.market_cap / 1e9) < minMcap) return false;
@@ -181,6 +198,28 @@ export default function RsLineScanner({ onTickerClick }) {
                 </div>
             </div>
 
+            {/* Intraday Live Alerts Bar */}
+            {liveAlerts.length > 0 && (
+                <div style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px' }}>
+                    <h3 style={{ margin: '0 0 10px 0', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        🔥 LIVE INTRADAY BREAKOUT ALERTS
+                    </h3>
+                    <div style={{ display: 'flex', gap: '15px', overflowX: 'auto', paddingBottom: '5px' }}>
+                        {liveAlerts.map((alert, i) => (
+                            <div key={i} onClick={() => onTickerClick(alert.ticker)} style={{ cursor: 'pointer', background: 'rgba(15, 23, 42, 0.8)', padding: '10px 15px', borderRadius: '6px', borderLeft: '3px solid #ef4444', minWidth: '200px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <strong style={{ color: '#fff', fontSize: '1.1rem' }}>{alert.ticker}</strong>
+                                    <span style={{ color: '#ef4444', fontWeight: 'bold' }}>+{alert.pct_above.toFixed(2)}%</span>
+                                </div>
+                                <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '5px' }}>
+                                    Breakout: ${alert.trigger_price.toFixed(2)} ➔ Now: ${alert.price.toFixed(2)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Filter Bar */}
             <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'center' }}>
                 <div>
@@ -207,6 +246,10 @@ export default function RsLineScanner({ onTickerClick }) {
                     <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#e2e8f0' }}>
                         <input type="checkbox" checked={skipEarnings} onChange={e => setSkipEarnings(e.target.checked)} />
                         Skip Earnings ≤14d
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#e2e8f0', marginLeft: '10px' }}>
+                        <input type="checkbox" checked={zacksOnly} onChange={e => setZacksOnly(e.target.checked)} />
+                        🔥 Zacks #1 & #2
                     </label>
                 </div>
                 <div style={{ marginLeft: 'auto', marginTop: '15px' }}>
@@ -248,6 +291,7 @@ export default function RsLineScanner({ onTickerClick }) {
                                 <th style={{ padding: '10px' }}>RS Status</th>
                                 <th style={{ padding: '10px' }}>C&H Pattern</th>
                                 <th style={{ padding: '10px' }}>RS Sparkline</th>
+                                <th style={{ padding: '10px' }}>Zacks Rank</th>
                                 <th style={{ padding: '10px' }}>ADR%</th>
                                 <th style={{ padding: '10px' }}>Earnings</th>
                                 <th style={{ padding: '10px' }}>MCap</th>
@@ -309,6 +353,12 @@ export default function RsLineScanner({ onTickerClick }) {
                                             onMouseLeave={() => setHoverInfo(null)}
                                         >
                                             <RsSparkline data={item.sparkline} status={item.pattern_status} />
+                                        </td>
+                                        <td style={{ padding: '10px', fontWeight: 'bold' }}>
+                                            {item.zacks_rank === 1 && <span style={{ color: '#10b981' }}>#1 Strong Buy</span>}
+                                            {item.zacks_rank === 2 && <span style={{ color: '#34d399' }}>#2 Buy</span>}
+                                            {item.zacks_rank === 3 && <span style={{ color: '#f59e0b' }}>#3 Hold</span>}
+                                            {item.zacks_rank >= 4 && <span style={{ color: '#ef4444' }}>#{item.zacks_rank} Sell</span>}
                                         </td>
                                         <td style={{ padding: '10px', color: (item.adr_pct < 3 || item.adr_pct > 15) ? '#ef4444' : '#10b981' }}>
                                             {item.adr_pct ? item.adr_pct.toFixed(1) + '%' : '-'}
