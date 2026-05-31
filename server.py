@@ -498,13 +498,28 @@ def search_stock():
         if not news_data:
             news_data = ["No recent news found."]
             
-        # Agent Insight
+        # Rich AI Agent Insight Generation
+        insight_parts = []
         if score >= 70:
-            agent_insight = f"The AI Master Algorithm is highly bullish on {ticker}. Both technical momentum and fundamentals align perfectly."
+            insight_parts.append(f"🔥 The Quantitative Master Algorithm is highly bullish on {ticker}.")
         elif score >= 40:
-            agent_insight = f"{ticker} is currently consolidating. Wait for a decisive Stage 2 breakout or an options flow sweep before entering."
+            insight_parts.append(f"⚖️ {ticker} is currently showing a mixed quantitative profile.")
         else:
-            agent_insight = f"Warning: {ticker} is showing significant weakness. The AI recommends avoiding this ticker as it is in a Stage 4 decline."
+            insight_parts.append(f"⚠️ {ticker} is exhibiting severe structural weakness.")
+
+        insight_parts.append(f"Technically, it is in a {stage} with {mom_text.split('(')[0].strip().lower()} momentum.")
+        
+        if rev_growth > 0 or profit_margin > 0:
+            insight_parts.append(f"Fundamentally, the engine detects {rev_growth:.1f}% YoY revenue growth and {profit_margin:.1f}% profit margins.")
+        
+        insight_parts.append(f"The algorithmic trade plan suggests an entry at ${curr_price:.2f}, with a strict stop-loss at ${stop_loss:.2f} (Risking {risk_pct:.1f}%) and a profit target of ${profit_target:.2f}.")
+
+        if rs_spy > 0:
+            insight_parts.append(f"Notably, {ticker} is outperforming the S&P 500 by {rs_spy:.1f}% over the last 20 days.")
+        else:
+            insight_parts.append(f"Caution: {ticker} is underperforming the S&P 500 by {abs(rs_spy):.1f}% over the last 20 days.")
+
+        agent_insight = " ".join(insight_parts)
 
         return jsonify({
             "ticker": ticker,
