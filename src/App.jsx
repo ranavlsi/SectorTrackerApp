@@ -735,7 +735,20 @@ function App() {
                   onClick={() => setCollapsedCategories(prev => ({ ...prev, [key]: !prev[key] }))}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{config.icon} {config.title}</span>
-                  {collapsedCategories[key] ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {expandedCategories[key] && !collapsedCategories[key] && (
+                        <span 
+                            style={{ fontSize: '0.75rem', padding: '4px 10px', background: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderRadius: '12px', border: '1px solid #4facfe' }}
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setExpandedCategories(prev => ({ ...prev, [key]: false })); 
+                            }}
+                        >
+                            Fold Up
+                        </span>
+                    )}
+                    {collapsedCategories[key] ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                  </div>
                 </h3>
                 
                 {!collapsedCategories[key] && (
