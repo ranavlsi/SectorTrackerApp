@@ -177,8 +177,8 @@ def evaluate_medium_base(ticker, pre_df=None):
             
             is_coiled = is_coiled and is_vol_coiled
             
-            # Distance checks (Within 12% of high)
-            is_about_to_breakout = (current_close >= base_high * 0.88) and (current_close <= base_high) and is_coiled
+            # Distance checks (Must be within 5% of high to be a true coil)
+            is_about_to_breakout = (current_close >= base_high * 0.95) and (current_close <= base_high) and is_coiled
             is_confirmed_breakout = (current_close > base_high) and (current_volume >= adv_50 * 1.50)
             
             if is_confirmed_breakout:
