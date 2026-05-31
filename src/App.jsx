@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link } from 'lucide-react'
+import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
@@ -10,6 +10,7 @@ import TradingViewSync from './TradingViewSync'
 import EarningsEvasionTracker from './EarningsEvasionTracker'
 import ZacksFundamentalReport from './ZacksFundamentalReport'
 import LiveAgentsDashboard from './LiveAgentsDashboard'
+import RsLineScanner from './RsLineScanner'
 import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
@@ -475,6 +476,7 @@ function App() {
           <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
           <button className={activeTab === 'intraday' ? 'tab-active' : ''} onClick={fetchIntradayAlerts}><Radio size={18} /> Intraday Radar</button>
           <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
+          <button className={activeTab === 'rslinescanner' ? 'tab-active' : ''} onClick={() => setActiveTab('rslinescanner')}><Star size={18} /> RS Line Scanner</button>
           <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
           <button className={activeTab === 'volsurface' ? 'tab-active' : ''} onClick={() => setActiveTab('volsurface')}><Activity size={18} /> 3D Vol Surface</button>
           <button className={activeTab === 'earnings' ? 'tab-active' : ''} onClick={() => setActiveTab('earnings')}><User size={18} /> AI Earnings</button>
@@ -612,6 +614,12 @@ function App() {
 
       {activeTab === 'agents' && (
         <LiveAgentsDashboard initialTicker={searchQuery || 'NVDA'} />
+      )}
+
+      {activeTab === 'rslinescanner' && (
+        <div className="glass-card" style={{ padding: '2rem' }}>
+            <RsLineScanner onTickerClick={fetchTickerData} />
+        </div>
       )}
 
       {activeTab === 'analysis' && (

@@ -1,0 +1,422 @@
+# RS Line Scanner — Complete Documentation
+
+> Built across a full conversation — covers scanner design, Cup & Handle detection, trading scenarios inside a base, and all filter features.
+
+-----
+
+## Table of Contents
+
+1. [What Is the RS Line Scanner?](#what-is-the-rs-line-scanner)
+1. [Scanner v1 — Basic RS High Detector](#scanner-v1)
+1. [Scanner v2 — Cup & Handle Added](#scanner-v2)
+1. [Scanner v3 — Full Feature Build](#scanner-v3)
+1. [How the RS Line Works](#how-the-rs-line-works)
+1. [Cup & Handle Detection Logic](#cup--handle-detection-logic)
+1. [All Filters Explained](#all-filters-explained)
+1. [Trading Inside a Base — Tree of Thought](#trading-inside-a-base)
+1. [Quick Reference Decision Table](#quick-reference-decision-table)
+
+-----
+
+## What Is the RS Line Scanner?
+
+The RS Line Scanner identifies stocks where the **Relative Strength (RS) Line** is hitting or near a **52-week high** — one of the most powerful early signals in growth stock investing, used by IBD/O’Neil methodology.
+
+**RS Line formula:**
+
+```
+RS Line = Stock Weekly Close ÷ SPY Weekly Close
+```
+
+Normalised so the first data point = 1.0, then tracked over 52 weeks.
+
+**Why RS Line at 52-week high matters:**
+
+- It means the stock is outperforming the S&P 500 on a relative basis
+- When the RS line makes a new high *before* the price breaks out — that is the highest-conviction buy signal possible
+- Institutions are accumulating before the crowd notices
+
+-----
+
+## Scanner v1 — Basic RS High Detector
+
+### Features
+
+- Universe selection: S&P 500, Nasdaq 100, Russell 2000, Momentum Watchlist
+- RS High threshold filter:
+  - **New 52-week RS High** (today)
+  - **Within 2% of RS High**
+  - **Within 5% of RS High**
+- Sector filter (Technology, Healthcare, Financials, Industrials, Energy, Consumer Disc., Materials, Utilities)
+- Minimum RS Rating filter (50–95+)
+- Sortable table: RS Rating, RS vs 52Wk High, Change%, Volume Ratio
+- RS Rating bar (colour-coded: green ≥90, amber ≥60, red <60)
+- Volume ratio bars (vs 20-day average)
+- Stats bar: Total Hits, New RS Highs, Near High, Avg RS Rating, In Base count
+
+### RS Status Badges
+
+|Badge      |Meaning                              |
+|-----------|-------------------------------------|
+|★ New High |RS line hit a new 52-week high today |
+|▲ Near High|RS line within 2% of its 52-week high|
+|◉ Watch    |RS line within 5% — monitor closely  |
+
+-----
+
+## Scanner v2 — Cup & Handle Added
+
+### New Features Added
+
+- **Cup & Handle pattern detection** on the RS line curve
+- **Pattern badges**: ☕ C&H (full pattern), ◡ Cup (forming, no handle yet)
+- **RS Line sparkline** — mini SVG chart showing the actual RS line shape per stock
+- **Pattern quality score** (0–100 ring) based on O’Neil criteria
+- **C&H Only toggle** — filter to show only stocks with a complete Cup & Handle
+- **C&H Details column**: cup depth %, handle depth/weeks, cup duration in weeks
+
+### Cup & Handle Detection Rules (O’Neil Criteria)
+
+```
+Cup:
+  - Depth: 10–40% (ideal: 12–25%)
+  - Duration: minimum 5 weeks (ideal 7–26 weeks)
+  - Right rim must recover to ≥85% of left rim height
+  - Smooth, rounded "U" shape preferred over "V"
+
+Handle:
+  - Retracement: 2–12% from right rim (ideal ≤8%)
+  - Duration: 1–7 weeks
+  - Must form in upper half of the cup (above midpoint)
+  - Volume should dry up during handle formation
+
+Pivot Point:
+  - The right rim of the cup = breakout price
+  - Buy within 5% above the pivot on volume
+```
+
+### Pattern Quality Score Breakdown
+
+|Criteria                                      |Points |
+|----------------------------------------------|-------|
+|Cup detected (valid depth + duration)         |+40    |
+|Handle detected (valid retracement + location)|+30    |
+|Ideal cup depth (12–25%)                      |+10    |
+|Right rim ≥95% of left rim                    |+10    |
+|Handle retracement ≤8%                        |+5     |
+|Cup duration 7–26 weeks                       |+5     |
+|**Maximum score**                             |**100**|
+
+-----
+
+## Scanner v3 — Full Feature Build
+
+### Feature 1: ADR% Filter (Average Daily Range)
+
+Filters out stocks that are too slow (low volatility) or too wild (lottery tickets).
+
+- Formula: Average of `(High − Low) / Low × 100` over last 20 weeks
+- Typical ranges by sector:
+  - Technology: 5–8%
+  - Healthcare: 4–6%
+  - Financials: 3–5%
+  - Energy: 4–6%
+  - Utilities: 2–4%
+- **Recommended setting**: Min 3%, Max 15% for active growth stocks
+- ADR shown in table: green = within range, red = outside range
+
+### Feature 2: Earnings Date Proximity Warning
+
+Flags stocks with earnings announcements within the next 14 days.
+
+- 🔴 Red: earnings ≤7 days — extreme risk
+- 🟡 Amber: earnings 8–14 days — caution
+- Grey: earnings >14 days or unknown
+- **Skip Earnings toggle**: automatically removes all stocks with earnings ≤14 days
+- Why it matters: even a perfect setup can be destroyed by a single earnings miss
+
+### Feature 3: Float / Market Cap Filter
+
+- Min and Max market cap inputs in $B (billions)
+- Examples:
+  - `5–50B` = small to mid caps — more volatile, higher upside
+  - `50–500B` = mid to large caps — more liquid, institutional-grade
+  - `500B+` = mega caps (MSFT, NVDA, AMZN)
+- Market cap shown in table (auto-formatted: $42B, $1.3T)
+
+### Feature 4: Email Alerts
+
+- Enter any email address in the top bar
+- After running a scan, click **📧 SEND ALERT**
+- Opens your default mail client with a pre-filled email containing all scan hits:
+  - RS Rating, RS Status, RS vs 52-week high
+  - Price and % change
+  - ADR%, Market Cap
+  - Cup & Handle status
+  - Days until next earnings
+- No external email service needed — uses your own mail app
+
+### Feature 5: Watchlist Save/Load
+
+- Click ☆ on any row to save a stock to the watchlist
+- Watchlist persists across browser sessions (browser storage)
+- Switch to the ⭐ Watchlist tab to view all saved stocks
+- Each card shows: ticker, name, sector, RS rating at save time, price at save time, date added
+- Remove individually with × or clear all
+
+-----
+
+## How the RS Line Works
+
+### Calculation
+
+```
+Step 1: Get 52 weekly closing prices for the stock
+Step 2: Get 52 weekly closing prices for SPY (S&P 500 ETF)
+Step 3: RS Ratio[i] = Stock Close[i] ÷ SPY Close[i]
+Step 4: Normalise: divide all values by the first ratio
+        → First point = 1.0, subsequent points show relative performance
+Step 5: RS Line 52-week high = max value over all 52 points
+Step 6: RS vs 52-week high = Current RS ÷ RS 52-week high × 100
+```
+
+### RS Rating (Percentile Rank)
+
+- Ranks each stock against the entire scan universe
+- Score of 99 = top 1% performer in the universe
+- Score of 70 = outperforms 70% of all stocks scanned
+- Colour coding: ≥90 bright green, ≥75 green, ≥60 amber, <60 red
+
+### What to Look For
+
+|Signal                                |Meaning                   |Action                     |
+|--------------------------------------|--------------------------|---------------------------|
+|RS line new 52-wk high, price in base |Institutions buying early |**Highest priority setup** |
+|RS line new high on price breakout    |Confirms breakout         |Buy on breakout with volume|
+|RS line flat while price rises        |Rising only with market   |Lower conviction           |
+|RS line falling while price holds     |Relative weakness — danger|Avoid or exit              |
+|RS line breaks below RS line base lows|Leadership lost           |Exit immediately           |
+
+-----
+
+## Cup & Handle Detection Logic
+
+### Algorithm
+
+```
+Input: 52-week RS line (array of 52 weekly values)
+
+1. Find PEAK — highest RS line value in the window
+2. Find TROUGH — lowest value before the peak
+3. Cup Depth = (Peak − Trough) / Peak × 100
+4. Find RIGHT SIDE — recovery from trough toward peak level
+5. Right Rim = highest value on the right side
+6. Right Rim Pct = Right Rim / Peak × 100
+
+Cup valid if:
+  - Depth 10–40%
+  - ≥5 weeks from trough to right rim
+  - Right rim ≥85% of left rim
+
+7. Find HANDLE — price action after the right rim
+8. Handle Depth = (Right Rim − Handle Low) / Right Rim × 100
+9. Handle Location — must be above (Trough + Peak) / 2
+
+Handle valid if:
+  - Depth 2–12%
+  - Duration 1–7 weeks
+  - Location above cup midpoint
+```
+
+### Sparkline Colours
+
+|Colour          |Meaning                             |
+|----------------|------------------------------------|
+|Purple `#c47aff`|Full Cup & Handle detected          |
+|Amber `#ffb800` |Cup forming, handle not yet complete|
+|Grey `#4a6080`  |No pattern detected                 |
+
+-----
+
+## All Filters Explained
+
+|Filter           |What It Does                         |Recommended Setting                |
+|-----------------|-------------------------------------|-----------------------------------|
+|Universe         |Stock pool to scan                   |S&P 500 for large caps             |
+|RS High Threshold|How close to 52-week RS high         |“New High” for strongest setups    |
+|Sector           |Narrow to one sector                 |Use when sector is in leadership   |
+|Min RS Rating    |Minimum percentile rank              |80+ for high-conviction setups     |
+|ADR% Min         |Minimum daily volatility             |3% — removes dead stocks           |
+|ADR% Max         |Maximum daily volatility             |15% — removes lottery tickets      |
+|MCap Min         |Minimum market cap                   |$5B — removes micro caps           |
+|MCap Max         |Maximum market cap                   |$500B or unlimited                 |
+|C&H Only         |Require full Cup & Handle pattern    |Use for highest-quality setups     |
+|Skip Earnings    |Exclude stocks with earnings ≤14 days|Always recommended for swing trades|
+
+-----
+
+## Trading Inside a Base
+
+### Position in Base Matters
+
+```
+UPPER THIRD (near pivot/resistance)
+  → Tightest stop, best R:R, highest conviction entries
+
+MIDDLE OF BASE (no man's land)
+  → Wider stop needed, only trade intra-base pivots
+
+LOWER THIRD (near support)
+  → Shakeout or breakdown — read the volume
+```
+
+-----
+
+### Branch 1 — Upper Third (Near Pivot)
+
+#### A) Break Above Previous Day High (PDH)
+
+**✅ SUCCESS — Volume confirms (1.5x+ average)**
+
+- Enter on breakout candle or next-day open
+- Stop: below breakout candle low OR below pivot −7–8%
+- Target 1: prior base depth added above pivot
+- Target 2: next resistance / measured move
+- Action: **BUY, trail stop as price advances**
+
+**❌ FAILURE — Low volume breakout (“dry” break)**
+
+- Price breaks PDH but volume is below average
+- Head fake — institutions not participating
+- If entered: sell if price closes back inside base
+- Action: **WAIT or use very small size**
+
+**❌ FAILURE — Breakout then reversal (Bull Trap)**
+
+- Price breaks PDH, runs 1–3%, then reverses hard
+- RS line did NOT confirm new high = very bearish
+- Action: **EXIT, re-evaluate base integrity**
+
+#### B) Price Stalls at Pivot — No Break
+
+- Multiple tests with no close above = handle building (bullish if tight)
+- Volume drying up = constructive shakeout completing
+- Price fading from pivot = possible right side failure
+- Action: **HOLD / WAIT, do not chase**
+
+#### C) Break Below PDL from Upper Third
+
+- Mild pullback + volume dries up = normal handle action → **HOLD**
+- Sharp drop on volume = base breakdown starting → **EXIT or hedge**
+
+-----
+
+### Branch 2 — Middle of Base
+
+#### A) Break Above PDH
+
+- Intra-base pivot above: break with volume = continuation ✅ / stall = fade ❌
+- No overhead resistance + RS line rising = can buy half size, wider stop
+- **Key rule**: Mid-base entries carry more risk. Better to wait for pivot.
+
+#### B) Price Chops Sideways
+
+- Volume contracting week over week + RS line new high = institutions accumulating → **Watch closely**
+- Volume expanding on down days + RS line declining = distribution → **AVOID**
+
+#### C) Break Below PDL
+
+- Holds above 50-day MA + volume dries up = normal action → **HOLD**
+- Breaks below 50-day MA on volume = base compromised → **EXIT**
+
+-----
+
+### Branch 3 — Lower Third (Near Support)
+
+#### A) Break Above PDH (from support)
+
+**✅ Undercut & Rally (shakeout complete)**
+
+- Price undercut prior lows, then reclaimed them
+- Volume surge on reclaim = institutional buying
+- Stop: below the undercut low (very tight)
+- Action: **STRONG BUY, excellent R:R**
+
+**Low-volume bounce**
+
+- No volume confirmation = dead cat bounce
+- Action: **AVOID or very small size**
+
+#### B) Price Holds Support
+
+- Multiple touches, closes above each time + RS line at new high = **HOLD, pivot coming**
+- High volume close at lows = institutions selling at support → **EXIT**
+
+#### C) Break Below PDL (support break)
+
+- First time: wait for end-of-day close before deciding
+- Reclaim same day = shakeout ✅
+- Close below = breakdown ❌ → **EXIT LONG immediately**
+- Gap down below base = **SELL ALL, no averaging down**
+
+-----
+
+### The RS Line Overlay (All Scenarios)
+
+|RS Line Behaviour                 |Meaning                    |Action                              |
+|----------------------------------|---------------------------|------------------------------------|
+|New 52-wk high while price in base|🔥 Institutions buying early|Highest conviction — buy pivot break|
+|Flat/sideways                     |Neutral consolidation      |Watch, wait for RS to lead          |
+|Declining while price holds       |⚠️ Relative weakness        |Reduce, do not add                  |
+|Breaks below RS line base lows    |Leadership lost            |**Full exit regardless of price**   |
+
+-----
+
+### Volume Confirmation
+
+|Volume vs Average       |Signal             |Action                  |
+|------------------------|-------------------|------------------------|
+|>1.5x on breakout       |✅ Confirmed        |Enter / hold full size  |
+|1.0–1.5x on breakout    |⚠️ Marginal         |Smaller size, tight stop|
+|<1.0x on breakout       |❌ Suspect          |Wait for follow-through |
+|High volume on breakdown|❌ Confirmed selling|Exit immediately        |
+|Low volume on breakdown |⚠️ Possible shakeout|Watch for reclaim       |
+
+-----
+
+### Position Sizing by Entry Location
+
+|Entry Location                |Size               |Stop Placement           |
+|------------------------------|-------------------|-------------------------|
+|Pivot breakout (top of base)  |**Full size**      |Below breakout candle low|
+|Mid-base bounce from 50-day MA|**Half size**      |Below 50-day MA          |
+|Support undercut & rally      |**Half size**      |Below undercut low       |
+|Anywhere else in base         |**No new position**|Wait                     |
+
+-----
+
+## Quick Reference Decision Table
+
+|Location  |Trigger               |Volume   |RS Line  |Action      |
+|----------|----------------------|---------|---------|------------|
+|Near pivot|Break PDH             |High     |New high |✅ Full buy  |
+|Near pivot|Break PDH             |Low      |Flat     |⚠️ Wait/small|
+|Near pivot|Fails at pivot        |Any      |Declining|Reduce      |
+|Mid-base  |Break intra-base pivot|High     |Rising   |Half buy    |
+|Mid-base  |Chop                  |Drying up|New high |Hold/watch  |
+|Support   |Undercut & reclaim    |High     |Holds    |✅ Strong buy|
+|Support   |Break below           |High     |Breaking |❌ Exit      |
+|Any       |Gap below base        |Any      |Collapses|❌ Sell all  |
+
+-----
+
+## The #1 Rule
+
+> **The RS Line leads price.**
+> 
+> If the RS line is making new highs before the price breakout, you have early confirmation from institutional money flow. If the RS line is failing while price holds, get out before the crowd does.
+
+-----
+
+*Document generated from RS Scanner conversation — May 2026*
+*⚠️ Not financial advice. All scanner data is simulated for educational purposes.*

@@ -65,6 +65,24 @@ def fundamentals():
         print(f"Error processing fundamentals for {ticker}: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/sync_lakehouse', methods=['POST'])
+def sync_lakehouse_api():
+    try:
+        # Launch sync_lakehouse.py in the background
+        subprocess.Popen([sys.executable, "sync_lakehouse.py"])
+        return jsonify({"status": "started", "message": "Lakehouse sync started in background."})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route('/api/run_rs_scanner', methods=['POST'])
+def run_rs_scanner_api():
+    try:
+        # Launch rs_line_scanner.py in the background
+        subprocess.Popen([sys.executable, "rs_line_scanner.py"])
+        return jsonify({"status": "started", "message": "RS Line Scanner started in background."})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
 if __name__ == '__main__':
     print("Starting SectorTracker API server on port 5001...")
     app.run(port=5001, debug=True)
