@@ -10,7 +10,14 @@ const TickerCell = ({ ticker, onClick }) => {
 
     const handleMouseEnter = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
-        setHoverInfo({ x: rect.left, y: rect.bottom });
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const renderAbove = spaceBelow < 300; // If less than 300px below, flip it up
+        
+        setHoverInfo({ 
+            x: rect.left, 
+            y: renderAbove ? rect.top - 5 : rect.bottom + 5,
+            renderAbove 
+        });
         
         if (!healthData && !loading && !errorMsg) {
             setLoading(true);
@@ -37,7 +44,7 @@ const TickerCell = ({ ticker, onClick }) => {
         >
             {ticker}
             {hoverInfo && (
-                <div style={{ position: 'fixed', top: hoverInfo.y + 5, left: hoverInfo.x, width: '280px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid #4facfe', borderRadius: '8px', padding: '1rem', zIndex: 99999, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', cursor: 'default', pointerEvents: 'none' }}>
+                <div style={{ position: 'fixed', top: hoverInfo.y, left: hoverInfo.x, transform: hoverInfo.renderAbove ? 'translateY(-100%)' : 'none', width: '280px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid #4facfe', borderRadius: '8px', padding: '1rem', zIndex: 99999, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', cursor: 'default', pointerEvents: 'none' }}>
                     <h4 style={{ margin: '0 0 0.5rem 0', color: '#4facfe' }}>{ticker} Health</h4>
                     {loading ? (
                         <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>Loading live data...</p>
@@ -290,10 +297,13 @@ export default function RsLineScanner({ onTickerClick }) {
                                             style={{ padding: '10px', cursor: 'pointer' }} 
                                             onMouseEnter={(e) => { 
                                                 const rect = e.currentTarget.getBoundingClientRect();
+                                                const spaceAbove = rect.top;
+                                                const renderBelow = spaceAbove < 150;
                                                 setHoverInfo({ 
                                                     item, 
                                                     x: rect.left + (rect.width / 2), 
-                                                    y: rect.top 
+                                                    y: renderBelow ? rect.bottom + 10 : rect.top - 10,
+                                                    renderBelow
                                                 }); 
                                             }} 
                                             onMouseLeave={() => setHoverInfo(null)}
@@ -326,9 +336,9 @@ export default function RsLineScanner({ onTickerClick }) {
             {hoverInfo && (
                 <div style={{ 
                     position: 'fixed', 
-                    top: hoverInfo.y - 100, 
+                    top: hoverInfo.y, 
                     left: hoverInfo.x, 
-                    transform: 'translateX(-50%)',
+                    transform: `translateX(-50%) ${hoverInfo.renderBelow ? '' : 'translateY(-100%)'}`,
                     background: '#1e293b', 
                     border: '1px solid #334155', 
                     padding: '10px', 
