@@ -1416,6 +1416,30 @@ function App() {
                        </div>
                      </div>
 
+                     {expertTickerData.trade_plan && (
+                       <div className="neo-panel" style={{ marginBottom: '1.5rem', borderLeft: '4px solid #10b981' }}>
+                         <h3 style={{ margin: '0 0 1rem 0', color: '#10b981', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem' }}>Algorithmic Trade Plan</h3>
+                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                           <div>
+                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Ideal Entry</p>
+                             <strong style={{ fontSize: '1.1rem', color: '#fff' }}>${expertTickerData.trade_plan.entry.toFixed(2)}</strong>
+                           </div>
+                           <div>
+                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Target (3 ATR)</p>
+                             <strong style={{ fontSize: '1.1rem', color: '#10b981' }}>${expertTickerData.trade_plan.profit_target.toFixed(2)}</strong>
+                           </div>
+                           <div>
+                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Stop Loss (1.5 ATR)</p>
+                             <strong style={{ fontSize: '1.1rem', color: '#ef4444' }}>${expertTickerData.trade_plan.stop_loss.toFixed(2)}</strong>
+                           </div>
+                           <div>
+                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Risk %</p>
+                             <strong style={{ fontSize: '1.1rem', color: '#f59e0b' }}>{expertTickerData.trade_plan.risk_pct.toFixed(1)}%</strong>
+                           </div>
+                         </div>
+                       </div>
+                     )}
+
                      {expertTickerData.fundamentals && (
                        <div className="neo-panel">
                          <h3 style={{ margin: '0 0 1rem 0', color: '#f59e0b', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem' }}>Fundamental Health</h3>
