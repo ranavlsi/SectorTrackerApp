@@ -208,6 +208,9 @@ def run_screener(custom_universe=None):
         "rs_divergence": []
     }
     
+    # We will collect highly-trending candidates here and check their fundamentals in bulk at the end
+    zacks_candidates = []
+    
     dollar_vol_dict = {}
     
     for i, ticker in enumerate(dynamic_universe):
@@ -428,43 +431,62 @@ def run_screener(custom_universe=None):
             # Score is distance below 40 (deeper oversold = higher score)
             results["reversal"].append({"ticker": ticker, "metric": f"RSI {rsi.iloc[-1]:.1f} + Bullish Candle", "score": float(40 - rsi.iloc[-1])})
             
-        # 9. High Volume Event (HVE)
-        avg_vol = vol.iloc[-50:].mean()
+        # 9. High Volume Event (HVE) (Smart Volume Climax)
         curr_vol = vol.iloc[-1]
-        if curr_vol > avg_vol * 3:
-            vol_mult = curr_vol / avg_vol
-            results["hve_volume"].append({"ticker": ticker, "metric": f"{vol_mult:.1f}x Avg Vol", "score": float(vol_mult)})
-            
-        # 10. Consolidation after Positive HVE
-        hve_threshold = vol.iloc[-65:-15].mean() * 2.5
         
-        # Find all days in last 15 days that were positive HVEs (Close > Open and Close > Prev Close)
+        if len(vol) >= 63:
+            vol_63d_max = vol.iloc[-63:].max()
+            vol_252d_max = vol.iloc[-252:].max() if len(vol) >= 252 else vol_63d_max
+            
+            # The volume must be the absolute HIGHEST volume in the last quarter OR year
+            is_smart_hve = (curr_vol >= vol_63d_max * 0.95) or (curr_vol >= vol_252d_max * 0.95)
+            
+            # Must be a massive positive green day (Close > Prev Close, Close > Open, and closing near the High)
+            is_bullish_day = (curr_c > prev_c) and (curr_c > curr_o) and (curr_c >= high.iloc[-1] * 0.90)
+            
+            if is_smart_hve and is_bullish_day:
+                avg_vol = vol.iloc[-50:].mean()
+                vol_mult = curr_vol / avg_vol
+                results["hve_volume"].append({"ticker": ticker, "metric": f"Max Vol Climax ({vol_mult:.1f}x Avg)", "score": float(vol_mult)})
+            
+        # 10. Consolidation after Positive HVE (Smart Volume)
         positive_hve_days = []
-        for i in range(-15, -1):
-            if vol.iloc[i] > hve_threshold:
-                if close.iloc[i] > open_s.iloc[i] and close.iloc[i] > close.iloc[i-1]:
-                    positive_hve_days.append(i)
+        if len(vol) >= 63:
+            for i in range(-15, -1):
+                # Calculate the 63-day max volume up to the day before 'i' to see if 'i' was a climax
+                hist_vol = vol.iloc[i-63:i+1] if i >= -63 else vol.iloc[:i+1]
+                if len(hist_vol) > 0 and vol.iloc[i] >= hist_vol.max() * 0.95:
+                    # Must be structurally positive
+                    c_day = close.iloc[i]
+                    o_day = open_s.iloc[i]
+                    pc_day = close.iloc[i-1]
+                    h_day = high.iloc[i]
+                    if (c_day > pc_day) and (c_day > o_day) and (c_day >= h_day * 0.90):
+                        positive_hve_days.append(i)
                     
         if positive_hve_days:
             # Take the most recent one
             hve_idx = positive_hve_days[-1]
             hve_c = close.iloc[hve_idx]
             hve_l = low.iloc[hve_idx]
+            hve_h = high.iloc[hve_idx]
+            hve_mid = hve_l + ((hve_h - hve_l) * 0.5)
             
-            # Since the HVE, price must hold ABOVE the HVE Low (preferably near the close)
+            # Since the HVE, price must consolidate in the UPPER HALF of the HVE candle (True Bull Flag)
             days_since = abs(hve_idx) - 1
             if days_since >= 3: # Need at least 3 days of consolidation
                 post_hve_lows = low.iloc[hve_idx+1:]
                 
-                # Condition 1: Holds HVE Low (No major breakdown)
-                if post_hve_lows.min() >= hve_l * 0.98: # Allow slight wick below
+                # Condition 1: Holds UPPER HALF of the HVE candle (No major breakdown)
+                if post_hve_lows.min() >= hve_mid * 0.98: # Allow slight wick below midpoint
                     # Condition 2: Tight consolidation in the last 4 days
                     recent_tightness = (high.iloc[-4:].max() - low.iloc[-4:].min()) / low.iloc[-4:].min()
                     
                     # Condition 3: Volume dry up
                     avg_v = vol.iloc[-65:-15].mean()
                     if recent_tightness < 0.06 and vol.iloc[-3:].mean() < avg_v * 1.2:
-                        results["hve_consolidation"].append({"ticker": ticker, "metric": f"Tight Post-HVE ({days_since}d)"})
+                        # Score mathematically by how tight the consolidation is (lower tightness = higher score)
+                        results["hve_consolidation"].append({"ticker": ticker, "metric": f"Tight Post-HVE ({days_since}d)", "score": -float(recent_tightness)})
                 
         # 11. Post Earning Positive Reaction & Consolidation
         # Define earnings reaction technically: Gap Up > 4% and Volume > 2.5x average
@@ -512,40 +534,17 @@ def run_screener(custom_universe=None):
         except Exception as e:
             pass
 
-        # 13. Zacks Rank #1 (Strong Buy)
-        if is_aaaa: print("Starting Zacks...")
+        # 13. Zacks Rank #1 (Strong Buy) / Fundamentals Collector
         try:
-            # OPTIMIZATION: Do not fetch yf.info for all 12,000 stocks as it takes 40 minutes.
-            # Only fetch fundamentals if the stock is displaying relative strength or is near a 52w high.
-            if lakehouse_mode:
-                raise Exception("Bypassed fundamental API check to save time in fast Lakehouse mode")
-                    
-            t = yf.Ticker(ticker)
-            info = t.info
-            peg = info.get("pegRatio")
-            revenue_growth = info.get("revenueGrowth")
-            
-            safe_peg = peg if peg is not None else 999
-            safe_rev = revenue_growth if revenue_growth is not None else 0
-            
-            score = 0
-            if safe_rev > 0.15: score += 2
-            elif safe_rev > 0.05: score += 1
-            elif safe_rev < 0: score -= 2
-            
-            if safe_peg < 1.0: score += 2
-            elif safe_peg <= 2.0: score += 1
-            elif safe_peg > 4.0 and safe_peg != 999: score -= 2
-            elif safe_peg > 3.0 and safe_peg != 999: score -= 1
-            elif safe_peg == 999: score -= 1
+            # OPTIMIZATION: Do not fetch yf.info for 12,000 stocks inside this loop (causes rate limit crashes).
+            # Instead, we identify stocks in a structural uptrend near 52w highs and bulk-query them at the end!
+            if len(close) >= 200:
+                sma50 = close.rolling(50).mean().iloc[-1]
+                sma200 = close.rolling(200).mean().iloc[-1]
+                high_52w = close.iloc[-252:].max() if len(close) >= 252 else close.max()
                 
-            rec = info.get("recommendationKey", "none").lower()
-            if "buy" in rec: score += 1
-            elif "sell" in rec or "underperform" in rec: score -= 2
-            elif "hold" in rec: score -= 1
-            
-            if score >= 3:
-                results["zacks_rank_1"].append({"ticker": ticker, "metric": f"Score: {score} | PEG: {safe_peg}"})
+                if curr_c > sma50 and sma50 > sma200 and curr_c >= high_52w * 0.85:
+                    zacks_candidates.append(ticker)
         except Exception as e:
             pass
 
@@ -599,6 +598,52 @@ def run_screener(custom_universe=None):
     # Instead of relying on rate-limited, broken external APIs (YahooQuery) for Market Cap,
     # we natively calculate and cache the 20-day Average Dollar Volume of every ticker.
     # Dollar Volume accurately correlates with mega-caps (IBM, ORCL, TSLA, AAPL).
+    
+    # -----------------------------------
+    # POST-SCAN FUNDAMENTAL SWEEP (Zacks)
+    # -----------------------------------
+    print(f"Post-Scan Optimization: Running bulk Fundamental check on {len(zacks_candidates)} highly-trending candidates...")
+    try:
+        from yahooquery import Ticker as YQTicker
+        if len(zacks_candidates) > 0:
+            yq_zacks = YQTicker(zacks_candidates, asynchronous=True)
+            z_details = yq_zacks.summary_detail
+            z_fin = yq_zacks.financial_data
+            z_key = yq_zacks.key_stats
+            
+            for t in zacks_candidates:
+                d_data = z_details.get(t, {}) if isinstance(z_details, dict) else {}
+                f_data = z_fin.get(t, {}) if isinstance(z_fin, dict) else {}
+                k_data = z_key.get(t, {}) if isinstance(z_key, dict) else {}
+                
+                if isinstance(d_data, dict) and isinstance(f_data, dict) and isinstance(k_data, dict):
+                    # PEG is inside key_stats!
+                    peg = k_data.get('pegRatio', 999)
+                    rev = f_data.get('revenueGrowth', 0)
+                    rec = f_data.get('recommendationKey', 'none').lower()
+                        
+                    safe_peg = peg if isinstance(peg, (int, float)) else 999
+                    safe_rev = rev if isinstance(rev, (int, float)) else 0
+                    
+                    score = 0
+                    if safe_rev > 0.15: score += 2
+                    elif safe_rev > 0.05: score += 1
+                    elif safe_rev < 0: score -= 2
+                    
+                    if safe_peg < 1.0: score += 2
+                    elif safe_peg <= 2.0: score += 1
+                    elif safe_peg > 4.0 and safe_peg != 999: score -= 2
+                    elif safe_peg > 3.0 and safe_peg != 999: score -= 1
+                    elif safe_peg == 999: score -= 1
+                        
+                    if "buy" in rec: score += 1
+                    elif "sell" in rec or "underperform" in rec: score -= 2
+                    elif "hold" in rec: score -= 1
+                    
+                    if score >= 3:
+                        results["zacks_rank_1"].append({"ticker": t, "metric": f"Score: {score} | PEG: {safe_peg}", "score": score})
+    except Exception as e:
+        print(f"Failed to fetch Zacks Fundamentals: {e}")
     
     # -----------------------------------
     # POST-SCAN MARKET CAP ENFORCEMENT
