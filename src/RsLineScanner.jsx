@@ -7,8 +7,7 @@ export default function RsLineScanner({ onTickerClick }) {
     const [loading, setLoading] = useState(false);
     const [watchlist, setWatchlist] = useState([]);
     const [showWatchlist, setShowWatchlist] = useState(false);
-    const [hoveredItem, setHoveredItem] = useState(null);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [hoverInfo, setHoverInfo] = useState(null);
     
     // Filters
     const [minRating, setMinRating] = useState(80);
@@ -226,9 +225,15 @@ export default function RsLineScanner({ onTickerClick }) {
                                         </td>
                                         <td 
                                             style={{ padding: '10px', cursor: 'pointer' }} 
-                                            onMouseEnter={(e) => { setHoveredItem(item); setMousePos({ x: e.clientX, y: e.clientY }); }} 
-                                            onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })} 
-                                            onMouseLeave={() => setHoveredItem(null)}
+                                            onMouseEnter={(e) => { 
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverInfo({ 
+                                                    item, 
+                                                    x: rect.left + (rect.width / 2), 
+                                                    y: rect.top 
+                                                }); 
+                                            }} 
+                                            onMouseLeave={() => setHoverInfo(null)}
                                         >
                                             <RsSparkline data={item.sparkline} status={item.pattern_status} />
                                         </td>
@@ -255,11 +260,12 @@ export default function RsLineScanner({ onTickerClick }) {
             )}
             
             {/* Global Fixed Tooltip */}
-            {hoveredItem && (
+            {hoverInfo && (
                 <div style={{ 
                     position: 'fixed', 
-                    top: mousePos.y - 120, 
-                    left: mousePos.x + 20, 
+                    top: hoverInfo.y - 100, 
+                    left: hoverInfo.x, 
+                    transform: 'translateX(-50%)',
                     background: '#1e293b', 
                     border: '1px solid #334155', 
                     padding: '10px', 
@@ -269,18 +275,18 @@ export default function RsLineScanner({ onTickerClick }) {
                     boxShadow: '0 8px 16px rgba(0,0,0,0.6)',
                     pointerEvents: 'none'
                 }}>
-                    <h4 style={{ margin: '0 0 8px 0', color: '#60a5fa', textAlign: 'center', fontSize: '0.9rem' }}>{hoveredItem.ticker} RS Stats</h4>
+                    <h4 style={{ margin: '0 0 8px 0', color: '#60a5fa', textAlign: 'center', fontSize: '0.9rem' }}>{hoverInfo.item.ticker} RS Stats</h4>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                         <span style={{ color: '#94a3b8' }}>52w High:</span>
-                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>{Math.max(...hoveredItem.sparkline).toFixed(3)}</span>
+                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>{Math.max(...hoverInfo.item.sparkline).toFixed(3)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '5px' }}>
                         <span style={{ color: '#94a3b8' }}>52w Low:</span>
-                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{Math.min(...hoveredItem.sparkline).toFixed(3)}</span>
+                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{Math.min(...hoverInfo.item.sparkline).toFixed(3)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '5px', borderTop: '1px solid #334155', paddingTop: '5px' }}>
                         <span style={{ color: '#94a3b8' }}>Current:</span>
-                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{hoveredItem.sparkline[hoveredItem.sparkline.length-1].toFixed(3)}</span>
+                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{hoverInfo.item.sparkline[hoverInfo.item.sparkline.length-1].toFixed(3)}</span>
                     </div>
                 </div>
             )}
