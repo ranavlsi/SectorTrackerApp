@@ -277,9 +277,10 @@ export default function RsLineScanner({ onTickerClick }) {
                                             </div>
                                         </td>
                                         <td style={{ padding: '10px' }}>
-                                            {item.rs_badge === 'New High' && <span style={{ color: '#10b981', display: 'flex', gap: '5px', alignItems: 'center' }}><Star size={14} fill="#10b981"/> New High</span>}
-                                            {item.rs_badge === 'Near High' && <span style={{ color: '#f59e0b', display: 'flex', gap: '5px', alignItems: 'center' }}><ChevronUp size={14} /> Near High</span>}
-                                            {item.rs_badge === 'Watch' && <span style={{ color: '#94a3b8' }}>◉ Watch</span>}
+                                            {item.rs_badge === '12M RS High' && <span style={{ color: '#10b981', display: 'flex', gap: '5px', alignItems: 'center' }}><Star size={14} fill="#10b981"/> 12M RS High</span>}
+                                            {item.rs_badge === '6M RS High' && <span style={{ color: '#34d399', display: 'flex', gap: '5px', alignItems: 'center' }}><Star size={14} fill="none"/> 6M RS High</span>}
+                                            {item.rs_badge === '3M RS High' && <span style={{ color: '#f59e0b', display: 'flex', gap: '5px', alignItems: 'center' }}><ChevronUp size={14} /> 3M RS High</span>}
+                                            {item.rs_badge === '1M RS High' && <span style={{ color: '#fbbf24', display: 'flex', gap: '5px', alignItems: 'center' }}><ChevronUp size={14} /> 1M RS High</span>}
                                         </td>
                                         <td style={{ padding: '10px' }}>
                                             {item.pattern_status === 'c_and_h' && <span style={{ color: '#c47aff', padding: '2px 8px', background: 'rgba(196,122,255,0.1)', borderRadius: '12px', fontSize: '0.85rem' }}>☕ C&H ({item.pattern_score})</span>}

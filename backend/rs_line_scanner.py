@@ -197,18 +197,27 @@ def run_rs_scanner():
         recent_20 = weekly_52.iloc[-20:]
         adr_pct = calculate_adr(recent_20['high'], recent_20['low'])
         
-        # Determine Badge Status (For Visual Tagging in UI)
-        if rs_vs_high >= 99.0:
-            rs_badge = "New High"
-        elif rs_vs_high >= 95.0:
-            rs_badge = "Near High"
-        elif rs_vs_high >= 90.0:
-            rs_badge = "Watch"
+        # Calculate Multi-Timeframe RS Peaks (1 bar = 1 week)
+        rs_current = rs_ratio_normalized.iloc[-1]
+        rs_peak_12m = rs_ratio_normalized.max()
+        rs_peak_6m = rs_ratio_normalized.iloc[-26:].max() if len(rs_ratio_normalized) >= 26 else rs_peak_12m
+        rs_peak_3m = rs_ratio_normalized.iloc[-13:].max() if len(rs_ratio_normalized) >= 13 else rs_peak_12m
+        rs_peak_1m = rs_ratio_normalized.iloc[-4:].max() if len(rs_ratio_normalized) >= 4 else rs_peak_12m
+        
+        # Determine Multi-Timeframe Badge Status
+        if (rs_current / rs_peak_12m) * 100 >= 99.0:
+            rs_badge = "12M RS High"
+        elif (rs_current / rs_peak_6m) * 100 >= 99.0:
+            rs_badge = "6M RS High"
+        elif (rs_current / rs_peak_3m) * 100 >= 99.0:
+            rs_badge = "3M RS High"
+        elif (rs_current / rs_peak_1m) * 100 >= 99.0:
+            rs_badge = "1M RS High"
         else:
             rs_badge = "None"
             
-        # USER CONSTRAINT 1: RS Line MUST be at a fresh high
-        if rs_badge != "New High":
+        # USER CONSTRAINT 1: RS Line MUST be at a fresh high on at least a 1-month timeframe
+        if rs_badge == "None":
             continue
             
         # USER CONSTRAINT 2: Cup and Handle Detection on STOCK PRICE
