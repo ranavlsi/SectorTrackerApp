@@ -530,22 +530,20 @@ function App() {
           )}
         </div>
 
-        {/* Global Intraday Live Alerts Bar */}
+        {/* Global Intraday Live Alerts Ticker */}
         {globalLiveAlerts.length > 0 && (
-          <div style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.15)', border: '2px solid #ef4444', borderRadius: '8px', boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', textTransform: 'uppercase' }}>
-                  <AlertCircle size={20} /> LIVE INTRADAY BREAKOUT ALERTS
-              </h3>
-              <div style={{ display: 'flex', gap: '15px', overflowX: 'auto', paddingBottom: '5px' }}>
+          <div style={{ marginBottom: '1.5rem', padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', display: 'flex', alignItems: 'center', gap: '15px', overflowX: 'auto', borderRadius: '4px' }}>
+              <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                  <AlertCircle size={16} /> BREAKOUTS:
+              </span>
+              <div style={{ display: 'flex', gap: '10px' }}>
                   {globalLiveAlerts.map((alert, i) => (
-                      <div key={i} onClick={() => fetchTickerData(alert.ticker)} style={{ cursor: 'pointer', background: 'rgba(15, 23, 42, 0.9)', padding: '10px 15px', borderRadius: '6px', borderLeft: '4px solid #ef4444', minWidth: '220px', transition: 'all 0.2s', hover: {transform: 'scale(1.05)'} }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <strong style={{ color: '#fff', fontSize: '1.2rem' }}>{alert.ticker}</strong>
-                              <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1.1rem' }}>+{alert.pct_above.toFixed(2)}%</span>
-                          </div>
-                          <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: '5px' }}>
-                              Trigger: ${alert.trigger_price.toFixed(2)} ➔ Now: <strong style={{color: '#fff'}}>${alert.price.toFixed(2)}</strong>
-                          </div>
+                      <div key={i} onClick={() => fetchTickerData(alert.ticker)} style={{ cursor: 'pointer', background: 'rgba(15, 23, 42, 0.8)', padding: '4px 10px', borderRadius: '4px', borderLeft: '2px solid #ef4444', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)'}>
+                          <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{alert.ticker}</strong>
+                          <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.85rem' }}>+{alert.pct_above.toFixed(2)}%</span>
+                          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                              Brk: ${alert.trigger_price.toFixed(2)} ➔ <strong style={{color: '#fff'}}>${alert.price.toFixed(2)}</strong>
+                          </span>
                       </div>
                   ))}
               </div>
