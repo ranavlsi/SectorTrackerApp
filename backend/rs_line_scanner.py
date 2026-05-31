@@ -237,11 +237,17 @@ def run_rs_scanner():
             try:
                 details = yq.summary_detail
                 cal = yq.calendar_events
+                quote_types = yq.quote_type
                 
                 for t in chunk:
                     mcap = 0
                     earnings_days = 999
+                    is_etf = False
                     
+                    if isinstance(quote_types, dict) and t in quote_types and isinstance(quote_types[t], dict):
+                        if quote_types[t].get('quoteType', '') == 'ETF':
+                            is_etf = True
+                            
                     if isinstance(details, dict) and t in details and isinstance(details[t], dict):
                         mcap = details[t].get('marketCap', 0)
                         
@@ -263,9 +269,13 @@ def run_rs_scanner():
                         if c['ticker'] == t:
                             c['market_cap'] = mcap
                             c['earnings_days'] = earnings_days
+                            c['is_etf'] = is_etf
                             break
             except Exception as e:
                 print(f"Error fetching fundamental chunk: {e}")
+                
+    # Filter out ETFs
+    candidates = [c for c in candidates if not c.get('is_etf', False)]
                 
     # Sort by Pattern Score first, then RS Rating
     candidates.sort(key=lambda x: (x['pattern_score'], x['rs_rating']), reverse=True)
