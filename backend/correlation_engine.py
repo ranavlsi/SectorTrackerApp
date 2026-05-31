@@ -14,9 +14,10 @@ MACRO_DRIVERS = {
 }
 
 def run_correlation_engine():
-    print("Fetching data for Cross-Asset Correlation Matrix...")
+    print("Fetching data for Actionable Macro Scenarios Dashboard...")
     
-    tickers_to_fetch = UNIVERSE[:20] + list(MACRO_DRIVERS.keys())  # Limit to top 20 stocks for clean UI
+    # Expand universe to get more comprehensive baskets
+    tickers_to_fetch = UNIVERSE[:60] + list(MACRO_DRIVERS.keys())
     df = yf.download(tickers_to_fetch, period="90d", interval="1d", group_by="ticker", progress=False)
     
     # Extract closing prices
@@ -31,25 +32,38 @@ def run_correlation_engine():
     # Calculate correlation matrix
     corr_matrix = returns.corr().round(2)
     
-    # Format for frontend
+    # Format for actionable frontend UI
     results = {
-        "macro_drivers": list(MACRO_DRIVERS.values()),
-        "stocks": []
+        "scenarios": []
     }
     
-    for stock in UNIVERSE[:20]:
-        if stock in corr_matrix.index:
-            stock_data = {"ticker": stock, "correlations": {}}
-            for driver_sym, driver_name in MACRO_DRIVERS.items():
-                if driver_sym in corr_matrix.columns:
-                    stock_data["correlations"][driver_name] = corr_matrix.loc[stock, driver_sym]
-            results["stocks"].append(stock_data)
+    for driver_sym, driver_name in MACRO_DRIVERS.items():
+        if driver_sym not in corr_matrix.columns:
+            continue
+            
+        driver_corrs = corr_matrix[driver_sym].drop(index=list(MACRO_DRIVERS.keys()), errors='ignore')
+        
+        # Sort by most positive and most negative
+        most_positive = driver_corrs[driver_corrs > 0.3].sort_values(ascending=False).head(8)
+        most_negative = driver_corrs[driver_corrs < -0.3].sort_values(ascending=True).head(8)
+        
+        # Create actionable basket data
+        scenario = {
+            "driver": driver_name,
+            "if_up": [
+                {"ticker": t, "corr": float(c), "action": "buy"} for t, c in most_positive.items()
+            ],
+            "if_down": [
+                {"ticker": t, "corr": float(c), "action": "buy"} for t, c in most_negative.items()
+            ]
+        }
+        results["scenarios"].append(scenario)
             
     output_path = '/Users/amitkumar/Desktop/SectorTrackerApp/public/correlation_results.json'
     with open(output_path, 'w') as f:
         json.dump(results, f)
         
-    print(f"Successfully wrote correlation results to {output_path}")
+    print(f"Successfully wrote actionable macro scenarios to {output_path}")
 
 if __name__ == "__main__":
     run_correlation_engine()

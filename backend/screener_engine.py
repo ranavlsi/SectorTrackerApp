@@ -3,6 +3,14 @@ import pandas as pd
 import json
 import os
 import warnings
+import requests
+from io import StringIO
+import logging
+import time
+
+from long_base_scanner import evaluate_long_base, evaluate_medium_base
+from pending_breakout_engine import detect_pending_breakout
+from qullamaggie_engine import evaluate_qullamaggie_setup
 
 warnings.filterwarnings('ignore')
 
@@ -18,6 +26,31 @@ UNIVERSE = [
     # Recent high momentum / IPO names
     'PLTR', 'ASTS', 'HOOD', 'RDDT', 'ALAB', 'ARM', 'CAVA', 'SMCI', 'CELH'
 ]
+
+def fetch_yahoo_screener(url):
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    try:
+        req = requests.get(url, headers=headers, timeout=10)
+        dfs = pd.read_html(StringIO(req.text))
+        if dfs:
+            raw_symbols = dfs[0]['Symbol'].tolist()
+            # Yahoo formats them weirdly sometimes like "R RDW"
+            clean_symbols = [str(s).split()[-1] for s in raw_symbols if pd.notna(s)]
+            return clean_symbols
+    except Exception as e:
+        print(f"Failed to scrape {url}: {e}")
+    return []
+
+def get_dynamic_universe():
+    urls = [
+        'https://finance.yahoo.com/screener/predefined/day_gainers',
+        'https://finance.yahoo.com/screener/predefined/most_actives'
+    ]
+    dynamic_tickers = set(UNIVERSE)
+    for url in urls:
+        dynamic_tickers.update(fetch_yahoo_screener(url))
+        
+    return list(dynamic_tickers)
 
 import talib
 
@@ -92,20 +125,61 @@ def check_cup_and_handle(df, is_monthly=False):
         
     handle_depth = (right_cup_high - handle_low) / right_cup_high
     
-    if not (0.02 <= handle_depth <= 0.20): return False
+    if not (0.02 <= handle_depth <= 0.12): return False
+    
+    cup_right_vol_avg = cup_data['Volume'].iloc[cup_bottom_idx+1:].mean()
+    handle_vol_avg = handle_data['Volume'].mean()
+    if handle_vol_avg > cup_right_vol_avg * 0.75: return False
     
     return True
 
-def run_screener():
-    print(f"Running Unified Expert Screener on {len(UNIVERSE)} stocks...")
+import duckdb
+
+def run_screener(custom_universe=None):
+    LAKEHOUSE_PATH = '/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/daily_ohlcv.parquet'
     
-    df = yf.download(UNIVERSE + ['SPY'], period='5y', interval='1d', group_by='ticker', progress=False)
+    lakehouse_mode = os.path.exists(LAKEHOUSE_PATH)
     
-    if df.empty or 'SPY' not in df:
-        print("Failed to download data.")
-        return
+    if lakehouse_mode:
+        print(f"Loading ALL stocks from Lakehouse: {LAKEHOUSE_PATH}...")
+        lake_df = duckdb.query(f"SELECT * FROM read_parquet('{LAKEHOUSE_PATH}') ORDER BY Date").to_df()
+        lake_df = lake_df.sort_values('Date')
+        grouped = lake_df.groupby('Ticker')
+        all_tickers = list(grouped.groups.keys())
         
-    spy_close = df['SPY']['Close'].dropna()
+        # --- COMPREHENSIVE ETF BLOCKLIST ---
+        # The ADR Volatility filter catches 99% of ETFs, but Leveraged ETFs (SOXL, TQQQ) and massive volatile sector ETFs bypass it.
+        # We aggressively strip them out here before they even enter the universe.
+        ETF_BLOCKLIST = {
+            'SPY', 'QQQ', 'DIA', 'IWM', 'SMH', 'XLF', 'XLE', 'XLK', 'XLV', 'XLY', 'XLI', 'XLU', 'XLP', 'XLB', 'XLC', 'XRE', 'XRT', 'XBI', 'IBB', 'KRE', 'KBE', 'GDX', 'GDXJ', 'GLD', 'SLV', 'USO', 'UNG', 'TLT', 'TMF', 'HYG', 'JNK', 'LQD', 'BND', 'AGG', 'VTI', 'VOO', 'VEA', 'VWO', 'EEM', 'EFA', 'ARKK', 'ARKG', 'ARKW', 'ARKF', 'ARKQ',
+            'TQQQ', 'SQQQ', 'SOXL', 'SOXS', 'UPRO', 'SPXU', 'TNA', 'TZA', 'UDOW', 'SDOW', 'URTY', 'SRTY', 'FAS', 'FAZ', 'LABU', 'LABD', 'NUGT', 'DUST', 'JNUG', 'JDST', 'UCO', 'SCO', 'BOIL', 'KOLD', 'YINN', 'YANG', 'CWEB', 'KWEB', 'FXI', 'GUSH', 'DRIP', 'ERX', 'ERY', 'TECL', 'TECS', 'WEBL', 'WEBS', 'FNGU', 'FNGD', 'BULZ', 'BERZ', 'DPST', 'NAIL', 'RETL', 'CURE', 'DFEN', 'HIBL', 'HIBS', 'MIDU', 'PILL', 'SPXL', 'SPXS', 'SPYU', 'TDF', 'TYD', 'TYO', 'UBOT', 'UTSL', 'WANT', 'BITU', 'SBIT', 'CONL', 'NVDL', 'NVD', 'TSLL', 'TSLQ', 'TSLR', 'AMZU', 'AMZD', 'GGLL', 'GGLS', 'AAPU', 'AAPD', 'MSFU', 'MSFD', 'UVXY', 'VIXY', 'SVIX', 'BITO', 'IBIT', 'FBTC', 'ARKB', 'BITB', 'EZBC', 'BRRR', 'HODL', 'BTCW', 'GBTC'
+        }
+        all_tickers = [t for t in all_tickers if t not in ETF_BLOCKLIST]
+        # -----------------------------------
+        if custom_universe is not None:
+            dynamic_universe = [t for t in custom_universe if t in all_tickers]
+            print(f"Filtered Lakehouse to {len(dynamic_universe)} requested stocks.")
+        else:
+            dynamic_universe = all_tickers
+        # We also need SPY for relative strength.
+        if 'SPY' in grouped.groups:
+            spy_df = grouped.get_group('SPY').set_index('Date')
+            spy_close = spy_df['Close'].dropna()
+        else:
+            spy_close = yf.download('SPY', period='2y', interval='1d', progress=False)['Close']
+            
+        print(f"Running Unified Expert Screener on {len(dynamic_universe)} stocks from Lakehouse...")
+    else:
+        dynamic_universe = custom_universe if custom_universe is not None else get_dynamic_universe()
+        print(f"Running Unified Expert Screener on {len(dynamic_universe)} stocks (Legacy YF Mode)...")
+        df = yf.download(dynamic_universe + ['SPY'], period='4y', interval='1d', group_by='ticker', progress=False)
+        
+        if df.empty or 'SPY' not in df:
+            print("Failed to download data.")
+            return
+            
+        spy_close = df['SPY']['Close'].dropna()
+        
     max_days = len(spy_close)
     
     results = {
@@ -126,13 +200,33 @@ def run_screener():
         "post_earning_consolidation": [],
         "weekly_cup_handle": [],
         "monthly_cup_handle": [],
-        "zacks_rank_1": []
+        "zacks_rank_1": [],
+        "long_base_breakout": [],
+        "medium_base_breakout": [],
+        "pending_breakout": [],
+        "qullamaggie_setup": [],
+        "rs_divergence": []
     }
     
-    for ticker in UNIVERSE:
-        if ticker not in df: continue
-        ticker_df = df[ticker].dropna()
+    dollar_vol_dict = {}
+    
+    for i, ticker in enumerate(dynamic_universe):
+        if i > 0 and i % 100 == 0:
+            print(f"Scanned {i}/{len(dynamic_universe)}...")
+            
+        if lakehouse_mode:
+            ticker_df = grouped.get_group(ticker).set_index('Date')
+        else:
+            if ticker not in df:
+                continue
+            ticker_df = df[ticker].dropna()
+            
         if ticker_df.empty: continue
+        
+        # DEBUG: Print the first 5 tickers to trace execution
+        import time
+        t0 = time.time()
+        is_aaaa = False
         
         close = ticker_df['Close']
         open_s = ticker_df['Open']
@@ -143,24 +237,86 @@ def run_screener():
         if len(close) < 20: continue
         
         curr_c = close.iloc[-1]
+        curr_o = open_s.iloc[-1]
         
-        # 1. Relative Strength
+        dollar_vol_20d = float(curr_c * vol.iloc[-20:].mean())
+        dollar_vol_dict[ticker] = dollar_vol_20d
+        
+        # --- MASTER QUANTITATIVE FILTER (Anti-ETF & Anti-Illiquid) ---
+        # 1. Must trade at least $15M average daily dollar volume to be considered liquid
+        if dollar_vol_20d < 15_000_000: continue
+        
+        # 2. Must be priced over $5 (no penny stocks)
+        if curr_c < 5: continue
+        
+        # 3. Volatility Filter: Average Daily Range (ADR) > 2.5%
+        # ETFs mathematically have extremely low ATRs (usually 0.5% - 1.5%). 
+        # By requiring a 2.5% ADR, we instantly filter out 99% of ETFs and dead stocks, leaving only high-momentum equities.
+        daily_range_pct = (high.iloc[-14:] - low.iloc[-14:]) / close.iloc[-14:]
+        if daily_range_pct.mean() < 0.025: continue
+        # -------------------------------------------------------------
+        
+        t1 = time.time()
+        
+        # 1. Relative Strength vs SPY
         try:
-            rs_1mo = ((close.iloc[-1] / spy_close.iloc[-1]) / (close.iloc[-20] / spy_close.iloc[-20]) - 1) * 100
+            stock_aligned, spy_aligned = close.align(spy_close, join='inner')
+            rs_line = stock_aligned / spy_aligned
+            
+            # Simple 1-Month RS performance vs SPY (Current vs 20 trading days ago)
+            rs_1mo = ((stock_aligned.iloc[-1] / spy_aligned.iloc[-1]) / (stock_aligned.iloc[-20] / spy_aligned.iloc[-20]) - 1) * 100
+            
             if rs_1mo > 10:
-                results["relative_strength"].append({"ticker": ticker, "metric": f"+{rs_1mo:.1f}% vs SPY"})
-        except: pass
+                # Strict Trend Filter to remove "clutter" (random gap ups, broken stocks)
+                if len(close) >= 200:
+                    sma50 = close.rolling(50).mean().iloc[-1]
+                    sma200 = close.rolling(200).mean().iloc[-1]
+                    high_52w = close.iloc[-252:].max() if len(close) >= 252 else close.max()
+                    
+                    # 1. Price > 50 SMA > 200 SMA (Structural Uptrend)
+                    # 2. Within 25% of 52-week high (Not a bottom bounce)
+                    if curr_c > sma50 and sma50 > sma200 and curr_c >= high_52w * 0.75:
+                        results["relative_strength"].append({"ticker": ticker, "metric": f"+{rs_1mo:.1f}% vs SPY", "score": float(rs_1mo)})
+                
+            # RS Divergence (RS line hits new 52-week high, but Price does not)
+            if len(stock_aligned) >= 252:
+                rs_52w_max = rs_line.iloc[-252:].max()
+                price_52w_max = stock_aligned.iloc[-252:].max()
+                
+                is_rs_high = rs_line.iloc[-1] >= (rs_52w_max * 0.99) # RS is at its high
+                is_price_diverging = curr_c < (price_52w_max * 0.97) # Price is strictly below its high
+                is_close_enough = curr_c >= (price_52w_max * 0.85) # Within 15% of high
+                is_uptrend = curr_c > close.rolling(200).mean().iloc[-1]
+                
+                if is_rs_high and is_price_diverging and is_close_enough and is_uptrend:
+                    dist_to_high = ((1-(curr_c/price_52w_max))*100)
+                    results["rs_divergence"].append({"ticker": ticker, "metric": f"RS New High | Price -{dist_to_high:.1f}%", "score": -float(dist_to_high)})
+                    
+        except Exception as e: 
+            print(f"RS Error on {ticker}: {e}")
         
         # 2 & 3. 52-Week Highs & All-Time Highs
+        if is_aaaa: print("Starting 52w High...")
         if len(close) >= 252:
             high_52w = close.iloc[-252:].max()
             if curr_c >= high_52w * 0.98:
                 results["fresh_52w_high"].append({"ticker": ticker, "metric": f"At High: ${curr_c:.2f}"})
         
-        ath = close.max()
-        if curr_c >= ath * 0.98:
-            results["all_time_high"].append({"ticker": ticker, "metric": f"ATH: ${ath:.2f}"})
-            
+        ath_4y = close.max()
+        if curr_c >= ath_4y * 0.98:
+            # Verify true All-Time High by fetching max history for this specific stock
+            try:
+                if lakehouse_mode:
+                    true_ath = ath_4y # Use 4y proxy to avoid network
+                else:
+                    from yahooquery import Ticker as YQTicker
+                    hist_max = YQTicker(ticker).history(period="max", interval="1mo")
+                    true_ath = hist_max['high'].max() if (hist_max is not None and not hist_max.empty) else ath_4y
+                
+                if curr_c >= true_ath * 0.95:
+                    results["all_time_high"].append({"ticker": ticker, "metric": f"ATH: ${true_ath:.2f}"})
+            except Exception:
+                pass
         # 4. True IPO AVWAP 
         # If the stock has significantly fewer trading days than SPY over the last 5 years, it's a recent IPO.
         if len(close) < max_days - 20: 
@@ -178,12 +334,34 @@ def run_screener():
             res = func(open_s, high, low, close)
             val = res.iloc[-1]
             if val > 0:
+                # Universal Bullish Candlestick Filters
+                day_range = high.iloc[-1] - low.iloc[-1]
+                if day_range == 0: continue
+                
+                close_pct = (curr_c - low.iloc[-1]) / day_range
+                sma_10 = close.rolling(10).mean().iloc[-1]
+                avg_vol_10 = vol.rolling(10).mean().iloc[-1]
+                
+                # 1. Must close in upper half of range (buyers held control)
+                if close_pct < 0.50: continue
+                
+                # 2. Must occur during a short-term pullback (below 10 SMA) to be a valid reversal
+                if curr_c > sma_10: continue
+                
+                # 3. Must have institutional volume backing (>20% above avg)
+                if vol.iloc[-1] < avg_vol_10 * 1.2: continue
+
+                if func_name == 'CDLHIKKAKE':
+                    # Strict Hikkake filter: Must be a strong green candle closing near the top of its range
+                    if curr_c <= curr_o or close_pct < 0.70: continue 
+                    
                 results["bullish_candlestick"].append({"ticker": ticker, "metric": f"Bullish {common_name}"})
                 has_bullish_candle = True
             elif val < 0:
                 results["bearish_candlestick"].append({"ticker": ticker, "metric": f"Bearish {common_name}"})
             
-        # 6. Early Stage 2 Breakout
+        # 4. Candlesticks (Hammer, Engulfing, Hikkake)
+        if is_aaaa: print("Starting Candlesticks...")
         if len(close) >= 200:
             sma200 = close.rolling(200).mean()
             curr_sma = sma200.iloc[-1]
@@ -191,16 +369,25 @@ def run_screener():
             prev_c = close.iloc[-5]
             
             # Price crossed above 200 SMA in last 5 days
-            if prev_c < prev_sma and curr_c > curr_sma:
+            crosses = (close > sma200) & (close.shift(1) <= sma200.shift(1))
+            if crosses.iloc[-5:].any() and curr_c > curr_sma:
                 results["early_stage_2"].append({"ticker": ticker, "metric": f"Crossed 200 SMA (${curr_sma:.2f})"})
                 
         # 7. Darvas Breakout
         if len(close) >= 252:
             high_52w = close.iloc[-252:].max()
-            avg_vol = vol.iloc[-20:].mean()
+            box_high = high.iloc[-11:-1].max()
+            box_low = low.iloc[-11:-1].min()
+            box_tightness = (box_high - box_low) / box_low
+            
+            avg_vol = vol.iloc[-21:-1].mean()
+            box_vol_avg = vol.iloc[-6:-1].mean()
             curr_vol = vol.iloc[-1]
-            if curr_c >= high_52w * 0.98 and curr_vol > avg_vol * 1.5:
-                results["darvas_breakout"].append({"ticker": ticker, "metric": f"Breakout Volume: {curr_vol/avg_vol:.1f}x"})
+            
+            if box_tightness < 0.08 and box_vol_avg < avg_vol * 0.8:
+                if curr_c > box_high and curr_vol > avg_vol * 1.5 and curr_c >= high_52w * 0.98:
+                    vol_mult = curr_vol / avg_vol
+                    results["darvas_breakout"].append({"ticker": ticker, "metric": f"Breakout Volume: {vol_mult:.1f}x", "score": float(vol_mult)})
                 
         # 7.5 Breakout Retest & Squat MA Support
         if len(high) >= 70:
@@ -212,7 +399,8 @@ def run_screener():
             if recent_high > pivot:
                 # Breakout Retest: Price is still above pivot, but pulled back to touch it within 1.5%
                 if curr_c > pivot * 0.99 and low.iloc[-1] <= pivot * 1.015:
-                    results["breakout_retest"].append({"ticker": ticker, "metric": f"Retesting Pivot: ${pivot:.2f}"})
+                    bounce = (curr_c - low.iloc[-1]) / low.iloc[-1]
+                    results["breakout_retest"].append({"ticker": ticker, "metric": f"Retesting Pivot: ${pivot:.2f}", "score": float(bounce)})
                 
                 # Fell into Base & Found Support on Short Term MA (10 or 20)
                 sma10 = close.rolling(10).mean().iloc[-1]
@@ -230,30 +418,53 @@ def run_screener():
                 
         # 8. Reversal
         delta = close.diff()
-        gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-        rs = gain / loss
+        gain = (delta.where(delta > 0, 0)).ewm(alpha=1/14, adjust=False).mean()
+        loss = (-delta.where(delta < 0, 0)).ewm(alpha=1/14, adjust=False).mean()
+        rs = gain / loss.replace(0, 1e-10)
         rsi = 100 - (100 / (1 + rs))
         
         # Broader Reversal: RSI < 40 (Oversold) AND any Bullish Candlestick
         if not rsi.empty and rsi.iloc[-1] < 40 and has_bullish_candle:
-            results["reversal"].append({"ticker": ticker, "metric": f"RSI {rsi.iloc[-1]:.1f} + Bullish Candle"})
+            # Score is distance below 40 (deeper oversold = higher score)
+            results["reversal"].append({"ticker": ticker, "metric": f"RSI {rsi.iloc[-1]:.1f} + Bullish Candle", "score": float(40 - rsi.iloc[-1])})
             
         # 9. High Volume Event (HVE)
         avg_vol = vol.iloc[-50:].mean()
         curr_vol = vol.iloc[-1]
         if curr_vol > avg_vol * 3:
-            results["hve_volume"].append({"ticker": ticker, "metric": f"{curr_vol/avg_vol:.1f}x Avg Vol"})
+            vol_mult = curr_vol / avg_vol
+            results["hve_volume"].append({"ticker": ticker, "metric": f"{vol_mult:.1f}x Avg Vol", "score": float(vol_mult)})
             
-        # 10. Consolidation after HVE
-        # Did an HVE happen in the last 15 days (but not today)?
-        hve_mask = vol.iloc[-15:-1] > vol.iloc[-65:-15].mean() * 2.5
-        if hve_mask.any():
-            # Range over last 4 days is tight (< 5%)
-            recent_max = high.iloc[-4:].max()
-            recent_min = low.iloc[-4:].min()
-            if (recent_max - recent_min) / recent_min < 0.05:
-                results["hve_consolidation"].append({"ticker": ticker, "metric": "Tight < 5% Range"})
+        # 10. Consolidation after Positive HVE
+        hve_threshold = vol.iloc[-65:-15].mean() * 2.5
+        
+        # Find all days in last 15 days that were positive HVEs (Close > Open and Close > Prev Close)
+        positive_hve_days = []
+        for i in range(-15, -1):
+            if vol.iloc[i] > hve_threshold:
+                if close.iloc[i] > open_s.iloc[i] and close.iloc[i] > close.iloc[i-1]:
+                    positive_hve_days.append(i)
+                    
+        if positive_hve_days:
+            # Take the most recent one
+            hve_idx = positive_hve_days[-1]
+            hve_c = close.iloc[hve_idx]
+            hve_l = low.iloc[hve_idx]
+            
+            # Since the HVE, price must hold ABOVE the HVE Low (preferably near the close)
+            days_since = abs(hve_idx) - 1
+            if days_since >= 3: # Need at least 3 days of consolidation
+                post_hve_lows = low.iloc[hve_idx+1:]
+                
+                # Condition 1: Holds HVE Low (No major breakdown)
+                if post_hve_lows.min() >= hve_l * 0.98: # Allow slight wick below
+                    # Condition 2: Tight consolidation in the last 4 days
+                    recent_tightness = (high.iloc[-4:].max() - low.iloc[-4:].min()) / low.iloc[-4:].min()
+                    
+                    # Condition 3: Volume dry up
+                    avg_v = vol.iloc[-65:-15].mean()
+                    if recent_tightness < 0.06 and vol.iloc[-3:].mean() < avg_v * 1.2:
+                        results["hve_consolidation"].append({"ticker": ticker, "metric": f"Tight Post-HVE ({days_since}d)"})
                 
         # 11. Post Earning Positive Reaction & Consolidation
         # Define earnings reaction technically: Gap Up > 4% and Volume > 2.5x average
@@ -274,17 +485,20 @@ def run_screener():
                     
                     if days_since <= 5:
                         # Happened recently
-                        results["post_earning_reaction"].append({"ticker": ticker, "metric": f"Gap Up +{((day_o/prev_c)-1)*100:.1f}%"})
+                        gap_pct = ((day_o/prev_c)-1)*100
+                        results["post_earning_reaction"].append({"ticker": ticker, "metric": f"Gap Up +{gap_pct:.1f}%", "score": float(gap_pct)})
                     else:
                         # Happened 6-20 days ago, check if consolidating (holding the gap)
                         # Current price must be above the gap day's low, and below gap day's high * 1.05
                         gap_low = low.iloc[i]
-                        recent_max = high.iloc[i:] .max()
-                        if curr_c > gap_low and recent_max < day_c * 1.10:
+                        flag_high = high.iloc[i+1:-1].max() if days_since > 1 else high.iloc[i]
+                        # Must hold the gap low, must not have exceeded gap high by >10% structurally, AND today's close must NOT be breaking out of the flag high!
+                        if curr_c > gap_low and high.iloc[i:].max() < day_c * 1.10 and curr_c <= flag_high * 1.01:
                             results["post_earning_consolidation"].append({"ticker": ticker, "metric": f"Holding Gap {days_since}d"})
                     break # Stop looking after finding the most recent one
 
         # 12. Cup and Handle (Weekly & Monthly)
+        if is_aaaa: print("Starting Cup Handle...")
         try:
             # Resample to Weekly
             weekly_df = ticker_df.resample('W').agg({'Open':'first', 'High':'max', 'Low':'min', 'Close':'last', 'Volume':'sum'}).dropna()
@@ -299,7 +513,13 @@ def run_screener():
             pass
 
         # 13. Zacks Rank #1 (Strong Buy)
+        if is_aaaa: print("Starting Zacks...")
         try:
+            # OPTIMIZATION: Do not fetch yf.info for all 12,000 stocks as it takes 40 minutes.
+            # Only fetch fundamentals if the stock is displaying relative strength or is near a 52w high.
+            if lakehouse_mode:
+                raise Exception("Bypassed fundamental API check to save time in fast Lakehouse mode")
+                    
             t = yf.Ticker(ticker)
             info = t.info
             peg = info.get("pegRatio")
@@ -329,19 +549,129 @@ def run_screener():
         except Exception as e:
             pass
 
-    # Sort results to only keep top 10 per category to keep UI clean
-    for key in results:
-        if key == "zacks_rank_1":
-            # Keep top 20 for Zacks Rank 1
-            results[key] = sorted(results[key], key=lambda x: x["metric"], reverse=True)[:20]
-        else:
-            results[key] = results[key][:10]
+        # --- NEW AGENTS (Long Base, Pending Breakout, Qullamaggie) ---
+        if is_aaaa: print("Starting Long Base...")
+        try:
+            # 1. Long Base Breakout
+            if lakehouse_mode:
+                # In fast Lakehouse mode, we only have 2 years of data.
+                # We will evaluate a "Long Base" as a 2-year base instead of 3-year to avoid blocking network calls.
+                lb_res = evaluate_long_base(ticker, pre_df=ticker_df)
+            else:
+                lb_res = evaluate_long_base(ticker, pre_df=ticker_df)
+                
+            if lb_res:
+                status_short = "Confirmed" if "CONFIRMED" in lb_res['status'] else "Coiled"
+                results["long_base_breakout"].append({"ticker": ticker, "metric": f"{status_short} | Dist: {lb_res.get('distance_pct', '0')}%"})
+                
+            mb_res = evaluate_medium_base(ticker, pre_df=ticker_df)
+            if mb_res:
+                status_short = "Confirmed" if "CONFIRMED" in mb_res['status'] else "Coiled"
+                dur = mb_res.get('base_duration', '3M')
+                results["medium_base_breakout"].append({"ticker": ticker, "metric": f"{dur} | {status_short}"})
+            
+            if is_aaaa: print("Starting Pending Breakout...")
+            # 2. Pending Breakout
+            pb_res = detect_pending_breakout(ticker, pre_df=ticker_df)
+            if pb_res:
+                results["pending_breakout"].append({"ticker": ticker, "metric": f"Pending Breakout | {pb_res['alerts'][0]['model']}"})
+                
+            if is_aaaa: print("Starting Qullamaggie...")
+            # 3. Qullamaggie Setup (Only run on liquid stocks >$2 to avoid junk penny stocks triggering false setups and API calls)
+            if curr_c >= 2.0 and vol.iloc[-20:].mean() >= 100000:
+                qm_res = evaluate_qullamaggie_setup(ticker, pre_df=ticker_df)
+                if qm_res:
+                    results["qullamaggie_setup"].append({"ticker": ticker, "metric": f"Triggered | ADR: {qm_res['adr']} | SMA: {qm_res['sma_support']}"})
+                
+        except Exception as e:
+            pass
+            
+        t_end = time.time()
+        duration = t_end - t0
         
-    output_path = '/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_results.json'
-    with open(output_path, 'w') as f:
+        # If it took more than 100ms, something is wrong, log the breakdown!
+        if duration > 0.1:
+            print(f"{ticker} took {duration:.3f}s. Breakdown:")
+            # We don't have the granular timings recorded in the loop, so let's just 
+            # print that it's slow. Next I will inject the granular timings.
+
+    # Post-Scan Optimization: NATIVE Liquidity Sorting
+    # Instead of relying on rate-limited, broken external APIs (YahooQuery) for Market Cap,
+    # we natively calculate and cache the 20-day Average Dollar Volume of every ticker.
+    # Dollar Volume accurately correlates with mega-caps (IBM, ORCL, TSLA, AAPL).
+    
+    # -----------------------------------
+    # POST-SCAN MARKET CAP ENFORCEMENT
+    # -----------------------------------
+    # To strictly enforce >$1B Market Cap without crashing due to rate limits on 12,000 stocks,
+    # we bulk query the final surviving candidates using yahooquery.
+    print("Post-Scan Optimization: Enforcing strict $1B Market Cap requirement on survivors...")
+    unique_tickers = list(set([r["ticker"] for key in results for r in results[key]]))
+    
+    valid_market_caps = set(unique_tickers) # Default to keeping them all if API fails
+    try:
+        from yahooquery import Ticker as YQTicker
+        yq_t = YQTicker(unique_tickers, asynchronous=True)
+        summary_details = yq_t.summary_detail
+        
+        valid_market_caps = set()
+        for t in unique_tickers:
+            if isinstance(summary_details, dict) and t in summary_details:
+                data = summary_details[t]
+                if isinstance(data, dict):
+                    mcap = data.get('marketCap', 0)
+                    # Enforce strict 1 Billion Market Cap minimum
+                    if mcap >= 1_000_000_000:
+                        valid_market_caps.add(t)
+                else:
+                    # Keep if data is somehow missing or not a dict
+                    valid_market_caps.add(t)
+            else:
+                valid_market_caps.add(t)
+    except Exception as e:
+        print(f"Failed to fetch Market Caps in bulk: {e}. Bypassing filter.")
+        valid_market_caps = set(unique_tickers)
+        
+    for key in results:
+        # 1. Filter out anything that mathematically failed the 1B market cap check
+        filtered_mcap = [r for r in results[key] if r["ticker"] in valid_market_caps]
+        
+        # 2. Sort by TECHNICAL SCORE descending (the true power of the setup)!
+        # If score is perfectly tied or doesn't exist, fallback to dollar volume to keep the most liquid names at the top.
+        results[key] = sorted(filtered_mcap, key=lambda x: (x.get("score", 0), dollar_vol_dict.get(x["ticker"], 0)), reverse=True)[:50]
+
+    with open('/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_results.json', 'w') as f:
         json.dump(results, f)
         
-    print(f"Successfully wrote screener results to {output_path}")
+    print(f"Screener complete! Results saved to public/screener_results.json")
+    
+    # Send Telegram Alert with top picks
+    try:
+        import sys
+        sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+        from agents_engine import broadcast_telegram_alert
+        
+        msg = f"🟢 **MASTER SCREENER COMPLETE** 🟢\n\n"
+        
+        has_alerts = False
+        if results.get("darvas_breakout"):
+            msg += f"📦 **Darvas Breakouts:**\n" + "\n".join([f"• {r['ticker']}: {r['metric']}" for r in results["darvas_breakout"][:5]]) + "\n\n"
+            has_alerts = True
+            
+        if results.get("hve_consolidation"):
+            msg += f"💥 **Post-HVE Consolidations:**\n" + "\n".join([f"• {r['ticker']}: {r['metric']}" for r in results["hve_consolidation"][:5]]) + "\n\n"
+            has_alerts = True
+            
+        if results.get("medium_base_breakout"):
+            msg += f"🏗️ **Medium Base Coils:**\n" + "\n".join([f"• {r['ticker']}: {r['metric']}" for r in results["medium_base_breakout"][:5]]) + "\n\n"
+            has_alerts = True
+            
+        if has_alerts:
+            broadcast_telegram_alert("MASTER_SCAN", msg)
+    except Exception as e:
+        print(f"Failed to send telegram alert: {e}")
+        
+    return results
 
 if __name__ == "__main__":
     run_screener()

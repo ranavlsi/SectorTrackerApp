@@ -10,6 +10,47 @@ def get_style_score(metric, thresholds):
     if metric >= thresholds[3]: return 'D'
     return 'F'
 
+PEER_BASKETS = {
+    "Technology": ["MSFT", "AAPL", "ORCL", "CSCO"],
+    "Semiconductors": ["NVDA", "AMD", "TSM", "AVGO", "INTC"],
+    "Software - Infrastructure": ["MSFT", "ADBE", "ORCL"],
+    "Software - Application": ["CRM", "NOW", "SNPS"],
+    "Healthcare": ["LLY", "UNH", "JNJ", "ABBV"],
+    "Financial Services": ["JPM", "BAC", "WFC", "MS"],
+    "Consumer Cyclical": ["AMZN", "TSLA", "HD", "MCD"],
+    "Energy": ["XOM", "CVX", "COP", "SLB"],
+    "Industrials": ["CAT", "GE", "UNP", "HON"],
+    "Communication Services": ["GOOGL", "META", "NFLX", "DIS"],
+    "Basic Materials": ["LIN", "SHW", "FCX", "ECL"],
+    "Consumer Defensive": ["WMT", "PG", "COST", "KO"]
+}
+
+def get_industry_benchmark(sector, industry):
+    basket = PEER_BASKETS.get(industry, PEER_BASKETS.get(sector, ["SPY"]))
+    
+    total_pe, count_pe = 0, 0
+    total_peg, count_peg = 0, 0
+    total_ps, count_ps = 0, 0
+    
+    for sym in basket:
+        try:
+            t = yf.Ticker(sym)
+            i = t.info
+            pe = i.get('trailingPE')
+            peg = i.get('pegRatio')
+            ps = i.get('priceToSalesTrailing12Months')
+            if pe: total_pe += pe; count_pe += 1
+            if peg: total_peg += peg; count_peg += 1
+            if ps: total_ps += ps; count_ps += 1
+        except: pass
+        
+    return {
+        "pe": round(total_pe / count_pe, 2) if count_pe > 0 else 20.0,
+        "peg": round(total_peg / count_peg, 2) if count_peg > 0 else 1.5,
+        "ps": round(total_ps / count_ps, 2) if count_ps > 0 else 2.0,
+        "basket": basket
+    }
+
 def calculate_zacks_rank(revenue_growth, peg_ratio):
     if revenue_growth is None: revenue_growth = 0
     if peg_ratio is None: peg_ratio = 1.5
@@ -51,9 +92,25 @@ def get_fundamentals(ticker_symbol):
         rank = calculate_zacks_rank(revenue_growth, peg_ratio)
         
         # Determine Style Scores (Proxy)
-        # Value: lower P/E is better
         pe = info.get("trailingPE", 20)
-        v_score = get_style_score(-pe, [-15, -20, -25, -35]) 
+        peg_ratio = info.get("pegRatio", 1.5)
+        ps_ratio = info.get("priceToSalesTrailing12Months", 2.0)
+        sector = info.get("sector", "Unknown")
+        industry = info.get("industry", "Unknown")
+        
+        # New Blended Value Score (PE, PEG, P/S) Relative to Industry Benchmark
+        benchmark = get_industry_benchmark(sector, industry)
+        
+        # Calculate deviation from benchmark (lower is better for value)
+        pe_dev = (benchmark["pe"] - pe) / benchmark["pe"] if benchmark["pe"] else 0
+        peg_dev = (benchmark["peg"] - peg_ratio) / benchmark["peg"] if benchmark["peg"] else 0
+        ps_dev = (benchmark["ps"] - ps_ratio) / benchmark["ps"] if benchmark["ps"] else 0
+        
+        # Blended deviation metric
+        blended_dev = (pe_dev + peg_dev + ps_dev) / 3
+        # If blended_dev is +0.30, stock is 30% CHEAPER than peers (Good)
+        # If blended_dev is -0.50, stock is 50% MORE EXPENSIVE than peers (Bad)
+        v_score = get_style_score(blended_dev, [0.30, 0.10, -0.10, -0.40]) 
         
         # Growth: higher rev growth is better
         g_score = get_style_score(revenue_growth, [0.20, 0.10, 0.0, -0.10])
@@ -112,9 +169,14 @@ def get_fundamentals(ticker_symbol):
             "pegRatio": peg_ratio,
             "trailingPE": pe,
             "forwardPE": info.get("forwardPE"),
+            "priceToSales": ps_ratio,
             "revenueGrowth": revenue_growth,
             "profitMargins": info.get("profitMargins"),
             "returnOnEquity": info.get("returnOnEquity"),
+            "benchmark_pe": benchmark["pe"],
+            "benchmark_peg": benchmark["peg"],
+            "benchmark_ps": benchmark["ps"],
+            "benchmark_basket": benchmark["basket"],
             "history": history
         }
         

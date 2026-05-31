@@ -169,8 +169,8 @@ def fetch_dynamic_holdings():
 
 def generate_data():
     tickers = list(ETFS.keys()) + ['SPY']
-    print("Fetching historical sector data for Multi-Timeframe RRG (2 years needed for 200 SMA)...")
-    df = yf.download(tickers, period='2y', interval='1d', group_by='ticker', progress=False)
+    print("Fetching historical sector data for Multi-Timeframe RRG (5 years needed for Monthly RRG)...")
+    df = yf.download(tickers, period='5y', interval='1d', group_by='ticker', progress=False)
     
     if df.empty or 'SPY' not in df:
         print("Error fetching S&P 500 baseline data.")
@@ -259,17 +259,15 @@ def generate_data():
         rs = t_close / spy_close
         rs = rs.dropna()
         
-        d_ratio = (rs.rolling(10).mean() / rs.rolling(40).mean()) * 100
-        d_mom = (d_ratio / d_ratio.rolling(10).mean()) * 100
-        d_ratio = d_ratio.dropna(); d_mom = d_mom.dropna()
-        
-        w_ratio = (rs.rolling(30).mean() / rs.rolling(100).mean()) * 100
-        w_mom = (w_ratio / w_ratio.rolling(30).mean()) * 100
-        w_ratio = w_ratio.dropna(); w_mom = w_mom.dropna()
-        
-        m_ratio = (rs.rolling(100).mean() / rs.rolling(200).mean()) * 100
-        m_mom = (m_ratio / m_ratio.rolling(100).mean()) * 100
-        m_ratio = m_ratio.dropna(); m_mom = m_mom.dropna()
+        def calc_jdk_rrg(rs_series, period):
+            rs_norm = (rs_series - rs_series.rolling(period).mean()) / rs_series.rolling(period).std()
+            ratio = 100 + (rs_norm * 10)
+            mom = 100 + ((ratio - ratio.rolling(period).mean()) / ratio.rolling(period).std() * 10)
+            return ratio.dropna(), mom.dropna()
+            
+        d_ratio, d_mom = calc_jdk_rrg(rs, 14)       # 14 Days
+        w_ratio, w_mom = calc_jdk_rrg(rs, 70)       # 14 Weeks (approx 70 days)
+        m_ratio, m_mom = calc_jdk_rrg(rs, 280)      # 14 Months (approx 280 days)
         
         top_stocks = []
         if ticker in dynamic_holdings_map:

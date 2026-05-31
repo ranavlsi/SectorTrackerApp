@@ -6,6 +6,8 @@ import ftplib
 import io
 import concurrent.futures
 from datetime import datetime
+import warnings
+warnings.filterwarnings("ignore")
 
 def get_us_tickers():
     print("Fetching all US listed tickers from NASDAQ FTP...")
@@ -90,13 +92,14 @@ def minervini_technical_screen(df):
     else:
         return False, "Failed Minervini"
 
-def canslim_fundamental_screen(stock):
+def canslim_fundamental_screen(ticker):
     """
     Applies relaxed CAN SLIM fundamental rules.
     C: Current Qtr EPS Growth > 20% (YoY)
     A: Annual EPS Growth > 20%
     """
     try:
+        stock = yf.Ticker(ticker)
         # Quarterly Check (YoY)
         q_inc = stock.quarterly_income_stmt
         if q_inc is None or q_inc.empty:
@@ -149,43 +152,8 @@ def canslim_fundamental_screen(stock):
     except Exception as e:
         return False, f"Error: {str(e)}"
 
-def process_ticker(ticker):
-    try:
-        stock = yf.Ticker(ticker)
-        # Pull 2 years to safely calculate 252-day high/low and 200 SMA
-        df = stock.history(period="2y")
-        if df.empty or len(df) < 200:
-            return None
-            
-        # 1. Technical Screen
-        tech_pass, tech_msg = minervini_technical_screen(df)
-        if not tech_pass:
-            return None
-            
-        # 2. Fundamental Screen
-        fund_pass, fund_msg = canslim_fundamental_screen(stock)
-        if not fund_pass:
-            return None
-            
-        close_price = df.iloc[-1]['Close']
-        date_val = df.index[-1]
-        if hasattr(date_val, 'strftime'):
-            date_val = date_val.strftime('%Y-%m-%d')
-        else:
-            date_val = str(date_val)[:10]
-            
-        return {
-            'Date': date_val,
-            'Ticker': ticker,
-            'Close': round(close_price, 2),
-            'Status': "Passed Minervini & CAN SLIM"
-        }
-    except Exception:
-        pass
-    return None
 
 def prepend_to_csv(filepath, new_df):
-    """Prepends new_df to the CSV file at filepath."""
     if not os.path.exists(filepath):
         new_df.to_csv(filepath, index=False)
         return
@@ -196,42 +164,78 @@ def prepend_to_csv(filepath, new_df):
         combined_df.to_csv(filepath, index=False)
     except Exception as e:
         print(f"Error prepending to CSV: {e}")
-        # Fallback to appending
         new_df.to_csv(filepath, mode='a', header=not os.path.exists(filepath), index=False)
 
 def run_scanner():
     base_dir = '/Users/amitkumar'
-    output_file = os.path.join(base_dir, 'canslim_minervini_alerts.csv')
+    output_file = os.path.join(base_dir, 'Desktop', 'canslim_minervini_alerts.csv')
     
-    tickers = get_us_tickers()
-    if not tickers:
-        print("No tickers to scan. Exiting.")
+    print("Loading data from Local DuckDB Lakehouse...")
+    import duckdb
+    parquet_path = os.path.join('/Users/amitkumar/Desktop/SectorTrackerApp/backend', 'data', 'daily_ohlcv.parquet')
+    if not os.path.exists(parquet_path):
+        print("Lakehouse not found. Please run db_updater.py first.")
         return
         
-    print(f"Scanning {len(tickers)} tickers for CAN SLIM & Minervini setups. This will take a while...")
+    query = f"SELECT * FROM read_parquet('{parquet_path}') ORDER BY Date"
+    df_bulk = duckdb.query(query).to_df()
+    
+    unique_tickers = df_bulk['Ticker'].unique()
+    print(f"Scanning {len(unique_tickers)} tickers for CAN SLIM & Minervini setups (Local Lakehouse Mode).")
+    
+    # Phase 1: Bulk Download Technicals
+    passing_tech = []
+    
+    for ticker in unique_tickers:
+        try:
+            ticker_df = df_bulk[df_bulk['Ticker'] == ticker].copy()
+            ticker_df = ticker_df.sort_values('Date').set_index('Date')
+            
+            if not ticker_df.empty:
+                tech_pass, _ = minervini_technical_screen(ticker_df)
+                if tech_pass:
+                    close_price = ticker_df.iloc[-1]['Close']
+                    passing_tech.append((ticker, close_price))
+        except Exception:
+            pass
+            
+    print(f"Phase 1 Complete: {len(passing_tech)} passed the technical Minervini screen.")
+    
+    if not passing_tech:
+        print("No setups passed technicals today.")
+        return
+        
+    # Phase 2: Targeted Fundamentals (Only the handful that passed technicals)
+    print("Phase 2: Checking fundamentals for the technical passing candidates...")
     results = []
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(process_ticker, t): t for t in tickers}
+    def check_fund_threaded(tup):
+        ticker, close_price = tup
+        fund_pass, fund_msg = canslim_fundamental_screen(ticker)
+        if fund_pass:
+            return {
+                'Date': datetime.now().strftime('%Y-%m-%d'),
+                'Ticker': ticker,
+                'Close': round(close_price, 2),
+                'Status': "Passed Minervini & CAN SLIM"
+            }
+        return None
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(check_fund_threaded, tup): tup for tup in passing_tech}
         
-        processed = 0
         for future in concurrent.futures.as_completed(futures):
-            processed += 1
-            result = future.result()
-            
-            if result:
-                results.append(result)
-                print(f"[ALERT] {result['Ticker']}: {result['Status']} (Close: {result['Close']:.2f})")
-                
-            if processed % 500 == 0:
-                print(f"Processed {processed}/{len(tickers)} tickers...")
+            res = future.result()
+            if res:
+                results.append(res)
+                print(f"[ALERT] {res['Ticker']}: {res['Status']} (Close: {res['Close']:.2f})")
                 
     if results:
         results_df = pd.DataFrame(results)
         prepend_to_csv(output_file, results_df)
         print(f"\nScan complete. Found {len(results)} setups. Results prepended to {output_file}")
     else:
-        print("\nScan complete. No setups found today.")
+        print("\nScan complete. No fundamental setups found today.")
 
 if __name__ == "__main__":
     run_scanner()

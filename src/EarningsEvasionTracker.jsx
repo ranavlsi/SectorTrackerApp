@@ -10,7 +10,7 @@ const EarningsDashboard = ({ ticker }) => {
 
   // Initial load of the 15 default stocks
   useEffect(() => {
-    fetch('/earnings_data.json')
+    fetch('/earnings_data.json?t=' + new Date().getTime())
       .then(res => res.json())
       .then(d => {
         setData(d);

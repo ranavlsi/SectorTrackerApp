@@ -62,9 +62,8 @@ def check_fundamentals(ticker):
     except Exception as e:
         return False, f"Fundamental error"
 
-def process_price_action(ticker):
+def process_price_action(ticker, df):
     try:
-        df = yf.download(ticker, period='1y', interval='1d', progress=False)
         if len(df) < 60:
             return None
             
@@ -106,16 +105,11 @@ def process_price_action(ticker):
         if current_close < mid_point:
             return None
             
-        # 3. Check Fundamentals (Only do this for the ~50 stocks that pass the technical screen)
-        passed_funds, fund_msg = check_fundamentals(ticker)
-        
-        if passed_funds:
-            return {
-                'Ticker': ticker,
-                'Price': current_close,
-                'Reaction_Date': reaction_date.strftime('%Y-%m-%d'),
-                'Fundamentals': fund_msg
-            }
+        return {
+            'Ticker': ticker,
+            'Price': current_close,
+            'Reaction_Date': reaction_date.strftime('%Y-%m-%d')
+        }
             
     except Exception:
         pass
@@ -153,23 +147,53 @@ def run_scanner():
     base_dir = '/Users/amitkumar'
     output_file = os.path.join(base_dir, 'Desktop', 'earnings_gap_alerts.md')
     
-    print("Fetching master list of US stocks...")
-    tickers = get_all_tickers()
-    if not tickers:
-        print("Failed to fetch tickers.")
+    print("Loading data from Local DuckDB Lakehouse...")
+    import duckdb
+    parquet_path = os.path.join('/Users/amitkumar/Desktop/SectorTrackerApp/backend', 'data', 'daily_ohlcv.parquet')
+    if not os.path.exists(parquet_path):
+        print("Lakehouse not found. Please run db_updater.py first.")
         return
         
-    print(f"Scanning {len(tickers)} stocks for Post-Earnings Flags...")
+    query = f"SELECT * FROM read_parquet('{parquet_path}') ORDER BY Date"
+    df_bulk = duckdb.query(query).to_df()
     
-    alerts = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
-        futures = {executor.submit(process_price_action, t): t for t in tickers}
+    unique_tickers = df_bulk['Ticker'].unique()
+    print(f"Scanning {len(unique_tickers)} stocks for Post-Earnings Flags (Local Lakehouse Mode)...")
+    
+    passing_tech = []
+    
+    for ticker in unique_tickers:
+        try:
+            ticker_df = df_bulk[df_bulk['Ticker'] == ticker].copy()
+            ticker_df = ticker_df.sort_values('Date').set_index('Date')
+            
+            if not ticker_df.empty:
+                res = process_price_action(ticker, ticker_df)
+                if res:
+                    passing_tech.append(res)
+        except Exception:
+            pass
+            
+    print(f"Phase 1 Complete: {len(passing_tech)} stocks with post-earnings consolidation.")
+    
+    if not passing_tech:
+        print("No setups passed technicals today.")
+        return
         
-        count = 0
+    print("Phase 2: Checking fundamentals for the technical passing candidates...")
+    alerts = []
+    
+    def check_fund_threaded(tech_res):
+        passed_funds, fund_msg = check_fundamentals(tech_res['Ticker'])
+        if passed_funds:
+            tech_res['Fundamentals'] = fund_msg
+            return tech_res
+        return None
+        
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(check_fund_threaded, res): res for res in passing_tech}
+        
         for future in concurrent.futures.as_completed(futures):
-            count += 1
-            if count % 1000 == 0:
-                print(f"Processed {count}/{len(tickers)}...")
             res = future.result()
             if res:
                 alerts.append(res)

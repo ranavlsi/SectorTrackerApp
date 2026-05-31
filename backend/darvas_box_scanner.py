@@ -4,7 +4,6 @@ import numpy as np
 import os
 import io
 import urllib.request
-import concurrent.futures
 from datetime import datetime
 import warnings
 warnings.filterwarnings("ignore")
@@ -26,10 +25,6 @@ def get_all_tickers():
         return []
 
 def calculate_darvas_box(df):
-    """
-    Returns (status, box_top, box_bottom, message)
-    status can be: "ABOUT_TO_BREAKOUT", "STRONG_BREAKOUT", or None
-    """
     if len(df) < 252:
         return None, 0, 0, ""
         
@@ -92,9 +87,8 @@ def calculate_darvas_box(df):
             
     return None, 0, 0, ""
 
-def process_ticker(ticker):
+def process_ticker(ticker, df):
     try:
-        df = yf.download(ticker, period='1y', interval='1d', progress=False)
         if len(df) < 252:
             return None
             
@@ -154,27 +148,33 @@ def run_scanner():
     base_dir = '/Users/amitkumar'
     output_file = os.path.join(base_dir, 'Desktop', 'darvas_box_alerts.md')
     
-    print("Fetching master list of US stocks...")
-    tickers = get_all_tickers()
-    if not tickers:
-        print("Failed to fetch tickers.")
+    print("Loading data from Local DuckDB Lakehouse...")
+    import duckdb
+    parquet_path = os.path.join('/Users/amitkumar/Desktop/SectorTrackerApp/backend', 'data', 'daily_ohlcv.parquet')
+    if not os.path.exists(parquet_path):
+        print("Lakehouse not found. Please run db_updater.py first.")
         return
         
-    print(f"Scanning {len(tickers)} stocks for Darvas Box setups...")
+    query = f"SELECT * FROM read_parquet('{parquet_path}') ORDER BY Date"
+    df_bulk = duckdb.query(query).to_df()
+    
+    unique_tickers = df_bulk['Ticker'].unique()
+    print(f"Scanning {len(unique_tickers)} stocks for Darvas Box setups (Local Lakehouse Mode)...")
     
     alerts = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
-        futures = {executor.submit(process_ticker, t): t for t in tickers}
-        
-        count = 0
-        for future in concurrent.futures.as_completed(futures):
-            count += 1
-            if count % 1000 == 0:
-                print(f"Processed {count}/{len(tickers)}...")
-            res = future.result()
-            if res:
-                alerts.append(res)
-                print(f"[ALERT] Found {res['Ticker']} - {res['Status']}")
+    
+    for ticker in unique_tickers:
+        try:
+            ticker_df = df_bulk[df_bulk['Ticker'] == ticker].copy()
+            ticker_df = ticker_df.sort_values('Date').set_index('Date')
+            
+            if not ticker_df.empty:
+                res = process_ticker(ticker, ticker_df)
+                if res:
+                    alerts.append(res)
+                    print(f"[ALERT] Found {res['Ticker']} - {res['Status']}")
+        except Exception:
+            pass
                 
     print(f"Found {len(alerts)} Darvas Box setups.")
     

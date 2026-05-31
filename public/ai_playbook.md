@@ -1,33 +1,73 @@
-# AI Playbook & Trade Plans
+# 🤖 Quantitative AI Playbook
 
-Welcome to the Master Analyst Playbook. Based on the convergence of technical setups, fundamental momentum, and sector rotation, here are the top 3 high-probability trade setups for today.
+**Date:** Saturday, May 30, 2026
 
----
-
-### 1. AMD (Advanced Micro Devices) - Semiconductor Breakout
-**Setup Reasoning:** AMD is exhibiting massive relative strength (+34.0% vs SPY in the last month). It just triggered a **Fresh All-Time High** breakout and a **Breakout Pivot Retest**. Institutional flow is heavily concentrated in Semiconductors.
-
-*   **Entry Price:** $460.00 - $465.00 (Buy the pivot retest)
-*   **Stop Loss:** $442.00 (Below the 10-day SMA)
-*   **Profit Target:** $520.00 (Measured move of the Darvas Box)
+Welcome to the Daily AI Playbook. Based on the overnight convergence of technical setups, fundamental momentum, and breakout scanners, here are the top high-probability trade setups for today.
 
 ---
 
-### 2. RGTI (Rigetti Computing) - Quantum Computing Momentum
-**Setup Reasoning:** RGTI is undergoing a massive momentum squeeze. It triggered an **Early Stage 2 Breakout** by crossing its 200-day SMA on extreme **HVE (High Volume Expansion) of 5.9x average volume**. It boasts +49.9% Relative Strength vs the S&P 500.
+### 1. ROKU - High Confluence Setup
+**Confluence Score:** 6 points
 
-*   **Entry Price:** $23.15 (Buy the moving average cross)
-*   **Stop Loss:** $20.50 (Below the breakout candle low)
-*   **Profit Target:** $35.00 (Next major historical resistance)
+**Quantitative Reasoning:**
+*   **Fresh 52W High**: At High: $130.18
+*   **Bearish Candlestick**: Bearish Hikkake
+*   **Breakout Retest**: Retesting Pivot: $131.39
+*   **Zacks Rank 1**: Score: 5 | PEG: 0.95
+
+**Algorithmic Trade Plan:**
+*   **Entry Zone:** $134.79 (Current Market Price)
+*   **Stop Loss:** $128.74 (Dynamic trailing support)
+*   **Profit Target:** $149.94 (2.5R Risk/Reward)
+
+**Technical Health Card:**
+*   **Structural Stage:** Stage 2 (Advancing)
+*   **Momentum:** 🔥 Momentum Building (Bullish)
+*   **RSI:** 51.4
 
 ---
 
-### 3. PLD (Prologis) - Real Estate Base Pullback
-**Setup Reasoning:** PLD has formed a beautiful 52-week high base and recently flashed a **Hammer Candlestick** right at the 20-day moving average. This is a classic "Squat Support" setup with excellent risk/reward, backed by declining treasury yields.
+### 2. ZETA - High Confluence Setup
+**Confluence Score:** 5 points
 
-*   **Entry Price:** $146.00 (Trigger above the hammer high)
-*   **Stop Loss:** $141.50 (Below the hammer low and 20-SMA)
-*   **Profit Target:** $160.00 (Channel top extension)
+**Quantitative Reasoning:**
+*   **Relative Strength**: +17.2% vs SPY
+*   **Bearish Candlestick**: Bearish Hikkake
+*   **Early Stage 2**: Crossed 200 SMA ($18.57)
+*   **Zacks Rank 1**: Score: 5 | PEG: 0.77
 
-> [!TIP]
-> Always adhere to your stop losses. These trade plans assume a 1% portfolio risk per trade.
+**Algorithmic Trade Plan:**
+*   **Entry Zone:** $18.7 (Current Market Price)
+*   **Stop Loss:** $17.2 (Dynamic trailing support)
+*   **Profit Target:** $24.9 (2.5R Risk/Reward)
+
+**Technical Health Card:**
+*   **Structural Stage:** Stage 2 (Advancing)
+*   **Momentum:** 🔥 Momentum Building (Bullish)
+*   **RSI:** 76.9
+
+---
+
+### 3. FSLR - High Confluence Setup
+**Confluence Score:** 5 points
+
+**Quantitative Reasoning:**
+*   **Relative Strength**: +38.0% vs SPY
+*   **Fresh 52W High**: At High: $306.79
+*   **All Time High**: ATH: $317.00
+*   **Zacks Rank 1**: Score: 5 | PEG: 0.8
+
+**Algorithmic Trade Plan:**
+*   **Entry Zone:** $245.66 (Current Market Price)
+*   **Stop Loss:** $226.01 (Dynamic trailing support)
+*   **Profit Target:** $313.75 (2.5R Risk/Reward)
+
+**Technical Health Card:**
+*   **Structural Stage:** Stage 2 (Advancing)
+*   **Momentum:** 🔥 Momentum Building (Bullish)
+*   **RSI:** 84.2
+
+---
+
+> [!IMPORTANT]
+> Always adhere to your stop losses. These trade plans are quantitatively generated and assume a 1% portfolio risk per trade.

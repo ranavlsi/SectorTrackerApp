@@ -6,6 +6,8 @@ import ftplib
 import io
 import concurrent.futures
 from datetime import datetime
+import warnings
+warnings.filterwarnings("ignore")
 
 def get_us_tickers():
     print("Fetching all US listed tickers from NASDAQ FTP...")
@@ -34,7 +36,6 @@ def get_us_tickers():
         
         ftp.quit()
         
-        # Clean up tickers
         valid_tickers = []
         for t in tickers:
             t_str = str(t).strip()
@@ -46,13 +47,11 @@ def get_us_tickers():
         return unique_tickers
     except Exception as e:
         print(f"Failed to fetch tickers from FTP: {e}")
-        # Fallback if FTP fails
         return []
 
 def calculate_avwap(df):
     """Calculates the Anchored VWAP starting from the first row of the dataframe."""
-    df.columns = [col.title() for col in df.columns]
-    
+    df = df.copy()
     if 'High' not in df.columns or 'Low' not in df.columns or 'Close' not in df.columns or 'Volume' not in df.columns:
         raise ValueError("Missing required columns for AVWAP calculation.")
         
@@ -66,8 +65,9 @@ def calculate_avwap(df):
                            df['Typical_Price'])
     return df
 
-def check_fundamentals(stock):
+def check_fundamentals(ticker):
     try:
+        stock = yf.Ticker(ticker)
         inc = stock.quarterly_income_stmt
         if inc is None or inc.empty:
             return False, "Missing Data"
@@ -115,12 +115,9 @@ def check_fundamentals(stock):
     except Exception as e:
         return False, f"Error: {str(e)}"
 
-def process_ticker(ticker):
+def process_technical(ticker, df):
     try:
-        stock = yf.Ticker(ticker)
-        df = stock.history(period="max")
-        
-        if df.empty or len(df) < 2:
+        if len(df) < 2:
             return None
             
         df = calculate_avwap(df)
@@ -136,10 +133,6 @@ def process_ticker(ticker):
         within_range = 1.0 <= distance_pct <= 5.0
         
         if touched_avwap or within_range:
-            passed_fund, fund_status = check_fundamentals(stock)
-            if not passed_fund:
-                return None
-                
             status = []
             if touched_avwap:
                 status.append("Touched")
@@ -158,8 +151,7 @@ def process_ticker(ticker):
                 'Close': round(close_price, 2),
                 'AVWAP': round(avwap, 2),
                 'Distance_Pct': round(distance_pct, 2),
-                'Tech_Status': " & ".join(status),
-                'Fund_Status': fund_status
+                'Tech_Status': " & ".join(status)
             }
     except Exception:
         pass
@@ -174,23 +166,55 @@ def run_scanner():
         print("No tickers to scan. Exiting.")
         return
         
-    print(f"Scanning {len(tickers)} tickers for IPO AVWAP setups. This will take a while...")
+    print(f"Scanning {len(tickers)} tickers for IPO AVWAP setups (Bulk Mode)...")
+    
+    passing_tech = []
+    chunk_size = 1500
+    for i in range(0, len(tickers), chunk_size):
+        chunk = tickers[i:i+chunk_size]
+        print(f"Downloading chunk {i} to {i+chunk_size}...")
+        try:
+            # We use max period to calculate IPO AVWAP. 
+            # Note: bulk download with period='max' might be slow, but it's required for AVWAP
+            df_bulk = yf.download(chunk, period='max', interval='1d', group_by='ticker', progress=False)
+            
+            for ticker in chunk:
+                try:
+                    if ticker in df_bulk:
+                        ticker_df = df_bulk[ticker].dropna()
+                        if not ticker_df.empty:
+                            res = process_technical(ticker, ticker_df)
+                            if res:
+                                passing_tech.append(res)
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"Error on bulk download: {e}")
+            
+    print(f"Phase 1 Complete: {len(passing_tech)} stocks near their IPO AVWAP.")
+    
+    if not passing_tech:
+        print("No setups passed technicals today.")
+        return
+        
+    print("Phase 2: Checking fundamentals for the technical passing candidates...")
     results = []
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(process_ticker, t): t for t in tickers}
+    def check_fund_threaded(tech_res):
+        passed_funds, fund_msg = check_fundamentals(tech_res['Ticker'])
+        if passed_funds:
+            tech_res['Fund_Status'] = fund_msg
+            return tech_res
+        return None
         
-        processed = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(check_fund_threaded, res): res for res in passing_tech}
+        
         for future in concurrent.futures.as_completed(futures):
-            processed += 1
-            result = future.result()
-            
-            if result:
-                results.append(result)
-                print(f"[ALERT] {result['Ticker']}: {result['Tech_Status']} & {result['Fund_Status']} (Close: {result['Close']:.2f}, AVWAP: {result['AVWAP']:.2f})")
-                
-            if processed % 500 == 0:
-                print(f"Processed {processed}/{len(tickers)} tickers...")
+            res = future.result()
+            if res:
+                results.append(res)
+                print(f"[ALERT] {res['Ticker']}: {res['Tech_Status']} & {res['Fund_Status']} (Close: {res['Close']:.2f}, AVWAP: {res['AVWAP']:.2f})")
                 
     if results:
         results_df = pd.DataFrame(results)

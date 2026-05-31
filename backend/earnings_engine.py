@@ -98,27 +98,55 @@ def get_eps_trend(ticker_symbol):
 
 def get_historical_earnings_action(ticker_symbol):
     try:
-        ticker = yf.Ticker(ticker_symbol)
-        ed = ticker.get_earnings_dates()
-        if ed is None or ed.empty:
+        from yahooquery import Ticker as YQTicker
+        import pandas as pd
+        import numpy as np
+        
+        t = YQTicker(ticker_symbol)
+        eh = t.earning_history
+        if not isinstance(eh, pd.DataFrame) or eh.empty:
             return []
             
-        now = pd.Timestamp.now(tz='America/New_York')
-        past_ed = ed[ed.index < now].head(4)
-        if past_ed.empty:
+        ev = t.corporate_events
+        if not isinstance(ev, pd.DataFrame) or ev.empty:
             return []
-        
-        start_date = (past_ed.index.min() - pd.Timedelta(days=15)).strftime('%Y-%m-%d')
-        end_date = (past_ed.index.max() + pd.Timedelta(days=20)).strftime('%Y-%m-%d')
-        
-        hist = yf.download(ticker_symbol, start=start_date, end=end_date, progress=False)
-        if hist.empty:
-            return []
-        
-        if isinstance(hist.columns, pd.MultiIndex):
-            hist.columns = hist.columns.get_level_values(0)
             
-        if hist.index.tz is None:
+        earnings_events = ev[ev['parentTopics'].str.contains('Performance|Corporate Guidance', na=False)]
+        
+        past_ed = []
+        for index, row in eh.iterrows():
+            try:
+                q_date = pd.Timestamp(row['quarter']).tz_localize(None)
+                post_q = earnings_events[earnings_events.index.get_level_values('date').tz_localize(None) > q_date]
+                if not post_q.empty:
+                    exact_date = post_q.index.get_level_values('date').min()
+                    # Assume AMC (16:00) as default heuristic
+                    dt = pd.Timestamp(exact_date).replace(hour=16, minute=0, second=0).tz_localize('America/New_York')
+                    surprise = float(row['surprisePercent']) * 100
+                    past_ed.append({'date': dt, 'surprise': surprise})
+            except Exception:
+                continue
+                
+        if not past_ed:
+            return []
+            
+        past_ed_df = pd.DataFrame(past_ed)
+        past_ed_df.set_index('date', inplace=True)
+        past_ed_df = past_ed_df.sort_index(ascending=False).head(4)
+        
+        start_date = (past_ed_df.index.min() - pd.Timedelta(days=15)).strftime('%Y-%m-%d')
+        end_date = (past_ed_df.index.max() + pd.Timedelta(days=20)).strftime('%Y-%m-%d')
+        
+        hist = t.history(start=start_date, end=end_date)
+        if isinstance(hist, dict) or hist.empty:
+            return []
+            
+        if isinstance(hist.index, pd.MultiIndex):
+            hist = hist.reset_index(level=0, drop=True)
+            
+        hist.index = pd.to_datetime(hist.index)
+        
+        if getattr(hist.index, 'tz', None) is None:
             hist.index = hist.index.tz_localize('America/New_York')
         else:
             hist.index = hist.index.tz_convert('America/New_York')
@@ -126,8 +154,8 @@ def get_historical_earnings_action(ticker_symbol):
         all_trading_days = hist.index.normalize().tolist()
         results = []
         
-        for release_datetime, row in past_ed.iterrows():
-            is_amc = release_datetime.hour >= 14
+        for release_datetime, row in past_ed_df.iterrows():
+            is_amc = True 
             release_date = release_datetime.normalize()
             
             if release_date not in all_trading_days:
@@ -157,17 +185,17 @@ def get_historical_earnings_action(ticker_symbol):
                 
             if idx_t5 >= len(all_trading_days): continue
                 
-            base_price = float(hist['Close'].iloc[idx_t_minus_1])
-            t0_open = float(hist['Open'].iloc[idx_t0])
-            t0_close = float(hist['Close'].iloc[idx_t0])
-            t1_close = float(hist['Close'].iloc[idx_t1])
-            t5_close = float(hist['Close'].iloc[idx_t5])
+            base_price = float(hist['close'].iloc[idx_t_minus_1])
+            t0_open = float(hist['open'].iloc[idx_t0])
+            t0_close = float(hist['close'].iloc[idx_t0])
+            t1_close = float(hist['close'].iloc[idx_t1])
+            t5_close = float(hist['close'].iloc[idx_t5])
             
-            surprise = float(row.get('Surprise(%)', np.nan)) * 100
+            surprise = float(row.get('surprise', np.nan))
             
             results.append({
                 'date': release_datetime.strftime('%Y-%m-%d'),
-                'timing': 'AMC' if is_amc else 'BMO',
+                'timing': 'AMC',
                 'gap_pct': round((t0_open - base_price) / base_price * 100, 2),
                 't0_close_pct': round((t0_close - base_price) / base_price * 100, 2),
                 't1_close_pct': round((t1_close - base_price) / base_price * 100, 2),
@@ -210,7 +238,7 @@ def get_institutional_data(ticker_symbol):
                     "firm": row.get('Firm', ''),
                     "to_grade": row.get('ToGrade', ''),
                     "from_grade": row.get('FromGrade', ''),
-                    "price_target": row.get('priceTarget', 0),
+                    "price_target": row.get('currentPriceTarget', 0),
                     "action": row.get('Action', 'Maintain')
                 })
         

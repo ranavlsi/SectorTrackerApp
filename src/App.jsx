@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area } from 'recharts'
-import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen } from 'lucide-react'
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
+import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
+import UnifiedPlotlyChart from './UnifiedPlotlyChart'
 import GexHeatmap from './GexHeatmap'
 import VolatilitySurface3D from './VolatilitySurface3D'
+import TradingViewSync from './TradingViewSync'
 import EarningsEvasionTracker from './EarningsEvasionTracker'
 import ZacksFundamentalReport from './ZacksFundamentalReport'
+import LiveAgentsDashboard from './LiveAgentsDashboard'
 import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
@@ -47,37 +50,59 @@ const ScreenerCategories = {
   bullish_candlestick: { title: "Bullish Candlestick", icon: <TrendingUp color="#22c55e" /> },
   bearish_candlestick: { title: "Bearish Candlestick", icon: <TrendingUp color="#ef4444" style={{ transform: 'rotate(180deg)' }} /> },
   reversal: { title: "Oversold Reversal", icon: <RefreshCw color="#ef4444" /> },
-  zacks_rank_1: { title: "Zacks Rank #1 (Strong Buy)", icon: <BookOpen color="#10b981" /> }
+  zacks_rank_1: { title: "Zacks Rank #1 (Strong Buy)", icon: <BookOpen color="#10b981" /> },
+  pending_breakout: { title: "Pending Breakout (Squeeze)", icon: <ActivitySquare color="#f43f5e" /> },
+  long_base_breakout: { title: "3-Year Long Base", icon: <Compass color="#3b82f6" /> },
+  medium_base_breakout: { title: "Medium Base (3mo - 2yr)", icon: <Compass color="#a855f7" /> },
+  qullamaggie_setup: { title: "Qullamaggie Episodic Pivot", icon: <TrendingUp color="#8b5cf6" /> },
+  rs_divergence: { title: "RS Line Divergence (New High)", icon: <Activity color="#10b981" /> }
 }
 
-const ScreenerPill = ({ item, onClick }) => {
+const ScreenerPill = ({ item, rank, onClick }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [healthData, setHealthData] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const refreshData = (e) => {
+    if (e) e.stopPropagation();
+    setLoading(true);
+    setErrorMsg(null);
+    fetch(`/api/search?ticker=${item.ticker}&t=${new Date().getTime()}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          setErrorMsg(data.error);
+        } else {
+          setHealthData(data);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setErrorMsg("Network error");
+        setLoading(false);
+      });
+  };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    if (!healthData && !loading) {
-      setLoading(true);
-      fetch(`/api/search?ticker=${item.ticker}`)
-        .then(res => res.json())
-        .then(data => {
-          if (!data.error) setHealthData(data);
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
+    if (!healthData && !loading && !errorMsg) {
+      refreshData();
     }
   };
 
   return (
     <div 
       className="stock-pill" 
-      style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', cursor: 'pointer', background: isHovered ? 'rgba(79, 172, 254, 0.1)' : 'rgba(255,255,255,0.05)' }}
+      style={{ position: 'relative', zIndex: isHovered ? 999 : 1, display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', cursor: 'pointer', background: isHovered ? 'rgba(79, 172, 254, 0.1)' : 'rgba(255,255,255,0.05)' }}
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <strong>{item.ticker}</strong>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {rank && <span style={{ color: '#4facfe', fontWeight: 'bold', minWidth: '25px' }}>#{rank}</span>}
+        <strong>{item.ticker}</strong>
+      </div>
       <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{item.metric}</span>
       
       {isHovered && (
@@ -85,7 +110,12 @@ const ScreenerPill = ({ item, onClick }) => {
           <h4 style={{ margin: '0 0 0.5rem 0', color: '#4facfe' }}>Why Picked:</h4>
           <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#fff' }}>{item.metric}</p>
           
-          <h4 style={{ margin: '0 0 0.5rem 0', color: '#10b981' }}>Health:</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <h4 style={{ margin: 0, color: '#10b981' }}>Health:</h4>
+            <button onClick={refreshData} style={{ background: 'none', border: 'none', color: '#4facfe', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }} title="Refresh Data">
+              <RefreshCw size={14} className={loading ? "spin" : ""} />
+            </button>
+          </div>
           {loading ? (
             <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px' }}><Loader size={12} className="spin"/> Loading...</p>
           ) : healthData ? (
@@ -107,7 +137,7 @@ const ScreenerPill = ({ item, onClick }) => {
               )}
             </div>
           ) : (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#ef4444' }}>Data unavailable</p>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#ef4444' }}>{errorMsg || 'Data unavailable'}</p>
           )}
         </div>
       )}
@@ -126,6 +156,7 @@ function App() {
   const [hoveredSector, setHoveredSector] = useState(null)
   const [isTop5Isolated, setIsTop5Isolated] = useState(false)
   const [modalData, setModalData] = useState(null)
+  const [expandedCategories, setExpandedCategories] = useState({})
   const [collapsedCategories, setCollapsedCategories] = useState(
     Object.keys(ScreenerCategories).reduce((acc, key) => { acc[key] = true; return acc; }, {})
   )
@@ -155,6 +186,9 @@ function App() {
   // Squeeze State
   const [squeezeData, setSqueezeData] = useState(null)
   
+  // DeepVue State
+  const [deepvueData, setDeepvueData] = useState(null)
+  
   // Advanced Analytics State
   const [correlationData, setCorrelationData] = useState(null)
   const [gexSearch, setGexSearch] = useState('')
@@ -164,34 +198,45 @@ function App() {
   
   // Playbook State
   const [playbookContent, setPlaybookContent] = useState('')
+  const [weeklyPlaybook, setWeeklyPlaybook] = useState(null)
 
   useEffect(() => {
-    fetch('/sector_flow.json')
+    fetch('/sector_flow.json?t=' + new Date().getTime())
       .then(res => res.json())
       .then(json => setData(json))
       .catch(err => console.error("Error fetching data:", err))
       
-    fetch('/screener_results.json')
+    fetch('/screener_results.json?t=' + new Date().getTime())
       .then(res => res.json())
       .then(data => setScreenerData(data))
       .catch(err => console.error("Error loading screener data:", err))
       
-    fetch('/market_health.json')
+    fetch('/market_health.json?t=' + new Date().getTime())
       .then(res => res.json())
       .then(data => setMarketHealth(data))
+
+    fetch('/weekly_playbook.json?t=' + new Date().getTime())
+      .then(res => res.json())
+      .then(data => setWeeklyPlaybook(data))
+      .catch(err => console.error("Error loading weekly playbook:", err))
       .catch(err => console.error("Error loading market health data:", err))
       
-    fetch('/squeeze_results.json')
+    fetch('/squeeze_results.json?t=' + new Date().getTime())
       .then(res => res.json())
       .then(data => setSqueezeData(data))
       .catch(err => console.error("Error loading squeeze data:", err))
       
-    fetch('/correlation_results.json')
+    fetch('/deepvue_results.json?t=' + new Date().getTime())
+      .then(res => res.json())
+      .then(data => setDeepvueData(data))
+      .catch(err => console.error("Error loading deepvue data:", err))
+      
+    fetch('/correlation_results.json?t=' + new Date().getTime())
       .then(res => res.json())
       .then(data => setCorrelationData(data))
       .catch(err => console.error("Error loading correlation data:", err))
 
-    fetch('/ai_playbook.md')
+    fetch('/ai_playbook.md?t=' + new Date().getTime())
       .then(res => res.text())
       .then(text => setPlaybookContent(text))
       .catch(err => console.error("Error loading playbook:", err))
@@ -276,7 +321,7 @@ function App() {
     setIsRightDrawerOpen(true);
     
     try {
-      const res = await fetch(`/api/search?ticker=${ticker}`);
+      const res = await fetch(`/api/search?ticker=${ticker}&t=${new Date().getTime()}`);
       const json = await res.json();
       if (!res.ok) {
         setSearchError(json.error || "Failed to fetch data.");
@@ -406,9 +451,27 @@ function App() {
         
         <div className="sidebar-menu">
           <button className={activeTab === 'dashboard' ? 'tab-active' : ''} onClick={() => setActiveTab('dashboard')}><Activity size={18} /> RRG Dashboard</button>
-          <button className={activeTab === 'chart' ? 'tab-active' : ''} onClick={() => setActiveTab('chart')}><BarChart2 size={18} /> Deep Charting</button>
+          <button className={activeTab === 'chart' ? 'tab-active' : ''} onClick={() => {
+            setActiveTab('chart');
+            if (!expertTickerData && !isSearching) {
+              fetchTickerData('SPY');
+            }
+          }}><BarChart2 size={18} /> Deep Charting</button>
           <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
           <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
+          <button className={activeTab === 'playbook' ? 'tab-active' : ''} onClick={() => setActiveTab('playbook')}><BookOpen size={18} /> Weekly Playbook</button>
+          <div style={{ marginTop: '2rem', padding: '0 10px' }}>
+            <button 
+              className="trade-button" 
+              onClick={() => {
+                fetch('http://localhost:5001/api/sync_lakehouse', { method: 'POST' });
+                alert("Database Update & Scanner Engine started in the background. Please wait ~2 minutes for it to complete.");
+              }} 
+              style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}
+            >
+              <RefreshCw size={16} /> Sync Lakehouse
+            </button>
+          </div>
           <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
           <button className={activeTab === 'intraday' ? 'tab-active' : ''} onClick={fetchIntradayAlerts}><Radio size={18} /> Intraday Radar</button>
           <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
@@ -416,7 +479,9 @@ function App() {
           <button className={activeTab === 'volsurface' ? 'tab-active' : ''} onClick={() => setActiveTab('volsurface')}><Activity size={18} /> 3D Vol Surface</button>
           <button className={activeTab === 'earnings' ? 'tab-active' : ''} onClick={() => setActiveTab('earnings')}><User size={18} /> AI Earnings</button>
           <button className={activeTab === 'zacks' ? 'tab-active' : ''} onClick={() => setActiveTab('zacks')}><BookOpen size={18} /> Zacks Fundamentals</button>
+          <button className={activeTab === 'agents' ? 'tab-active' : ''} onClick={() => setActiveTab('agents')}><Search size={18} /> AI Market Agents</button>
           <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
+          <button className={activeTab === 'tvsync' ? 'tab-active' : ''} onClick={() => setActiveTab('tvsync')}><Link size={18} /> TradingView Sync</button>
           <button className={activeTab === 'ask_ai' ? 'tab-active' : ''} onClick={() => setActiveTab('ask_ai')}><Bot size={18} /> Ask AI (Live)</button>
         </div>
       </div>
@@ -444,45 +509,71 @@ function App() {
           )}
         </div>
 
+      {activeTab === 'tvsync' && (
+        <TradingViewSync />
+      )}
+
       {activeTab === 'macromatrix' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <h2 style={{ marginTop: 0, color: '#4facfe' }}>🔬 Cross-Asset Correlation Matrix (90-Day)</h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Track how your portfolio rotates alongside macroeconomic drivers (Yields, Oil, Crypto, DXY).</p>
-            {correlationData ? (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #334155' }}>Ticker</th>
-                      {correlationData.macro_drivers.map(driver => (
-                        <th key={driver} style={{ textAlign: 'center', padding: '0.75rem', borderBottom: '1px solid #334155' }}>{driver}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {correlationData.stocks.map(stock => (
-                      <tr key={stock.ticker}>
-                        <td style={{ padding: '0.75rem', borderBottom: '1px solid #1e293b', fontWeight: 'bold' }}>{stock.ticker}</td>
-                        {correlationData.macro_drivers.map(driver => {
-                          const val = stock.correlations[driver];
-                          let bgColor = 'transparent';
-                          if (val > 0.5) bgColor = 'rgba(16, 185, 129, 0.2)';
-                          else if (val > 0.2) bgColor = 'rgba(16, 185, 129, 0.05)';
-                          else if (val < -0.5) bgColor = 'rgba(239, 68, 68, 0.2)';
-                          else if (val < -0.2) bgColor = 'rgba(239, 68, 68, 0.05)';
-                          return (
-                            <td key={driver} style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '1px solid #1e293b', backgroundColor: bgColor }}>
-                              {val ? val.toFixed(2) : '-'}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="glass-card" style={{ padding: '2rem', borderTop: '5px solid #4facfe' }}>
+            <h2 style={{ marginTop: 0, color: '#4facfe', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ActivitySquare size={24} /> Actionable Macro Regimes
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '1rem', marginBottom: '2rem' }}>
+              Stop looking at raw correlation decimals. This engine tells you exactly what to buy based on where you think Yields, Oil, Crypto, and the Dollar are going.
+            </p>
+            {correlationData && correlationData.scenarios ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                {correlationData.scenarios.map((scenario, idx) => {
+                  let driverColor = '#4facfe';
+                  if (scenario.driver.includes("Yield")) driverColor = '#ef4444';
+                  if (scenario.driver.includes("Oil")) driverColor = '#f59e0b';
+                  if (scenario.driver.includes("Bitcoin")) driverColor = '#f59e0b';
+                  if (scenario.driver.includes("Dollar")) driverColor = '#10b981';
+
+                  return (
+                    <div key={idx} className="neo-panel" style={{ padding: '1.5rem', background: 'rgba(15, 23, 42, 0.6)' }}>
+                      <h3 style={{ margin: '0 0 1.5rem 0', color: driverColor, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', fontSize: '1.3rem' }}>
+                        {scenario.driver} Scenario
+                      </h3>
+                      
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <h4 style={{ margin: '0 0 0.75rem 0', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          If {scenario.driver} goes UP ↗️
+                        </h4>
+                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#94a3b8' }}>Buy these highly positively correlated names:</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          {scenario.if_up.length > 0 ? scenario.if_up.map(stock => (
+                            <span key={stock.ticker} onClick={() => fetchTickerData(stock.ticker)} className="stock-pill" style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.85rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              {stock.ticker} <span style={{opacity: 0.5}}>{stock.corr}</span>
+                            </span>
+                          )) : <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No strong positive correlations found.</span>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 style={{ margin: '0 0 0.75rem 0', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          If {scenario.driver} goes DOWN ↘️
+                        </h4>
+                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#94a3b8' }}>Buy these highly inversely correlated names:</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          {scenario.if_down.length > 0 ? scenario.if_down.map(stock => (
+                            <span key={stock.ticker} onClick={() => fetchTickerData(stock.ticker)} className="stock-pill" style={{ cursor: 'pointer', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.85rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              {stock.ticker} <span style={{opacity: 0.5}}>{stock.corr}</span>
+                            </span>
+                          )) : <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No strong inverse correlations found.</span>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ) : <p>Loading Matrix...</p>}
+            ) : (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#4facfe' }}>
+                <Loader className="spin" size={32} style={{ marginBottom: '1rem' }} />
+                <p>Loading Actionable Scenarios...</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -516,7 +607,11 @@ function App() {
       )}
 
       {activeTab === 'earnings' && (
-        <EarningsEvasionTracker ticker={(searchedGex?.ticker) || expertTickerData?.ticker || null} />
+        <EarningsEvasionTracker initialTicker={searchQuery || 'NVDA'} />
+      )}
+
+      {activeTab === 'agents' && (
+        <LiveAgentsDashboard initialTicker={searchQuery || 'NVDA'} />
       )}
 
       {activeTab === 'analysis' && (
@@ -578,7 +673,61 @@ function App() {
       {activeTab === 'screeners' && screenerData && (
         <div>
           <h2 style={{ marginBottom: '2rem' }}>Algorithmic Technical Setups</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start', marginBottom: '2rem' }}>
+            {/* DeepVue Quantitative Leaders Card */}
+            {deepvueData && deepvueData.leaders && (
+              <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+                <h3 
+                  style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#ffd700', cursor: 'pointer' }}
+                  onClick={() => setCollapsedCategories(prev => ({ ...prev, deepvue: !prev.deepvue }))}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Zap size={18} /> TraderLion / DeepVue Leaders</span>
+                  {collapsedCategories.deepvue ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                </h3>
+                
+                {!collapsedCategories.deepvue && (
+                  <>
+                    <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1rem', marginTop: '0.5rem' }}>
+                      S.N.I.P Matrix: RS Rating &gt; 80, VCP, Earnings Growth &gt; 15%
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {deepvueData.leaders.map(item => (
+                        <ScreenerPill 
+                          key={item.ticker} 
+                          item={{
+                            ticker: item.ticker,
+                            metric: `RS Rank ${item.rs_rating} ${item.vcp_setup ? '🔥(VCP)' : ''}`
+                          }} 
+                          onClick={() => fetchTickerData(item.ticker)} 
+                        />
+                      ))}
+                    </div>
+
+                    {deepvueData.active_vcp && deepvueData.active_vcp.length > 0 && (
+                      <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 215, 0, 0.15)' }}>
+                        <h4 style={{ color: '#ffd700', marginTop: 0, marginBottom: '0.75rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Crosshair size={14} /> Tightly Coiled (VCP)
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {deepvueData.active_vcp.map(item => (
+                            <ScreenerPill 
+                              key={`vcp-${item.ticker}`} 
+                              item={{
+                                ticker: item.ticker,
+                                metric: `RS Rank ${item.rs_rating}`
+                              }} 
+                              onClick={() => fetchTickerData(item.ticker)} 
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            
+            {/* Standard Algorithmic Setups */}
             {Object.entries(ScreenerCategories).map(([key, config]) => (
               <div key={key} className="glass-card" style={{ padding: '1.5rem' }}>
                 <h3 
@@ -592,9 +741,38 @@ function App() {
                 {!collapsedCategories[key] && (
                   screenerData[key] && screenerData[key].length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                      {screenerData[key].map(item => (
-                        <ScreenerPill key={item.ticker} item={item} onClick={() => fetchTickerData(item.ticker)} />
+                      {screenerData[key]
+                        .slice(0, expandedCategories[key] ? 20 : 5)
+                        .map((item, idx) => (
+                        <ScreenerPill key={item.ticker} item={item} rank={idx + 1} onClick={() => fetchTickerData(item.ticker)} />
                       ))}
+                      {screenerData[key].length > 5 && (
+                        <button 
+                          onClick={() => setExpandedCategories(prev => ({ ...prev, [key]: !prev[key] }))}
+                          style={{ 
+                            background: 'rgba(79, 172, 254, 0.05)', 
+                            border: '1px dashed rgba(79, 172, 254, 0.3)', 
+                            color: '#4facfe', 
+                            padding: '0.5rem', 
+                            borderRadius: '4px', 
+                            cursor: 'pointer', 
+                            marginTop: '0.5rem',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            gap: '5px'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(79, 172, 254, 0.15)'; e.currentTarget.style.borderColor = '#4facfe'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(79, 172, 254, 0.05)'; e.currentTarget.style.borderColor = 'rgba(79, 172, 254, 0.3)'; }}
+                        >
+                          {expandedCategories[key] ? (
+                            <><ChevronUp size={16}/> Fold Up</>
+                          ) : (
+                            <><ChevronDown size={16}/> Show Next 15 Stocks (Rank 6-20)</>
+                          )}
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <p style={{ color: '#64748b', fontStyle: 'italic', marginTop: '1rem' }}>No setups found today.</p>
@@ -606,12 +784,103 @@ function App() {
         </div>
       )}
 
+      {/* Weekly Playbook Tab */}
+      {activeTab === 'playbook' && weeklyPlaybook && (
+        <div style={{ marginTop: '2rem' }}>
+          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
+            <h2 style={{ margin: '0 0 1rem 0', color: '#4facfe', display: 'flex', alignItems: 'center', gap: '10px' }}><Compass size={24}/> Weekly Market Summary ({weeklyPlaybook.date})</h2>
+            <p style={{ fontSize: '1.2rem', lineHeight: '1.6', color: '#e2e8f0', margin: '0 0 1rem 0' }}>{weeklyPlaybook.market_summary.text}</p>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #10b981' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}><TrendingUp size={18}/> Stocks That Ran (Top 5)</h3>
+              {weeklyPlaybook.stocks_that_ran.map(s => (
+                <div key={s.ticker} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0' }}>
+                  <strong style={{ color: '#fff' }}>{s.ticker}</strong>
+                  <span style={{ color: '#10b981' }}>{s.return}</span>
+                </div>
+              ))}
+            </div>
+            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #f43f5e' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '8px' }}><ActivitySquare size={18}/> About to Fly (Squeeze)</h3>
+              {weeklyPlaybook.about_to_fly.map(s => (
+                <div key={s.ticker} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0' }}>
+                  <strong style={{ color: '#fff' }}>{s.ticker}</strong>
+                  <span style={{ color: '#f59e0b' }}>{s.dist_ath} from ATH</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <h2 style={{ margin: '2rem 0 1rem 0', color: '#fff' }}>🤖 Top 3 AI Trade Plans for Next Week</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+            {weeklyPlaybook.top_3_picks.map((pick, i) => (
+              <div key={pick.ticker} className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(79,172,254,0.1) 0%, rgba(0,242,254,0.05) 100%)', border: '1px solid rgba(79,172,254,0.3)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem', color: '#fff', textShadow: '0 0 10px rgba(79,172,254,0.5)' }}>#{i+1} {pick.ticker}</h2>
+                    <span style={{ display: 'inline-block', padding: '4px 10px', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>{pick.setup_type}</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: '0', fontSize: '0.9rem', color: '#94a3b8' }}>Entry Zone</p>
+                    <p style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: '#fff', fontWeight: 'bold' }}>{pick.entry_price}</p>
+                    <p style={{ margin: '0', fontSize: '0.9rem', color: '#94a3b8' }}>Stop Loss</p>
+                    <p style={{ margin: '0', fontSize: '1.2rem', color: '#ef4444', fontWeight: 'bold' }}>{pick.stop_loss}</p>
+                  </div>
+                </div>
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', marginTop: '1rem' }}>
+                  <p style={{ margin: '0', color: '#e2e8f0', lineHeight: '1.5' }}><strong>Reasoning:</strong> {pick.reasoning}</p>
+                  <p style={{ margin: '1rem 0 1rem 0', color: '#10b981', fontWeight: 'bold' }}>🎯 Target: {pick.profit_target}</p>
+                  
+                  {pick.health && (
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', borderLeft: `3px solid ${pick.health.momentum_color}` }}>
+                      <h4 style={{ margin: '0 0 10px 0', color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase' }}>Technical Health Card</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                        <div>
+                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Structural Stage</span>
+                           <div style={{ color: pick.health.stage.includes('Stage 2') ? '#10b981' : '#e2e8f0', fontWeight: 'bold', fontSize: '0.9rem' }}>{pick.health.stage}</div>
+                        </div>
+                        <div>
+                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Momentum</span>
+                           <div style={{ color: pick.health.momentum_color, fontWeight: 'bold', fontSize: '0.9rem' }}>{pick.health.momentum_text}</div>
+                        </div>
+                        <div>
+                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>RSI</span>
+                           <div style={{ color: pick.health.rsi > 70 ? '#ef4444' : pick.health.rsi < 30 ? '#10b981' : '#e2e8f0', fontWeight: 'bold', fontSize: '0.9rem' }}>{pick.health.rsi}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Market Health Dashboard Tab */}
       {activeTab === 'health' && marketHealth && (
         <div style={{ marginTop: '2rem' }}>
           {/* Master Health Card */}
-          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', textAlign: 'center', borderTop: `5px solid ${marketHealth.current_health.score.includes('Bullish') || marketHealth.current_health.score.includes('Buy') ? '#10b981' : marketHealth.current_health.score.includes('Bearish') ? '#ef4444' : '#f59e0b'}` }}>
-            <h2 style={{ fontSize: '2.5rem', margin: '0 0 1rem 0' }}>{marketHealth.current_health.score}</h2>
+          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', textAlign: 'center', borderTop: `5px solid ${marketHealth.current_health.score_value >= 60 ? '#10b981' : marketHealth.current_health.score_value <= 40 ? '#ef4444' : '#f59e0b'}` }}>
+            <h2 style={{ fontSize: '1.5rem', margin: '0', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '2px' }}>Aggregate Market Health Score</h2>
+            <h1 style={{ fontSize: '4rem', margin: '0.5rem 0 0 0', color: marketHealth.current_health.score_value >= 60 ? '#10b981' : marketHealth.current_health.score_value <= 40 ? '#ef4444' : '#f59e0b' }}>
+              {marketHealth.current_health.score_value} <span style={{fontSize: '2rem', color: '#64748b'}}>/ 100</span>
+            </h1>
+            <h3 style={{ fontSize: '1.2rem', margin: '0.5rem 0 2rem 0', color: '#fff' }}>Status: {marketHealth.current_health.score_label}</h3>
+            
+            <div style={{ background: 'rgba(15,23,42,0.5)', padding: '1.5rem', borderRadius: '12px', textAlign: 'left', borderLeft: '4px solid #3b82f6' }}>
+              <h4 style={{ margin: '0 0 1rem 0', color: '#60a5fa', fontSize: '1.1rem' }}>Council Summary Briefing</h4>
+              {marketHealth.current_health.summary_text ? (
+                 marketHealth.current_health.summary_text.split('\\n').map((line, i) => (
+                    <p key={i} style={{ margin: '0.5rem 0', color: '#e2e8f0', lineHeight: '1.5' }}>
+                      {line.replace(/\\*\\*/g, '')}
+                    </p>
+                 ))
+              ) : null}
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '2rem' }}>
               <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
                 <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>McClellan Oscillator</span>
@@ -625,74 +894,245 @@ function App() {
                 <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>A/D Momentum</span>
                 <h3 style={{ margin: '0.5rem 0 0 0', color: marketHealth.current_health.ad_momentum.includes('Bullish') ? '#10b981' : '#ef4444' }}>{marketHealth.current_health.ad_momentum}</h3>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-                <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Price/Breadth Divergence</span>
-                <h3 style={{ margin: '0.5rem 0 0 0', color: marketHealth.current_health.divergence.includes('Bullish') ? '#10b981' : marketHealth.current_health.divergence.includes('Bearish') ? '#ef4444' : '#fff' }}>{marketHealth.current_health.divergence}</h3>
-              </div>
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-            {/* Chart 1: SPY vs A/D Line */}
-            <div className="glass-card" style={{ padding: '2rem' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '1.5rem' }}>SPY Price vs Advance/Decline Line</h3>
-              <div style={{ height: '400px' }}>
+            
+            {/* Global Gradients */}
+            <svg style={{ height: 0, position: 'absolute' }}>
+              <defs>
+                <linearGradient id="colorSpy" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorBreadth" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {/* Chart 1: Composite Market Health Oscillator */}
+            <div className="glass-card" style={{ padding: '0', overflow: 'hidden', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+              <div style={{ padding: '2rem 2rem 0 2rem' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{width: 12, height: 12, borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 10px #f59e0b'}}></span>
+                  Master Composite Health Oscillator (0-100)
+                </h3>
+                <div style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '3px solid #f59e0b', padding: '1rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.95rem', color: '#fde68a' }}>
+                  <strong>ALGO INSIGHT:</strong> {marketHealth.current_health.chart_observations.oscillator}
+                </div>
+              </div>
+              <div style={{ height: '350px', paddingRight: '2rem' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={marketHealth.historical_data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{fill: '#94a3b8'}} tickFormatter={(str) => str.substring(5)} />
-                    <YAxis yAxisId="left" stroke="#94a3b8" tick={{fill: '#94a3b8'}} domain={['auto', 'auto']} />
-                    <YAxis yAxisId="right" orientation="right" stroke="#10b981" tick={{fill: '#10b981'}} domain={['auto', 'auto']} />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="spy" name="SPY Price" stroke="#94a3b8" strokeWidth={3} dot={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="ad_line" name="A/D Line" stroke="#10b981" strokeWidth={2} dot={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b'}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="left" stroke="#64748b" tick={{fill: '#64748b'}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" tick={{fill: '#f59e0b'}} domain={[0, 100]} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }} />
+                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
+                    <ReferenceLine y={50} yAxisId="right" stroke="#64748b" strokeDasharray="3 3" />
+                    <Area yAxisId="left" type="monotone" dataKey="spy" name="SPY Price" stroke="#94a3b8" fillOpacity={1} fill="url(#colorSpy)" strokeWidth={2} />
+                    <Line yAxisId="right" type="monotone" dataKey="health_oscillator" name="Composite Health" stroke="#f59e0b" strokeWidth={4} dot={false} style={{ filter: 'drop-shadow(0px 0px 6px rgba(245, 158, 11, 0.8))' }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Chart 2: McClellan Oscillator */}
-            <div className="glass-card" style={{ padding: '2rem' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '1.5rem' }}>McClellan Oscillator (Momentum Breadth)</h3>
-              <div style={{ height: '300px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={marketHealth.historical_data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{fill: '#94a3b8'}} tickFormatter={(str) => str.substring(5)} />
-                    <YAxis stroke="#94a3b8" tick={{fill: '#94a3b8'}} />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                    <ReferenceLine y={0} stroke="#94a3b8" />
-                    <ReferenceLine y={50} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'Overbought', fill: '#ef4444' }} />
-                    <ReferenceLine y={-50} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'insideBottomLeft', value: 'Oversold', fill: '#10b981' }} />
-                    <Bar dataKey="mco" name="McClellan Osc">
-                      {
-                        marketHealth.historical_data.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.mco > 0 ? '#10b981' : '#ef4444'} />
-                        ))
-                      }
-                    </Bar>
-                  </ComposedChart>
-                </ResponsiveContainer>
+            {/* Grid for Dual Charts */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              
+              {/* Chart 2: McClellan Oscillator */}
+              <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9' }}>McClellan Oscillator (MCO)</h3>
+                <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                  {marketHealth.current_health.chart_observations.mco}
+                </div>
+                <div style={{ height: '250px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketHealth.historical_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <ReferenceLine y={0} stroke="#475569" strokeWidth={2} />
+                      <ReferenceLine y={50} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'OB', fill: '#ef4444', fontSize: 10 }} />
+                      <ReferenceLine y={-50} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'insideBottomLeft', value: 'OS', fill: '#10b981', fontSize: 10 }} />
+                      <Bar dataKey="mco" name="MCO" radius={[2, 2, 0, 0]}>
+                        {marketHealth.historical_data.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.mco > 0 ? '#10b981' : '#ef4444'} fillOpacity={0.8} />
+                        ))}
+                      </Bar>
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Chart 3: % > 50 SMA */}
+              <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9' }}>Market Breadth (% Above 50 SMA)</h3>
+                <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#93c5fd' }}>
+                  {marketHealth.current_health.chart_observations.p50}
+                </div>
+                <div style={{ height: '250px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketHealth.historical_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={[0, 100]} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <ReferenceLine y={50} stroke="#475569" strokeDasharray="3 3" />
+                      <Area type="monotone" dataKey="pct_above_50" name="% > 50 SMA" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorBreadth)" style={{ filter: 'drop-shadow(0px 0px 4px rgba(59, 130, 246, 0.4))' }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
 
-            {/* Chart 3: % > 50 SMA */}
-            <div className="glass-card" style={{ padding: '2rem' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Market Breadth (% Above 50-Day SMA)</h3>
-              <div style={{ height: '300px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={marketHealth.historical_data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{fill: '#94a3b8'}} tickFormatter={(str) => str.substring(5)} />
-                    <YAxis stroke="#94a3b8" tick={{fill: '#94a3b8'}} domain={[0, 100]} />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                    <ReferenceLine y={50} stroke="#94a3b8" strokeDasharray="3 3" />
-                    <Area type="monotone" dataKey="pct_above_50" name="% > 50 SMA" stroke="#3b82f6" fillOpacity={0.3} fill="#3b82f6" />
-                  </ComposedChart>
-                </ResponsiveContainer>
+            {/* Grid for Secondary Indicators */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              
+              {/* Chart 4: New Highs vs New Lows */}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9' }}>New Highs vs New Lows</h3>
+                <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                  {marketHealth.current_health.chart_observations.nhnl}
+                </div>
+                <div style={{ height: '200px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketHealth.historical_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Bar dataKey="new_highs" name="New Highs" fill="#10b981" radius={[2, 2, 0, 0]} />
+                      <Bar dataKey="new_lows" name="New Lows" fill="#ef4444" radius={[2, 2, 0, 0]} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Chart 5: Volatility Curve (CBOE Put/Call Proxy) */}
+              <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{width: 10, height: 10, borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 8px #ef4444'}}></span>
+                  CBOE Volatility Skew (Put/Call Institutional Proxy)
+                </h3>
+                <div style={{ background: 'rgba(239, 68, 68, 0.05)', borderLeft: '3px solid #ef4444', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#fca5a5' }}>
+                  <strong>ALGO INSIGHT:</strong> {marketHealth.current_health.chart_observations.vix_curve}
+                </div>
+                <div style={{ height: '200px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketHealth.historical_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                      <Line type="monotone" dataKey="vix" name="VIX (Spot Fear)" stroke="#ef4444" strokeWidth={3} dot={false} style={{ filter: 'drop-shadow(0px 0px 4px rgba(239, 68, 68, 0.5))' }} />
+                      <Line type="monotone" dataKey="vix3m" name="VIX3M (3-Month)" stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Grid for Bottom Indicators */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              
+              {/* Chart 6: Credit Spreads */}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9' }}>Institutional Credit Spreads (HYG/IEF)</h3>
+                <div style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '3px solid #f59e0b', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#fcd34d' }}>
+                  {marketHealth.current_health.chart_observations.credit}
+                </div>
+                <div style={{ height: '200px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketHealth.historical_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Line type="monotone" dataKey="hyg_ratio" name="Risk-Appetite Ratio" stroke="#f59e0b" strokeWidth={3} dot={false} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Chart 7: Index Divergences */}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9' }}>Sector & Size Divergences</h3>
+                <div style={{ background: 'rgba(139, 92, 246, 0.05)', borderLeft: '3px solid #8b5cf6', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#c4b5fd' }}>
+                  {marketHealth.current_health.chart_observations.divergence}
+                </div>
+                <div style={{ height: '200px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketHealth.historical_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="left" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="right" orientation="right" stroke="#8b5cf6" tick={{fill: '#8b5cf6', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                      <Line yAxisId="left" type="monotone" dataKey="spy_rsp_ratio" name="SPY/RSP (Mega-Cap)" stroke="#94a3b8" strokeWidth={2} dot={false} />
+                      <Line yAxisId="right" type="monotone" dataKey="qqq_spy_ratio" name="QQQ/SPY (Tech)" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
+
+            {/* Grid for Macro Institutional Data (COT & T-Bill) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
+              
+              {/* Chart 8: Money Market Liquidity (13-Week T-Bill) */}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9' }}>Money Market Liquidity (13-Week T-Bill)</h3>
+                <div style={{ background: 'rgba(56, 189, 248, 0.05)', borderLeft: '3px solid #38bdf8', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#bae6fd' }}>
+                  {marketHealth.current_health.chart_observations.irx_liquidity}
+                </div>
+                <div style={{ height: '200px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketHealth.historical_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Line type="monotone" dataKey="irx" name="13-Week Yield (%)" stroke="#38bdf8" strokeWidth={3} dot={false} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Chart 9: CFTC COT S&P 500 Positioning */}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9' }}>CFTC COT (Net Commercial Hedgers)</h3>
+                <div style={{ background: 'rgba(236, 72, 153, 0.05)', borderLeft: '3px solid #ec4899', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#fbcfe8' }}>
+                  {marketHealth.current_health.chart_observations.cot}
+                </div>
+                <div style={{ height: '200px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketHealth.historical_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <ReferenceLine y={0} stroke="#475569" strokeWidth={2} />
+                      <Bar dataKey="cot_net" name="Net Positioning" radius={[2, 2, 0, 0]}>
+                        {marketHealth.historical_data.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.cot_net > 0 ? '#10b981' : '#ef4444'} fillOpacity={0.8} />
+                        ))}
+                      </Bar>
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         </div>
       )}
@@ -712,52 +1152,98 @@ function App() {
                 <h2 style={{ textAlign: 'left', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <TrendingUp color="#4facfe" /> Relative Rotation Graph ({timeframe})
                 </h2>
-                <button onClick={isolateTop5} className={`isolate-btn ${isTop5Isolated ? 'isolated' : ''}`}><Filter size={16} />{isTop5Isolated ? "Show All Sectors" : "🎯 Isolate Top 5"}</button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => { setIsTop5Isolated(false); setHiddenLines({}) }} className={`isolate-btn ${!isTop5Isolated && !hiddenLines['grid'] ? 'isolated' : ''}`}><Activity size={16} />All</button>
+                  <button onClick={isolateTop5} className={`isolate-btn ${isTop5Isolated ? 'isolated' : ''}`}><Filter size={16} />Top 5</button>
+                  <button onClick={() => setHiddenLines({ 'grid': true })} className={`isolate-btn ${hiddenLines['grid'] ? 'isolated' : ''}`}><ActivitySquare size={16} />Grid View (Separate)</button>
+                </div>
               </div>
               
-              <div style={{ position: 'absolute', top: '70px', right: '30px', color: '#10b981', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>LEADING</div>
-              <div style={{ position: 'absolute', bottom: '150px', right: '30px', color: '#f59e0b', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>WEAKENING</div>
-              <div style={{ position: 'absolute', bottom: '150px', left: '80px', color: '#ef4444', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>LAGGING</div>
-              <div style={{ position: 'absolute', top: '70px', left: '80px', color: '#3b82f6', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>IMPROVING</div>
+              {!hiddenLines['grid'] ? (
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: '70px', right: '30px', color: '#10b981', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>LEADING</div>
+                  <div style={{ position: 'absolute', bottom: '150px', right: '30px', color: '#f59e0b', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>WEAKENING</div>
+                  <div style={{ position: 'absolute', bottom: '150px', left: '80px', color: '#ef4444', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>LAGGING</div>
+                  <div style={{ position: 'absolute', top: '70px', left: '80px', color: '#3b82f6', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>IMPROVING</div>
 
-              <div style={{ height: '650px', width: '100%' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <ReferenceArea x1={100} y1={100} fill="rgba(16, 185, 129, 0.05)" /> 
-                    <ReferenceArea x1={100} y2={100} fill="rgba(245, 158, 11, 0.05)" /> 
-                    <ReferenceArea x2={100} y2={100} fill="rgba(239, 68, 68, 0.05)" /> 
-                    <ReferenceArea x2={100} y1={100} fill="rgba(59, 130, 246, 0.05)" /> 
-                    <ReferenceLine x={100} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
-                    <ReferenceLine y={100} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
-                    <XAxis type="number" dataKey="x" name="RS-Ratio" domain={['dataMin - 1', 'dataMax + 1']} stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                    <YAxis type="number" dataKey="y" name="RS-Momentum" domain={['dataMin - 1', 'dataMax + 1']} stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
-                    <Legend content={renderCustomLegend} verticalAlign="bottom" />
-                    
-                    {rrgData.map((sector, idx) => {
-                      if (hiddenLines[sector.name]) return null;
-                      const isHovered = hoveredSector === sector.name;
-                      const isAnotherHovered = hoveredSector !== null && hoveredSector !== sector.name;
-                      const color = COLORS[idx % COLORS.length];
-                      
-                      return (
-                        <Scatter 
-                          key={sector.name} name={sector.name} data={sector.trail} fill={color}
-                          line={{ stroke: color, strokeWidth: isHovered ? 4 : 2, strokeDasharray: '5 5' }}
-                          opacity={isAnotherHovered ? 0.1 : 1} style={{ transition: 'all 0.3s ease', cursor: 'pointer' }}
-                          onClick={() => setModalData(sector)}
-                        >
-                          {sector.trail.map((entry, index) => {
-                            const isLast = index === sector.trail.length - 1;
-                            return <Cell key={`cell-${index}`} fill={color} r={isLast ? (isHovered ? 10 : 7) : 3} opacity={isLast ? 1 : 0.4} />
-                          })}
-                        </Scatter>
-                      )
-                    })}
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
+                  <div style={{ height: '650px', width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <ReferenceArea x1={100} y1={100} fill="rgba(16, 185, 129, 0.05)" /> 
+                        <ReferenceArea x1={100} y2={100} fill="rgba(245, 158, 11, 0.05)" /> 
+                        <ReferenceArea x2={100} y2={100} fill="rgba(239, 68, 68, 0.05)" /> 
+                        <ReferenceArea x2={100} y1={100} fill="rgba(59, 130, 246, 0.05)" /> 
+                        <ReferenceLine x={100} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
+                        <ReferenceLine y={100} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
+                        <XAxis type="number" dataKey="x" name="RS-Ratio" domain={['dataMin - 3', 'dataMax + 4']} stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                        <YAxis type="number" dataKey="y" name="RS-Momentum" domain={['dataMin - 3', 'dataMax + 4']} stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
+                        <Legend content={renderCustomLegend} verticalAlign="bottom" />
+                        
+                        {rrgData.map((sector, idx) => {
+                          if (hiddenLines[sector.name]) return null;
+                          const isHovered = hoveredSector === sector.name;
+                          const isAnotherHovered = hoveredSector !== null && hoveredSector !== sector.name;
+                          const color = COLORS[idx % COLORS.length];
+                          
+                          return (
+                            <Scatter 
+                              key={sector.name} name={sector.name} 
+                              data={sector.trail.map((pt, i) => ({ ...pt, labelName: i === sector.trail.length - 1 ? sector.name : '' }))} 
+                              fill={color}
+                              line={{ type: "monotone", stroke: color, strokeWidth: isHovered ? 4 : 2 }}
+                              opacity={isAnotherHovered ? 0.1 : 1} style={{ transition: 'all 0.3s ease', cursor: 'pointer' }}
+                              onClick={() => setModalData(sector)}
+                            >
+                              <LabelList dataKey="labelName" position="right" offset={8} style={{ fill: 'white', fontSize: '13px', fontWeight: 'bold', textShadow: `0px 0px 4px ${color}, 0px 0px 8px black` }} />
+                              {sector.trail.map((entry, index) => {
+                                const isLast = index === sector.trail.length - 1;
+                                return <Cell key={`cell-${index}`} fill={color} r={isLast ? (isHovered ? 12 : 8) : 0} opacity={isLast ? 1 : 0} />
+                              })}
+                            </Scatter>
+                          )
+                        })}
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
+                  {rrgData.map((sector, idx) => {
+                    const color = COLORS[idx % COLORS.length];
+                    return (
+                      <div key={sector.name} className="stat-card" style={{ padding: '10px', height: '250px', cursor: 'pointer' }} onClick={() => setModalData(sector)}>
+                        <h4 style={{ margin: '0 0 10px 0', textAlign: 'center', color: color }}>{sector.name}</h4>
+                        <ResponsiveContainer width="100%" height="85%">
+                          <ScatterChart margin={{ top: 5, right: 15, bottom: 5, left: 5 }}>
+                            <ReferenceArea x1={100} y1={100} fill="rgba(16, 185, 129, 0.05)" /> 
+                            <ReferenceArea x1={100} y2={100} fill="rgba(245, 158, 11, 0.05)" /> 
+                            <ReferenceArea x2={100} y2={100} fill="rgba(239, 68, 68, 0.05)" /> 
+                            <ReferenceArea x2={100} y1={100} fill="rgba(59, 130, 246, 0.05)" /> 
+                            <ReferenceLine x={100} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+                            <ReferenceLine y={100} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+                            <XAxis type="number" dataKey="x" domain={['dataMin - 1', 'dataMax + 1']} hide />
+                            <YAxis type="number" dataKey="y" domain={['dataMin - 1', 'dataMax + 1']} hide />
+                            <Tooltip content={<CustomTooltip />} cursor={false} />
+                            <Scatter 
+                              name={sector.name} 
+                              data={sector.trail} 
+                              fill={color}
+                              line={{ type: "monotone", stroke: color, strokeWidth: 2 }}
+                            >
+                              {sector.trail.map((entry, index) => {
+                                const isLast = index === sector.trail.length - 1;
+                                return <Cell key={`mini-cell-${index}`} fill={color} r={isLast ? 6 : 0} opacity={isLast ? 1 : 0} />
+                              })}
+                            </Scatter>
+                          </ScatterChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="glass-card alerts-card" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -817,37 +1303,36 @@ function App() {
                     </div>
                     
                     <div style={{ display: 'flex', gap: '10px' }}>
-                      <button 
-                        onClick={() => setChartMode('advanced')} 
-                        style={{ background: chartMode === 'advanced' ? 'rgba(79, 172, 254, 0.2)' : 'transparent', border: `1px solid ${chartMode === 'advanced' ? '#4facfe' : 'rgba(255,255,255,0.1)'}`, padding: '8px 16px', borderRadius: '4px', color: chartMode === 'advanced' ? '#4facfe' : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                      >
-                        <Compass size={16} /> Drawing Tools
-                      </button>
-                      <button 
-                        onClick={() => setChartMode('institutional')} 
-                        style={{ background: chartMode === 'institutional' ? 'rgba(16, 185, 129, 0.2)' : 'transparent', border: `1px solid ${chartMode === 'institutional' ? '#10b981' : 'rgba(255,255,255,0.1)'}`, padding: '8px 16px', borderRadius: '4px', color: chartMode === 'institutional' ? '#10b981' : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                      >
-                        <Activity size={16} /> Dark Pool Levels
-                      </button>
+                      <div style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', padding: '8px 16px', borderRadius: '4px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <Activity size={16} /> Pro Terminal: Drawing & Dark Pools
+                      </div>
                     </div>
                  </div>
                  <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-                   <div style={{ height: '100%' }}>
-                     {chartMode === 'advanced' ? (
-                       <AdvancedRealTimeChart theme="dark" symbol={expertTickerData.ticker} autosize />
-                     ) : (
-                       <CustomTradingChart ticker={expertTickerData.ticker} />
-                     )}
+                   <div style={{ height: '100%', position: 'relative' }}>
+                     <UnifiedPlotlyChart ticker={expertTickerData.ticker} />
                    </div>
                    <div style={{ overflowY: 'auto', paddingRight: '10px' }}>
                      {expertTickerData.score !== null && (
-                       <div className="glass-card" style={{ marginBottom: '2rem', textAlign: 'center', padding: '1.5rem', background: 'rgba(15, 23, 42, 0.6)' }}>
+                       <div className="glass-card" style={{ marginBottom: '1.5rem', textAlign: 'center', padding: '1.5rem', background: 'rgba(15, 23, 42, 0.6)' }}>
                          <span style={{ color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Master Algorithm Score</span>
                          <div style={{ fontSize: '4rem', fontWeight: 'bold', color: expertTickerData.score >= 70 ? '#10b981' : expertTickerData.score >= 40 ? '#f59e0b' : '#ef4444', lineHeight: '1', margin: '0.5rem 0' }}>
                            {expertTickerData.score}
                          </div>
                        </div>
                      )}
+
+                     {expertTickerData.agent_insight && (
+                       <div className="neo-panel" style={{ marginBottom: '1.5rem', borderLeft: '4px solid #a855f7', background: 'rgba(168, 85, 247, 0.05)' }}>
+                         <h3 style={{ margin: '0 0 0.5rem 0', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                           <Activity size={18} /> AI Agent Observation
+                         </h3>
+                         <p style={{ margin: 0, color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                           {expertTickerData.agent_insight}
+                         </p>
+                       </div>
+                     )}
+
 
                      <div className="neo-panel" style={{ marginBottom: '1.5rem' }}>
                        <h3 style={{ margin: '0 0 1rem 0', color: '#4facfe', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem' }}>Technical Health</h3>
@@ -964,9 +1449,21 @@ function App() {
                         <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>Vol Multiplier</span>
                         <strong style={{ color: alert.vol_multiplier > 2 ? '#10b981' : '#f59e0b' }}>{alert.vol_multiplier.toFixed(1)}x Avg</strong>
                       </div>
-                      <div>
+                      <div style={{ marginBottom: '0.5rem' }}>
                         <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>Call/Put Vol Ratio</span>
                         <strong style={{ color: alert.call_put_ratio > 2 ? '#10b981' : '#ec4899' }}>{alert.call_put_ratio.toFixed(2)}x</strong>
+                      </div>
+                      <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>VWAP Trend Velocity</span>
+                        <strong style={{ background: alert.vwap_slope > 0.1 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: alert.vwap_slope > 0.1 ? '#10b981' : '#ef4444', padding: '2px 8px', borderRadius: '4px', fontSize: '0.9rem' }}>
+                          {alert.vwap_slope !== undefined ? `${alert.vwap_slope > 0 ? '+' : ''}${alert.vwap_slope.toFixed(2)}%` : 'N/A'}
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>Institutional Block HVN</span>
+                        <strong style={{ color: '#3b82f6', borderBottom: '1px dashed #3b82f6' }}>
+                          ${alert.hvn_proxy !== undefined ? alert.hvn_proxy.toFixed(2) : 'N/A'}
+                        </strong>
                       </div>
                     </div>
                   </div>

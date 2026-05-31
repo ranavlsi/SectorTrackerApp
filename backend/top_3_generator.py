@@ -1,0 +1,128 @@
+import os
+import glob
+import re
+import json
+from collections import defaultdict
+from datetime import datetime
+import sys
+import yfinance as yf
+
+# Need to import TradeCouncil
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from trade_council import TradeCouncil
+
+DESKTOP_DIR = "/Users/amitkumar/Desktop"
+PUBLIC_DIR = "/Users/amitkumar/Desktop/SectorTrackerApp/public"
+OUTPUT_FILE = os.path.join(DESKTOP_DIR, "Top_3_Trade_Plans.md")
+
+def extract_tickers_from_file(filepath):
+    tickers = set()
+    try:
+        if filepath.endswith('.json'):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+                # Simple regex for JSON to catch "ticker": "AAPL"
+                matches = re.findall(r'"ticker"\s*:\s*"([A-Z]+)"', content, re.IGNORECASE)
+                for m in matches: tickers.add(m.upper())
+                
+                # If no direct ticker key matches, fallback to sweeping
+                if not matches:
+                    matches = re.findall(r'\b([A-Z]{2,5})\b', content)
+                    for m in matches: tickers.add(m)
+        else:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+                matches = re.findall(r'\b([A-Z]{2,5})\b', content)
+                for m in matches: tickers.add(m)
+    except Exception as e:
+        print(f"Failed to read {filepath}: {e}")
+        
+    # Clean false positives
+    stop_words = {'DATE', 'TIME', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOL', 'VOLUME', 'TICKER', 'PRICE', 'SCORE', 'THE', 'AND', 'FOR', 'TRUE', 'FALSE', 'NULL', 'ATH', 'SMA', 'EMA', 'MACD', 'RSI'}
+    return {t for t in tickers if t not in stop_words}
+
+def generate_top_3():
+    confluence = defaultdict(int)
+    file_hits = defaultdict(list)
+    
+    # 1. Sweep Desktop for .md and .csv
+    desktop_files = glob.glob(os.path.join(DESKTOP_DIR, "*.md")) + glob.glob(os.path.join(DESKTOP_DIR, "*.csv"))
+    
+    # 2. Sweep Public for .json results
+    public_files = glob.glob(os.path.join(PUBLIC_DIR, "*results.json")) + glob.glob(os.path.join(PUBLIC_DIR, "*flow.json"))
+    
+    all_files = desktop_files + public_files
+    
+    print(f"Scanning {len(all_files)} files for confluence...")
+    
+    for filepath in all_files:
+        filename = os.path.basename(filepath)
+        # Skip output files
+        if "Top_3_Trade_Plans" in filename or "playbook" in filename.lower():
+            continue
+            
+        tickers = extract_tickers_from_file(filepath)
+        for t in tickers:
+            confluence[t] += 1
+            file_hits[t].append(filename)
+            
+    if not confluence:
+        print("No tickers found across any scanner files.")
+        return
+            
+    # Remove extremely common ETF indices
+    for w in ['SPY', 'QQQ', 'IWM', 'DIA']:
+        confluence.pop(w, None)
+            
+    # Sort by highest confluence score
+    top_tickers = sorted(confluence.items(), key=lambda x: x[1], reverse=True)[:3]
+    
+    date_str = datetime.now().strftime("%B %d, %Y")
+    
+    md_content = f"# 🏆 Master Analyst: Top 3 Trade Plans\n"
+    md_content += f"**Date:** {date_str}\n\n"
+    md_content += "By cross-referencing all Desktop scan results and backend algorithmic output, here are the absolute best 3 setups for today based on extreme multi-scanner confluence:\n\n"
+    md_content += "---\n\n"
+    
+    for i, (ticker, score) in enumerate(top_tickers, 1):
+        try:
+            print(f"Evaluating Trade Plan for {ticker}...")
+            t = yf.Ticker(ticker)
+            hist = t.history(period="3mo", interval="1d")
+            
+            if len(hist) < 5:
+                continue
+                
+            plan = TradeCouncil.evaluate(ticker, hist)
+            
+            reasons = ", ".join(set(file_hits[ticker][:4])) # Show top files it appeared in
+            
+            md_content += f"### {i}. {ticker}\n"
+            md_content += f"* **Confluence Score:** {score} (Found in: {reasons})\n"
+            md_content += f"* **Entry Price:** ${plan['entry']:.2f}\n"
+            md_content += f"* **Stop Loss:** ${plan['stop_loss']:.2f}\n"
+            md_content += f"* **Profit Target:** ${plan['profit_target']:.2f}\n\n"
+        except Exception as e:
+            print(f"Error building plan for {ticker}: {e}")
+            
+    md_content += "---\n*Generated automatically before market open.*\n"
+    
+    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+        
+    playbook_file = os.path.join(PUBLIC_DIR, "ai_playbook.md")
+    with open(playbook_file, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+        
+    print(f"Saved Top 3 to {OUTPUT_FILE} and {playbook_file}")
+    
+    # Broadcast to Telegram
+    try:
+        sys.path.append(os.path.join(DESKTOP_DIR, "SectorTrackerApp"))
+        import send_telegram_report
+        send_telegram_report.send_telegram_alert(md_content)
+    except Exception as e:
+        print(f"Failed to send telegram alert: {e}")
+
+if __name__ == "__main__":
+    generate_top_3()

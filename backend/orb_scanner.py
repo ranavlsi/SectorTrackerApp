@@ -133,27 +133,30 @@ def run_scanner():
         print("Could not get tickers.")
         return
         
-    print(f"Fetching 1-minute data for {len(tickers)} S&P 500 stocks...")
+    print(f"Fetching 1-minute data for {len(tickers)} S&P 500 stocks (Paced YahooQuery)...")
+    import yahooquery as yq
     
-    # Download 1m data for all tickers at once (much faster)
-    df = yf.download(tickers, period='1d', interval='1m', group_by='ticker', progress=False)
+    yq_t = yq.Ticker(tickers, asynchronous=True, max_workers=10)
+    df_bulk = yq_t.history(period='1d', interval='1m')
     
     alerts = []
     passing_tickers = []
     orb_data = {}
     
-    # Evaluate ORB technicals
-    for ticker in tickers:
-        try:
-            if ticker in df:
-                ticker_df = df[ticker].dropna()
-                if not ticker_df.empty:
-                    passed_orb, orb_info = check_orb(ticker_df)
-                    if passed_orb:
-                        passing_tickers.append(ticker)
-                        orb_data[ticker] = orb_info
-        except Exception:
-            continue
+    if isinstance(df_bulk, pd.DataFrame) and not df_bulk.empty:
+        df_bulk = df_bulk.rename(columns={'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'})
+        
+        for ticker in tickers:
+            try:
+                if ticker in df_bulk.index.get_level_values('symbol'):
+                    ticker_df = df_bulk.loc[ticker].dropna()
+                    if not ticker_df.empty:
+                        passed_orb, orb_info = check_orb(ticker_df)
+                        if passed_orb:
+                            passing_tickers.append(ticker)
+                            orb_data[ticker] = orb_info
+            except Exception:
+                continue
             
     print(f"Found {len(passing_tickers)} stocks that broke the 15-min ORB with positive delta and unusual volume.")
     

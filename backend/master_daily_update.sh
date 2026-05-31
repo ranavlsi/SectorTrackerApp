@@ -1,0 +1,15 @@
+#!/bin/bash
+cd /Users/amitkumar/Desktop/SectorTrackerApp/backend
+echo "Starting Daily Market Data Download..." > master_update.log
+python3 db_updater.py >> master_update.log 2>&1
+echo "Running Volume Climax Scanner..." >> master_update.log
+python3 volume_climax_scanner.py >> master_update.log 2>&1
+echo "Running Darvas Box Scanner..." >> master_update.log
+python3 darvas_box_scanner.py >> master_update.log 2>&1
+echo "Running CANSLIM Scanner..." >> master_update.log
+python3 canslim_minervini_scanner.py >> master_update.log 2>&1
+echo "Running Earnings Flag Scanner..." >> master_update.log
+python3 earnings_flag_scanner.py >> master_update.log 2>&1
+echo "Running Candlestick Scanner..." >> master_update.log
+python3 candlestick_scanner.py >> master_update.log 2>&1
+echo "Update Complete." >> master_update.log

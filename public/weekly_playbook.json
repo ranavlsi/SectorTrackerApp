@@ -1,0 +1,116 @@
+{
+    "date": "May 30, 2026",
+    "market_summary": {
+        "text": "The S&P 500 closed the week at $756.48, moving +1.85% over the last 5 days. Structurally, the market remains bullish above its 50-day moving average. Focus on high relative strength leaders that survived the week.",
+        "bias": "Bullish",
+        "spy_weekly_return": "+1.85%"
+    },
+    "stocks_that_ran": [
+        {
+            "ticker": "SEDG",
+            "return": "+21.19%",
+            "price": "$76.35",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        },
+        {
+            "ticker": "ARM",
+            "return": "+18.46%",
+            "price": "$353.29",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        },
+        {
+            "ticker": "ASTS",
+            "return": "+17.85%",
+            "price": "$113.41",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        },
+        {
+            "ticker": "ALAB",
+            "return": "+15.11%",
+            "price": "$342.85",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        },
+        {
+            "ticker": "AMD",
+            "return": "+14.79%",
+            "price": "$516.10",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        }
+    ],
+    "about_to_fly": [
+        {
+            "ticker": "AVGO",
+            "price": "$446.77",
+            "dist_ath": "0.5%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        },
+        {
+            "ticker": "ROKU",
+            "price": "$130.18",
+            "dist_ath": "2.5%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        },
+        {
+            "ticker": "TSM",
+            "price": "$418.45",
+            "dist_ath": "2.8%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        },
+        {
+            "ticker": "AMZN",
+            "price": "$270.64",
+            "dist_ath": "2.8%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        },
+        {
+            "ticker": "BIIB",
+            "price": "$196.00",
+            "dist_ath": "4.8%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        }
+    ],
+    "top_3_picks": [
+        {
+            "ticker": "AVGO",
+            "entry_price": "$366.43 - 418.48",
+            "stop_loss": "$348.11",
+            "profit_target": "$448.90",
+            "setup_type": "Mean Reversion Pullback",
+            "reasoning": "Stock is structurally extended. Wait for the Deep Value Box convergence of the 21 EMA, Anchored VWAP, and Fibonacci retracement layers.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 57.8
+            }
+        },
+        {
+            "ticker": "ROKU",
+            "entry_price": "$134.79 - 140.13",
+            "stop_loss": "$128.74",
+            "profit_target": "$149.94",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 51.4
+            }
+        },
+        {
+            "ticker": "TSM",
+            "entry_price": "$434.86 - 452.08",
+            "stop_loss": "$413.09",
+            "profit_target": "$489.27",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
+                "momentum_color": "warning",
+                "rsi": 53.3
+            }
+        }
+    ]
+}

@@ -155,6 +155,9 @@ const ZacksFundamentalReport = ({ initialTicker }) => {
                       <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 0.5rem' }}></div>
                       <StyleBadge label="VGM" score={data.style_scores.vgm} />
                     </div>
+                    <p style={{ color: '#64748b', margin: '0.5rem 0 0 0', fontSize: '0.7rem', textAlign: 'center' }}>
+                      *Value score dynamically benchmarked against {data.benchmark_basket?.length || 0} peers.
+                    </p>
                   </div>
                 )}
               </div>
@@ -175,9 +178,9 @@ const ZacksFundamentalReport = ({ initialTicker }) => {
 
           {/* Valuation Metrics Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-            <MetricCard title="PEG Ratio" value={formatNumber(data.pegRatio)} icon={Activity} color={data.pegRatio < 1.5 ? '#10b981' : (data.pegRatio > 3 ? '#ef4444' : '#f59e0b')} />
-            <MetricCard title="Trailing P/E" value={formatNumber(data.trailingPE)} icon={DollarSign} color="#60a5fa" />
-            <MetricCard title="Forward P/E" value={formatNumber(data.forwardPE)} icon={TrendingUp} color="#c084fc" />
+            <MetricCard title={`Trailing P/E (vs ${formatNumber(data.benchmark_pe)} avg)`} value={formatNumber(data.trailingPE)} icon={DollarSign} color={data.trailingPE < data.benchmark_pe ? '#10b981' : '#ef4444'} />
+            <MetricCard title={`PEG Ratio (vs ${formatNumber(data.benchmark_peg)} avg)`} value={formatNumber(data.pegRatio)} icon={Activity} color={data.pegRatio < data.benchmark_peg ? '#10b981' : '#ef4444'} />
+            <MetricCard title={`Price/Sales (vs ${formatNumber(data.benchmark_ps)} avg)`} value={formatNumber(data.priceToSales)} icon={DollarSign} color={data.priceToSales < data.benchmark_ps ? '#10b981' : '#ef4444'} />
             <MetricCard title="Revenue Growth" value={formatPercent(data.revenueGrowth)} icon={TrendingUp} color={data.revenueGrowth > 0 ? '#10b981' : '#ef4444'} />
             <MetricCard title="Profit Margins" value={formatPercent(data.profitMargins)} icon={DollarSign} color="#34d399" />
             <MetricCard title="Return on Equity" value={formatPercent(data.returnOnEquity)} icon={Activity} color="#fbc2eb" />

@@ -4,7 +4,6 @@ import numpy as np
 import os
 import io
 import urllib.request
-import concurrent.futures
 from datetime import datetime
 import warnings
 warnings.filterwarnings("ignore")
@@ -20,7 +19,10 @@ def get_all_tickers():
         tickers = df['Symbol'].dropna().tolist()
         tickers = [t for t in tickers if isinstance(t, str) and len(t) > 0]
         tickers = [t.replace('$', '-').replace('.', '-') for t in tickers]
-        # Filter out warrants and other weird symbols if possible, but YF will just skip them
+        # Quick hack: limit to S&P 500 equivalent if possible, but let's just do full list 
+        # because bulk download handles it fine. Let's limit to 3000 to keep it extremely fast
+        # for testing today, otherwise the user will wait 5 minutes.
+        # But wait, they want the full market. Let's do the full list.
         return tickers
     except Exception as e:
         print(f"Error fetching tickers: {e}")
@@ -79,14 +81,14 @@ def identify_candlestick(df):
         return True, ", ".join(patterns)
     return False, ""
 
-def process_ticker(ticker):
+def process_ticker(ticker, df):
     try:
-        df = yf.download(ticker, period='1y', interval='1d', progress=False)
         if len(df) < 200:
             return None
             
         current_close = float(df['Close'].iloc[-1])
         
+        df = df.copy()
         df['SMA_50'] = df['Close'].rolling(window=50).mean()
         df['SMA_200'] = df['Close'].rolling(window=200).mean()
         df['SMA_20'] = df['Close'].rolling(window=20).mean()
@@ -152,32 +154,33 @@ def run_scanner():
     base_dir = '/Users/amitkumar'
     output_file = os.path.join(base_dir, 'Desktop', 'candlestick_pullback_alerts.md')
     
-    print("Fetching master list of US stocks...")
-    tickers = get_all_tickers()
-    if not tickers:
-        print("Failed to fetch tickers.")
+    print("Loading data from Local DuckDB Lakehouse...")
+    import duckdb
+    parquet_path = os.path.join('/Users/amitkumar/Desktop/SectorTrackerApp/backend', 'data', 'daily_ohlcv.parquet')
+    if not os.path.exists(parquet_path):
+        print("Lakehouse not found. Please run db_updater.py first.")
         return
         
-    # Limit to 5000 for realistic execution time without API bans, 
-    # but the user wanted full market if possible. 
-    # We will use ThreadPoolExecutor with 15 workers.
-    print(f"Scanning {len(tickers)} stocks for candlestick pullbacks...")
+    query = f"SELECT * FROM read_parquet('{parquet_path}') ORDER BY Date"
+    df_bulk = duckdb.query(query).to_df()
+    
+    unique_tickers = df_bulk['Ticker'].unique()
+    print(f"Scanning {len(unique_tickers)} stocks for candlestick pullbacks (Local Lakehouse Mode)...")
     
     alerts = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
-        # Using a subset for faster testing right now, but full list runs on cron
-        # Actually I will just run the full list!
-        futures = {executor.submit(process_ticker, t): t for t in tickers}
-        
-        count = 0
-        for future in concurrent.futures.as_completed(futures):
-            count += 1
-            if count % 1000 == 0:
-                print(f"Processed {count}/{len(tickers)}...")
-            res = future.result()
-            if res:
-                alerts.append(res)
-                
+    
+    for ticker in unique_tickers:
+        try:
+            ticker_df = df_bulk[df_bulk['Ticker'] == ticker].copy()
+            ticker_df = ticker_df.sort_values('Date').set_index('Date')
+            
+            if not ticker_df.empty:
+                res = process_ticker(ticker, ticker_df)
+                if res:
+                    alerts.append(res)
+        except Exception:
+            pass
+            
     print(f"Found {len(alerts)} stocks with bullish pullback patterns.")
     
     report = generate_markdown(alerts)

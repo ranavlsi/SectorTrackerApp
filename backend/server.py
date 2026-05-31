@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_caching import Cache
 import yfinance as yf
 import pandas as pd
 from earnings_engine import get_max_pain, get_eps_trend, get_historical_earnings_action, get_institutional_data
@@ -7,8 +8,11 @@ from fundamentals_engine import get_fundamentals
 
 app = Flask(__name__)
 CORS(app)
+cache = Cache(config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 3600})
+cache.init_app(app)
 
 @app.route('/api/analyze_earnings', methods=['GET'])
+@cache.cached(query_string=True)
 def analyze_earnings():
     ticker = request.args.get('ticker')
     if not ticker:
@@ -45,6 +49,7 @@ def analyze_earnings():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/fundamentals', methods=['GET'])
+@cache.cached(query_string=True)
 def fundamentals():
     ticker = request.args.get('ticker')
     if not ticker:
