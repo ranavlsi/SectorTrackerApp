@@ -32,7 +32,7 @@ def detect_rs_cup_and_handle(rs_line):
         return {"status": "none", "score": 0, "details": {}}
         
     cup_depth = float((peak_val - trough_val) / peak_val)
-    if not (0.10 <= cup_depth <= 0.55): # RELAXED: Max cup depth 55%
+    if not (0.10 <= cup_depth <= 0.40): # QUANT STRICT: Max cup depth 40%
         return {"status": "none", "score": 0, "details": {}}
         
     cup_duration = int(trough_idx - peak_idx)
@@ -46,8 +46,8 @@ def detect_rs_cup_and_handle(rs_line):
     right_rim_val = right_side_data.max()
     right_rim_idx = right_side_data.argmax() + trough_idx + 1
     
-    # Right rim must recover to >= 65% of left rim (peak) - RELAXED
-    if right_rim_val < peak_val * 0.65:
+    # Right rim must recover to >= 80% of left rim (peak) - QUANT STRICT
+    if right_rim_val < peak_val * 0.80:
         return {"status": "none", "score": 0, "details": {}}
         
     handle_data = rs_line.iloc[right_rim_idx:]
@@ -61,15 +61,16 @@ def detect_rs_cup_and_handle(rs_line):
         
     handle_low = handle_data.min()
     
-    # Handle must be in upper 75% of the cup - RELAXED
-    cup_midpoint = trough_val + (peak_val - trough_val) * 0.25
+    # Handle must be in upper half of the cup - QUANT STRICT
+    cup_midpoint = trough_val + (peak_val - trough_val) * 0.50
     if handle_low < cup_midpoint:
         return {"status": "none", "score": 0, "details": {}}
         
     handle_depth = float((right_rim_val - handle_low) / right_rim_val)
     handle_duration = int(len(handle_data))
     
-    if not (0.02 <= handle_depth <= 0.12) or handle_duration > 7:
+    # QUANT STRICT: Handle must be relatively tight (max 15%)
+    if not (0.02 <= handle_depth <= 0.15) or handle_duration > 7:
         return {
             "status": "cup", 
             "score": 40 + (10 if 0.12 <= cup_depth <= 0.25 else 0), 
@@ -172,8 +173,8 @@ def run_rs_scanner():
         if weeks_since_high < 3:
             continue
             
-        # FILTER: Skip stocks that have already broken out (>99% of high) or are too far away (<45% of high)
-        if price_vs_high >= 99.0 or price_vs_high < 45.0:
+        # FILTER: Skip stocks that have already broken out (>99% of high) or are too far away (<60% of high)
+        if price_vs_high >= 99.0 or price_vs_high < 60.0:
             continue
             
         if weeks_since_high < 3:
