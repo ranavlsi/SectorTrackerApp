@@ -348,6 +348,12 @@ function App() {
         deadMoney.push(sectorObj);
       }
     });
+    
+    // Sort all arrays by rank (ascending, so #1 is first)
+    freshMoney.sort((a, b) => a.rank - b.rank);
+    profitTaking.sort((a, b) => a.rank - b.rank);
+    deadMoney.sort((a, b) => a.rank - b.rank);
+
     return { freshMoney, profitTaking, deadMoney };
   };
   const moneyFlow = getRotationSummary();
