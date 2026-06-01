@@ -314,6 +314,36 @@ function App() {
   const marketMeter = data.market_meter;
   const tableData = [...rrgData].sort((a, b) => b.trail[b.trail.length - 1].x - a.trail[a.trail.length - 1].x)
 
+  const getRotationSummary = () => {
+    const freshMoney = [];
+    const profitTaking = [];
+    const deadMoney = [];
+
+    rrgData.forEach(sec => {
+      if (!sec.trail || sec.trail.length === 0) return;
+      const current = sec.trail[sec.trail.length - 1];
+      // Look back a few periods for direction
+      const prev = sec.trail.length > 3 ? sec.trail[sec.trail.length - 3] : sec.trail[0];
+
+      const isImproving = current.x < 100 && current.y >= 100;
+      const isLeading = current.x >= 100 && current.y >= 100;
+      const isWeakening = current.x >= 100 && current.y < 100;
+      const isLagging = current.x < 100 && current.y < 100;
+
+      const momRising = current.y > prev.y;
+      
+      if ((isImproving && momRising) || (isLeading && momRising)) {
+        freshMoney.push(sec.name);
+      } else if (isWeakening || (isLeading && !momRising)) {
+        profitTaking.push(sec.name);
+      } else if (isLagging) {
+        deadMoney.push(sec.name);
+      }
+    });
+    return { freshMoney, profitTaking, deadMoney };
+  };
+  const moneyFlow = getRotationSummary();
+
   const toggleLine = (name) => {
     if (isTop5Isolated) setIsTop5Isolated(false)
     setHiddenLines(prev => ({ ...prev, [name]: !prev[name] }))
@@ -1324,6 +1354,43 @@ function App() {
                   )
                 })}
               </div>
+            </div>
+          </div>
+
+          {/* Automated Money Flow Summary */}
+          <div className="glass-card" style={{ marginTop: '20px' }}>
+            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
+              <Zap color="#f59e0b" /> Automated Money Flow Summary ({timeframe})
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+              
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <h3 style={{ color: '#10b981', marginTop: 0 }}>🟢 Fresh Money Inflow</h3>
+                <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Institutional capital is actively rotating INTO these sectors (Momentum is rising).</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {moneyFlow.freshMoney.map(sec => <span key={sec} style={{ background: '#10b981', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>{sec}</span>)}
+                  {moneyFlow.freshMoney.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                <h3 style={{ color: '#f59e0b', marginTop: 0 }}>🟡 Profit Taking</h3>
+                <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Money is moving OUT of these previous leaders (Momentum is falling).</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {moneyFlow.profitTaking.map(sec => <span key={sec} style={{ background: '#f59e0b', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>{sec}</span>)}
+                  {moneyFlow.profitTaking.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                <h3 style={{ color: '#ef4444', marginTop: 0 }}>🔴 Dead Money</h3>
+                <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Sectors trapped in structural downtrends (Lagging quadrant).</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {moneyFlow.deadMoney.map(sec => <span key={sec} style={{ background: '#ef4444', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>{sec}</span>)}
+                  {moneyFlow.deadMoney.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
+                </div>
+              </div>
+
             </div>
           </div>
         </>
