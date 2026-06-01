@@ -1,12 +1,12 @@
 # 🏆 Master Analyst: Top 3 Trade Plans
-**Date:** May 31, 2026
+**Date:** June 01, 2026
 
 By cross-referencing all Desktop scan results and backend algorithmic output, here are the absolute best 3 setups for today based on extreme multi-scanner confluence:
 
 ---
 
 ### 1. IBM
-* **Confluence Score:** 5 (Found in: intraday_results.json, screener_results.json, earnings_gap_alerts.md, squeeze_results.json)
+* **Confluence Score:** 5 (Found in: screener_results.json, intraday_results.json, squeeze_results.json, earnings_gap_alerts.md)
 **🎯 Algorithmic Trade Plan:**
 - Ideal Entry: $267.13
 - Target (3 ATR): $308.75
@@ -19,16 +19,16 @@ By cross-referencing all Desktop scan results and backend algorithmic output, he
 - YoY Revenue Growth: 9.5%
 
 **🔥 Options Flow (Exp: 2026-06-05):**
-- Max Pain: $245.0
+- Max Pain: $262.5
 - Put/Call Ratio: 0.21
 
 **📰 Social Sentiment & Catalysts:**
-- Trump praised IBM's 'legend' CEO, government floated a $1B quantum award — is the stock still a 'very nice price'? (Moneywise)
-- Quantum Computing Just Hit Commercial Viability and These 3 ETFs Sit on Top of the Compute Transition (24/7 Wall St.)
-- Here's why Wall Street is so chuffed about Trump investing $2 billion in quantum computing companies (Moneywise)
+- IBM shares surge 15% after Trump video resurfaces (Investing.com)
+- Here Are Monday’s Top Wall Street Analyst Research Calls: Accenture, Caesars Entertainment, Carnival, Dell Technologies, IBM, Kohl’s, Microsoft, Zscaler, and More (24/7 Wall St.)
+- D-Wave Quantum Releases Gate-Model Roadmap. What That Means and Why It Matters. (Barrons.com)
 
 ### 2. BA
-* **Confluence Score:** 5 (Found in: intraday_results.json, screener_results.json, darvas_box_alerts.md, correlation_results.json)
+* **Confluence Score:** 5 (Found in: darvas_box_alerts.md, correlation_results.json, intraday_results.json, screener_results.json)
 **🎯 Algorithmic Trade Plan:**
 - Ideal Entry: $226.82
 - Target (3 ATR): $253.83
@@ -41,16 +41,16 @@ By cross-referencing all Desktop scan results and backend algorithmic output, he
 - YoY Revenue Growth: 14.0%
 
 **🔥 Options Flow (Exp: 2026-06-05):**
-- Max Pain: $225.0
+- Max Pain: $222.5
 - Put/Call Ratio: 0.35
 
 **📰 Social Sentiment & Catalysts:**
+- How Kelly Ortberg is rebuilding Boeing from the inside out (Fortune)
+- Is RTX Corporation Stock Outperforming the Dow? (Barchart)
 - President Xi Jinping Has Promised China Will Buy 200 Boeing 737s. Here Is One More Big Reason the Stock Is a Buy in 2026. (Motley Fool)
-- Why Did South Korea Just Order $4.2 Billion in Military Helicopters From Boeing and Lockheed? (Motley Fool)
-- Boeing Ramps 737 MAX Output As China Order And Defense Wins Build (Simply Wall St.)
 
 ### 3. SEDG
-* **Confluence Score:** 5 (Found in: canslim_minervini_alerts.csv, screener_results.json, tv_watchlist_results.json, squeeze_results.json)
+* **Confluence Score:** 5 (Found in: tv_watchlist_results.json, canslim_minervini_alerts.csv, squeeze_results.json, screener_results.json)
 **🎯 Algorithmic Trade Plan:**
 - Ideal Entry: $62.25
 - Target (3 ATR): $81.25
@@ -63,7 +63,7 @@ By cross-referencing all Desktop scan results and backend algorithmic output, he
 - YoY Revenue Growth: 41.5%
 
 **🔥 Options Flow (Exp: 2026-06-05):**
-- Max Pain: $55.0
+- Max Pain: $60.0
 - Put/Call Ratio: 0.88
 
 **📰 Social Sentiment & Catalysts:**

@@ -92,6 +92,8 @@ def run_daemon():
     print(f"Loaded {len(tickers)} symbols from Lakehouse.")
     print("Daemon will pull market-wide snapshots every 60 seconds during open hours.")
     
+    last_15m_run = 0
+    
     while True:
         if is_market_open() or True: # Remove 'or True' for production, keeping it so you can test it after-hours!
             t0 = time.time()
@@ -105,6 +107,18 @@ def run_daemon():
                 # Trigger the live market scanner to instantly analyze the snapshot
                 import subprocess
                 subprocess.Popen(['python3', '/Users/amitkumar/Desktop/SectorTrackerApp/backend/live_market_scanner.py'])
+            
+            # --- 15-Minute Engine Triggers ---
+            current_time = time.time()
+            if current_time - last_15m_run >= 900:  # 900 seconds = 15 minutes
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Triggering 15-Minute Engines (Intraday Alerts, Options, Darkpool, RRG)...")
+                try:
+                    subprocess.Popen(['python3', '/Users/amitkumar/Desktop/SectorTrackerApp/backend/intraday_engine.py'])
+                    subprocess.Popen(['python3', '/Users/amitkumar/Desktop/SectorTrackerApp/backend/sector_data_api.py'])
+                except Exception as e:
+                    print(f"Error triggering engines: {e}")
+                last_15m_run = current_time
+
         else:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Market closed. Sleeping...")
             
