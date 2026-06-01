@@ -183,7 +183,7 @@ def run_intraday_scanner():
     # Intraday 1-minute bars for today
     from datetime import timedelta
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=2) # 2 days to cover pre-market / previous close
+    start_date = end_date - timedelta(days=5) # 5 days to safely cover weekends and pre-market
     
     # Safe Batching for Alpaca
     chunk_size = 100
