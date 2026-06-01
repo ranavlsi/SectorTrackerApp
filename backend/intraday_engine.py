@@ -151,11 +151,16 @@ def run_algorithms(ticker, df_1m, df_5m):
         if curr_1m['Close'] > df_1m['High'].rolling(15).max().shift(1).iloc[-1]:
             fire_alert(ticker, "MULTI-TIMEFRAME CONFLUENCE", f"Perfect alignment: Breaking local highs while holding above VWAP and SMAs across 1m and 5m frames.", "#14b8a6")
 
-    # --- 10. Gap and Go ---
-    if len(df_5m) > 4:
-        day_open = df_5m['Open'].iloc[0]
-        if df_5m['Low'].iloc[0:3].min() >= day_open * 0.995:
-            opening_range_high = df_5m['High'].iloc[0:3].max()
+    # --- 10. Gap and Go (15m ORB) ---
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    today_5m = df_5m[df_5m.index.strftime('%Y-%m-%d') == today_str]
+    
+    # Only fire in the first 16 minutes after market open (9:30 AM to 9:46 AM)
+    if now_time <= dt_time(9, 46) and len(today_5m) >= 3:
+        day_open = today_5m['Open'].iloc[0]
+        # Must hold near the open (no massive flush)
+        if today_5m['Low'].iloc[0:3].min() >= day_open * 0.995:
+            opening_range_high = today_5m['High'].iloc[0:3].max()
             if prev_1m['Close'] < opening_range_high and curr_1m['Close'] > opening_range_high:
                 fire_alert(ticker, "GAP AND GO", f"Successfully held the morning opening gap and is now breaking the 15-minute Opening Range High (${opening_range_high:.2f}).", "#f97316")
 
@@ -242,11 +247,17 @@ def run_intraday_scanner():
             run_algorithms(ticker, df_1m, df_5m)
             
             # --- Generate UI Data for Intraday Radar ---
-            # 1. ORB Pivot (15m high)
-            if len(df_5m) >= 3:
-                orb_pivot = float(df_5m['High'].iloc[0:3].max())
+            today_str = datetime.now().strftime('%Y-%m-%d')
+            today_5m_ui = df_5m[df_5m.index.strftime('%Y-%m-%d') == today_str]
+            today_1m_ui = df_1m[df_1m.index.strftime('%Y-%m-%d') == today_str]
+            
+            # 1. ORB Pivot (15m high for today)
+            if len(today_5m_ui) >= 3:
+                orb_pivot = float(today_5m_ui['High'].iloc[0:3].max())
+            elif len(today_1m_ui) > 0:
+                orb_pivot = float(today_1m_ui['High'].max())
             else:
-                orb_pivot = float(df_1m['High'].max())
+                orb_pivot = float(df_1m['High'].max()) # fallback
                 
             current_price = float(df_1m['Close'].iloc[-1])
             
