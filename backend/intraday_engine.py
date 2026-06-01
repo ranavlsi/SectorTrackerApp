@@ -69,7 +69,7 @@ def rsi_series(series, period=14):
     rs = avg_gain / avg_loss
     return 100 - (100 / (1 + rs))
 
-def run_algorithms(ticker, df_1m, df_5m):
+def run_algorithms(ticker, df_1m, df_5m, structural_levels=None):
     # Ensure sequential index for calculation
     df_1m = df_1m.sort_index()
     df_5m = df_5m.sort_index()
@@ -164,10 +164,54 @@ def run_algorithms(ticker, df_1m, df_5m):
             if prev_1m['Close'] < opening_range_high and curr_1m['Close'] > opening_range_high:
                 fire_alert(ticker, "GAP AND GO", f"Successfully held the morning opening gap and is now breaking the 15-minute Opening Range High (${opening_range_high:.2f}).", "#f97316")
 
+    # --- 11. Structural Level Breakout (Key Levels Agent) ---
+    if structural_levels and isinstance(structural_levels, dict):
+        levels = structural_levels.get(ticker, {})
+        if levels:
+            # Check for crosses of key levels in the last 1 minute
+            c = curr_1m['Close']
+            p = prev_1m['Close']
+            vol_conviction = curr_1m['Volume'] > curr_1m['Vol_SMA20'] * 2.0
+            
+            # Map of level names to values
+            level_map = {
+                "Premarket High (PMH)": levels.get("PMH"),
+                "Premarket Low (PML)": levels.get("PML"),
+                "Previous Day High (PDH)": levels.get("PDH"),
+                "Previous Day Low (PDL)": levels.get("PDL"),
+                "Previous Week High (PWH)": levels.get("PWH"),
+                "Previous Week Low (PWL)": levels.get("PWL"),
+                "Previous Month High (PMoH)": levels.get("PMoH"),
+                "Previous Month Low (PMoL)": levels.get("PMoL"),
+            }
+            
+            for lvl_name, lvl_val in level_map.items():
+                if lvl_val is None: continue
+                
+                # Upside Breakout
+                if p < lvl_val and c > lvl_val:
+                    if vol_conviction and c > curr_1m['VWAP']:
+                        fire_alert(ticker, "STRUCTURAL BREAKOUT", f"Crossed above {lvl_name} at ${lvl_val:.2f} with 2x Volume Conviction and VWAP support.", "#ec4899", council="🏛️ KEY LEVELS AGENT")
+                
+                # Downside Breakdown
+                elif p > lvl_val and c < lvl_val:
+                    if vol_conviction and c < curr_1m['VWAP']:
+                        fire_alert(ticker, "STRUCTURAL BREAKDOWN", f"Broke below {lvl_name} at ${lvl_val:.2f} with 2x Volume Conviction and VWAP resistance.", "#ef4444", council="🏛️ KEY LEVELS AGENT")
+
 
 def run_intraday_scanner():
-    print(f"Starting Ultimate 10-Algorithm Intraday Scanner on {len(UNIVERSE)} stocks using Alpaca...")
+    print(f"Starting Ultimate 11-Algorithm Intraday Scanner on {len(UNIVERSE)} stocks using Alpaca...")
     
+    # Load Key Structural Levels Cached by the Daemon
+    structural_levels = {}
+    try:
+        with open('/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/structural_levels.json', 'r') as f:
+            st_data = json.load(f)
+            structural_levels = st_data.get('levels', {})
+    except Exception as e:
+        print(f"Could not load structural levels cache: {e}")
+        
+
     import os
     from dotenv import load_dotenv
     from alpaca.data.historical import StockHistoricalDataClient
@@ -244,7 +288,7 @@ def run_intraday_scanner():
         df_5m = df_1m.resample('5min', closed='right', label='right').agg(agg_dict).dropna()
         
         try:
-            run_algorithms(ticker, df_1m, df_5m)
+            run_algorithms(ticker, df_1m, df_5m, structural_levels)
             
             # --- Generate UI Data for Intraday Radar ---
             today_str = datetime.now().strftime('%Y-%m-%d')

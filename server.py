@@ -1616,6 +1616,22 @@ def intraday_multi_algo_worker():
             
         time.sleep(300) # Run every 5 minutes
 
+def key_levels_worker():
+    """Runs the structural key levels daemon daily or on startup."""
+    while True:
+        try:
+            import sys
+            if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+                sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+            from key_levels_daemon import fetch_key_levels
+            fetch_key_levels()
+        except Exception as e:
+            print(f"Key Levels Worker Error: {e}")
+            
+        # Run every 6 hours to catch pre-market changes and daily rollovers
+        time.sleep(21600)
+
+
 if __name__ == '__main__':
     # Start autonomous councils in background threads
     threading.Thread(target=technical_council_worker, daemon=True).start()
@@ -1627,6 +1643,8 @@ if __name__ == '__main__':
     threading.Thread(target=market_health_worker, daemon=True).start()
     threading.Thread(target=gex_council_worker, daemon=True).start()
     threading.Thread(target=intraday_multi_algo_worker, daemon=True).start()
+    threading.Thread(target=key_levels_worker, daemon=True).start()
     
+
     # Run the Flask app with threading enabled to handle SSE connections concurrently
     app.run(port=5000, debug=True, threaded=True)
