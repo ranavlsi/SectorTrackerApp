@@ -332,17 +332,20 @@ function App() {
 
       const momRising = current.y > prev.y;
       
+      const rank = tableData.findIndex(s => s.name === sec.name) + 1;
+      const sectorObj = { name: sec.name, rank, improving: momRising };
+      
       // 1. Fresh Money / Leaders (Aggressive rotation IN or Current Leaders)
       if (isLeading || (isImproving && momRising)) {
-        freshMoney.push(sec.name);
+        freshMoney.push(sectorObj);
       } 
       // 2. Profit Taking (Rotation OUT)
       else if (isWeakening) {
-        profitTaking.push(sec.name);
+        profitTaking.push(sectorObj);
       } 
       // 3. Dead Money (Trapped, or Failed Breakouts)
       else if (isLagging || (isImproving && !momRising)) {
-        deadMoney.push(sec.name);
+        deadMoney.push(sectorObj);
       }
     });
     return { freshMoney, profitTaking, deadMoney };
@@ -1373,7 +1376,11 @@ function App() {
                 <h3 style={{ color: '#10b981', marginTop: 0 }}>🟢 Fresh Money Inflow</h3>
                 <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Institutional capital is actively rotating INTO these sectors (Momentum is rising).</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {moneyFlow.freshMoney.map(sec => <span key={sec} style={{ background: '#10b981', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>{sec}</span>)}
+                  {moneyFlow.freshMoney.map(sec => (
+                    <span key={sec.name} style={{ background: '#10b981', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                      #{sec.rank} {sec.name} {sec.improving ? '📈' : '📉'}
+                    </span>
+                  ))}
                   {moneyFlow.freshMoney.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
                 </div>
               </div>
@@ -1382,7 +1389,11 @@ function App() {
                 <h3 style={{ color: '#f59e0b', marginTop: 0 }}>🟡 Profit Taking</h3>
                 <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Money is moving OUT of these previous leaders (Momentum is falling).</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {moneyFlow.profitTaking.map(sec => <span key={sec} style={{ background: '#f59e0b', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>{sec}</span>)}
+                  {moneyFlow.profitTaking.map(sec => (
+                    <span key={sec.name} style={{ background: '#f59e0b', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                      #{sec.rank} {sec.name} {sec.improving ? '📈' : '📉'}
+                    </span>
+                  ))}
                   {moneyFlow.profitTaking.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
                 </div>
               </div>
@@ -1391,7 +1402,11 @@ function App() {
                 <h3 style={{ color: '#ef4444', marginTop: 0 }}>🔴 Dead Money</h3>
                 <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Sectors trapped in structural downtrends (Lagging quadrant).</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {moneyFlow.deadMoney.map(sec => <span key={sec} style={{ background: '#ef4444', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>{sec}</span>)}
+                  {moneyFlow.deadMoney.map(sec => (
+                    <span key={sec.name} style={{ background: '#ef4444', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                      #{sec.rank} {sec.name} {sec.improving ? '📈' : '📉'}
+                    </span>
+                  ))}
                   {moneyFlow.deadMoney.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
                 </div>
               </div>
