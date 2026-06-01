@@ -332,12 +332,12 @@ function App() {
 
       const momRising = current.y > prev.y;
       
-      // 1. Fresh Money (Aggressive rotation IN)
-      if ((isImproving && momRising) || (isLeading && momRising)) {
+      // 1. Fresh Money / Leaders (Aggressive rotation IN or Current Leaders)
+      if (isLeading || (isImproving && momRising)) {
         freshMoney.push(sec.name);
       } 
       // 2. Profit Taking (Rotation OUT)
-      else if (isWeakening || (isLeading && !momRising)) {
+      else if (isWeakening) {
         profitTaking.push(sec.name);
       } 
       // 3. Dead Money (Trapped, or Failed Breakouts)
