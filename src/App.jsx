@@ -348,11 +348,11 @@ function App() {
         deadMoney.push(sectorObj);
       }
     });
-    
     // Sort all arrays by rank (ascending, so #1 is first)
     freshMoney.sort((a, b) => a.rank - b.rank);
     profitTaking.sort((a, b) => a.rank - b.rank);
-    deadMoney.sort((a, b) => a.rank - b.rank);
+    // Dead money sorted descending (so highest rank number/worst sector is first)
+    deadMoney.sort((a, b) => b.rank - a.rank);
 
     return { freshMoney, profitTaking, deadMoney };
   };
