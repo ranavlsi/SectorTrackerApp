@@ -1634,7 +1634,7 @@ def key_levels_worker():
 
 if __name__ == '__main__':
     # Start autonomous councils in background threads
-    threading.Thread(target=technical_council_worker, daemon=True).start()
+    # threading.Thread(target=technical_council_worker, daemon=True).start() # Replaced by live Intraday Engine
     threading.Thread(target=insider_council_worker, daemon=True).start()
     threading.Thread(target=darkpool_council_worker, daemon=True).start()
     threading.Thread(target=premarket_council_worker, daemon=True).start()

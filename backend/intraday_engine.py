@@ -207,9 +207,41 @@ def run_algorithms(ticker, df_1m, df_5m, structural_levels=None):
                     if vol_conviction and c < curr_1m['VWAP']:
                         fire_alert(ticker, "STRUCTURAL BREAKDOWN", f"Broke below {lvl_name} at ${lvl_val:.2f} with 2x Volume Conviction and VWAP resistance.", "#ef4444", council="🏛️ KEY LEVELS AGENT")
 
+    # --- 12. Liquidity Sweep (Bullish Reversal Trap) ---
+    if structural_levels and isinstance(structural_levels, dict):
+        levels = structural_levels.get(ticker, {})
+        if levels and len(df_5m) > 3:
+            lod = df_5m['Low'].iloc[:-2].min() 
+            levels_to_check = [levels.get("PML"), levels.get("PDL"), lod]
+            for lvl in levels_to_check:
+                if lvl is None: continue
+                if curr_5m['Low'] < lvl and curr_5m['Close'] > lvl and curr_5m['Volume'] > curr_5m['Vol_SMA20'] * 1.5:
+                    candle_range = curr_5m['High'] - curr_5m['Low']
+                    if candle_range > 0:
+                        close_pct = (curr_5m['Close'] - curr_5m['Low']) / candle_range
+                        if close_pct > 0.6: # Closes in the upper 40% of the candle
+                            fire_alert(ticker, "LIQUIDITY SWEEP", f"Violent 5m rejection wick. Swept stops below ${lvl:.2f} but instantly reclaimed it on heavy volume.", "#f59e0b")
+                            break # Don't fire multiple times for different levels
+
+    # --- 13. Head Fake Trap (Bearish Reversal Trap) ---
+    if structural_levels and isinstance(structural_levels, dict):
+        levels = structural_levels.get(ticker, {})
+        if levels and len(df_5m) > 3:
+            hod = df_5m['High'].iloc[:-2].max() 
+            levels_to_check = [levels.get("PMH"), levels.get("PDH"), hod]
+            for lvl in levels_to_check:
+                if lvl is None: continue
+                if curr_5m['High'] > lvl and curr_5m['Close'] < lvl and curr_5m['Volume'] > curr_5m['Vol_SMA20'] * 1.5:
+                    candle_range = curr_5m['High'] - curr_5m['Low']
+                    if candle_range > 0:
+                        close_pct = (curr_5m['High'] - curr_5m['Close']) / candle_range
+                        if close_pct > 0.6: # Closes in the lower 40% of the candle
+                            fire_alert(ticker, "HEAD FAKE TRAP", f"Violent 5m rejection wick. Broke out above ${lvl:.2f} but immediately trapped bulls and flushed on heavy volume.", "#ef4444")
+                            break # Don't fire multiple times for different levels
+
 
 def run_intraday_scanner():
-    print(f"Starting Ultimate 11-Algorithm Intraday Scanner on {len(UNIVERSE)} stocks using Alpaca...")
+    print(f"Starting Ultimate 13-Algorithm Intraday Scanner on {len(UNIVERSE)} stocks using Alpaca...")
     
     # Load Key Structural Levels Cached by the Daemon
     structural_levels = {}
