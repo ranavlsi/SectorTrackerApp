@@ -28,7 +28,7 @@ UNIVERSE = [
 
 LAST_ALERTED = {}
 COOLDOWN_SECONDS = 1800 # 30 mins
-
+LAST_RADAR_SUMMARY_TIME = 0
 def fire_alert(ticker, setup_name, msg, color="#10b981", council="🎯 INTRADAY EXPERT"):
     global LAST_ALERTED
     now = time.time()
@@ -54,10 +54,19 @@ def fire_alert(ticker, setup_name, msg, color="#10b981", council="🎯 INTRADAY 
 
 
 def calc_vwap(df):
+    # Calculate intraday VWAP anchored to the start of each day
     df['Typical'] = (df['High'] + df['Low'] + df['Close']) / 3
-    df['CumVol'] = df['Volume'].cumsum()
-    df['CumVolPrice'] = (df['Typical'] * df['Volume']).cumsum()
+    df['TypicalVol'] = df['Typical'] * df['Volume']
+    
+    # Extract the date part to group by
+    df['Date'] = df.index.strftime('%Y-%m-%d')
+    
+    # Cumsum grouped by date ensures it resets at 9:30 AM every morning
+    df['CumVol'] = df.groupby('Date')['Volume'].cumsum()
+    df['CumVolPrice'] = df.groupby('Date')['TypicalVol'].cumsum()
+    
     df['VWAP'] = df['CumVolPrice'] / df['CumVol']
+    df.drop(columns=['TypicalVol', 'Date'], inplace=True)
     return df
 
 def rsi_series(series, period=14):
