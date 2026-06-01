@@ -359,6 +359,27 @@ def run_intraday_scanner():
         json.dump({"results": radar_results}, f)
         
     print(f"Intraday Multi-Algo Scan complete. Wrote {len(radar_results)} setups to Intraday Radar.")
+    
+    # Broadcast to Telegram every 30 minutes
+    global LAST_RADAR_SUMMARY_TIME
+    now = time.time()
+    if radar_results and (now - LAST_RADAR_SUMMARY_TIME > 1800):
+        LAST_RADAR_SUMMARY_TIME = now
+        msg_lines = ["*Top Actionable Breakouts:*"]
+        for i, res in enumerate(radar_results[:5]):
+            msg_lines.append(f"{i+1}. {res['ticker']} (Vol: {res['vol_multiplier']:.1f}x) - Price: ${res['current_price']:.2f}")
+            
+        payload = {
+            "council": "📡 INTRADAY RADAR SWEEP",
+            "ticker": "MARKET",
+            "setup": "\n".join(msg_lines),
+            "color": "#3b82f6",
+            "send_telegram": True 
+        }
+        try:
+            requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=2)
+        except:
+            pass
 
 if __name__ == "__main__":
     run_intraday_scanner()

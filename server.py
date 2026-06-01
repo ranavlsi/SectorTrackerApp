@@ -810,7 +810,7 @@ def darkpool_council_worker():
             continue
             
         try:
-            url = 'https://finviz.com/screener.ashx?v=111&s=ta_unusualvolume&o=-volume'
+            url = 'https://finviz.com/screener.ashx?v=111&f=cap_midover,sh_price_o5&s=ta_unusualvolume&o=-volume'
             headers = {'User-Agent': 'Mozilla/5.0'}
             res = requests.get(url, headers=headers)
             dfs = pd.read_html(io.StringIO(res.text))
