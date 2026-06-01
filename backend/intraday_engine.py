@@ -29,6 +29,29 @@ UNIVERSE = [
 LAST_ALERTED = {}
 COOLDOWN_SECONDS = 1800 # 30 mins
 LAST_RADAR_SUMMARY_TIME = 0
+def check_social_sentiment(ticker):
+    try:
+        from agents_engine import get_market_agents_data
+        social_data = get_market_agents_data(ticker)
+        if social_data and 'surge_metrics' in social_data:
+            surge_level = social_data['surge_metrics'].get('surge_level', 0)
+            if surge_level > 85: # High Surge Threshold
+                bull_pct = social_data['surge_metrics'].get('bullish_percent', 50)
+                sentiment_label = social_data['surge_metrics'].get('sentiment_label', 'neutral')
+                
+                social_msg = f"Live Intraday Anomaly on ${ticker} confirmed by Social Chatter! Surge: {surge_level}. Sentiment: {sentiment_label.upper()} ({bull_pct}% Bullish)."
+                
+                payload = {
+                    "council": "📱 SOCIAL SENTIMENT COUNCIL",
+                    "ticker": ticker,
+                    "setup": social_msg,
+                    "color": "#3b82f6",
+                    "send_telegram": True
+                }
+                requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=2)
+    except Exception as e:
+        pass
+
 def fire_alert(ticker, setup_name, msg, color="#10b981", council="🎯 INTRADAY EXPERT"):
     global LAST_ALERTED
     now = time.time()
@@ -49,6 +72,10 @@ def fire_alert(ticker, setup_name, msg, color="#10b981", council="🎯 INTRADAY 
     try:
         requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=2)
         print(f"🔥 FIRED: {ticker} - {setup_name}")
+        
+        # Trigger Live Social Sentiment check in background to confirm the anomaly
+        import threading
+        threading.Thread(target=check_social_sentiment, args=(ticker,), daemon=True).start()
     except Exception as e:
         print(f"Webhook error for {ticker}: {e}")
 

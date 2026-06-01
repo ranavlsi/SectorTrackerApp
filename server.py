@@ -960,40 +960,6 @@ def darkpool_council_worker():
                 
                 alert_queue.put(alert)
                 
-                # --- NEW SOCIAL SENTIMENT INTEGRATION ---
-                try:
-                    import sys
-                    if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
-                        sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
-                    from agents_engine import get_market_agents_data
-                    
-                    # 20% chance to check social sentiment per sweep to avoid spamming APIs
-                    if random.random() < 0.20:
-                        social_data = get_market_agents_data(ticker)
-                        if social_data and 'surge_metrics' in social_data:
-                            surge_level = social_data['surge_metrics'].get('surge_level', 0)
-                            if surge_level > 85: # High Surge Threshold
-                                bull_pct = social_data['surge_metrics'].get('bullish_percent', 50)
-                                sentiment_label = social_data['surge_metrics'].get('sentiment_label', 'neutral')
-                                
-                                social_msg = f"📱 SOCIAL SENTIMENT COUNCIL: High Social Surge Detected on ${ticker}! Surge Level: {surge_level}. Sentiment: {sentiment_label.upper()} ({bull_pct}% Bullish). Unusual options and retail chatter spiking."
-                                
-                                if not deduplicator.is_duplicate(ticker, datetime.now().strftime("%Y-%m-%d %H"), "SOCIAL", "", "", "", "SOCIAL"):
-                                    social_alert = {
-                                        "id": str(random.randint(10000, 99999)),
-                                        "council": "📱 SOCIAL SENTIMENT COUNCIL",
-                                        "ticker": ticker,
-                                        "setup": social_msg,
-                                        "color": "#3b82f6", # Blue for social
-                                        "timestamp": datetime.now().strftime("%I:%M:%S %p")
-                                    }
-                                    alert_queue.put(social_alert)
-                                    
-                                    if "DISPATCH_TELEGRAM" in verdict or surge_level > 95:
-                                        threading.Thread(target=send_telegram_alert, args=(social_alert,), daemon=True).start()
-                except Exception as e:
-                    print(f"Social sentiment error in background loop: {e}")
-                
                 # Add to Rolling Imbalance History (Only if it's an options sweep)
                 if "SWEEP" in alert_text:
                     now = time.time()
@@ -1050,79 +1016,17 @@ def premarket_council_worker():
         
         if is_trigger_time and is_valid_day and not has_run_today:
             
-            # Fetch Dynamic Top Movers using Market-Wide Finviz Screener
             try:
-                import requests
-                import io
-                import pandas as pd
+                import sys
+                if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+                    sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+                from premarket_gappers import fetch_premarket_briefing
                 
-                # Filters: Market Cap > $2B, Rel Vol > 1.5, EPS Q/Q Positive, sorted by Change
-                url = 'https://finviz.com/screener.ashx?v=111&f=cap_midover,sh_relvol_o1.5,fa_epsqoq_pos&o=-change'
-                headers = {'User-Agent': 'Mozilla/5.0'}
-                html = requests.get(url, headers=headers).text
-                df = pd.read_html(io.StringIO(html))[-2]
+                print("Triggering Live Alpaca Premarket Briefing...")
+                fetch_premarket_briefing()
                 
-                top_5_tickers = df['Ticker'].head(5).tolist()
-                top_5_changes = df['Change'].head(5).tolist()
-                
-                live_movers = []
-                for i in range(len(top_5_tickers)):
-                    ticker = top_5_tickers[i]
-                    change = str(top_5_changes[i])
-                    
-                    # Ensure positive numbers have a '+' for the React UI color mapping
-                    if not change.startswith('-') and not change.startswith('+'):
-                        change = f"+{change}"
-                    
-                    # Fetch live news for the specific ticker as the reason
-                    try:
-                        tkr = yf.Ticker(ticker)
-                        news = tkr.news[0]['content']['title'] if tkr.news else 'Screener: High Rel Vol + EPS Growth'
-                    except:
-                        news = 'Screener: High Rel Vol + EPS Growth'
-                        
-                    live_movers.append({
-                        'ticker': ticker, 
-                        'change': change, 
-                        'reason': news
-                    })
-                    
-                if not live_movers: raise Exception
             except Exception as e:
-                live_movers = [
-                    {"ticker": "SYS", "change": "+0.00%", "reason": f"Screener Failed: {str(e)}"}
-                ]
-
-            # Fetch live news for Macro (SPY) and Tech/Earnings (QQQ)
-            try:
-                spy_news = yf.Ticker('SPY').news[:3]
-                live_macro = [n['content']['title'] for n in spy_news]
-            except Exception:
-                live_macro = ["Failed to fetch live macro news."]
-                
-            try:
-                qqq_news = yf.Ticker('QQQ').news[:3]
-                live_earnings = [n['content']['title'] for n in qqq_news]
-            except Exception:
-                live_earnings = ["Failed to fetch live earnings news."]
-
-            alert = {
-                "id": f"PREMARKET_{now_est.strftime('%Y%m%d%H%M%S')}",
-                "type": "PREMARKET_BRIEFING",
-                "council": "🌅 PREMARKET COUNCIL",
-                "ticker": "BRIEFING",
-                "setup": "Morning Briefing is Ready.",
-                "color": "#DFFF00",
-                "timestamp": now_est.strftime("%I:%M:%S %p"),
-                "payload": {
-                    "top_movers": live_movers,
-                    "macro_news": live_macro,
-
-                    "earnings": live_earnings
-                }
-            }
-            alert_queue.put(alert)
-            threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+                print(f"Premarket Briefing error: {e}")
             
             # Execute the new Master Scanner for Top 3 Trade Plans
             try:
