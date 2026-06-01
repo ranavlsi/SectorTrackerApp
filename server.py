@@ -596,6 +596,9 @@ def technical_council_worker():
             "timestamp": datetime.now().strftime("%I:%M:%S %p")
         }
         alert_queue.put(alert)
+        
+        # Send Telegram alert directly for technicals
+        threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
 
 import io
 import hashlib
@@ -682,10 +685,19 @@ class ResearchCouncilOrchestrator:
 
         # 2. Process Setup Confluence
         final_verdict = "NEUTRAL"
-        if insider_signal == "CLUSTER_INSIDER_BUY" or (intraday_signal == "BULLISH_CALL_SWEEP" and swing_signal == "DARKPOOL_ACCUMULATION"):
+        if insider_signal == "CLUSTER_INSIDER_BUY":
             final_verdict = "HIGH_CONVICTION_BULLISH"
+        elif intraday_signal == "BULLISH_CALL_SWEEP" and swing_signal == "DARKPOOL_ACCUMULATION":
+            final_verdict = "PERFECT_CONFLUENCE_BULLISH"
         elif intraday_signal == "BEARISH_PUT_SWEEP" and swing_signal == "SIGNATURE_LEVEL_FAILURE":
-            final_verdict = "HIGH_CONVICTION_BEARISH"
+            final_verdict = "PERFECT_CONFLUENCE_BEARISH"
+        # Allow standalone strong flow to pass instead of suppressing everything
+        elif intraday_signal == "BULLISH_CALL_SWEEP":
+            final_verdict = "BULLISH_CALL_SWEEP"
+        elif intraday_signal == "BEARISH_PUT_SWEEP":
+            final_verdict = "BEARISH_PUT_SWEEP"
+        elif swing_signal == "DARKPOOL_ACCUMULATION":
+            final_verdict = "DARKPOOL_ACCUMULATION"
 
         if final_verdict == "NEUTRAL":
             return "SUPPRESS_NOISE"

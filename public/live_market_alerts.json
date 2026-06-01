@@ -1,1 +1,1 @@
-{"last_updated": "2026-06-01T10:02:52.195149", "alerts": [{"ticker": "AAPL", "time": "2026-06-01T15:01:00+00:00", "price": 307.095, "trigger_price": 50.0, "pct_above": 514.19, "volume_1m": 1823, "type": "\ud83d\ude80 Handle Breakout"}]}
+{"last_updated": "2026-06-01T10:10:29.216978", "alerts": [{"ticker": "AAPL", "time": "2026-06-01T15:09:00+00:00", "price": 306.95, "trigger_price": 50.0, "pct_above": 513.9, "volume_1m": 8692, "type": "\ud83d\ude80 Handle Breakout"}]}
