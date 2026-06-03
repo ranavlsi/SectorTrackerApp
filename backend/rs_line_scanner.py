@@ -193,6 +193,12 @@ def run_rs_scanner():
         # Must not be in a climax run above 40-week MA (max 40% above)
         if pd.isna(sma_40) or (current_price / sma_40) > 1.40:
             continue
+            
+        # FILTER 4: Prevent Intraday/Recent Crashes
+        # If the stock dropped significantly this week (e.g., > 10% from the high of the week), skip it
+        weekly_high = weekly_52['high'].iloc[-1]
+        if (current_price / weekly_high) < 0.90:
+            continue
         
         # ADR% (over 20 weeks)
         recent_20 = weekly_52.iloc[-20:]
@@ -281,6 +287,9 @@ def run_rs_scanner():
                     is_etf = False
                     zacks_rank = 5
                     
+                    rev_growth = 0
+                    peg_ratio = 1.5
+                    
                     if isinstance(fin_data, dict) and t in fin_data and isinstance(fin_data[t], dict):
                         rev_growth = fin_data[t].get('revenueGrowth', 0)
                         if rev_growth is None: rev_growth = 0
@@ -288,6 +297,7 @@ def run_rs_scanner():
                     if isinstance(details, dict) and t in details and isinstance(details[t], dict):
                         peg_ratio = details[t].get('pegRatio', 1.5)
                         if peg_ratio is None: peg_ratio = 1.5
+                        
                         
                         # Calculate Zacks Rank Proxy
                         if rev_growth > 0.15 and peg_ratio < 1.5:

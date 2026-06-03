@@ -471,3 +471,29 @@ h1 {
   color: white;
 }
 
+/* Marquee Animation for Global Banner */
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.marquee-content {
+  display: flex;
+  gap: 15px;
+  animation: marquee-scroll 30s linear infinite;
+  min-width: 100%;
+}
+
+.marquee-content:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+

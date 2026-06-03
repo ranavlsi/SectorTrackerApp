@@ -111,12 +111,15 @@ export default function RsLineScanner({ onTickerClick }) {
         return () => clearInterval(interval);
     }, []);
 
+    const [lastUpdated, setLastUpdated] = useState(null);
+
     const fetchData = async () => {
         try {
             const res = await fetch('/rs_scanner_results.json?t=' + new Date().getTime());
             if (res.ok) {
                 const json = await res.json();
                 setData(json.results || []);
+                setLastUpdated(json.last_updated);
             }
         } catch (err) {
             console.error("Failed to load RS data", err);
@@ -178,9 +181,16 @@ export default function RsLineScanner({ onTickerClick }) {
     return (
         <div style={{ padding: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h2 style={{ margin: 0, color: '#4facfe', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <RefreshCw /> Advanced RS Line Scanner
-                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <h2 style={{ margin: 0, color: '#4facfe', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <RefreshCw /> Advanced RS Line Scanner
+                    </h2>
+                    {lastUpdated && (
+                        <span style={{ color: '#10b981', fontSize: '0.85rem', marginTop: '5px', fontWeight: 'bold' }}>
+                            Data Live Updated: {new Date(lastUpdated).toLocaleString()} (Latest Scan)
+                        </span>
+                    )}
+                </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <input 
                         type="email" 

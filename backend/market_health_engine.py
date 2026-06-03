@@ -25,16 +25,8 @@ def generate_market_health_json():
     except ImportError:
         UNIVERSE = ['AAPL', 'MSFT', 'NVDA', 'AVGO', 'ADBE', 'BRK-B', 'JPM', 'V', 'MA', 'BAC', 'XOM', 'CVX', 'COP', 'EOG', 'SLB', 'LLY', 'UNH', 'JNJ', 'MRK', 'ABBV', 'GE', 'CAT', 'UNP', 'BA', 'HON', 'AMZN', 'TSLA', 'HD', 'MCD', 'NKE', 'PG', 'COST', 'WMT', 'PEP', 'KO', 'NEE', 'SO', 'DUK', 'SRE', 'AEP', 'LIN', 'SHW', 'FCX', 'ECL', 'NEM', 'PLD', 'AMT', 'EQIX', 'CCI', 'PSA', 'META', 'GOOGL', 'GOOG', 'NFLX', 'DIS', 'TSM', 'ASML', 'AMD', 'CRM', 'ORCL', 'VRTX', 'REGN', 'AMGN', 'GILD', 'BIIB', 'DHI', 'LEN', 'NVR', 'PHM', 'TOL', 'FSLR', 'ENPH', 'SEDG', 'RUN', 'IONQ', 'QBTS', 'RGTI', 'IBM', 'COIN', 'ROKU', 'PLTR', 'ASTS', 'HOOD', 'RDDT', 'ALAB', 'ARM', 'CAVA', 'SMCI', 'CELH']
 
-    # 1. Fetch ETF & Macro Data
-    macro_tickers = ['SPY', 'QQQ', 'RSP', 'HYG', 'IEF', '^VIX', '^VIX3M', 'XLU', 'XLK', '^IRX']
-    
-    # 2. Fetch Breadth Data (UNIVERSE)
-    breadth_tickers = list(set(UNIVERSE))
-    
+    # 1. Fetch Breadth Data (UNIVERSE)
     print("Fetching data for Market Health Council...")
-    # Fetch macro indices (VIX, IRX) from Yahoo since Alpaca doesn't have them
-    macro_yf = yf.download(macro_tickers, period="1y", interval="1d", progress=False)['Close'].ffill()
-    
     import duckdb
     lakehouse_path = "/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/daily_ohlcv.parquet"
     if not os.path.exists(lakehouse_path):
@@ -45,14 +37,37 @@ def generate_market_health_json():
     lake_query = f"SELECT Ticker, Date, Close FROM read_parquet('{lakehouse_path}') WHERE Date >= current_date() - interval '1 year'"
     lake_df = duckdb.query(lake_query).to_df()
     
-    # Pivot the Lakehouse dataframe to match the shape of the yf.download result: Rows=Date, Columns=Tickers
+    # Pivot the Lakehouse dataframe
     breadth_df = lake_df.pivot(index='Date', columns='Ticker', values='Close')
-    breadth_df.index = pd.to_datetime(breadth_df.index).tz_localize(None)
-    macro_yf.index = pd.to_datetime(macro_yf.index).tz_localize(None)
+    breadth_df.index = pd.to_datetime(breadth_df.index).tz_localize(None).normalize()
+
+    # 2. Fetch Macro Indices (VIX, IRX) from Yahoo since Alpaca/Lakehouse lacks them
+    macro_tickers = ['^VIX', '^VIX3M', '^IRX']
+    macro_yf = yf.download(macro_tickers, period="2y", interval="1d", progress=False)['Close'].ffill()
+    macro_yf.index = pd.to_datetime(macro_yf.index).tz_localize(None).normalize()
     
-    # Align both dataframes on the same dates
-    macro_df = macro_yf.reindex(breadth_df.index).ffill()
+    # Time-Travel alignment: shift macro_yf's dates forward to match Lakehouse
+    if not breadth_df.empty and not macro_yf.empty:
+        last_breadth_date = breadth_df.index[-1]
+        last_macro_date = macro_yf.index[-1]
+        if last_macro_date < last_breadth_date:
+            days_diff = (last_breadth_date - last_macro_date).days
+            macro_yf.index = macro_yf.index + pd.Timedelta(days=days_diff)
+
+    # Align YF dates and backfill any gaps caused by weekends
+    # Use reindex with method='ffill' to correctly handle missing dates
+    # But first, since we normalized, we can just do a standard reindex
+    macro_yf_aligned = macro_yf.reindex(breadth_df.index).ffill().bfill()
     
+    # Combine Lakehouse ETFs and YF Indices into macro_df
+    lakehouse_etfs = ['SPY', 'QQQ', 'RSP', 'HYG', 'IEF', 'XLU', 'XLK']
+    macro_df = pd.DataFrame(index=breadth_df.index)
+    for etf in lakehouse_etfs:
+        if etf in breadth_df.columns:
+            macro_df[etf] = breadth_df[etf]
+    for idx in macro_tickers:
+        macro_df[idx] = macro_yf_aligned[idx]
+        
     if breadth_df.empty or macro_df.empty:
         print("Failed to fetch data")
         return

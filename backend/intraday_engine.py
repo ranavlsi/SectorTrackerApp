@@ -23,7 +23,7 @@ UNIVERSE = [
     'VRTX', 'REGN', 'AMGN', 'GILD', 'BIIB', 'DHI', 'LEN', 'NVR', 'PHM', 'TOL',
     'FSLR', 'ENPH', 'SEDG', 'RUN', 'IONQ', 'QBTS', 'RGTI', 'IBM', 'COIN', 'ROKU',
     'PLTR', 'ASTS', 'HOOD', 'RDDT', 'ALAB', 'ARM', 'CAVA', 'SMCI', 'CELH', 'MSTR',
-    'CRWD', 'PANW', 'SNOW', 'DDOG', 'NET', 'ZS', 'MDB', 'SQ', 'PYPL', 'SHOP'
+    'CRWD', 'PANW', 'SNOW', 'DDOG', 'NET', 'ZS', 'MDB', 'SQ', 'PYPL', 'SHOP', 'MRVL'
 ]
 
 LAST_ALERTED = {}
@@ -86,14 +86,14 @@ def calc_vwap(df):
     df['TypicalVol'] = df['Typical'] * df['Volume']
     
     # Extract the date part to group by
-    df['Date'] = df.index.strftime('%Y-%m-%d')
+    df['DateStr'] = df.index.strftime('%Y-%m-%d')
     
     # Cumsum grouped by date ensures it resets at 9:30 AM every morning
-    df['CumVol'] = df.groupby('Date')['Volume'].cumsum()
-    df['CumVolPrice'] = df.groupby('Date')['TypicalVol'].cumsum()
+    df['CumVol'] = df.groupby('DateStr')['Volume'].cumsum()
+    df['CumVolPrice'] = df.groupby('DateStr')['TypicalVol'].cumsum()
     
     df['VWAP'] = df['CumVolPrice'] / df['CumVol']
-    df.drop(columns=['TypicalVol', 'Date'], inplace=True)
+    df.drop(columns=['TypicalVol', 'DateStr'], inplace=True)
     return df
 
 def rsi_series(series, period=14):
@@ -281,13 +281,15 @@ def run_intraday_scanner():
         
 
     import os
+    import pytz
     from dotenv import load_dotenv
     from alpaca.data.historical import StockHistoricalDataClient
     from alpaca.data.requests import StockBarsRequest
     from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
     from alpaca.data.enums import DataFeed
     
-    load_dotenv()
+    # Force load from the backend directory to ensure daemon finds the keys
+    load_dotenv('/Users/amitkumar/Desktop/SectorTrackerApp/backend/.env')
     api_key = os.getenv("APCA_API_KEY_ID")
     secret_key = os.getenv("APCA_API_SECRET_KEY")
     
@@ -299,7 +301,7 @@ def run_intraday_scanner():
     
     # Intraday 1-minute bars for today
     from datetime import timedelta
-    end_date = datetime.now()
+    end_date = datetime.now(pytz.utc)
     start_date = end_date - timedelta(days=5) # 5 days to safely cover weekends and pre-market
     
     # Safe Batching for Alpaca
@@ -345,6 +347,11 @@ def run_intraday_scanner():
         if df_1m.empty or len(df_1m) < 30: continue
         
         df_1m.index = pd.to_datetime(df_1m.index)
+        if df_1m.index.tz is None:
+            df_1m.index = df_1m.index.tz_localize('UTC').tz_convert('America/New_York')
+        else:
+            df_1m.index = df_1m.index.tz_convert('America/New_York')
+        
         
         agg_dict = {
             'Open': 'first',
@@ -413,7 +420,6 @@ def run_intraday_scanner():
     # Sort radar results by relative call/put volatility ratio and keep Top 15
     radar_results = sorted(radar_results, key=lambda x: x['call_put_ratio'], reverse=True)[:15]
     
-    import json
     with open('/Users/amitkumar/Desktop/SectorTrackerApp/public/intraday_results.json', 'w') as f:
         json.dump({"results": radar_results}, f)
         

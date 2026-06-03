@@ -76,19 +76,24 @@ def process_price_action(ticker, df):
         reaction_high = None
         reaction_low = None
         
-        for date, row in recent_df.iterrows():
-            idx = df.index.get_loc(date)
-            if idx < 50: continue
-            
-            avg_vol = df['Volume'].iloc[idx-50:idx].mean()
+        # Pre-calculate a 50-day moving average of volume for the whole df
+        df['AvgVol50'] = df['Volume'].rolling(window=50).mean()
+        
+        # We only care about the last 14 rows, but we use integer positions to avoid get_loc
+        total_len = len(df)
+        recent_len = min(14, total_len - 50)
+        
+        for i in range(total_len - recent_len, total_len):
+            row = df.iloc[i]
+            avg_vol = float(df['AvgVol50'].iloc[i-1]) # Use previous day's 50-day MA
             price_jump = (float(row['Close']) / float(row['Open'])) - 1
             
             if price_jump > 0.05 and float(row['Volume']) > (avg_vol * 2):
-                reaction_date = date
+                reaction_date = df.index[i]
                 reaction_close = float(row['Close'])
                 reaction_high = float(row['High'])
                 reaction_low = float(row['Low'])
-                break 
+                break
                 
         if not reaction_date:
             return None

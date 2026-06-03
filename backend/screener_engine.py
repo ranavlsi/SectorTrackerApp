@@ -276,11 +276,14 @@ def run_screener(custom_universe=None):
                     sma200 = close.rolling(200).mean().iloc[-1]
                     high_52w = close.iloc[-252:].max() if len(close) >= 252 else close.max()
                     
-                    # 1. Price > 50 SMA > 200 SMA (Structural Uptrend)
-                    # 2. Within 25% of 52-week high (Not a bottom bounce)
-                    if curr_c > sma50 and sma50 > sma200 and curr_c >= high_52w * 0.75:
-                        results["relative_strength"].append({"ticker": ticker, "metric": f"+{rs_1mo:.1f}% vs SPY", "score": float(rs_1mo)})
-                
+                    # FILTER: Prevent crashing stocks from showing up in Highest Relative Strength
+                    daily_pct_change = (curr_c / close.iloc[-2]) - 1
+                    if daily_pct_change > -0.05:
+                        # 1. Price > 50 SMA > 200 SMA (Structural Uptrend)
+                        # 2. Within 25% of 52-week high (Not a bottom bounce)
+                        if curr_c > sma50 and sma50 > sma200 and curr_c >= high_52w * 0.75:
+                            results["relative_strength"].append({"ticker": ticker, "metric": f"+{rs_1mo:.1f}% vs SPY", "score": float(rs_1mo)})
+            
             # RS Divergence (RS line hits new 52-week high, but Price does not)
             if len(stock_aligned) >= 252:
                 rs_52w_max = rs_line.iloc[-252:].max()
@@ -300,10 +303,11 @@ def run_screener(custom_universe=None):
         
         # 2 & 3. 52-Week Highs & All-Time Highs
         if is_aaaa: print("Starting 52w High...")
-        if len(close) >= 252:
-            high_52w = close.iloc[-252:].max()
-            if curr_c >= high_52w * 0.98:
-                results["fresh_52w_high"].append({"ticker": ticker, "metric": f"At High: ${curr_c:.2f}"})
+        if len(high) >= 252:
+            prev_high_52w = high.iloc[-252:-1].max()
+            curr_h = high.iloc[-1]
+            if curr_h >= prev_high_52w:
+                results["fresh_52w_high"].append({"ticker": ticker, "metric": f"New High: ${curr_h:.2f}"})
         
         ath_4y = close.max()
         if curr_c >= ath_4y * 0.98:
@@ -395,28 +399,69 @@ def run_screener(custom_universe=None):
         # 7.5 Breakout Retest & Squat MA Support
         if len(high) >= 70:
             # Pivot is the max high from 70 days ago up to 10 days ago (the base)
-            pivot = high.iloc[-70:-10].max()
-            recent_high = high.iloc[-10:-1].max()
+            base_highs = high.iloc[-70:-10]
+            pivot = base_highs.max()
+            recent_data = high.iloc[-10:-1]
+            recent_high = recent_data.max()
             
             # Did we breakout recently?
             if recent_high > pivot:
-                # Breakout Retest: Price is still above pivot, but pulled back to touch it within 1.5%
-                if curr_c > pivot * 0.99 and low.iloc[-1] <= pivot * 1.015:
-                    bounce = (curr_c - low.iloc[-1]) / low.iloc[-1]
-                    results["breakout_retest"].append({"ticker": ticker, "metric": f"Retesting Pivot: ${pivot:.2f}", "score": float(bounce)})
+                peak_idx = recent_data.values.argmax() 
+                days_since_peak = len(recent_data) - peak_idx
+                
+                curr_l = low.iloc[-1]
+                curr_h = high.iloc[-1]
+                curr_c = close.iloc[-1]
+                curr_o = open_s.iloc[-1]
+                
+                # 1. Pullback Speed & Structure
+                is_orderly_pullback = 2 <= days_since_peak <= 8
+                
+                # Check proximity to pivot
+                if is_orderly_pullback and (pivot * 0.985 < curr_c <= pivot * 1.05) and (pivot * 0.97 <= curr_l <= pivot * 1.015):
+                    
+                    # 2. Wick Structure (Rejection Tail)
+                    lower_wick = min(curr_o, curr_c) - curr_l
+                    body = abs(curr_o - curr_c)
+                    total_range = curr_h - curr_l
+                    is_rejection = (lower_wick > body * 1.5) and (lower_wick > total_range * 0.35) if total_range > 0 else False
+                    
+                    # 3. Volatility Contraction
+                    atr_base = (high.iloc[-70:-10] - low.iloc[-70:-10]).mean()
+                    is_contracting = total_range <= atr_base * 1.2
+                    
+                    # 4. Volume Contraction & Breakout Conviction
+                    breakout_vol = vol.iloc[-10:-days_since_peak].max() if days_since_peak < 10 else vol.iloc[-10]
+                    avg_vol_50 = vol.iloc[-60:-10].mean()
+                    is_conviction_breakout = breakout_vol > avg_vol_50 * 1.5
+                    
+                    pullback_vol = vol.iloc[-days_since_peak:].mean()
+                    vol_drying_up = pullback_vol < avg_vol_50 * 1.1
+                    
+                    # 5. Moving Average Alignment
+                    ema10 = close.ewm(span=10, adjust=False).mean().iloc[-1]
+                    ma_aligned = abs(ema10 - pivot) / pivot < 0.025
+                    
+                    # 6. Relative Strength (RS didn't crater)
+                    rs_spy_10d = ((curr_c / spy_close.iloc[-1]) / (close.iloc[-10] / spy_close.iloc[-10]) - 1) * 100 if spy_close.iloc[-10] != 0 else 0
+                    rs_strong = rs_spy_10d > -2.0
+                    
+                    # Final A+ Condition
+                    if is_contracting and vol_drying_up and is_conviction_breakout and ma_aligned and rs_strong:
+                        score = float(lower_wick / total_range) if total_range > 0 else 0
+                        results["breakout_retest"].append({"ticker": ticker, "metric": f"A+ Retest Pivot: ${pivot:.2f}", "score": score})
                 
                 # Fell into Base & Found Support on Short Term MA (10 or 20)
                 sma10 = close.rolling(10).mean().iloc[-1]
                 sma20 = close.rolling(20).mean().iloc[-1]
-                curr_l = low.iloc[-1]
                 
                 # Fell back below pivot
                 if curr_c < pivot:
-                    # Found support on 10 SMA
-                    if curr_l <= sma10 and curr_c >= sma10 * 0.99:
+                    # Found support on 10 SMA (Low must touch but not violate by more than 3%)
+                    if (sma10 * 0.97 <= curr_l <= sma10 * 1.01) and curr_c >= sma10 * 0.99:
                         results["base_pullback_ma"].append({"ticker": ticker, "metric": f"Squat Support at 10-SMA (${sma10:.2f})"})
                     # Found support on 20 SMA
-                    elif curr_l <= sma20 and curr_c >= sma20 * 0.99:
+                    elif (sma20 * 0.97 <= curr_l <= sma20 * 1.01) and curr_c >= sma20 * 0.99:
                         results["base_pullback_ma"].append({"ticker": ticker, "metric": f"Squat Support at 20-SMA (${sma20:.2f})"})
                 
         # 8. Reversal

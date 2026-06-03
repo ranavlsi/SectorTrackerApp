@@ -66,11 +66,19 @@ def evaluate_qullamaggie_setup(ticker, pre_df=None):
             return None
             
         # 6. Intraday Breakout Trigger (Current price > yesterday's high)
-        # BYPASSED for Master Scanner speed: 
-        # If it's coiled and surfing, it's a valid pending setup!
-        
         curr_price = df['Close'].iloc[-1]
         prev_high = df['High'].iloc[-2]
+        
+        # --- NEW: Failure Detection ---
+        # If the stock falls and fails today, strip it from the results!
+        curr_low = df['Low'].iloc[-1]
+        sma_10_curr = df['SMA_10'].iloc[-1]
+        sma_20_curr = df['SMA_20'].iloc[-1]
+        recent_low = df['Low'].iloc[-4:-1].min()
+        
+        # If it breaks below the recent tight range low or below both moving averages, the setup is dead.
+        if curr_price < recent_low or (curr_price < sma_10_curr and curr_price < sma_20_curr):
+            return None # Setup failed/falling today
         
         if curr_price > prev_high:
             status = "TRIGGERED"

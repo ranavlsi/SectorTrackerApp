@@ -14,5 +14,7 @@ python3 orb_scanner.py
 python3 sector_rotation_scanner.py
 python3 volume_climax_scanner.py
 python3 squeeze_engine.py
+python3 screener_engine.py
+python3 rs_line_scanner.py
 
 echo "[Master Scanner] All individual scanners have completed successfully!"

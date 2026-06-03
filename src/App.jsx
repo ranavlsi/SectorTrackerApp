@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
@@ -261,6 +261,15 @@ function App() {
         };
         // Append the live broadcast to the global chat history
         setChatHistory(prev => [...prev, slackMessage]);
+        
+        // Push Intraday Engine live breakouts directly to the global banner
+        if (alert.council && alert.council.includes('INTRADAY')) {
+          setGlobalLiveAlerts(prev => {
+            const newBannerAlert = { ticker: alert.ticker, msg: alert.setup };
+            // Prepend new alert and keep max 10
+            return [newBannerAlert, ...prev].slice(0, 10);
+          });
+        }
       } catch (err) {
         console.error("SSE Parse Error", err);
       }
@@ -276,7 +285,12 @@ function App() {
         const res = await fetch('/live_market_alerts.json?t=' + new Date().getTime());
         if (res.ok) {
           const json = await res.json();
-          setGlobalLiveAlerts(json.alerts || []);
+          setGlobalLiveAlerts(prev => {
+            // Preserve the SSE injected alerts (they have a 'msg' property)
+            const sseAlerts = prev.filter(a => a.msg !== undefined);
+            const polledAlerts = json.alerts || [];
+            return [...sseAlerts, ...polledAlerts].slice(0, 15);
+          });
         }
       } catch (err) {}
     };
@@ -438,7 +452,7 @@ function App() {
     setActiveTab('intraday');
     setIntradayLoading(true);
     try {
-      const res = await fetch(`/intraday_results.json`);
+      const res = await fetch(`/intraday_results.json?t=` + new Date().getTime());
       const json = await res.json();
       setIntradayData(json.results || []);
     } catch (err) {
@@ -528,7 +542,7 @@ function App() {
             <button 
               className="trade-button" 
               onClick={() => {
-                fetch('http://localhost:5001/api/sync_lakehouse', { method: 'POST' });
+                fetch('/api/sync_lakehouse', { method: 'POST' });
                 alert("Database Update & Scanner Engine started in the background. Please wait ~2 minutes for it to complete.");
               }} 
               style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}
@@ -576,18 +590,24 @@ function App() {
 
         {/* Global Intraday Live Alerts Ticker */}
         {globalLiveAlerts.length > 0 && (
-          <div style={{ marginBottom: '1.5rem', padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', display: 'flex', alignItems: 'center', gap: '15px', overflowX: 'auto', borderRadius: '4px' }}>
-              <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                  <AlertCircle size={16} /> BREAKOUTS:
+          <div className="marquee-container" style={{ marginBottom: '1.5rem', padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', borderRadius: '4px' }}>
+              <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap', paddingRight: '15px', zIndex: 10, position: 'relative', background: '#09090b', boxShadow: '10px 0 15px #09090b' }}>
+                  <AlertCircle size={16} /> LIVE ALERTS:
               </span>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                  {globalLiveAlerts.map((alert, i) => (
+              <div className="marquee-content">
+                  {[...globalLiveAlerts, ...globalLiveAlerts].map((alert, i) => (
                       <div key={i} onClick={() => fetchTickerData(alert.ticker)} style={{ cursor: 'pointer', background: 'rgba(15, 23, 42, 0.8)', padding: '4px 10px', borderRadius: '4px', borderLeft: '2px solid #ef4444', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)'}>
                           <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{alert.ticker}</strong>
-                          <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.85rem' }}>+{alert.pct_above.toFixed(2)}%</span>
-                          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                              Brk: ${alert.trigger_price.toFixed(2)} ➔ <strong style={{color: '#fff'}}>${alert.price.toFixed(2)}</strong>
-                          </span>
+                          {alert.pct_above !== undefined ? (
+                            <>
+                              <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.85rem' }}>+{alert.pct_above.toFixed(2)}%</span>
+                              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                                  Brk: ${alert.trigger_price.toFixed(2)} ➔ <strong style={{color: '#fff'}}>${alert.price.toFixed(2)}</strong>
+                              </span>
+                            </>
+                          ) : (
+                            <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: '500' }}>{alert.msg}</span>
+                          )}
                       </div>
                   ))}
               </div>
@@ -1417,6 +1437,46 @@ function App() {
                 </div>
               </div>
 
+            </div>
+          </div>
+
+          {/* Detailed Sector Rankings */}
+          <div className="glass-card" style={{ marginTop: '20px' }}>
+            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
+              <List color="#4facfe" /> Sector Rankings & Momentum ({timeframe})
+            </h2>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Rank</th>
+                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Sector</th>
+                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Trend (RS-Ratio)</th>
+                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Momentum</th>
+                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Trajectory</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableData.map((sec, idx) => {
+                    const current = sec.trail[sec.trail.length - 1];
+                    const prev = sec.trail.length > 3 ? sec.trail[sec.trail.length - 3] : sec.trail[0];
+                    const momRising = current.y > prev.y;
+                    
+                    return (
+                      <tr key={sec.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                        <td style={{ padding: '12px 10px', color: '#fff', fontWeight: 'bold' }}>#{idx + 1}</td>
+                        <td style={{ padding: '12px 10px', color: '#4facfe', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setModalData(sec)}>{sec.name}</td>
+                        <td style={{ padding: '12px 10px', color: current.x >= 100 ? '#10b981' : '#ef4444' }}>{current.x}</td>
+                        <td style={{ padding: '12px 10px', color: current.y >= 100 ? '#10b981' : '#ef4444' }}>{current.y}</td>
+                        <td style={{ padding: '12px 10px', display: 'flex', alignItems: 'center', gap: '8px', color: momRising ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                          {momRising ? <TrendingUp size={18} /> : <TrendingDown size={18} />} 
+                          {momRising ? 'Improving' : 'Deteriorating'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         </>

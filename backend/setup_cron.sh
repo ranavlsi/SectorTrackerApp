@@ -22,12 +22,16 @@ echo "Running Earnings Flag Scanner..." >> master_update.log
 python3 earnings_flag_scanner.py >> master_update.log 2>&1
 echo "Running Candlestick Scanner..." >> master_update.log
 python3 candlestick_scanner.py >> master_update.log 2>&1
+echo "Running Unified Expert Screener (Screener Engine)..." >> master_update.log
+python3 screener_engine.py >> master_update.log 2>&1
+echo "Running Relative Strength Line Scanner..." >> master_update.log
+python3 rs_line_scanner.py >> master_update.log 2>&1
 echo "Update Complete." >> master_update.log
 EOF
 
 chmod +x "$BACKEND_DIR/master_daily_update.sh"
 
-CRON_CMD="15 16 * * 1-5 $BACKEND_DIR/master_daily_update.sh"
+CRON_CMD="0 16 * * 1-5 $BACKEND_DIR/master_daily_update.sh"
 REBOOT_CMD="@reboot sleep 30 && $BACKEND_DIR/master_daily_update.sh && /usr/bin/python3 $BACKEND_DIR/market_health_engine.py"
 
 # Add to crontab if not already there

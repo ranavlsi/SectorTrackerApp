@@ -67,6 +67,15 @@ def index():
     """Serves the React Frontend."""
     return app.send_static_file('index.html')
 
+@app.route('/<filename>.json')
+def serve_json_data(filename):
+    """Serve dynamic JSON data files directly from the public directory instead of the stale dist build."""
+    public_path = os.path.join(os.path.dirname(__file__), 'public', f"{filename}.json")
+    if os.path.exists(public_path):
+        from flask import send_file
+        return send_file(public_path)
+    return app.send_static_file(f"{filename}.json")
+
 @app.route('/api/analyze_earnings')
 def analyze_earnings():
     ticker = request.args.get('ticker')
@@ -157,6 +166,16 @@ def chart_data():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/sync_lakehouse', methods=['POST'])
+def sync_lakehouse():
+    import subprocess
+    script_path = os.path.join(os.path.dirname(__file__), 'backend', 'master_daily_update.sh')
+    if os.path.exists(script_path):
+        subprocess.Popen(['bash', script_path], cwd=os.path.join(os.path.dirname(__file__), 'backend'), start_new_session=True)
+        return jsonify({"status": "success", "msg": "Sync started in background"}), 200
+    else:
+        return jsonify({"status": "error", "msg": "Script not found"}), 404
 
 @app.route('/api/log_error', methods=['POST'])
 def log_error():
@@ -1393,10 +1412,11 @@ def market_health_worker():
             json_payload = generate_market_health_json()
             
             # 2. Daily End-of-Day Telegram Dispatch at Market Close
-            now = datetime.now()
+            import pytz
+            now_est = datetime.now(pytz.timezone('America/New_York'))
             # If time is between 4:00 PM and 4:30 PM EST, send daily brief
-            if now.hour >= 16 and now.weekday() < 5:
-                today_str = now.strftime("%Y-%m-%d")
+            if now_est.hour >= 16 and now_est.weekday() < 5:
+                today_str = now_est.strftime("%Y-%m-%d")
                 if last_telegram_date != today_str and json_payload:
                     score = json_payload['current_health']['score_value']
                     summary_text = json_payload['current_health']['summary_text']
@@ -1507,9 +1527,10 @@ def intraday_multi_algo_worker():
     """Runs the 10-algorithm intraday engine every 5 minutes."""
     while True:
         try:
-            now = datetime.now()
+            import pytz
+            now_est = datetime.now(pytz.timezone('America/New_York'))
             # Only run during market hours (9:30 AM to 4:00 PM EST) roughly
-            if now.weekday() < 5 and (now.hour > 9 or (now.hour == 9 and now.minute >= 30)) and now.hour < 16:
+            if now_est.weekday() < 5 and (now_est.hour > 9 or (now_est.hour == 9 and now_est.minute >= 30)) and now_est.hour < 16:
                 import sys
                 if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
                     sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
@@ -1535,6 +1556,32 @@ def key_levels_worker():
         # Run every 6 hours to catch pre-market changes and daily rollovers
         time.sleep(21600)
 
+def expert_screener_worker():
+    """Triggers the Master Screener / Lakehouse Sync every day after market close (4:01 PM EST)."""
+    import subprocess
+    import pytz
+    from datetime import datetime
+    import os
+    
+    last_run_date = None
+    
+    while True:
+        try:
+            now_est = datetime.now(pytz.timezone('America/New_York'))
+            # Run after 4:00 PM EST on weekdays. If missed (e.g. server restart), it will immediately catch up.
+            if now_est.weekday() < 5 and now_est.hour >= 16:
+                today_str = now_est.strftime("%Y-%m-%d")
+                if last_run_date != today_str:
+                    script_path = os.path.join(os.path.dirname(__file__), 'backend', 'master_daily_update.sh')
+                    if os.path.exists(script_path):
+                        subprocess.Popen(['bash', script_path], cwd=os.path.join(os.path.dirname(__file__), 'backend'), start_new_session=True)
+                        print(f"[{now_est.strftime('%H:%M:%S')}] Automated Market Close Expert Screener Update Triggered.")
+                    last_run_date = today_str
+        except Exception as e:
+            print(f"Expert Screener Worker Error: {e}")
+            
+        time.sleep(60) # Check every minute
+
 
 if __name__ == '__main__':
     # Start autonomous councils in background threads
@@ -1548,6 +1595,7 @@ if __name__ == '__main__':
     threading.Thread(target=gex_council_worker, daemon=True).start()
     threading.Thread(target=intraday_multi_algo_worker, daemon=True).start()
     threading.Thread(target=key_levels_worker, daemon=True).start()
+    threading.Thread(target=expert_screener_worker, daemon=True).start()
     
 
     # Run the Flask app with threading enabled to handle SSE connections concurrently

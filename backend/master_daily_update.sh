@@ -12,4 +12,8 @@ echo "Running Earnings Flag Scanner..." >> master_update.log
 python3 earnings_flag_scanner.py >> master_update.log 2>&1
 echo "Running Candlestick Scanner..." >> master_update.log
 python3 candlestick_scanner.py >> master_update.log 2>&1
+echo "Running Unified Expert Screener (Screener Engine)..." >> master_update.log
+python3 screener_engine.py >> master_update.log 2>&1
+echo "Running Relative Strength Line Scanner..." >> master_update.log
+python3 rs_line_scanner.py >> master_update.log 2>&1
 echo "Update Complete." >> master_update.log
