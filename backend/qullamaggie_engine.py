@@ -1,12 +1,12 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
+from scipy.stats import linregress
 
 def evaluate_qullamaggie_setup(ticker, pre_df=None):
     """
     Evaluates a stock against Kristjan Kullamägi's quantitative breakout rules.
-    Checks for >4% ADR, a massive historical run (HTF), tight moving average surfing,
-    and a low-volume consolidation followed by an intraday breakout.
+    Upgraded with Institutional Momentum rules (Linear Regression, Liquidity, VCP, Pocket Pivots).
     """
     try:
         if pre_df is not None:
@@ -14,73 +14,96 @@ def evaluate_qullamaggie_setup(ticker, pre_df=None):
         else:
             from yahooquery import Ticker as YQTicker
             t = YQTicker(ticker)
-            df = t.history(period="3mo", interval="1d")
+            # Need more data for 50-day volume SMA and 40-day run
+            df = t.history(period="6mo", interval="1d")
             if df is None or df.empty or ticker.lower() not in df.index.get_level_values(0).str.lower(): return None
             df = df.loc[ticker.lower() if ticker.lower() in df.index.levels[0] else ticker].reset_index()
             df.rename(columns={'close':'Close', 'high':'High', 'low':'Low', 'open':'Open', 'volume':'Volume'}, inplace=True)
             
-        if len(df) < 40: return None
+        if len(df) < 60: return None
         
-        # 1. Calculate ADR (Average Daily Range) over 20 days
+        # 0. Basic Cleanup
+        df['Close'] = df['Close'].ffill()
+        
+        # 1. Anti-Penny Liquidity Check ($20M Dollar Volume)
+        df['Dollar_Volume'] = df['Close'] * df['Volume']
+        if df['Dollar_Volume'].rolling(window=20).mean().iloc[-1] < 20000000:
+            return None # Illiquid
+
+        # 2. Calculate ADR (Average Daily Range) over 20 days
         df['Daily_Range_Pct'] = (df['High'] - df['Low']) / df['Close'].shift(1)
         adr_20 = df['Daily_Range_Pct'].rolling(window=20).mean().iloc[-2] * 100
         
         if adr_20 < 4.0:
             return None # Not volatile enough for Qullamaggie
             
-        # 2. HTF / Prior Move Detection (must have rallied > 50% in last 40 days)
-        last_40_days = df.iloc[-41:-1] # Exclude today
-        min_close_40d = last_40_days['Close'].min()
-        max_close_40d = last_40_days['Close'].max()
-        
-        if (max_close_40d / min_close_40d) - 1 < 0.50:
-            return None # No massive prior run
-            
-        # 3. Moving Averages
+        # 3. True Range and ATR
+        df['TR'] = np.maximum((df['High'] - df['Low']), 
+                              np.maximum(abs(df['High'] - df['Close'].shift(1)), 
+                                         abs(df['Low'] - df['Close'].shift(1))))
+        df['ATR_3'] = df['TR'].rolling(window=3).mean()
+        df['ATR_20'] = df['TR'].rolling(window=20).mean()
+
+        # Moving Averages
         df['SMA_10'] = df['Close'].rolling(window=10).mean()
         df['SMA_20'] = df['Close'].rolling(window=20).mean()
+        df['SMA_50_Vol'] = df['Volume'].rolling(window=50).mean()
+
+        # 4. HTF / Prior Move Detection (The Parabolic Pole)
+        last_40_days = df.iloc[-41:-1].copy() # Exclude today
         
-        # 4. Consolidation & "Surfing" Check (Price must be tight to SMA)
-        prev_close = df['Close'].iloc[-2]
-        sma_10 = df['SMA_10'].iloc[-2]
-        sma_20 = df['SMA_20'].iloc[-2]
+        # Linear Regression on Log Close
+        last_40_days['Log_Close'] = np.log(last_40_days['Close'])
+        x = np.arange(len(last_40_days))
+        slope, intercept, r_value, p_value, std_err = linregress(x, last_40_days['Log_Close'])
+        r_squared = r_value ** 2
         
-        # Check if previous close is within 3% of the 10 or 20 SMA
-        dist_10 = abs((prev_close - sma_10) / sma_10)
-        dist_20 = abs((prev_close - sma_20) / sma_20)
+        # Rule: R-squared > 0.60 and slope > 0.005
+        if r_squared < 0.60 or slope < 0.005:
+            return None # Trend is not smooth/steady enough
+            
+        # Volume Thrust: At least one day in the last 40 days where volume > 2 * 50-day SMA
+        if not (last_40_days['Volume'] > 2 * last_40_days['SMA_50_Vol']).any():
+            return None # No institutional volume thrust
+
+        # Largest Down-Day Filter (Loosened to avoid false negatives on single bad days)
+        up_days = last_40_days[last_40_days['Close'] > last_40_days['Open']]
+        down_days = last_40_days[last_40_days['Close'] < last_40_days['Open']]
+        # if not up_days.empty and not down_days.empty:
+        #     if down_days['Volume'].max() >= up_days['Volume'].max() * 1.5:
+        #         return None # Extreme distribution
+
+        # 5. Consolidation & "Surfing" Check (Price must be tight to SMA)
+        # Surfing the 10-day SMA
+        min_low_3 = df['Low'].iloc[-4:-1].min()
+        min_close_3 = df['Close'].iloc[-4:-1].min()
+        sma_10_prev = df['SMA_10'].iloc[-2]
         
-        is_surfing = (dist_10 <= 0.03) or (dist_20 <= 0.03)
+        is_surfing = (min_low_3 <= sma_10_prev * 1.05) and (min_close_3 > sma_10_prev * 0.98)
         if not is_surfing:
             return None
-            
-        # 5. Volume Dry-Up Check
-        df['ADV_20'] = df['Volume'].rolling(window=20).mean()
-        # Require multiple days of volume dry-up and price tightness
-        recent_vol_avg = df['Volume'].iloc[-4:-1].mean()
-        if recent_vol_avg > df['ADV_20'].iloc[-2] * 0.75:
-            return None
-            
-        # Price tightness over the last 3 days
-        recent_range = df['High'].iloc[-4:-1].max() - df['Low'].iloc[-4:-1].min()
-        if recent_range > (df['Close'].iloc[-2] * 0.05): # Range must be tight (< 5%)
-            return None
-            
-        # 6. Intraday Breakout Trigger (Current price > yesterday's high)
+
+        # 6. Volatility Contraction (ATR Crush)
+        atr_3_prev = df['ATR_3'].iloc[-2]
+        atr_20_prev = df['ATR_20'].iloc[-2]
+        if (atr_3_prev / atr_20_prev) >= 0.70:
+            return None # Volatility has not crushed enough
+
+        # 7. Intraday Breakout Trigger (Current price > 15-day Swing High)
         curr_price = df['Close'].iloc[-1]
-        prev_high = df['High'].iloc[-2]
+        swing_high_15 = df['High'].iloc[-16:-1].max()
         
-        # --- NEW: Failure Detection ---
-        # If the stock falls and fails today, strip it from the results!
-        curr_low = df['Low'].iloc[-1]
-        sma_10_curr = df['SMA_10'].iloc[-1]
-        sma_20_curr = df['SMA_20'].iloc[-1]
-        recent_low = df['Low'].iloc[-4:-1].min()
+        # --- Failure Detection ---
+        # Stop loss capped at 1x 20-day ADR below entry
+        max_risk_price = swing_high_15 * (1 - (adr_20 / 100))
+        # If it drops below the max risk level OR below the recent structural base low
+        recent_low = df['Low'].iloc[-16:-1].min()
+        hard_stop = max(max_risk_price, recent_low)
         
-        # If it breaks below the recent tight range low or below both moving averages, the setup is dead.
-        if curr_price < recent_low or (curr_price < sma_10_curr and curr_price < sma_20_curr):
-            return None # Setup failed/falling today
+        if curr_price < hard_stop:
+            return None # Setup failed/stopped out
         
-        if curr_price > prev_high:
+        if curr_price > swing_high_15:
             status = "TRIGGERED"
         else:
             status = "PENDING"
@@ -90,10 +113,9 @@ def evaluate_qullamaggie_setup(ticker, pre_df=None):
             "ticker": ticker,
             "adr": round(adr_20, 1),
             "price": round(curr_price, 2),
-            "breakout_level": round(prev_high, 2),
-            "sma_support": "10-Day" if dist_10 <= dist_20 else "20-Day"
+            "breakout_level": round(swing_high_15, 2),
+            "sma_support": "10-Day"
         }
-
 
     except Exception as e:
         print(f"[Qullamaggie Engine] Error analyzing {ticker}: {e}")

@@ -252,6 +252,36 @@ def run_screener(custom_universe=None):
         # 2. Must be priced over $5 (no penny stocks)
         if curr_c < 5: continue
         
+        # --- NEW AGENTS (Long Base, Medium Base, Pending Breakout, Qullamaggie) ---
+        # These structural base scanners must run BEFORE the master volatility filter 
+        # because a tight Medium Base (VCP) will naturally have its volatility crushed below 2.5% ADR!
+        try:
+            if lakehouse_mode:
+                lb_res = evaluate_long_base(ticker, pre_df=ticker_df)
+            else:
+                lb_res = evaluate_long_base(ticker, pre_df=ticker_df)
+                
+            if lb_res:
+                status_short = "Confirmed" if "CONFIRMED" in lb_res['status'] else "Coiled"
+                results["long_base_breakout"].append({"ticker": ticker, "metric": f"{status_short} | Dist: {lb_res.get('distance_pct', '0')}%"})
+                
+            mb_res = evaluate_medium_base(ticker, pre_df=ticker_df)
+            if mb_res:
+                status_short = "Confirmed" if "CONFIRMED" in mb_res['status'] else "Coiled"
+                dur = mb_res.get('base_duration', '3M')
+                results["medium_base_breakout"].append({"ticker": ticker, "metric": f"{dur} | {status_short}"})
+            
+            pb_res = detect_pending_breakout(ticker, pre_df=ticker_df)
+            if pb_res:
+                results["pending_breakout"].append({"ticker": ticker, "metric": f"Pending Breakout | {pb_res['alerts'][0]['model']}"})
+                
+            if curr_c >= 2.0 and vol.iloc[-20:].mean() >= 100000:
+                qm_res = evaluate_qullamaggie_setup(ticker, pre_df=ticker_df)
+                if qm_res:
+                    results["qullamaggie_setup"].append({"ticker": ticker, "metric": f"Triggered | ADR: {qm_res['adr']} | SMA: {qm_res['sma_support']}"})
+        except Exception as e:
+            pass
+
         # 3. Volatility Filter: Average Daily Range (ADR) > 2.5%
         # ETFs mathematically have extremely low ATRs (usually 0.5% - 1.5%). 
         # By requiring a 2.5% ADR, we instantly filter out 99% of ETFs and dead stocks, leaving only high-momentum equities.
@@ -284,18 +314,23 @@ def run_screener(custom_universe=None):
                         if curr_c > sma50 and sma50 > sma200 and curr_c >= high_52w * 0.75:
                             results["relative_strength"].append({"ticker": ticker, "metric": f"+{rs_1mo:.1f}% vs SPY", "score": float(rs_1mo)})
             
-            # RS Divergence (RS line hits new 52-week high, but Price does not)
-            if len(stock_aligned) >= 252:
-                rs_52w_max = rs_line.iloc[-252:].max()
-                price_52w_max = stock_aligned.iloc[-252:].max()
+            # RS Divergence (RS line hits new 3-month high, but Price has been consolidating for >5 days)
+            if len(stock_aligned) >= 63:
+                rs_63d_max = rs_line.iloc[-63:].max()
                 
-                is_rs_high = rs_line.iloc[-1] >= (rs_52w_max * 0.99) # RS is at its high
-                is_price_diverging = curr_c < (price_52w_max * 0.97) # Price is strictly below its high
-                is_close_enough = curr_c >= (price_52w_max * 0.85) # Within 15% of high
-                is_uptrend = curr_c > close.rolling(200).mean().iloc[-1]
+                # Use absolute Highs to determine the true peak
+                high_slice = high.iloc[-63:]
+                price_63d_max = high_slice.max()
+                days_since_high = 62 - high_slice.values.argmax()
                 
-                if is_rs_high and is_price_diverging and is_close_enough and is_uptrend:
-                    dist_to_high = ((1-(curr_c/price_52w_max))*100)
+                is_rs_high = rs_line.iloc[-1] >= (rs_63d_max * 0.97) # RS is near its high
+                is_price_consolidating = days_since_high >= 5 # True intraday peak was at least 5 days ago
+                is_price_diverging = curr_c < (price_63d_max * 0.99) # Price is resting at least 1% below absolute peak
+                is_close_enough = curr_c >= (price_63d_max * 0.85) # Within 15% of high
+                is_uptrend = curr_c > close.rolling(63).mean().iloc[-1]
+                
+                if is_rs_high and is_price_consolidating and is_price_diverging and is_close_enough and is_uptrend:
+                    dist_to_high = ((1-(curr_c/price_63d_max))*100)
                     results["rs_divergence"].append({"ticker": ticker, "metric": f"RS New High | Price -{dist_to_high:.1f}%", "score": -float(dist_to_high)})
                     
         except Exception as e: 
@@ -501,12 +536,12 @@ def run_screener(custom_universe=None):
                 # Calculate the 63-day max volume up to the day before 'i' to see if 'i' was a climax
                 hist_vol = vol.iloc[i-63:i+1] if i >= -63 else vol.iloc[:i+1]
                 if len(hist_vol) > 0 and vol.iloc[i] >= hist_vol.max() * 0.95:
-                    # Must be structurally positive
+                    # Must be structurally positive AND gain at least 10% on the day
                     c_day = close.iloc[i]
                     o_day = open_s.iloc[i]
                     pc_day = close.iloc[i-1]
                     h_day = high.iloc[i]
-                    if (c_day > pc_day) and (c_day > o_day) and (c_day >= h_day * 0.90):
+                    if (c_day > pc_day) and (c_day > o_day) and (c_day >= h_day * 0.90) and (c_day >= pc_day * 1.10):
                         positive_hve_days.append(i)
                     
         if positive_hve_days:
@@ -593,42 +628,7 @@ def run_screener(custom_universe=None):
         except Exception as e:
             pass
 
-        # --- NEW AGENTS (Long Base, Pending Breakout, Qullamaggie) ---
-        if is_aaaa: print("Starting Long Base...")
-        try:
-            # 1. Long Base Breakout
-            if lakehouse_mode:
-                # In fast Lakehouse mode, we only have 2 years of data.
-                # We will evaluate a "Long Base" as a 2-year base instead of 3-year to avoid blocking network calls.
-                lb_res = evaluate_long_base(ticker, pre_df=ticker_df)
-            else:
-                lb_res = evaluate_long_base(ticker, pre_df=ticker_df)
-                
-            if lb_res:
-                status_short = "Confirmed" if "CONFIRMED" in lb_res['status'] else "Coiled"
-                results["long_base_breakout"].append({"ticker": ticker, "metric": f"{status_short} | Dist: {lb_res.get('distance_pct', '0')}%"})
-                
-            mb_res = evaluate_medium_base(ticker, pre_df=ticker_df)
-            if mb_res:
-                status_short = "Confirmed" if "CONFIRMED" in mb_res['status'] else "Coiled"
-                dur = mb_res.get('base_duration', '3M')
-                results["medium_base_breakout"].append({"ticker": ticker, "metric": f"{dur} | {status_short}"})
-            
-            if is_aaaa: print("Starting Pending Breakout...")
-            # 2. Pending Breakout
-            pb_res = detect_pending_breakout(ticker, pre_df=ticker_df)
-            if pb_res:
-                results["pending_breakout"].append({"ticker": ticker, "metric": f"Pending Breakout | {pb_res['alerts'][0]['model']}"})
-                
-            if is_aaaa: print("Starting Qullamaggie...")
-            # 3. Qullamaggie Setup (Only run on liquid stocks >$2 to avoid junk penny stocks triggering false setups and API calls)
-            if curr_c >= 2.0 and vol.iloc[-20:].mean() >= 100000:
-                qm_res = evaluate_qullamaggie_setup(ticker, pre_df=ticker_df)
-                if qm_res:
-                    results["qullamaggie_setup"].append({"ticker": ticker, "metric": f"Triggered | ADR: {qm_res['adr']} | SMA: {qm_res['sma_support']}"})
-                
-        except Exception as e:
-            pass
+
             
         t_end = time.time()
         duration = t_end - t0

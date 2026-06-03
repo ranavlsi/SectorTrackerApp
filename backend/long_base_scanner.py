@@ -110,7 +110,7 @@ def evaluate_long_base(ticker, pre_df=None):
 def evaluate_medium_base(ticker, pre_df=None):
     """
     Evaluates if a stock is breaking out of a Medium-Term Structural Base (3 months to 2 years).
-    Dynamic lookback is approx 60 to 500 trading days.
+    Upgraded with Dynamic Depth, Minervini Trend Template, and VCP/Pocket Pivot Triggers.
     """
     try:
         if pre_df is not None:
@@ -123,14 +123,31 @@ def evaluate_medium_base(ticker, pre_df=None):
             df = df.loc[ticker.lower() if ticker.lower() in df.index.levels[0] else ticker].reset_index()
             df.rename(columns={'close':'Close', 'high':'High', 'low':'Low', 'open':'Open', 'volume':'Volume'}, inplace=True)
             
-        if len(df) < 63: return None # Not enough history even for 3 months
+        if len(df) < 250: return None # Need enough data for 200 SMA + 21 days back
         
+        # Calculate moving averages
         df['SMA_50'] = df['Close'].rolling(window=50).mean()
         df['SMA_200'] = df['Close'].rolling(window=200).mean()
         df['ATR_10'] = calculate_atr(df, 10)
         df['ATR_50'] = calculate_atr(df, 50)
         df['ADV_50'] = df['Volume'].rolling(window=50).mean()
         
+        # 0. Basic Clean
+        df['Close'] = df['Close'].ffill()
+
+        # 1. Minervini Trend Template Filter (Must be checked on the current day)
+        current_close = df['Close'].iloc[-1]
+        sma_50_current = df['SMA_50'].iloc[-1]
+        sma_200_current = df['SMA_200'].iloc[-1]
+        sma_200_21d_ago = df['SMA_200'].iloc[-22]
+        
+        if current_close < sma_50_current or current_close < sma_200_current:
+            return None
+        if sma_50_current < sma_200_current:
+            return None
+        if sma_200_current < sma_200_21d_ago:
+            return None # Macro trend is not rising
+
         # Test standard structural lookbacks: 3m, 6m, 1y, 1.5y, up to max
         timeframes = [63, 126, 252, 378, 500]
         
@@ -139,56 +156,85 @@ def evaluate_medium_base(ticker, pre_df=None):
             if lookback < 63:
                 continue
                 
-            base_df = df.iloc[-lookback:]
-            current_close = base_df['Close'].iloc[-1]
+            base_df = df.iloc[-lookback:].copy()
             current_volume = base_df['Volume'].iloc[-1]
             
             base_high = base_df['High'].max()
             base_low = base_df['Low'].min()
             
-            # Filter out illiquid junk and SPACs that artificially appear coiled
             if base_df['Volume'].mean() < 100000 or current_close < 3.0:
                 continue
 
-            # Determine the length of the base in months
             base_length_months = round(lookback / 21)
-            if base_length_months < 2: # Allow slightly shorter medium bases (2+ months)
+            if base_length_months < 2:
                 continue
                 
-            # 1. Depth Constraint (Max 40% drawdown for medium bases)
-            if base_low < (base_high * 0.60):
+            # 1.5 Proper Base Structure (High cannot be just a recent 2-week pullback)
+            base_high_idx = base_df['High'].idxmax()
+            pos = base_df.index.get_loc(base_high_idx)
+            days_since_high = len(base_df) - pos
+            if days_since_high < max(21, int(lookback * 0.33)):
+                continue # The left side of the cup is too recent, this is not a true base
+                
+            # 2. Dynamic Base Depth
+            base_drawdown = (base_high - base_low) / base_high
+            max_allowed_drawdown = 0.30 if base_length_months < 6 else 0.40
+            if base_drawdown > max_allowed_drawdown:
                 continue
                 
-            # 2. Moving Average Filter - Stock should be above 50 SMA for momentum
-            sma_50_current = base_df['SMA_50'].iloc[-1]
-            if current_close < sma_50_current:
-                continue
+            # 3. Right Side VCP Compression
+            base_range = base_high - base_low
+            right_side_range = base_df['High'].iloc[-10:].max() - base_df['Low'].iloc[-10:].min()
+            if base_range > 0 and (right_side_range / base_range) >= 0.40:
+                continue # The right side is too loose
+
+            # 4. Absolute Dry-Up
+            last_10_days = base_df.iloc[-10:]
+            days_under_75pct_vol = (last_10_days['Volume'] < (0.75 * last_10_days['ADV_50'])).sum()
+            if days_under_75pct_vol < 2:
+                continue # No absolute true dry-up detected
+
+            # 5. U/D Accumulation Ratio
+            last_50_days = base_df.iloc[-50:]
+            up_days_vol = last_50_days[last_50_days['Close'] > last_50_days['Open']]['Volume'].sum()
+            down_days_vol = last_50_days[last_50_days['Close'] < last_50_days['Open']]['Volume'].sum()
+            
+            if down_days_vol == 0:
+                ud_ratio = 999.0
+            else:
+                ud_ratio = up_days_vol / down_days_vol
                 
-            # 3. VCP Check (Coiled Spring)
-            atr_10 = base_df['ATR_10'].iloc[-1]
-            atr_50 = base_df['ATR_50'].iloc[-1]
-            # Loosen coil to 75% of 50-day ATR instead of 60%
-            is_coiled = atr_10 < (atr_50 * 0.75)
+            if ud_ratio < 1.05:
+                continue # Distribution is too high
+
+            # 6. Breakout Trigger (15-Day Handle Pivot + Pocket Pivot)
+            # Use iloc[-16:-1] to get the 15 days *before* today
+            handle_high_15 = base_df['High'].iloc[-16:-1].max()
             
-            adv_10 = base_df['Volume'].rolling(window=10).mean().iloc[-1]
-            adv_50 = base_df['Volume'].rolling(window=50).mean().iloc[-1]
-            # Volume contraction during the coil
-            is_vol_coiled = adv_10 < (adv_50 * 0.95)
+            # Pocket Pivot Volume Logic
+            # Down days volume in the last 10 days
+            last_10_prev = base_df.iloc[-11:-1]
+            down_days_10 = last_10_prev[(last_10_prev['Close'] < last_10_prev['Open']) | 
+                                        (last_10_prev['Close'] < last_10_prev['Close'].shift(1))]
+            max_down_vol_10 = down_days_10['Volume'].max() if not down_days_10.empty else 0
             
-            is_coiled = is_coiled and is_vol_coiled
-            
-            # Distance checks (Must be within 5% of high to be a true coil)
-            is_about_to_breakout = (current_close >= base_high * 0.95) and (current_close <= base_high) and is_coiled
-            is_confirmed_breakout = (current_close > base_high) and (current_volume >= adv_50 * 1.50)
+            is_up_day = (current_close > base_df['Open'].iloc[-1]) and (current_close > base_df['Close'].iloc[-2])
+            is_pocket_pivot = is_up_day and (current_volume > max_down_vol_10)
+
+            # Check proximity to the main base pivot
+            is_about_to_breakout = (current_close >= base_high * 0.85) and (current_close <= base_high)
+            is_confirmed_breakout = (current_close > base_high) and is_pocket_pivot
             
             if is_confirmed_breakout:
                 return {
                     "ticker": ticker,
                     "status": "CONFIRMED BREAKOUT",
                     "price": round(current_close, 2),
-                    "base_high": round(base_high, 2),
+                    "base_high": round(base_high, 2), # Keep for context
+                    "handle_pivot": round(handle_high_15, 2),
                     "base_duration": f"{base_length_months} Months",
-                    "vol_surge": round((current_volume / adv_50) * 100, 1)
+                    "vol_surge": round((current_volume / base_df['ADV_50'].iloc[-1]) * 100, 1),
+                    "ud_ratio": round(ud_ratio, 2)
                 }
             elif is_about_to_breakout:
                 return {
@@ -196,13 +242,16 @@ def evaluate_medium_base(ticker, pre_df=None):
                     "status": "ABOUT TO BREAKOUT",
                     "price": round(current_close, 2),
                     "base_high": round(base_high, 2),
+                    "handle_pivot": round(handle_high_15, 2),
                     "base_duration": f"{base_length_months} Months",
-                    "distance_pct": round(((base_high - current_close) / base_high) * 100, 1)
+                    "distance_pct": round(((base_high - current_close) / base_high) * 100, 1),
+                    "ud_ratio": round(ud_ratio, 2)
                 }
                 
         return None
         
     except Exception as e:
+        print(f"[Medium Base Engine] Error analyzing {ticker}: {e}")
         return None
 
 def run_saturday_batch_scan():
