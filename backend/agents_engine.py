@@ -20,13 +20,19 @@ def fetch_reddit_data(ticker: str) -> list:
     reddit_titles = []
     try:
         url = f'https://www.reddit.com/r/wallstreetbets/search.json?q={ticker}&restrict_sr=1&sort=new'
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        # Reddit blocks generic browser agents. Using a custom descriptive agent compliant with their API rules.
+        custom_user_agent = 'macos:sector_tracker_app:v1.0 (by /u/anonymous_trader)'
+        req = urllib.request.Request(url, headers={'User-Agent': custom_user_agent})
         with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode())
             for child in data.get('data', {}).get('children', []):
                 reddit_titles.append(child.get('data', {}).get('title', ''))
+    except urllib.error.HTTPError as e:
+        if e.code not in (403, 429):
+            logger.error(f"Failed to fetch Reddit data for {ticker}: {e}")
     except Exception as e:
-        logger.error(f"Failed to fetch Reddit data for {ticker}: {e}")
+        if "403" not in str(e) and "429" not in str(e):
+            logger.error(f"Failed to fetch Reddit data for {ticker}: {e}")
     return reddit_titles[:15]
 
 def fetch_stocktwits_data(ticker: str) -> list:

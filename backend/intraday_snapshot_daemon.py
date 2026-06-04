@@ -51,26 +51,37 @@ def fetch_market_snapshot(tickers):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Fetching Live Snapshot for {len(tickers)} stocks...")
     
     all_data = []
-    chunk_size = 2000
+    chunk_size = 1000
     
     for i, chunk in enumerate(chunk_list(tickers, chunk_size)):
-        try:
-            req = StockLatestBarRequest(symbol_or_symbols=chunk)
-            bars = client.get_stock_latest_bar(req)
-            
-            for symbol, bar in bars.items():
-                if bar is not None:
-                    all_data.append({
-                        'Ticker': symbol,
-                        'Close': float(bar.close),
-                        'High': float(bar.high),
-                        'Low': float(bar.low),
-                        'Open': float(bar.open),
-                        'Volume': int(bar.volume),
-                        'Timestamp': bar.timestamp.isoformat()
-                    })
-        except Exception as e:
-            print(f"Error on chunk {i}: {e}")
+        retries = 3
+        while retries > 0:
+            try:
+                req = StockLatestBarRequest(symbol_or_symbols=chunk)
+                bars = client.get_stock_latest_bar(req)
+                
+                for symbol, bar in bars.items():
+                    if bar is not None:
+                        all_data.append({
+                            'Ticker': symbol,
+                            'Close': float(bar.close),
+                            'High': float(bar.high),
+                            'Low': float(bar.low),
+                            'Open': float(bar.open),
+                            'Volume': int(bar.volume),
+                            'Timestamp': bar.timestamp.isoformat()
+                        })
+                break # Success, exit retry loop
+            except Exception as e:
+                err_str = str(e).lower()
+                print(f"Error on chunk {i} (retries left: {retries}): {e}")
+                if "429" in err_str or "too many requests" in err_str:
+                    time.sleep(15) # Longer backoff for rate limits
+                else:
+                    time.sleep(5) # Standard Backoff
+                retries -= 1
+        time.sleep(2.0) # Prevent hitting Alpaca's rate limit
+
             
     if not all_data:
         return None
@@ -95,7 +106,7 @@ def run_daemon():
     last_15m_run = 0
     
     while True:
-        if is_market_open() or True: # Remove 'or True' for production, keeping it so you can test it after-hours!
+        if is_market_open():
             t0 = time.time()
             df = fetch_market_snapshot(tickers)
             

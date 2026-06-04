@@ -38,9 +38,9 @@ def update_database():
         
     client = StockHistoricalDataClient(api_key, secret_key)
     
-    # We only need 2 years of data for the 200 SMA
+    # We need 4 years of data (1460 days) to accurately evaluate 3-Year Long Bases
     end_date = datetime.today()
-    start_date = end_date - timedelta(days=730)
+    start_date = end_date - timedelta(days=1460)
     
     tickers = get_all_tickers(api_key, secret_key)
     # Further sanitize: no hyphens or dots (warrants/preferred) just in case

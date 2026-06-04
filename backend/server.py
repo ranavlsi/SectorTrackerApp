@@ -5,6 +5,10 @@ import yfinance as yf
 import pandas as pd
 from earnings_engine import get_max_pain, get_eps_trend, get_historical_earnings_action, get_institutional_data
 from fundamentals_engine import get_fundamentals
+from fundamental_data_api import get_fundamental_history
+from sec_filings_api import get_recent_filings
+from peer_valuation_api import get_peer_valuation
+from macro_outlook_engine import get_macro_outlook
 
 app = Flask(__name__)
 CORS(app)
@@ -82,6 +86,34 @@ def run_rs_scanner_api():
         return jsonify({"status": "started", "message": "RS Line Scanner started in background."})
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route('/api/deep_fundamentals', methods=['GET'])
+@cache.cached(query_string=True)
+def deep_fundamentals():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    return jsonify(get_fundamental_history(ticker.upper()))
+
+@app.route('/api/sec_filings', methods=['GET'])
+@cache.cached(query_string=True)
+def sec_filings():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    return jsonify(get_recent_filings(ticker.upper()))
+
+@app.route('/api/peer_valuation', methods=['GET'])
+@cache.cached(query_string=True)
+def peer_valuation():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    return jsonify(get_peer_valuation(ticker.upper()))
+
+@app.route('/api/macro_outlook', methods=['GET'])
+@cache.cached(query_string=True)
+def macro_outlook():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    return jsonify(get_macro_outlook(ticker.upper()))
 
 if __name__ == '__main__':
     print("Starting SectorTracker API server on port 5001...")

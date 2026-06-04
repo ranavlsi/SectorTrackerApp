@@ -11,11 +11,6 @@ from alpaca.data.requests import StockSnapshotRequest, StockBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from alpaca.data.enums import DataFeed
 
-# Load UNIVERSE
-try:
-    from intraday_engine import UNIVERSE
-except:
-    UNIVERSE = ["SPY", "QQQ", "TSLA", "NVDA", "AMD", "AAPL", "META", "MSFT", "AMZN"]
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -38,16 +33,27 @@ def fetch_premarket_briefing():
     print("Fetching Premarket Snapshots for Top Gappers...")
     client = StockHistoricalDataClient(api_key, secret_key)
     
-    # 0. Fetch True Previous Close from Lakehouse
+    # 0. Fetch True Previous Close & Top 2000 Liquid Stocks from Lakehouse
     import duckdb
     lakehouse_path = "/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/daily_ohlcv.parquet"
     if os.path.exists(lakehouse_path):
-        prev_closes = duckdb.query(f"SELECT Ticker, Close FROM read_parquet('{lakehouse_path}') WHERE Date = (SELECT MAX(Date) FROM read_parquet('{lakehouse_path}'))").to_df().set_index('Ticker')['Close'].to_dict()
+        query = f"""
+        SELECT Ticker, Close 
+        FROM read_parquet('{lakehouse_path}') 
+        WHERE Date = (SELECT MAX(Date) FROM read_parquet('{lakehouse_path}'))
+        ORDER BY Close * Volume DESC
+        """
+        df = duckdb.query(query).to_df()
+        prev_closes = df.set_index('Ticker')['Close'].to_dict()
+        top_2000 = df['Ticker'].head(2000).tolist()
     else:
         prev_closes = {}
+        top_2000 = ["SPY", "QQQ", "TSLA", "NVDA", "AMD", "AAPL", "META", "MSFT", "AMZN"]
     
     # 1. Fetch Snapshots (Alpaca expects BRK.B instead of BRK-B)
-    alpaca_universe = [sym.replace('-', '.') for sym in UNIVERSE]
+    alpaca_universe = [sym.replace('-', '.') for sym in top_2000]
+    
+    # Alpaca can handle up to ~3000 symbols in a single snapshot request
     req = StockSnapshotRequest(symbol_or_symbols=alpaca_universe)
     snapshots = client.get_stock_snapshot(req)
     
@@ -64,7 +70,7 @@ def fetch_premarket_briefing():
             
             if prev_close > 5.0: # Filter out penny stocks
                 gap_pct = ((curr_price - prev_close) / prev_close) * 100
-                if gap_pct > 0: # Only look for Gap Ups
+                if gap_pct >= 5: # Only look for Gap Ups >= 5%
                     gaps.append((original_ticker, gap_pct, curr_price, prev_close, snap.latest_trade.size))
                     
     # Sort by gap percentage and take top 5
@@ -138,12 +144,33 @@ def fetch_premarket_briefing():
             short_str = "N/A"
             catalyst = "Error fetching news"
             
+        # Fetch Social Sentiment and Unusual Options
+        try:
+            from agents_engine import get_market_agents_data
+            agent_data = get_market_agents_data(ticker)
+            sentiment_label = agent_data.get('surge_metrics', {}).get('sentiment_label', 'neutral').upper()
+            bull_pct = agent_data.get('surge_metrics', {}).get('bullish_percent', 50)
+            options_data = agent_data.get('unusual_options', [])
+            
+            sentiment_str = f"{sentiment_label} ({bull_pct}% Bullish)"
+            
+            if options_data:
+                top_option = sorted(options_data, key=lambda x: x['vol'], reverse=True)[0]
+                options_str = f"Active Strike: ${top_option['strike']} (Vol: {top_option['vol']} vs OI: {top_option['oi']})"
+            else:
+                options_str = "No unusual options detected"
+        except Exception as e:
+            sentiment_str = "N/A"
+            options_str = "N/A"
+
         trade_plan = f"Watch for Opening Range Breakout (ORB) above PMH ({pmh}) with volume. Buy the breakout for a long continuation. Use PML ({pml}) or VWAP as a stop loss."
             
         briefing_lines.append(f"\n*{i+1}. {ticker} (+{gap_pct:.1f}%)* @ ${curr_price:.2f}")
         briefing_lines.append(f"• *PMH:* {pmh} | *PML:* {pml}")
         briefing_lines.append(f"• *Gap Fill Target:* ${prev_close:.2f}")
         briefing_lines.append(f"• *Float:* {float_str} | *Short:* {short_str}")
+        briefing_lines.append(f"• *Social Sentiment:* {sentiment_str}")
+        briefing_lines.append(f"• *Unusual Options:* {options_str}")
         briefing_lines.append(f"• *News:* {catalyst}")
         briefing_lines.append(f"• *Trade Plan:* {trade_plan}")
 

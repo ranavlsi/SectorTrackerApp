@@ -9,9 +9,11 @@ import VolatilitySurface3D from './VolatilitySurface3D'
 import TradingViewSync from './TradingViewSync'
 import EarningsEvasionTracker from './EarningsEvasionTracker'
 import ZacksFundamentalReport from './ZacksFundamentalReport'
+import DeepFundamentalsDashboard from './DeepFundamentalsDashboard'
 import LiveAgentsDashboard from './LiveAgentsDashboard'
 import RsLineScanner from './RsLineScanner'
 import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
+import { PieChart as PieChartIcon } from 'lucide-react';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -205,45 +207,51 @@ function App() {
   const [globalLiveAlerts, setGlobalLiveAlerts] = useState([])
 
   useEffect(() => {
-    fetch('/sector_flow.json?t=' + new Date().getTime())
-      .then(res => res.json())
-      .then(json => setData(json))
-      .catch(err => console.error("Error fetching data:", err))
-      
-    fetch('/screener_results.json?t=' + new Date().getTime())
-      .then(res => res.json())
-      .then(data => setScreenerData(data))
-      .catch(err => console.error("Error loading screener data:", err))
-      
-    fetch('/market_health.json?t=' + new Date().getTime())
-      .then(res => res.json())
-      .then(data => setMarketHealth(data))
+    const fetchAllData = () => {
+      fetch('/sector_flow.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(json => setData(json))
+        .catch(err => console.error("Error fetching data:", err))
+        
+      fetch('/screener_results.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setScreenerData(data))
+        .catch(err => console.error("Error loading screener data:", err))
+        
+      fetch('/market_health.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setMarketHealth(data))
+        .catch(err => console.error("Error loading market health data:", err))
 
-    fetch('/weekly_playbook.json?t=' + new Date().getTime())
-      .then(res => res.json())
-      .then(data => setWeeklyPlaybook(data))
-      .catch(err => console.error("Error loading weekly playbook:", err))
-      .catch(err => console.error("Error loading market health data:", err))
-      
-    fetch('/squeeze_results.json?t=' + new Date().getTime())
-      .then(res => res.json())
-      .then(data => setSqueezeData(data))
-      .catch(err => console.error("Error loading squeeze data:", err))
-      
-    fetch('/deepvue_results.json?t=' + new Date().getTime())
-      .then(res => res.json())
-      .then(data => setDeepvueData(data))
-      .catch(err => console.error("Error loading deepvue data:", err))
-      
-    fetch('/correlation_results.json?t=' + new Date().getTime())
-      .then(res => res.json())
-      .then(data => setCorrelationData(data))
-      .catch(err => console.error("Error loading correlation data:", err))
+      fetch('/weekly_playbook.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setWeeklyPlaybook(data))
+        .catch(err => console.error("Error loading weekly playbook:", err))
+        
+      fetch('/squeeze_results.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setSqueezeData(data))
+        .catch(err => console.error("Error loading squeeze data:", err))
+        
+      fetch('/deepvue_results.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setDeepvueData(data))
+        .catch(err => console.error("Error loading deepvue data:", err))
+        
+      fetch('/correlation_results.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setCorrelationData(data))
+        .catch(err => console.error("Error loading correlation data:", err))
 
-    fetch('/ai_playbook.md?t=' + new Date().getTime())
-      .then(res => res.text())
-      .then(text => setPlaybookContent(text))
-      .catch(err => console.error("Error loading playbook:", err))
+      fetch('/ai_playbook.md?t=' + new Date().getTime())
+        .then(res => res.text())
+        .then(text => setPlaybookContent(text))
+        .catch(err => console.error("Error loading playbook:", err))
+    };
+
+    fetchAllData();
+    // Auto-refresh main dashboard data every 10 minutes
+    const dataInterval = setInterval(fetchAllData, 600000);
       
     // Live Agent Slack-Channel Integration
     const eventSource = new EventSource('/api/stream');
@@ -275,7 +283,10 @@ function App() {
       }
     };
     
-    return () => eventSource.close();
+    return () => {
+      eventSource.close();
+      clearInterval(dataInterval);
+    };
   }, [])
   
   // Global Alert Polling
@@ -395,7 +406,9 @@ function App() {
     setSearchError(null);
     setExpertTickerData(null);
     setModalData(null);
-    setActiveTab('chart');
+    if (activeTab !== 'deepfundamentals' && activeTab !== 'zacks' && activeTab !== 'earnings') {
+      setActiveTab('chart');
+    }
     setIsRightDrawerOpen(true);
     
     try {
@@ -558,6 +571,7 @@ function App() {
           <button className={activeTab === 'volsurface' ? 'tab-active' : ''} onClick={() => setActiveTab('volsurface')}><Activity size={18} /> 3D Vol Surface</button>
           <button className={activeTab === 'earnings' ? 'tab-active' : ''} onClick={() => setActiveTab('earnings')}><User size={18} /> AI Earnings</button>
           <button className={activeTab === 'zacks' ? 'tab-active' : ''} onClick={() => setActiveTab('zacks')}><BookOpen size={18} /> Zacks Fundamentals</button>
+          <button className={activeTab === 'deepfundamentals' ? 'tab-active' : ''} onClick={() => setActiveTab('deepfundamentals')}><PieChartIcon size={18} /> Deep Fundamentals</button>
           <button className={activeTab === 'agents' ? 'tab-active' : ''} onClick={() => setActiveTab('agents')}><Search size={18} /> AI Market Agents</button>
           <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
           <button className={activeTab === 'tvsync' ? 'tab-active' : ''} onClick={() => setActiveTab('tvsync')}><Link size={18} /> TradingView Sync</button>
@@ -708,7 +722,11 @@ function App() {
       )}
 
       {activeTab === 'zacks' && (
-        <ZacksFundamentalReport initialTicker={searchQuery || 'NVDA'} />
+        <ZacksFundamentalReport initialTicker={expertTickerData?.ticker || searchQuery || 'NVDA'} />
+      )}
+
+      {activeTab === 'deepfundamentals' && (
+        <DeepFundamentalsDashboard currentTicker={expertTickerData?.ticker || searchQuery || 'NVDA'} />
       )}
 
       {activeTab === 'earnings' && (

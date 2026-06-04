@@ -18,6 +18,11 @@ from sector_data_api import calculate_stage, calculate_macd, calculate_rsi, calc
 from sector_data_api import calculate_stage, calculate_macd, calculate_rsi, calculate_momentum_fade
 
 import os
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend'))
+from fundamental_data_api import get_fundamental_history
+from sec_filings_api import get_recent_filings
+from peer_valuation_api import get_peer_valuation
+from macro_outlook_engine import get_macro_outlook
 import requests
 from dotenv import load_dotenv
 
@@ -1225,8 +1230,41 @@ def get_fundamentals():
             
         # Sort history chronologically
         eps_history.sort(key=lambda x: x["date"])
-        
         fundamental_data["history"] = eps_history
+
+        # Expected vs Actual Earnings & Surprises
+        earnings_dates = []
+        positive_surprises = 0
+        negative_surprises = 0
+        try:
+            ed = t.earnings_dates
+            if ed is not None and not ed.empty:
+                ed = ed.head(12) # Fetch up to 12 recent/future quarters
+                for date, row in ed.iterrows():
+                    eps_est = row.get("EPS Estimate")
+                    eps_rep = row.get("Reported EPS")
+                    surprise = row.get("Surprise(%)")
+                    
+                    if pd.notna(surprise):
+                        if float(surprise) > 0: positive_surprises += 1
+                        elif float(surprise) < 0: negative_surprises += 1
+                        
+                    if pd.notna(eps_est) or pd.notna(eps_rep):
+                        earnings_dates.append({
+                            "date": date.strftime("%Y-%m-%d"),
+                            "eps_estimate": float(eps_est) if pd.notna(eps_est) else None,
+                            "eps_reported": float(eps_rep) if pd.notna(eps_rep) else None,
+                            "surprise": float(surprise) if pd.notna(surprise) else None
+                        })
+        except Exception as e:
+            print(f"Error fetching earnings dates: {e}")
+            
+        # Sort earnings_dates chronologically for graphing
+        earnings_dates.sort(key=lambda x: x["date"])
+        fundamental_data["earnings_dates"] = earnings_dates
+        fundamental_data["positive_surprises"] = positive_surprises
+        fundamental_data["negative_surprises"] = negative_surprises
+        
         
         # AI Report Text Generation
         rank_names = {1: "Strong Buy", 2: "Buy", 3: "Hold", 4: "Sell", 5: "Strong Sell"}
@@ -1582,6 +1620,29 @@ def expert_screener_worker():
             
         time.sleep(60) # Check every minute
 
+@app.route('/api/deep_fundamentals', methods=['GET'])
+def deep_fundamentals():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    return jsonify(get_fundamental_history(ticker.upper()))
+
+@app.route('/api/sec_filings', methods=['GET'])
+def sec_filings():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    return jsonify(get_recent_filings(ticker.upper()))
+
+@app.route('/api/peer_valuation', methods=['GET'])
+def peer_valuation():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    return jsonify(get_peer_valuation(ticker.upper()))
+
+@app.route('/api/macro_outlook', methods=['GET'])
+def macro_outlook():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    return jsonify(get_macro_outlook(ticker.upper()))
 
 if __name__ == '__main__':
     # Start autonomous councils in background threads
@@ -1595,7 +1656,7 @@ if __name__ == '__main__':
     threading.Thread(target=gex_council_worker, daemon=True).start()
     threading.Thread(target=intraday_multi_algo_worker, daemon=True).start()
     threading.Thread(target=key_levels_worker, daemon=True).start()
-    threading.Thread(target=expert_screener_worker, daemon=True).start()
+    # threading.Thread(target=expert_screener_worker, daemon=True).start() # Disabled to prevent collision with crontab
     
 
     # Run the Flask app with threading enabled to handle SSE connections concurrently

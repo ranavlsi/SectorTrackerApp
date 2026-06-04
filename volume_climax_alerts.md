@@ -1,3 +1,159 @@
+## 🌋 Volume Climax Consolidation Scanner - June 04, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 04, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 03, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 03, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 03, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### RCAT
+- **Current Price:** $14.95
+- **Climax Date:** 2026-05-28 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.6x avg | MCap: $2.3B | AvgVol: 14.2M
+
+---
+
 ## 🌋 Volume Climax Consolidation Scanner - June 02, 2026
 Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
 

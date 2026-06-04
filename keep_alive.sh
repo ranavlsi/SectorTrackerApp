@@ -5,7 +5,7 @@ APP_DIR="/Users/amitkumar/Desktop/SectorTrackerApp"
 cd "$APP_DIR" || exit
 
 # Check if the server is running
-if ! pgrep -f "python3 backend/server.py" > /dev/null; then
+if ! pgrep -f "server\.py" > /dev/null; then
     
     # --- CRASH LOOP PROTECTION LOGIC ---
     NOW=$(date +%s)
@@ -37,5 +37,5 @@ if ! pgrep -f "python3 backend/server.py" > /dev/null; then
 
     echo "$(date): Server is not running. Restarting (Crash count in last 5m: $((CRASH_COUNT + 1)))..." >> server_watchdog.log
     # Use nohup to run it in the background independently of the shell
-    nohup python3 backend/server.py >> server_watchdog.log 2>&1 &
+    nohup python3 server.py >> server_watchdog.log 2>&1 &
 fi

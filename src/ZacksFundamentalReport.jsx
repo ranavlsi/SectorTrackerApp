@@ -186,9 +186,38 @@ const ZacksFundamentalReport = ({ initialTicker }) => {
             <MetricCard title="Return on Equity" value={formatPercent(data.returnOnEquity)} icon={Activity} color="#fbc2eb" />
           </div>
 
+          {/* Earnings Surprises Tracking */}
+          {data.earnings_dates && data.earnings_dates.length > 0 && (
+            <div style={{ marginTop: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                <MetricCard title="Positive Earnings Surprises" value={data.positive_surprises} icon={TrendingUp} color="#10b981" />
+                <MetricCard title="Negative Earnings Surprises" value={data.negative_surprises} icon={TrendingDown} color="#ef4444" />
+              </div>
+
+              <div className="glass-card" style={{ padding: '1.5rem' }}>
+                <h3 style={{ margin: '0 0 1rem 0', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Activity size={20} /> Expected vs Actual EPS (Surprise Tracker)
+                </h3>
+                <div style={{ height: '300px', width: '100%' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={data.earnings_dates}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <YAxis stroke="#94a3b8" />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: '#334155', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Bar dataKey="eps_estimate" fill="#64748b" radius={[4, 4, 0, 0]} name="EPS Estimate" />
+                      <Bar dataKey="eps_reported" fill="#10b981" radius={[4, 4, 0, 0]} name="Reported EPS" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Historical Charts */}
           {data.history && data.history.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
               
               <div className="glass-card" style={{ padding: '1.5rem' }}>
                 <h3 style={{ margin: '0 0 1rem 0', color: '#60a5fa' }}>Quarterly EPS Trend</h3>

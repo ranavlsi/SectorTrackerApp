@@ -11,6 +11,7 @@ import time
 from long_base_scanner import evaluate_long_base, evaluate_medium_base
 from pending_breakout_engine import detect_pending_breakout
 from qullamaggie_engine import evaluate_qullamaggie_setup
+from darvas_box_scanner import calculate_darvas_box
 
 warnings.filterwarnings('ignore')
 
@@ -415,21 +416,15 @@ def run_screener(custom_universe=None):
             if crosses.iloc[-5:].any() and curr_c > curr_sma:
                 results["early_stage_2"].append({"ticker": ticker, "metric": f"Crossed 200 SMA (${curr_sma:.2f})"})
                 
-        # 7. Darvas Breakout
-        if len(close) >= 252:
-            high_52w = close.iloc[-252:].max()
-            box_high = high.iloc[-11:-1].max()
-            box_low = low.iloc[-11:-1].min()
-            box_tightness = (box_high - box_low) / box_low
-            
-            avg_vol = vol.iloc[-21:-1].mean()
-            box_vol_avg = vol.iloc[-6:-1].mean()
-            curr_vol = vol.iloc[-1]
-            
-            if box_tightness < 0.08 and box_vol_avg < avg_vol * 0.8:
-                if curr_c > box_high and curr_vol > avg_vol * 1.5 and curr_c >= high_52w * 0.98:
-                    vol_mult = curr_vol / avg_vol
-                    results["darvas_breakout"].append({"ticker": ticker, "metric": f"Breakout Volume: {vol_mult:.1f}x", "score": float(vol_mult)})
+        # 7. Darvas Breakout (Using Authentic Algorithmic Logic)
+        try:
+            db_status, db_top, db_bottom, db_msg = calculate_darvas_box(ticker_df)
+            if db_status == "STRONG_BREAKOUT":
+                results["darvas_breakout"].append({"ticker": ticker, "metric": f"Cleared ${db_top:.2f} | {db_msg}", "score": 2.0})
+            elif db_status == "ABOUT_TO_BREAKOUT":
+                results["darvas_breakout"].append({"ticker": ticker, "metric": f"Tight Coil against ${db_top:.2f}", "score": 1.0})
+        except Exception as e:
+            pass
                 
         # 7.5 Breakout Retest & Squat MA Support
         if len(high) >= 70:

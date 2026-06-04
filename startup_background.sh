@@ -2,7 +2,7 @@
 cd /Users/amitkumar/Desktop/SectorTrackerApp
 
 # Clean up any lingering processes just in case
-pkill -f "python3 server.py" || true
+pkill -f "server\.py" || true
 pkill -f "npm run dev" || true
 pkill -f "vite" || true
 pkill -f "intraday_snapshot_daemon.py" || true
