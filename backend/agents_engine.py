@@ -156,17 +156,21 @@ def get_market_agents_data(ticker: str) -> Dict[str, Any]:
     x_updates = fetch_x_data(ticker)
     
     # Synthesis vibe
-    vibe_score = len(reddit_data) + len(stocktwits_data) + (len(options_data) * 2)
-    if vibe_score > 500:
-        synthesis = f"High chatter and activity detected for {ticker}. "
-    elif vibe_score > 5:
-        synthesis = f"Moderate activity detected for {ticker}. "
+    vibe_score = len(reddit_data) + len(stocktwits_data) + (len(options_data) * 20)
+    
+    # Bypass rule: If there are ANY extreme unusual options (Ratio > 2.0), immediately flag as high priority
+    has_whale_activity = len(options_data) > 0
+    
+    if vibe_score > 60 or has_whale_activity:
+        synthesis = f"🔥 HIGH ACTIVITY & WHALE ALERTS DETECTED for {ticker}. "
+    elif vibe_score > 15:
+        synthesis = f"Moderate chatter detected for {ticker}. "
     else:
         synthesis = f"Low activity detected for {ticker}. "
         
-    synthesis += f"Found {len(reddit_data)} Reddit posts, {len(stocktwits_data)} StockTwits messages, and {len(options_data)} unusual options trades."
+    synthesis += f"Found {len(reddit_data)} Reddit posts, {len(stocktwits_data)} StockTwits messages, and {len(options_data)} whale options sweeps."
     
-    if vibe_score > 500:
+    if vibe_score > 60 or has_whale_activity:
         # Trigger live market alert and Telegram push
         broadcast_telegram_alert(ticker, synthesis)
         

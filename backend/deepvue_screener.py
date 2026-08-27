@@ -45,22 +45,45 @@ def check_vcp(hist):
     
     return is_vol_contracting and is_price_tight and is_vol_dry
 
+def fetch_history_with_retry(ticker, period="2y"):
+    for attempt in range(3):
+        try:
+            return yf.Ticker(ticker).history(period=period)
+        except Exception as e:
+            if "RateLimitError" in str(type(e).__name__) or "Too Many Requests" in str(e):
+                print(f"[DeepVue] Rate limit on {ticker}, sleeping {20 * (attempt+1)}s...")
+                time.sleep(20 * (attempt+1))
+            else:
+                raise e
+    return yf.Ticker(ticker).history(period=period)
+
+def fetch_info_with_retry(ticker):
+    for attempt in range(3):
+        try:
+            return yf.Ticker(ticker).info
+        except Exception as e:
+            if "RateLimitError" in str(type(e).__name__) or "Too Many Requests" in str(e):
+                print(f"[DeepVue] Rate limit on {ticker} info, sleeping {20 * (attempt+1)}s...")
+                time.sleep(20 * (attempt+1))
+            else:
+                raise e
+    return yf.Ticker(ticker).info
+
 def run_deepvue_scan():
     print("[DeepVue Engine] Starting quantitative market scan...")
     # Use top liquid momentum stocks for the scan
     tickers = ["NVDA", "AAPL", "MSFT", "AMD", "META", "AMZN", "GOOGL", "TSLA", "NFLX", "AVGO", "SMCI", "ARM", "PLTR", "HOOD", "COIN", "RDDT", "CELH", "LLY"]
     
-    spy = yf.Ticker("SPY").history(period="2y")
+    spy = fetch_history_with_retry("SPY", period="2y")
     
     results = []
     
     for ticker in tickers:
         try:
-            t = yf.Ticker(ticker)
-            hist = t.history(period="2y")
+            hist = fetch_history_with_retry(ticker, period="2y")
             if len(hist) < 65: continue
             
-            info = t.info
+            info = fetch_info_with_retry(ticker)
             
             rs_score = calculate_rs_rating(hist, spy)
             vcp_setup = check_vcp(hist)
@@ -71,7 +94,7 @@ def run_deepvue_scan():
             sma_200 = hist['Close'].rolling(200).mean().iloc[-1]
             current_price = hist['Close'].iloc[-1]
             
-            is_uptrend = (current_price > sma_50) and (sma_50 > sma_200) and (ema_21 > sma_50)
+            is_uptrend = (current_price > ema_21) and (ema_21 > sma_50) and (sma_50 > sma_200)
             
             # DeepVue Fundamentals: EPS & Sales growth
             rev_growth = info.get('revenueGrowth', 0)

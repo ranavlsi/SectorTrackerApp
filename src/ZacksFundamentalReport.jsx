@@ -260,6 +260,56 @@ const ZacksFundamentalReport = ({ initialTicker }) => {
 
             </div>
           )}
+
+          {/* Forward-Looking Estimates */}
+          {data.forward_estimates && (data.forward_estimates.eps.length > 0 || data.forward_estimates.revenue.length > 0) && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
+              
+              {data.forward_estimates.eps.length > 0 && (
+                <div className="glass-card" style={{ padding: '1.5rem', borderTop: '4px solid #10b981' }}>
+                  <h3 style={{ margin: '0 0 1rem 0', color: '#10b981' }}>Analyst Consensus EPS Estimates</h3>
+                  <div style={{ height: '300px', width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={data.forward_estimates.eps}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="period" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                        <YAxis stroke="#94a3b8" />
+                        <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: '#334155', borderRadius: '8px' }} />
+                        <Bar dataKey="estimate" fill="#10b981" radius={[4, 4, 0, 0]} name="Expected EPS ($)" />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {data.forward_estimates.revenue.length > 0 && (
+                <div className="glass-card" style={{ padding: '1.5rem', borderTop: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 1rem 0', color: '#f59e0b' }}>Analyst Consensus Revenue Estimates</h3>
+                  <div style={{ height: '300px', width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={data.forward_estimates.revenue}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="period" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                        <YAxis stroke="#94a3b8" tickFormatter={(val) => `$${(val/1e9).toFixed(1)}B`} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: '#334155', borderRadius: '8px' }} 
+                          formatter={(val) => [`$${(val/1e9).toFixed(2)} Billion`, 'Expected Revenue']}
+                        />
+                        <Area type="monotone" dataKey="estimate" fill="url(#colorRevEst)" stroke="#f59e0b" name="Expected Revenue" />
+                        <defs>
+                          <linearGradient id="colorRevEst" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
         </>
       )}
     </div>

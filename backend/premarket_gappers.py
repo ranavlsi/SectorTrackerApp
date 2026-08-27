@@ -179,7 +179,8 @@ def fetch_premarket_briefing():
         "ticker": "MARKET",
         "setup": "\n".join(briefing_lines),
         "color": "#f59e0b",
-        "send_telegram": True 
+        "send_telegram": True,
+        "type": "PREMARKET_BRIEFING"
     }
     try:
         requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=2)

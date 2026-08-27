@@ -2,6 +2,100 @@ import yfinance as yf
 import pandas as pd
 import json
 
+def calculate_dcf_fair_value(ticker: str) -> dict:
+    """
+    Calculates a Simply Wall St style Fair Value using a 2-stage DCF model.
+    """
+    try:
+        t = yf.Ticker(ticker)
+        info = t.info
+        if not info:
+            return {"error": f"Could not fetch data for {ticker}."}
+    except Exception as e:
+        return {"error": f"Failed to fetch data: {str(e)}"}
+        
+    fcf = info.get('freeCashflow')
+    total_cash = info.get('totalCash', 0)
+    total_debt = info.get('totalDebt', 0)
+    shares = info.get('sharesOutstanding')
+    beta = info.get('beta')
+    growth = info.get('earningsGrowth')
+    
+    current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+    
+    missing = []
+    if fcf is None: missing.append('freeCashflow')
+    if shares is None or shares == 0: missing.append('sharesOutstanding')
+    if current_price is None: missing.append('currentPrice')
+    
+    if missing:
+        return {"error": f"Missing critical data for DCF: {', '.join(missing)}"}
+        
+    if fcf <= 0:
+        return {"error": "Free cash flow is negative or zero. Basic DCF cannot be applied."}
+        
+    total_cash = total_cash if total_cash is not None else 0
+    total_debt = total_debt if total_debt is not None else 0
+    
+    if growth is None:
+        growth_rate = 0.05
+    else:
+        # Cap growth at 25% for a 10-year horizon to prevent exponential blowouts
+        growth_rate = max(0.0, min(float(growth), 0.25))
+        
+    rfr = 0.04
+    erp = 0.06
+    if beta is None:
+        discount_rate = 0.09
+    else:
+        discount_rate = rfr + (float(beta) * erp)
+        discount_rate = max(0.05, min(discount_rate, 0.15))
+        
+    terminal_growth = 0.02
+    if discount_rate <= terminal_growth:
+        discount_rate = terminal_growth + 0.01
+        
+    pv_fcfs = 0.0
+    projected_fcf = float(fcf)
+    # 10-Year DCF Projection (Standard for Simply Wall St)
+    for year in range(1, 11):
+        projected_fcf *= (1 + growth_rate)
+        pv_fcfs += projected_fcf / ((1 + discount_rate) ** year)
+        
+    terminal_value = (projected_fcf * (1 + terminal_growth)) / (discount_rate - terminal_growth)
+    pv_tv = terminal_value / ((1 + discount_rate) ** 10)
+    
+    enterprise_value = pv_fcfs + pv_tv
+    equity_value = enterprise_value + float(total_cash) - float(total_debt)
+    
+    if equity_value <= 0:
+        fair_value = 0.0
+    else:
+        fair_value = equity_value / float(shares)
+        
+    fair_value = round(fair_value, 2)
+    current_price = round(current_price, 2)
+    
+    if fair_value > 0:
+        discount = (fair_value - current_price) / fair_value
+    else:
+        discount = 0.0
+        
+    discount_pct = round(discount * 100, 2)
+    
+    if discount_pct > 0:
+        valuation_status = "Undervalued"
+    elif discount_pct < 0:
+        valuation_status = "Overvalued"
+    else:
+        valuation_status = "Fairly Valued"
+        
+    return {
+        'fair_value': fair_value,
+        'current_price': current_price,
+        'valuation_status': valuation_status,
+        'discount_pct': discount_pct
+    }
 def get_fundamental_history(ticker):
     """
     Fetches up to 10+ quarters of historical financials using yfinance.
@@ -145,12 +239,76 @@ def get_fundamental_history(ticker):
             recommendation = "Neutral (Insufficient History)"
             reasons.append("Need more than 1 quarter of data to determine trend")
 
+        # --- Calculate Acceleration Velocity ---
+        acceleration_metrics = {}
+        if len(history) >= 3:
+            # history is oldest to newest, so history[-1] is current, [-2] is previous, [-3] is two quarters ago
+            h1 = history[-3]
+            h2 = history[-2]
+            h3 = history[-1]
+            
+            def calc_growth(v_old, v_new):
+                if v_old == 0: return 0
+                return (v_new - v_old) / abs(v_old)
+                
+            def get_accel(k):
+                g1 = calc_growth(h1[k], h2[k])
+                g2 = calc_growth(h2[k], h3[k])
+                
+                status = "Neutral"
+                color = "yellow"
+                if g2 > g1 and g2 > 0: 
+                    status = "Accelerating"
+                    color = "green"
+                elif g2 < g1 and g2 < 0:
+                    status = "Decelerating"
+                    color = "red"
+                elif g2 < g1 and g2 > 0:
+                    status = "Slowing Growth"
+                    color = "orange"
+                    
+                return {
+                    "current": h3[k],
+                    "growth_q1": round(g1 * 100, 1),
+                    "growth_q2": round(g2 * 100, 1),
+                    "status": status,
+                    "color": color
+                }
+                
+            acceleration_metrics = {
+                "revenue": get_accel("revenue"),
+                "eps": get_accel("eps"),
+                "fcf": get_accel("fcf"),
+                "operating_margin": {
+                    "current": h3["operating_margin"],
+                    "bps_change": round((h3["operating_margin"] - h2["operating_margin"]) * 100, 0),
+                    "status": "Expanding" if h3["operating_margin"] > h2["operating_margin"] else "Contracting",
+                    "color": "green" if h3["operating_margin"] > h2["operating_margin"] else "red"
+                }
+            }
+
+        # Fetch info to get the company overview
+        info = t.info if t.info else {}
+        
+        website = info.get("website", "")
+        logo_url = ""
+        if website:
+            domain = website.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]
+            logo_url = f"https://logo.clearbit.com/{domain}"
+        
         return {
             "ticker": ticker,
+            "company_overview": info.get("longBusinessSummary", "No company overview available."),
+            "sector": info.get("sector", "Unknown"),
+            "industry": info.get("industry", "Unknown"),
+            "website": website,
+            "logo_url": logo_url,
             "history": history,
+            "acceleration_metrics": acceleration_metrics,
             "recommendation": recommendation,
             "score": score,
-            "reasons": reasons
+            "reasons": reasons,
+            "fair_value_data": calculate_dcf_fair_value(ticker)
         }
         
     except Exception as e:

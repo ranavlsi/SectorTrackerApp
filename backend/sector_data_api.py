@@ -58,21 +58,36 @@ def calculate_stage(close_series, sma200_series):
     current_sma200 = float(sma200_series.iloc[-1])
     past_sma200 = float(sma200_series.iloc[-20])
     
-    slope = (current_sma200 - past_sma200) / past_sma200 * 100
+    sma50_series = close_series.rolling(50).mean()
+    sma20_series = close_series.rolling(20).mean()
+    current_sma50 = float(sma50_series.iloc[-1])
+    current_sma20 = float(sma20_series.iloc[-1])
+    
+    slope200 = (current_sma200 - past_sma200) / past_sma200 * 100
+    slope50 = (current_sma50 - float(sma50_series.iloc[-10])) / float(sma50_series.iloc[-10]) * 100
+    slope20 = (current_sma20 - float(sma20_series.iloc[-5])) / float(sma20_series.iloc[-5]) * 100
+    
     price_pos = (current_price - current_sma200) / current_sma200 * 100
     
-    if slope > 0.5 and price_pos > 0:
+    # 1. Strong Stage 2: 200 SMA slope is rising (>0.3%), price above 200 SMA and above 50 SMA
+    if slope200 > 0.3 and price_pos > 0 and current_price > current_sma50:
         return "Stage 2 (Advancing)"
-    elif slope < -0.5 and price_pos < 0:
+    # 2. Stage 4 Declining: 200 SMA slope is falling (<-0.3%) and price below 200 SMA
+    elif slope200 < -0.3 and price_pos < 0:
         return "Stage 4 (Declining)"
-    elif abs(slope) <= 0.5:
+    # 3. Early Stage 2 Breakout: 200 SMA is flattening/turning up (-0.5 <= slope200 <= 0.5), price > 200 SMA, price > 50 SMA, AND MA slopes are moving UP!
+    elif price_pos > 0 and current_price > current_sma50 and slope20 > 0 and slope50 > -0.2 and slope200 >= -0.5:
+        return "Early Stage 2 Breakout"
+    # 4. Stage 1 Basing: Price is above 200 SMA or consolidating, but MAs are not yet aligned/sloping up (e.g. QCOM)
+    elif price_pos > 0:
+        return "Stage 1 (Basing)"
+    # 5. Distribution / Breakdown
+    elif abs(slope200) <= 0.3:
         past_price = float(close_series.iloc[-60])
         if past_price > current_sma200:
             return "Stage 3 (Distribution)"
         else:
             return "Stage 1 (Basing)"
-    elif price_pos > 0:
-        return "Early Stage 2 Breakout"
     else:
         return "Stage 4 Breakdown"
 
@@ -172,6 +187,9 @@ def generate_data():
     print("Fetching historical sector data for Multi-Timeframe RRG (5 years needed for Monthly RRG)...")
     df = yf.download(tickers, period='5y', interval='1d', group_by='ticker', progress=False)
     
+    print("Fetching intraday sector data for 15-minute RRG...")
+    df_intra = yf.download(tickers, period='5d', interval='15m', group_by='ticker', progress=False)
+    
     if df.empty or 'SPY' not in df:
         print("Error fetching S&P 500 baseline data.")
         return
@@ -200,6 +218,7 @@ def generate_data():
     data_payload = {
         "market_meter": market_meter,
         "rrg": {
+            'intraday': [],
             "daily": [],
             "weekly": [],
             "monthly": []
@@ -237,13 +256,14 @@ def generate_data():
                         "stage": stage,
                         "momentum_text": momentum_text,
                         "momentum_color": momentum_color,
-                        "rs_spy_1mo": float(rs_spy)
+                        "rs_spy_1mo": float(rs_spy),
+                        "dist_200sma": float(((t_close.iloc[-1] / t_sma200.iloc[-1]) - 1) * 100)
                     }
                 elif len(t_close) >= 2:
                     perf = ((t_close.iloc[-1] / t_close.iloc[-2]) - 1) * 100
-                    stock_analysis[ticker] = {"perf": float(perf), "stage": "Insufficient Data", "momentum_text": "Neutral", "momentum_color": "neutral", "rs_spy_1mo": 0}
+                    stock_analysis[ticker] = {"perf": float(perf), "stage": "Insufficient Data", "momentum_text": "Neutral", "momentum_color": "neutral", "rs_spy_1mo": 0, "dist_200sma": 0}
                 else:
-                    stock_analysis[ticker] = {"perf": 0, "stage": "Unknown", "momentum_text": "Unknown", "momentum_color": "neutral", "rs_spy_1mo": 0}
+                    stock_analysis[ticker] = {"perf": 0, "stage": "Unknown", "momentum_text": "Unknown", "momentum_color": "neutral", "rs_spy_1mo": 0, "dist_200sma": 0}
             except:
                 stock_analysis[ticker] = {"perf": 0, "stage": "Error", "momentum_text": "Error", "momentum_color": "neutral", "rs_spy_1mo": 0}
         else:
@@ -269,6 +289,25 @@ def generate_data():
         w_ratio, w_mom = calc_jdk_rrg(rs, 70)       # 14 Weeks (approx 70 days)
         m_ratio, m_mom = calc_jdk_rrg(rs, 280)      # 14 Months (approx 280 days)
         
+        i_trail = []
+        if df_intra is not None and not df_intra.empty and ticker in df_intra and 'SPY' in df_intra:
+            t_close_intra = df_intra[ticker]['Close'].dropna()
+            spy_close_intra = df_intra['SPY']['Close'].dropna()
+            if len(t_close_intra) > 20 and len(spy_close_intra) > 20:
+                # Align indices precisely
+                idx = t_close_intra.index.intersection(spy_close_intra.index)
+                if len(idx) > 20:
+                    rs_intra = t_close_intra.loc[idx] / spy_close_intra.loc[idx]
+                    i_ratio, i_mom = calc_jdk_rrg(rs_intra.dropna(), 14)
+                    i_dates = i_ratio.index[-15:]
+                    for dt in i_dates:
+                        if dt in i_ratio.index and dt in i_mom.index:
+                            i_trail.append({
+                                "date": dt.strftime('%Y-%m-%d %H:%M'),
+                                "x": round(float(i_ratio.loc[dt]), 2),
+                                "y": round(float(i_mom.loc[dt]), 2)
+                            })
+        
         top_stocks = []
         if ticker in dynamic_holdings_map:
             holdings = dynamic_holdings_map[ticker]
@@ -282,7 +321,8 @@ def generate_data():
                         'stage': s_data['stage'],
                         'momentum_text': s_data['momentum_text'],
                         'momentum_color': s_data['momentum_color'],
-                        'rs_spy_1mo': s_data['rs_spy_1mo']
+                        'rs_spy_1mo': s_data['rs_spy_1mo'],
+                        'dist_200sma': s_data.get('dist_200sma', 0)
                     })
             holding_perfs.sort(key=lambda x: x['perf'], reverse=True)
             top_stocks = holding_perfs[:5]
@@ -308,6 +348,9 @@ def generate_data():
             "top_stocks": top_stocks
         }
         
+        if len(i_trail) > 0:
+            i_obj = base_obj.copy(); i_obj["trail"] = i_trail
+            data_payload["rrg"]["intraday"].append(i_obj)
         if len(d_trail) > 0:
             d_obj = base_obj.copy(); d_obj["trail"] = d_trail
             data_payload["rrg"]["daily"].append(d_obj)

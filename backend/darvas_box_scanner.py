@@ -28,63 +28,105 @@ def calculate_darvas_box(df):
     if len(df) < 252:
         return None, 0, 0, ""
         
-    current_close = float(df['Close'].iloc[-1])
-    current_vol = float(df['Volume'].iloc[-1])
-    avg_vol_50 = float(df['Volume'].iloc[-50:].mean()) if len(df) >= 50 else 1
-    
-    # Macro check: must be within 15% of 52-week high to ensure it's in a strong uptrend
+    # Macro check: must be within 15% of 52-week high
     high_52w = float(df['High'].iloc[-252:].max())
+    current_close = float(df['Close'].iloc[-1])
     if current_close < high_52w * 0.85: 
         return None, 0, 0, ""
         
-    box_top = 0
-    top_idx = -1
+    # Precalculate SMAs for filtering
+    sma50 = df['Close'].rolling(50).mean().values
+    sma200 = df['Close'].rolling(200).mean().values
+    vol_sma50 = df['Volume'].rolling(50).mean().values
     
-    # Find Box Top (A local high not broken for the next 3 days)
-    for i in range(4, 60):
-        test_high = float(df['High'].iloc[-i])
-        exceeded = False
-        for j in range(1, 4):
-            if float(df['High'].iloc[-(i-j)]) > test_high:
-                exceeded = True
-                break
-        if not exceeded:
-            box_top = test_high
-            top_idx = i
-            break
-            
-    if box_top == 0:
-        return None, 0, 0, ""
-        
-    # Find Box Bottom (A local low not broken for the next 3 days, occurring AFTER the top)
-    box_bottom = float('inf')
+    highs = df['High'].values
+    lows = df['Low'].values
+    closes = df['Close'].values
+    vols = df['Volume'].values
     
-    for i in range(3, top_idx):
-        test_low = float(df['Low'].iloc[-i])
-        broken = False
-        for j in range(1, 4):
-            if i-j > 0 and float(df['Low'].iloc[-(i-j)]) < test_low:
-                broken = True
-                break
-        if not broken:
-            box_bottom = test_low
-            break
-            
-    if box_bottom == float('inf') or box_bottom >= box_top:
-        return None, 0, 0, ""
+    n_days = 3
+    state = 0 # 0=Search Top, 1=Search Bottom, 2=Box Formed
+    current_top = 0.0
+    current_bottom = float('inf')
+    
+    last_top = 0.0
+    last_bottom = 0.0
+    latest_status = None
+    latest_msg = ""
+    
+    for i in range(n_days, len(df)):
+        if state == 0:
+            potential_top = highs[i-n_days]
+            if potential_top > highs[i-n_days-1]: 
+                is_top = True
+                for j in range(1, n_days + 1):
+                    if highs[i-n_days+j] >= potential_top:
+                        is_top = False
+                        break
+                if is_top:
+                    current_top = potential_top
+                    state = 1
+                    current_bottom = lows[i] # Initial search for bottom starts here
+        elif state == 1:
+            potential_bottom = lows[i-n_days]
+            if lows[i] < current_bottom:
+                current_bottom = lows[i]
+                
+            is_bottom = True
+            for j in range(1, n_days + 1):
+                if lows[i-n_days+j] <= potential_bottom:
+                    is_bottom = False
+                    break
+            if is_bottom and potential_bottom <= current_bottom:
+                current_bottom = potential_bottom
+                state = 2
+                
+            # Wick invalidation during bottom search
+            if highs[i] > current_top:
+                state = 0
+                current_top = 0.0
+                current_bottom = float('inf')
+                
+        elif state == 2:
+            # Box is fully formed.
+            if highs[i] > current_top:
+                if closes[i] > current_top:
+                    # Breakout attempt
+                    v_ma = vol_sma50[i]
+                    is_uptrend = sma50[i] > sma200[i] if not np.isnan(sma200[i]) else True
+                    
+                    if is_uptrend and vols[i] > (1.5 * v_ma):
+                        if i == len(df) - 1:
+                            latest_status = "STRONG_BREAKOUT"
+                            latest_msg = f"Volume is {vols[i]/v_ma:.1f}x avg"
+                            last_top = current_top
+                            last_bottom = current_bottom
+                    
+                # Box is destroyed (either successful breakout or false close/wick pierce)
+                state = 0
+                current_top = 0.0
+                current_bottom = float('inf')
+            elif closes[i] < current_bottom:
+                # Broken to downside
+                state = 0
+                current_top = 0.0
+                current_bottom = float('inf')
+            else:
+                # Inside box
+                if i == len(df) - 1:
+                    dist = (current_top - closes[i]) / current_top
+                    if dist <= 0.02:
+                        v_ma = vol_sma50[i]
+                        # Volume dry up condition (must be below 50-day average)
+                        if vols[i] < v_ma:
+                            latest_status = "ABOUT_TO_BREAKOUT"
+                            latest_msg = f"Within {dist*100:.1f}% of Top (Dry-up)"
+                            last_top = current_top
+                            last_bottom = current_bottom
+
+    if latest_status:
+        return latest_status, last_top, last_bottom, latest_msg
         
-    # Check "Strong Volume Breakout"
-    prev_close = float(df['Close'].iloc[-2])
-    if current_close > box_top and prev_close <= box_top:
-        if current_vol > (avg_vol_50 * 1.5):
-            return "STRONG_BREAKOUT", box_top, box_bottom, f"Volume is {current_vol/avg_vol_50:.1f}x average"
-            
-    # Check "About to Breakout"
-    if box_bottom <= current_close <= box_top:
-        distance_to_top = (box_top - current_close) / current_close
-        if distance_to_top <= 0.02: # Within 2%
-            return "ABOUT_TO_BREAKOUT", box_top, box_bottom, f"Within {distance_to_top*100:.1f}% of Box Top"
-            
     return None, 0, 0, ""
 
 def process_ticker(ticker, df):
@@ -158,14 +200,14 @@ def run_scanner():
     query = f"SELECT * FROM read_parquet('{parquet_path}') ORDER BY Date"
     df_bulk = duckdb.query(query).to_df()
     
-    unique_tickers = df_bulk['Ticker'].unique()
-    print(f"Scanning {len(unique_tickers)} stocks for Darvas Box setups (Local Lakehouse Mode)...")
+    grouped = df_bulk.groupby('Ticker')
+    print(f"Scanning {len(grouped)} stocks for Darvas Box setups (Local Lakehouse Mode)...")
     
     alerts = []
     
-    for ticker in unique_tickers:
+    for ticker, ticker_df in grouped:
         try:
-            ticker_df = df_bulk[df_bulk['Ticker'] == ticker].copy()
+            ticker_df = ticker_df.copy()
             ticker_df = ticker_df.sort_values('Date').set_index('Date')
             
             if not ticker_df.empty:

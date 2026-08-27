@@ -51,11 +51,11 @@ def detect_pending_breakout(ticker: str, pre_df=None):
         df['Base_Low'] = df['Low'].rolling(120).min()
         
         base_depth = (df['Base_High'].iloc[-1] - df['Base_Low'].iloc[-1]) / df['Base_High'].iloc[-1]
-        if base_depth > 0.35: return None # Anti-EQIX: Base is too deep/loose
+        if base_depth > 0.45: return None # Anti-EQIX: Base is too deep/loose
         
-        # Position in base (Must be top 15%)
+        # Position in base (Must be top 25%)
         pos_in_base = (df['Close'].iloc[-1] - df['Base_Low'].iloc[-1]) / (df['Base_High'].iloc[-1] - df['Base_Low'].iloc[-1])
-        if pos_in_base < 0.85: return None # Squeezing too low in the base
+        if pos_in_base < 0.75: return None # Squeezing too low in the base
         
         # Extension Limits (Anti-AVGO): Must be perfectly coiled under local pivot, not breaking out yet
         df['Local_Pivot'] = df['High'].shift(1).rolling(15).max()
@@ -64,12 +64,12 @@ def detect_pending_breakout(ticker: str, pre_df=None):
         
         dist_to_pivot = (local_pivot - close) / local_pivot
         # Must be strictly underneath the pivot! If dist <= 0, it already broke out.
-        if dist_to_pivot < 0.005 or dist_to_pivot > 0.08: return None
+        if dist_to_pivot < 0.002 or dist_to_pivot > 0.15: return None
         
         # Smoothness
         df['Daily_Range'] = (df['High'] / df['Low']) - 1
         adr_20 = df['Daily_Range'].rolling(20).mean().iloc[-1] * 100
-        if adr_20 > 4.5: return None # Too choppy
+        if adr_20 > 6.0: return None # Too choppy
         
         # --- PILLAR 2: THE VOLUME FOOTPRINT ---
         df['Vol_SMA_50'] = df['Volume'].rolling(50).mean()
@@ -88,7 +88,7 @@ def detect_pending_breakout(ticker: str, pre_df=None):
         down_vol_50 = df['Down_Vol'].rolling(50).sum().iloc[-1]
         
         up_down_ratio = up_vol_50 / down_vol_50 if down_vol_50 > 0 else 1.0
-        if up_down_ratio < 1.15: return None # Not enough institutional accumulation
+        if up_down_ratio < 1.05: return None # Not enough institutional accumulation
         
         # --- PILLAR 3: BOUNDED QUANTITATIVE SQUEEZE ---
         df['ATR_5'] = calculate_atr(df, 5)
@@ -108,17 +108,83 @@ def detect_pending_breakout(ticker: str, pre_df=None):
         df['KC_Lower'] = df['BB_Mid'] - (1.5 * df['ATR_20'])
         
         ttm_squeeze = (df['BB_Upper'].iloc[-1] < df['KC_Upper'].iloc[-1]) and (df['BB_Lower'].iloc[-1] > df['KC_Lower'].iloc[-1])
-        if not ttm_squeeze: return None
+        # We removed the hard strict rejection for TTM squeeze to let more VCPs through.
         
-        # PASSES ALL TESTS!
+        # PASSES ALL TESTS! We have a structural VCP.
+        alerts = [{
+            "model": "V2 VCP Squeeze",
+            "details": f"VCP setup coiled {dist_to_pivot*100:.1f}% under local pivot (${local_pivot:.2f}). Accumulation ratio: {up_down_ratio:.2f}x."
+        }]
+        
+        if ttm_squeeze:
+            alerts.append({
+                "model": "TTM Squeeze Active",
+                "details": "Bollinger Bands have compressed inside the Keltner Channels, indicating an imminent explosive move."
+            })
+
+        # --- ADVANCED QUANTITATIVE CATALYSTS ---
+        # We use try/except block to avoid crashing the base scanner if yfinance API fails
+        try:
+            t_obj = yf.Ticker(ticker)
+            info = t_obj.info
+            
+            # PILLAR 4: SHORT SQUEEZE FUEL
+            short_float = info.get('shortPercentOfFloat', 0)
+            if short_float is not None and short_float > 0.15:
+                alerts.append({
+                    "model": "Short Squeeze Fuel",
+                    "details": f"Coiled Spring: High Short Float ({short_float*100:.1f}%) trapped inside tight VCP."
+                })
+                
+            # PILLAR 5: MICRO-STRUCTURE ORDER FLOW PROXY
+            high = df['High'].iloc[-1]
+            low = df['Low'].iloc[-1]
+            close_p = df['Close'].iloc[-1]
+            
+            chr_val = (close_p - low) / (high - low) if high > low else 0.5
+            if chr_val > 0.85:
+                alerts.append({
+                    "model": "Order Flow Absorption",
+                    "details": f"Aggressive buyers controlled the daily close (CHR: {chr_val:.2f}), absorbing supply at resistance."
+                })
+                
+            # PILLAR 6: DARK POOL / BLOCK TRADE ANOMALY
+            rvol = df['Volume'].iloc[-1] / df['Vol_SMA_50'].iloc[-1] if df['Vol_SMA_50'].iloc[-1] > 0 else 0
+            daily_range_pct = (high / low) - 1
+            if rvol > 2.0 and daily_range_pct < 0.02:
+                alerts.append({
+                    "model": "Dark Pool Block Trade",
+                    "details": f"Massive relative volume ({rvol:.1f}x) without price expansion ({daily_range_pct*100:.1f}% range). Institutional footprint."
+                })
+                
+            # PILLAR 7: OPTIONS GAMMA SQUEEZE
+            opts = t_obj.options
+            if opts:
+                chain = t_obj.option_chain(opts[0])
+                calls = chain.calls
+                otm_calls = calls[calls['strike'] > close_p]
+                if not otm_calls.empty:
+                    max_vol_call = otm_calls.loc[otm_calls['volume'].idxmax()]
+                    if max_vol_call['volume'] > 0 and max_vol_call['openInterest'] > 0:
+                        v_oi_ratio = max_vol_call['volume'] / max_vol_call['openInterest']
+                        if v_oi_ratio > 1.5:
+                            alerts.append({
+                                "model": "Gamma Squeeze Trigger",
+                                "details": f"Explosive Call Volume/OI ratio ({v_oi_ratio:.1f}x) at ${max_vol_call['strike']} strike forces Dealer hedging."
+                            })
+                            
+            # PILLAR 8: EARNINGS PROXIMITY FILTER (SKIP BINARY RISK)
+            # Not strictly enforcing the skip here to avoid hiding the setup, 
+            # but we can check if it's close using YahooQuery or skip for now since info['earningsDates'] is sometimes messy.
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch advanced proxies for {ticker}: {e}")
+
         return {
             "status": "PENDING_BREAKOUT",
             "ticker": ticker,
             "price": round(float(close), 2),
-            "alerts": [{
-                "model": "V2 VCP Squeeze",
-                "details": f"Textbook VCP setup coiled {dist_to_pivot*100:.1f}% under local pivot (${local_pivot:.2f}). Volume dried up with {up_down_ratio:.2f}x accumulation ratio."
-            }]
+            "alerts": alerts
         }
 
     except Exception as e:

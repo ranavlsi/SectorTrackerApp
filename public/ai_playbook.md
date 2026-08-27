@@ -1,71 +1,50 @@
 # 🤖 Quantitative AI Playbook
 
-**Date:** Thursday, June 04, 2026
+**Date:** Thursday, August 27, 2026
 
 Welcome to the Daily AI Playbook. Based on the overnight convergence of technical setups, fundamental momentum, and breakout scanners, here are the top high-probability trade setups for today.
 
 ---
 
-### 1. MRVL - High Confluence Setup
-**Confluence Score:** 6 points
+### 1. VEEV - High Confluence Setup
+**Confluence Score:** 5 points
 
 **Quantitative Reasoning:**
-*   **Relative Strength**: +70.5% vs SPY
-*   **Fresh 52W High**: New High: $324.20
-*   **All Time High**: ATH: $301.65
-*   **Post Earning Reaction**: Gap Up +15.5%
+*   **Relative Strength**: +34.1% vs SPY
+*   **Hve Volume**: Quarterly High Volume (3.1x Avg)
+*   **Zacks Rank 1**: Score: 4 | PEG: 1.11
+*   **Universal Takeout**: Takeout Confirmed @ $253.49 (Vol Surge)
 
 **Algorithmic Trade Plan:**
-*   **Entry Zone:** $223.78 (Current Market Price)
-*   **Stop Loss:** $205.88 (Dynamic trailing support)
-*   **Profit Target:** $324.2 (2.5R Risk/Reward)
+*   **Entry Zone:** $296.77 (Current Market Price)
+*   **Stop Loss:** $261.97 (Dynamic trailing support)
+*   **Profit Target:** $383.77 (2.5R Risk/Reward)
 
 **Technical Health Card:**
-*   **Structural Stage:** Stage 2 (Advancing)
+*   **Structural Stage:** Stage 1 (Basing)
 *   **Momentum:** 🔥 Momentum Building (Bullish)
-*   **RSI:** 86.1
+*   **RSI:** 77.6
 
 ---
 
-### 2. JBL - High Confluence Setup
-**Confluence Score:** 6 points
+### 2. PSX - High Confluence Setup
+**Confluence Score:** 5 points
 
 **Quantitative Reasoning:**
-*   **Fresh 52W High**: New High: $384.70
-*   **All Time High**: ATH: $380.25
-*   **Darvas Breakout**: Tight Coil against $381.94
-*   **Zacks Rank 1**: Score: 5 | PEG: 0.82
+*   **All Time High**: ATH: $246.95
+*   **Zacks Rank 1**: Score: 4 | PEG: 1.13
+*   **Rs Divergence**: RS New High | Price -2.9%
+*   **Bull Flag Pending**: Pending | Breakout > $246.95 (Score: 6.1)
 
 **Algorithmic Trade Plan:**
-*   **Entry Zone:** $366.62 (Current Market Price)
-*   **Stop Loss:** $345.21 (Dynamic trailing support)
-*   **Profit Target:** $420.17 (2.5R Risk/Reward)
+*   **Entry Zone:** $232.51 (Current Market Price)
+*   **Stop Loss:** $155.04 (Dynamic trailing support)
+*   **Profit Target:** $276.43 (2.5R Risk/Reward)
 
 **Technical Health Card:**
 *   **Structural Stage:** Stage 2 (Advancing)
 *   **Momentum:** ⚠️ Momentum Fading (Exhaustion)
-*   **RSI:** 57.3
-
----
-
-### 3. NVTS - High Confluence Setup
-**Confluence Score:** 5 points
-
-**Quantitative Reasoning:**
-*   **Relative Strength**: +79.9% vs SPY
-*   **Fresh 52W High**: New High: $34.17
-*   **Darvas Breakout**: Cleared $29.80 | Volume is 3.3x average
-*   **Hve Volume**: Max Vol Climax (3.3x Avg)
-
-**Algorithmic Trade Plan:**
-*   **Entry Zone:** $23.2 (Current Market Price)
-*   **Stop Loss:** $21.34 (Dynamic trailing support)
-*   **Profit Target:** $34.17 (2.5R Risk/Reward)
-
-**Technical Health Card:**
-*   **Structural Stage:** Stage 2 (Advancing)
-*   **Momentum:** 🔥 Momentum Building (Bullish)
-*   **RSI:** 62.8
+*   **RSI:** 80.4
 
 ---
 

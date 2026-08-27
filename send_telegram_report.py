@@ -6,10 +6,14 @@ import sys
 from dotenv import load_dotenv
 
 # Load environment variables from .env
-load_dotenv()
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(env_path)
 
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+
+import requests
+import time
 
 def send_telegram_alert(message):
     """Sends a formatted markdown alert to Telegram if credentials exist."""
@@ -17,24 +21,28 @@ def send_telegram_alert(message):
         print("Error: Telegram credentials not configured properly.")
         return False
         
-    try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        data = json.dumps({
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": message
-        }).encode('utf-8')
-        
-        req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
-        with urllib.request.urlopen(req) as response:
-            if response.status == 200:
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message
+    }
+    
+    while True:
+        try:
+            response = requests.post(url, json=payload, timeout=10)
+            if response.status_code == 200:
                 print("Telegram alert sent successfully!")
                 return True
+            elif response.status_code == 429:
+                retry_after = response.json().get("parameters", {}).get("retry_after", 5)
+                print(f"Rate limited by Telegram. Waiting {retry_after} seconds before retrying...")
+                time.sleep(retry_after + 1)
             else:
-                print(f"Telegram returned status code: {response.status}")
+                print(f"Telegram returned status code: {response.status_code} - {response.text}")
                 return False
-    except Exception as e:
-        print(f"Telegram failed: {e}")
-        return False
+        except Exception as e:
+            print(f"Telegram failed: {e}")
+            time.sleep(5)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

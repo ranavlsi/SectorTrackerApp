@@ -26,9 +26,32 @@ UNIVERSE = [
     'CRWD', 'PANW', 'SNOW', 'DDOG', 'NET', 'ZS', 'MDB', 'SQ', 'PYPL', 'SHOP', 'MRVL'
 ]
 
-LAST_ALERTED = {}
-COOLDOWN_SECONDS = 1800 # 30 mins
+import json
+import os
+
+CACHE_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/alert_cache.json'
+COOLDOWN_SECONDS = 900 # 15 mins
 LAST_RADAR_SUMMARY_TIME = 0
+
+def load_alert_cache():
+    if not os.path.exists(CACHE_FILE):
+        return {}
+    try:
+        with open(CACHE_FILE, 'r') as f:
+            cache = json.load(f)
+        now = time.time()
+        # Prune alerts older than 24 hours to prevent the file from growing infinitely
+        return {k: v for k, v in cache.items() if now - v < 86400}
+    except:
+        return {}
+
+def save_alert_cache(cache):
+    try:
+        with open(CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+    except Exception as e:
+        print(f"Failed to save alert cache: {e}")
+
 def check_social_sentiment(ticker):
     try:
         from agents_engine import get_market_agents_data
@@ -53,13 +76,15 @@ def check_social_sentiment(ticker):
         pass
 
 def fire_alert(ticker, setup_name, msg, color="#10b981", council="🎯 INTRADAY EXPERT"):
-    global LAST_ALERTED
+    cache = load_alert_cache()
     now = time.time()
     
-    if ticker in LAST_ALERTED and now - LAST_ALERTED[ticker] < COOLDOWN_SECONDS:
+    alert_key = f"{ticker}_{setup_name}"
+    if alert_key in cache and now - cache[alert_key] < COOLDOWN_SECONDS:
         return
         
-    LAST_ALERTED[ticker] = now
+    cache[alert_key] = now
+    save_alert_cache(cache)
     
     payload = {
         "council": council,
@@ -153,7 +178,11 @@ def run_algorithms(ticker, df_1m, df_5m, structural_levels=None):
 
     # --- 4. VWAP Reclaim (1m) ---
     if prev_1m['Close'] < prev_1m['VWAP'] and curr_1m['Close'] > curr_1m['VWAP'] and curr_1m['Volume'] > curr_1m['Vol_SMA20'] * 2:
-        fire_alert(ticker, "VWAP RECLAIM", f"Violently reclaimed the Daily VWAP at ${curr_1m['VWAP']:.2f} on massive volume.", "#10b981")
+        candle_range = curr_1m['High'] - curr_1m['Low']
+        if candle_range > 0:
+            close_pct = (curr_1m['Close'] - curr_1m['Low']) / candle_range
+            if close_pct > 0.4: # Must close in the upper 60% of the candle (avoid bearish rejection wicks)
+                fire_alert(ticker, "VWAP RECLAIM", f"Violently reclaimed the Daily VWAP at ${curr_1m['VWAP']:.2f} on massive volume with a strong close.", "#10b981")
 
     # --- 5. HOD Momentum (1m) ---
     if is_after_1030:
@@ -190,6 +219,7 @@ def run_algorithms(ticker, df_1m, df_5m, structural_levels=None):
     # --- 10. Gap and Go (15m ORB) ---
     today_str = datetime.now().strftime('%Y-%m-%d')
     today_5m = df_5m[df_5m.index.strftime('%Y-%m-%d') == today_str]
+    today_5m = today_5m.between_time('09:30', '16:00')
     
     # Only fire in the first 16 minutes after market open (9:30 AM to 9:46 AM)
     if now_time <= dt_time(9, 46) and len(today_5m) >= 3:
@@ -266,6 +296,42 @@ def run_algorithms(ticker, df_1m, df_5m, structural_levels=None):
                             fire_alert(ticker, "HEAD FAKE TRAP", f"Violent 5m rejection wick. Broke out above ${lvl:.2f} but immediately trapped bulls and flushed on heavy volume.", "#ef4444")
                             break # Don't fire multiple times for different levels
 
+def check_sma_crossovers(ticker, df_5m, df_daily, clubbed_alerts):
+    # 5m SMA Crossovers
+    if len(df_5m) >= 50:
+        df_5m['SMA_10'] = df_5m['Close'].rolling(10).mean()
+        df_5m['SMA_20'] = df_5m['Close'].rolling(20).mean()
+        df_5m['SMA_34'] = df_5m['Close'].rolling(34).mean()
+        df_5m['SMA_50'] = df_5m['Close'].rolling(50).mean()
+        
+        c = df_5m.iloc[-1]
+        p = df_5m.iloc[-2]
+        
+        pairs = [(10, 20), (20, 34), (20, 50), (34, 50)]
+        for fast, slow in pairs:
+            if c[f'SMA_{fast}'] > c[f'SMA_{slow}'] and p[f'SMA_{fast}'] <= p[f'SMA_{slow}']:
+                cross_name = f"{fast}/{slow}"
+                if cross_name not in clubbed_alerts["5m"]:
+                    clubbed_alerts["5m"][cross_name] = []
+                clubbed_alerts["5m"][cross_name].append(ticker)
+
+    # Daily SMA Crossovers
+    if not df_daily.empty and len(df_daily) >= 50:
+        df_daily['SMA_10'] = df_daily['Close'].rolling(10).mean()
+        df_daily['SMA_20'] = df_daily['Close'].rolling(20).mean()
+        df_daily['SMA_34'] = df_daily['Close'].rolling(34).mean()
+        df_daily['SMA_50'] = df_daily['Close'].rolling(50).mean()
+        
+        c = df_daily.iloc[-1]
+        p = df_daily.iloc[-2]
+        
+        pairs = [(10, 20), (20, 34), (20, 50), (34, 50)]
+        for fast, slow in pairs:
+            if c[f'SMA_{fast}'] > c[f'SMA_{slow}'] and p[f'SMA_{fast}'] <= p[f'SMA_{slow}']:
+                cross_name = f"{fast}/{slow}"
+                if cross_name not in clubbed_alerts["Daily"]:
+                    clubbed_alerts["Daily"][cross_name] = []
+                clubbed_alerts["Daily"][cross_name].append(ticker)
 
 def run_intraday_scanner():
     print(f"Starting Ultimate 13-Algorithm Intraday Scanner on {len(UNIVERSE)} stocks using Alpaca...")
@@ -335,10 +401,41 @@ def run_intraday_scanner():
         
     df_bulk = pd.concat(df_chunks)
     df_bulk = df_bulk.rename(columns={'symbol': 'Ticker', 'timestamp': 'Date', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'})
-    # Ensure index is correctly set to symbol and date for the loop
     df_bulk = df_bulk.set_index(['Ticker', 'Date'])
     
+    # Bulk Fetch Daily Bars (100 days) for SMA 50 calculation
+    daily_start_date = end_date - timedelta(days=150) # 150 calendar days = ~100 trading days
+    df_daily_chunks = []
+    
+    for i in range(0, len(UNIVERSE), chunk_size):
+        chunk = UNIVERSE[i:i+chunk_size]
+        alpaca_chunk = [t.replace('-', '.') for t in chunk]
+        try:
+            req_daily = StockBarsRequest(
+                symbol_or_symbols=alpaca_chunk,
+                timeframe=TimeFrame(1, TimeFrameUnit.Day),
+                start=daily_start_date,
+                end=end_date,
+                feed=DataFeed.IEX
+            )
+            bars_daily = client.get_stock_bars(req_daily)
+            if bars_daily and hasattr(bars_daily, 'df') and not bars_daily.df.empty:
+                df_d_chunk = bars_daily.df.reset_index()
+                df_d_chunk['symbol'] = df_d_chunk['symbol'].str.replace('.', '-')
+                df_daily_chunks.append(df_d_chunk)
+        except Exception as e:
+            print(f"Failed to fetch Daily chunk {i} from Alpaca: {e}")
+            
+    df_bulk_daily = pd.concat(df_daily_chunks) if df_daily_chunks else pd.DataFrame()
+    if not df_bulk_daily.empty:
+        df_bulk_daily = df_bulk_daily.rename(columns={'symbol': 'Ticker', 'timestamp': 'Date', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'})
+        df_bulk_daily = df_bulk_daily.set_index(['Ticker', 'Date'])
+        df_bulk_daily = df_bulk_daily.sort_index()
+    
     radar_results = []
+    
+    # Initialize Clubbed Alerts Dictionary
+    CLUBBED_ALERTS = {"5m": {}, "Daily": {}}
     
     for ticker in UNIVERSE:
         if ticker not in df_bulk.index.get_level_values('Ticker'): continue
@@ -360,15 +457,21 @@ def run_intraday_scanner():
             'Close': 'last',
             'Volume': 'sum'
         }
-        df_5m = df_1m.resample('5min', closed='right', label='right').agg(agg_dict).dropna()
+        df_5m = df_1m.resample('5min', closed='left', label='left').agg(agg_dict).dropna()
         
         try:
             run_algorithms(ticker, df_1m, df_5m, structural_levels)
             
+            # Check for grouped SMA crossovers
+            df_daily = df_bulk_daily.loc[ticker].copy() if not df_bulk_daily.empty and ticker in df_bulk_daily.index.get_level_values('Ticker') else pd.DataFrame()
+            check_sma_crossovers(ticker, df_5m, df_daily, CLUBBED_ALERTS)
+            
             # --- Generate UI Data for Intraday Radar ---
             today_str = datetime.now().strftime('%Y-%m-%d')
             today_5m_ui = df_5m[df_5m.index.strftime('%Y-%m-%d') == today_str]
+            today_5m_ui = today_5m_ui.between_time('09:30', '16:00')
             today_1m_ui = df_1m[df_1m.index.strftime('%Y-%m-%d') == today_str]
+            today_1m_ui = today_1m_ui.between_time('09:30', '16:00')
             
             # 1. ORB Pivot (15m high for today)
             if len(today_5m_ui) >= 3:
@@ -380,8 +483,14 @@ def run_intraday_scanner():
                 
             current_price = float(df_1m['Close'].iloc[-1])
             
-            # Only include if price is near or above the ORB Pivot (actionable setups)
-            if current_price >= orb_pivot * 0.995:
+            # Only include if price actually broke above the ORB Pivot AND it broke out recently
+            # This turns the UI into a fresh Event Feed rather than an all-day Status Board
+            recent_lows = today_1m_ui['Low'].iloc[-15:] if len(today_1m_ui) >= 15 else today_1m_ui['Low']
+            broke_recently = any(l < orb_pivot for l in recent_lows)
+            
+            # Ensure at least 15 minutes have passed to form the ORB, and price strictly breaks the high
+            has_15m_passed = len(today_1m_ui) >= 15
+            if has_15m_passed and current_price > orb_pivot and broke_recently:
                 # 2. Vol Multiplier
                 vol_sma = df_1m['Volume'].rolling(20).mean().iloc[-1]
                 curr_vol = df_1m['Volume'].iloc[-1]
@@ -425,11 +534,38 @@ def run_intraday_scanner():
         
     print(f"Intraday Multi-Algo Scan complete. Wrote {len(radar_results)} setups to Intraday Radar.")
     
+    # --- Fire Clubbed SMA Alerts ---
+    for tf, tf_alerts in CLUBBED_ALERTS.items():
+        for cross_name, tickers in tf_alerts.items():
+            if len(tickers) > 0:
+                ticker_list = ", ".join(tickers)
+                payload = {
+                    "council": "📈 MOVING AVERAGE COUNCIL",
+                    "ticker": "MARKET",
+                    "setup": f"🚨 {tf} {cross_name} SMA Bullish Crossovers Triggered:\n{ticker_list}",
+                    "color": "#eab308",
+                    "send_telegram": True 
+                }
+                # Use a specific throttle key to prevent spam
+                alert_key = f"{tf}_{cross_name}_Crossover"
+                now_t = time.time()
+                cache = load_alert_cache()
+                
+                if alert_key not in cache or now_t - cache[alert_key] > 1800:
+                    cache[alert_key] = now_t
+                    save_alert_cache(cache)
+                    try:
+                        requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=2)
+                        print(f"🔥 FIRED GROUPED ALERT: {tf} {cross_name} -> {len(tickers)} tickers")
+                    except Exception as e:
+                        pass
+    
     # Broadcast to Telegram every 30 minutes
-    global LAST_RADAR_SUMMARY_TIME
     now = time.time()
-    if radar_results and (now - LAST_RADAR_SUMMARY_TIME > 1800):
-        LAST_RADAR_SUMMARY_TIME = now
+    cache = load_alert_cache()
+    radar_key = "LAST_RADAR_SUMMARY"
+    
+    if radar_results and (radar_key not in cache or now - cache[radar_key] > 1800):
         msg_lines = ["*Top Actionable Breakouts:*"]
         for i, res in enumerate(radar_results[:5]):
             msg_lines.append(f"{i+1}. {res['ticker']} (Vol: {res['vol_multiplier']:.1f}x) - Price: ${res['current_price']:.2f}")
@@ -442,9 +578,13 @@ def run_intraday_scanner():
             "send_telegram": True 
         }
         try:
-            requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=2)
-        except:
-            pass
+            resp = requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=5)
+            if resp.status_code == 200:
+                cache[radar_key] = now
+                save_alert_cache(cache)
+                print(f"🔥 FIRED: Top Actionable Breakouts")
+        except Exception as e:
+            print(f"Radar Alert Webhook Error: {e}")
 
 if __name__ == "__main__":
     run_intraday_scanner()

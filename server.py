@@ -23,6 +23,7 @@ from fundamental_data_api import get_fundamental_history
 from sec_filings_api import get_recent_filings
 from peer_valuation_api import get_peer_valuation
 from macro_outlook_engine import get_macro_outlook
+from historical_dna_engine import calculate_dna
 import requests
 from dotenv import load_dotenv
 
@@ -30,36 +31,76 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
+telegram_queue = queue.Queue()
+
+def telegram_worker():
+    while True:
+        alert = telegram_queue.get()
+        if alert is None:
+            break
+            
+        if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID or TELEGRAM_BOT_TOKEN == "PUT_YOUR_BOT_TOKEN_HERE":
+            telegram_queue.task_done()
+            continue
+            
+        try:
+            # Escape HTML entities to prevent 400 Bad Request
+            council = alert.get("council", "").replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            ticker = alert.get("ticker", "").replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            setup = alert.get("setup", "").replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            
+            msg = f"<b>{council}</b>\n\n🚨 {ticker}: {setup}"
+            
+            # Expand full payload for massive alerts like the Morning Briefing
+            if alert.get("type") == "PREMARKET_BRIEFING":
+                msg += "\n\n🚀 <b>TOP MOVERS</b>"
+                for m in alert.get("payload", {}).get("top_movers", []):
+                    r = m['reason'].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                    msg += f"\n• {m['ticker']} ({m['change']}): {r}"
+                    
+                msg += "\n\n📰 <b>MACRO NEWS</b>"
+                for m in alert.get("payload", {}).get("macro_news", []):
+                    n = m.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                    msg += f"\n• {n}"
+                    
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            chat_ids = [cid.strip() for cid in TELEGRAM_CHAT_ID.split(',')]
+            
+            for cid in chat_ids:
+                if not cid: continue
+                response = requests.post(url, json={
+                    "chat_id": cid,
+                    "text": msg,
+                    "parse_mode": "HTML"
+                }, timeout=10)
+                
+                if response.status_code == 429:
+                    retry_after = response.json().get("parameters", {}).get("retry_after", 5)
+                    print(f"⚠️ Telegram Rate Limit Hit! Sleeping for {retry_after} seconds...")
+                    time.sleep(retry_after + 1)
+                    # Retry once synchronously for this specific user to avoid queue duplication
+                    requests.post(url, json={
+                        "chat_id": cid,
+                        "text": msg,
+                        "parse_mode": "HTML"
+                    }, timeout=10)
+                elif response.status_code != 200:
+                    print(f"Telegram API Error for {cid}: {response.text}")
+                    print(f"FAILED MSG: {repr(msg)}")
+                
+                time.sleep(0.5) # Prevent spamming Telegram API between users
+                
+        except Exception as e:
+            print(f"Telegram failed: {e}")
+            
+        time.sleep(0.5) # General queue spacing
+        telegram_queue.task_done()
+
+threading.Thread(target=telegram_worker, daemon=True).start()
+
 def send_telegram_alert(alert):
-    """Sends a formatted markdown alert to Telegram if credentials exist."""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID or TELEGRAM_BOT_TOKEN == "PUT_YOUR_BOT_TOKEN_HERE":
-        return
-        
-    try:
-        # Build the basic message
-        council = alert.get("council", "")
-        ticker = alert.get("ticker", "")
-        setup = alert.get("setup", "")
-        msg = f"*{council}*\n\n🚨 {ticker}: {setup}"
-        
-        # Expand full payload for massive alerts like the Morning Briefing
-        if alert.get("type") == "PREMARKET_BRIEFING":
-            msg += "\n\n🚀 *TOP MOVERS*"
-            for m in alert.get("payload", {}).get("top_movers", []):
-                msg += f"\n• {m['ticker']} ({m['change']}): {m['reason']}"
-                
-            msg += "\n\n📰 *MACRO NEWS*"
-            for m in alert.get("payload", {}).get("macro_news", []):
-                msg += f"\n• {m}"
-                
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        requests.post(url, json={
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": msg,
-            "parse_mode": "Markdown"
-        }, timeout=5)
-    except Exception as e:
-        print(f"Telegram failed: {e}")
+    """Adds a formatted markdown alert to the Telegram queue."""
+    telegram_queue.put(alert)
 
 warnings.filterwarnings('ignore')
 
@@ -77,8 +118,10 @@ def serve_json_data(filename):
     """Serve dynamic JSON data files directly from the public directory instead of the stale dist build."""
     public_path = os.path.join(os.path.dirname(__file__), 'public', f"{filename}.json")
     if os.path.exists(public_path):
-        from flask import send_file
-        return send_file(public_path)
+        from flask import send_file, make_response
+        response = make_response(send_file(public_path))
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        return response
     return app.send_static_file(f"{filename}.json")
 
 @app.route('/api/analyze_earnings')
@@ -595,7 +638,24 @@ def is_market_open():
     
     return market_open <= current_minutes <= market_close
 
-alert_queue = queue.Queue()
+class PubSubQueue:
+    def __init__(self):
+        self.clients = []
+    def put(self, item):
+        for q in list(self.clients):
+            try:
+                q.put(item, block=False)
+            except Exception:
+                pass
+    def subscribe(self):
+        q = queue.Queue()
+        self.clients.append(q)
+        return q
+    def unsubscribe(self, q):
+        if q in self.clients:
+            self.clients.remove(q)
+
+alert_queue = PubSubQueue()
 
 def technical_council_worker():
     """Simulates scanning for Liquidity Sweeps, ORBs, and Head Fakes."""
@@ -1182,13 +1242,19 @@ def get_fundamentals():
         else: vgm_points = 0
         
         letter_map = {4: 'A', 3: 'B', 2: 'C', 1: 'D', 0: 'F'}
+        vgm_letter = letter_map[vgm_points]
         style_scores = {
             "value": letter_map[v_points],
             "growth": letter_map[g_points],
             "momentum": letter_map[m_points],
-            "vgm": letter_map[vgm_points]
+            "vgm": vgm_letter
         }
 
+        # Cap Zacks Rank Proxy if VGM score is terrible
+        if vgm_letter in ['D', 'F']:
+            zacks_rank = max(zacks_rank, 4)
+        elif vgm_letter == 'C':
+            zacks_rank = max(zacks_rank, 3)
         fundamental_data = {
             "pegRatio": peg,
             "style_scores": style_scores,
@@ -1265,6 +1331,35 @@ def get_fundamentals():
         fundamental_data["positive_surprises"] = positive_surprises
         fundamental_data["negative_surprises"] = negative_surprises
         
+        # Forward Looking Estimates (Revenue & EPS)
+        forward_estimates = {"revenue": [], "eps": []}
+        try:
+            ee = t.earnings_estimate
+            re = t.revenue_estimate
+            
+            period_map = {'0q': 'Current Qtr', '+1q': 'Next Qtr', '0y': 'Current Year', '+1y': 'Next Year'}
+            
+            if ee is not None and not ee.empty:
+                for period in ee.index:
+                    avg_est = ee.loc[period, 'avg']
+                    if pd.notna(avg_est):
+                        forward_estimates["eps"].append({
+                            "period": period_map.get(period, period),
+                            "estimate": float(avg_est)
+                        })
+                        
+            if re is not None and not re.empty:
+                for period in re.index:
+                    avg_est = re.loc[period, 'avg']
+                    if pd.notna(avg_est):
+                        forward_estimates["revenue"].append({
+                            "period": period_map.get(period, period),
+                            "estimate": float(avg_est)
+                        })
+        except Exception as e:
+            print(f"Error fetching forward estimates: {e}")
+            
+        fundamental_data["forward_estimates"] = forward_estimates
         
         # AI Report Text Generation
         rank_names = {1: "Strong Buy", 2: "Buy", 3: "Hold", 4: "Sell", 5: "Strong Sell"}
@@ -1392,9 +1487,13 @@ def webhook_alert():
 def stream():
     """SSE Endpoint for React to listen to live alerts."""
     def event_stream():
-        while True:
-            alert = alert_queue.get()
-            yield f"data: {json.dumps(alert)}\n\n"
+        q = alert_queue.subscribe()
+        try:
+            while True:
+                alert = q.get()
+                yield f"data: {json.dumps(alert)}\n\n"
+        finally:
+            alert_queue.unsubscribe(q)
     return Response(stream_with_context(event_stream()), mimetype="text/event-stream")
 
 def synergy_council_worker():
@@ -1459,14 +1558,18 @@ def market_health_worker():
                     score = json_payload['current_health']['score_value']
                     summary_text = json_payload['current_health']['summary_text']
                     
-                    alert = {
-                        "setup": f"[MARKET CLOSE BRIEFING]\n{summary_text}",
-                        "color": "#eab308" if 40 <= score <= 60 else "#ef4444" if score > 80 or score < 20 else "#10b981",
-                        "timestamp": now.strftime("%I:%M:%S %p"),
-                        "council": "🏥 HEALTH COUNCIL"
-                    }
-                    alert_queue.put(alert)
-                    threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+                    is_deteriorating = score < 40 or "HINDENBURG OMEN" in summary_text or "Decelerating" in summary_text or "Extreme Fear" in summary_text
+                    
+                    if is_deteriorating:
+                        alert = {
+                            "setup": f"[MARKET CLOSE BRIEFING]\n{summary_text}",
+                            "color": "#eab308" if 40 <= score <= 60 else "#ef4444" if score > 80 or score < 20 else "#10b981",
+                            "timestamp": now_est.strftime("%I:%M:%S %p"),
+                            "council": "🏥 HEALTH COUNCIL"
+                        }
+                        alert_queue.put(alert)
+                        threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+                    
                     last_telegram_date = today_str
                     
         except Exception as e:
@@ -1561,23 +1664,6 @@ def gex_council_worker():
                 
         time.sleep(300)
 
-def intraday_multi_algo_worker():
-    """Runs the 10-algorithm intraday engine every 5 minutes."""
-    while True:
-        try:
-            import pytz
-            now_est = datetime.now(pytz.timezone('America/New_York'))
-            # Only run during market hours (9:30 AM to 4:00 PM EST) roughly
-            if now_est.weekday() < 5 and (now_est.hour > 9 or (now_est.hour == 9 and now_est.minute >= 30)) and now_est.hour < 16:
-                import sys
-                if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
-                    sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
-                from intraday_engine import run_intraday_scanner
-                run_intraday_scanner()
-        except Exception as e:
-            print(f"Intraday Multi-Algo Worker Error: {e}")
-            
-        time.sleep(300) # Run every 5 minutes
 
 def key_levels_worker():
     """Runs the structural key levels daemon daily or on startup."""
@@ -1620,6 +1706,15 @@ def expert_screener_worker():
             
         time.sleep(60) # Check every minute
 
+@app.route('/api/run_rs_scanner', methods=['POST'])
+def run_rs_scanner_api():
+    try:
+        import subprocess
+        subprocess.Popen(["python3", "/Users/amitkumar/Desktop/SectorTrackerApp/backend/rs_line_scanner.py"])
+        return jsonify({"status": "started", "message": "RS Line Scanner triggered successfully."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/deep_fundamentals', methods=['GET'])
 def deep_fundamentals():
     ticker = request.args.get('ticker')
@@ -1644,6 +1739,19 @@ def macro_outlook():
     if not ticker: return jsonify({"error": "No ticker provided"}), 400
     return jsonify(get_macro_outlook(ticker.upper()))
 
+@app.route('/api/dna', methods=['GET'])
+def get_dna():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    ticker = ticker.upper()
+    try:
+        data = calculate_dna(ticker)
+        if "error" in data: return jsonify(data), 500
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error processing DNA for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     # Start autonomous councils in background threads
     # threading.Thread(target=technical_council_worker, daemon=True).start() # Replaced by live Intraday Engine
@@ -1654,10 +1762,10 @@ if __name__ == '__main__':
     threading.Thread(target=tradingview_sync_worker, daemon=True).start()
     threading.Thread(target=market_health_worker, daemon=True).start()
     threading.Thread(target=gex_council_worker, daemon=True).start()
-    threading.Thread(target=intraday_multi_algo_worker, daemon=True).start()
     threading.Thread(target=key_levels_worker, daemon=True).start()
     # threading.Thread(target=expert_screener_worker, daemon=True).start() # Disabled to prevent collision with crontab
     
 
     # Run the Flask app with threading enabled to handle SSE connections concurrently
+    print("Starting SectorTracker API server on port 5000...")
     app.run(port=5000, debug=True, threaded=True)

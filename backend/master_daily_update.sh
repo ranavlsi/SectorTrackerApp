@@ -20,4 +20,10 @@ echo "Running Relative Strength Line Scanner..." >> master_update.log
 python3 rs_line_scanner.py >> master_update.log 2>&1
 echo "Generating AI Playbook..." >> master_update.log
 python3 playbook_generator.py >> master_update.log 2>&1
+echo "Running DeepVue Quantitative Screener..." >> master_update.log
+python3 deepvue_screener.py >> master_update.log 2>&1
+echo "Running Correlation Engine..." >> master_update.log
+python3 correlation_engine.py >> master_update.log 2>&1
+echo "Running Market Health Engine..." >> master_update.log
+python3 market_health_engine.py >> master_update.log 2>&1
 echo "Update Complete." >> master_update.log

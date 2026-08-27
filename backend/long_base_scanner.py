@@ -54,9 +54,25 @@ def evaluate_long_base(ticker, pre_df=None):
         current_close = base_df['Close'].iloc[-1]
         current_volume = base_df['Volume'].iloc[-1]
         
-        base_high = base_df['High'].max()
+        # Calculate base_high excluding the last 5 days so the current breakout isn't counted as the base roof
+        historical_base = base_df.iloc[:-5]
+        base_high = historical_base['High'].max()
         base_low = base_df['Low'].min()
         
+        # Require the base high to have occurred at least 1 year ago (252 trading days)
+        base_high_idx = historical_base['High'].idxmax()
+        # Handle index get_loc safely if duplicate max values exist
+        try:
+            pos = historical_base.index.get_loc(base_high_idx)
+            if isinstance(pos, slice) or isinstance(pos, np.ndarray):
+                pos = pos[0] if isinstance(pos, np.ndarray) else pos.start
+        except KeyError:
+            return None
+            
+        days_since_high = len(historical_base) - pos
+        if days_since_high < 252:
+            return None # The peak was too recent; this is not a multi-year structural base
+            
         # 1. Depth Constraint (Max 35% drawdown)
         if base_low < (base_high * 0.65):
             return None # Base is too deep, considered broken structurally
@@ -107,10 +123,11 @@ def evaluate_long_base(ticker, pre_df=None):
         # Silently pass errors (like delisted stocks) to keep batch running fast
         return None
 
-def evaluate_medium_base(ticker, pre_df=None):
+def evaluate_medium_base(ticker, pre_df=None, min_volume_multiplier=None):
     """
     Evaluates if a stock is breaking out of a Medium-Term Structural Base (3 months to 2 years).
     Upgraded with Dynamic Depth, Minervini Trend Template, and VCP/Pocket Pivot Triggers.
+    Optionally accepts min_volume_multiplier to allow relaxed low-volume breakout scans.
     """
     try:
         if pre_df is not None:
@@ -165,20 +182,19 @@ def evaluate_medium_base(ticker, pre_df=None):
             if base_df['Volume'].mean() < 100000 or current_close < 3.0:
                 continue
 
-            base_length_months = round(lookback / 21)
-            if base_length_months < 2:
-                continue
-                
             # 1.5 Proper Base Structure (High cannot be just a recent 2-week pullback)
             base_high_idx = base_df['High'].idxmax()
             pos = base_df.index.get_loc(base_high_idx)
             days_since_high = len(base_df) - pos
+            
             if days_since_high < max(21, int(lookback * 0.33)):
                 continue # The left side of the cup is too recent, this is not a true base
                 
+            actual_base_length_months = max(2, round(days_since_high / 21))
+                
             # 2. Dynamic Base Depth
             base_drawdown = (base_high - base_low) / base_high
-            max_allowed_drawdown = 0.30 if base_length_months < 6 else 0.40
+            max_allowed_drawdown = 0.30 if actual_base_length_months < 6 else 0.40
             if base_drawdown > max_allowed_drawdown:
                 continue
                 
@@ -221,9 +237,17 @@ def evaluate_medium_base(ticker, pre_df=None):
             is_up_day = (current_close > base_df['Open'].iloc[-1]) and (current_close > base_df['Close'].iloc[-2])
             is_pocket_pivot = is_up_day and (current_volume > max_down_vol_10)
 
+            # Optional custom volume multiplier fallback (for catching stealthy low-volume breakouts)
+            if min_volume_multiplier is not None:
+                has_sufficient_vol = current_volume > (base_df['ADV_50'].iloc[-1] * min_volume_multiplier)
+                is_valid_breakout_vol = is_pocket_pivot or has_sufficient_vol
+            else:
+                is_valid_breakout_vol = is_pocket_pivot
+
             # Check proximity to the main base pivot
             is_about_to_breakout = (current_close >= base_high * 0.85) and (current_close <= base_high)
-            is_confirmed_breakout = (current_close > base_high) and is_pocket_pivot
+            is_confirmed_breakout = (current_close > base_high) and is_valid_breakout_vol
+
             
             if is_confirmed_breakout:
                 return {
@@ -232,7 +256,7 @@ def evaluate_medium_base(ticker, pre_df=None):
                     "price": round(current_close, 2),
                     "base_high": round(base_high, 2), # Keep for context
                     "handle_pivot": round(handle_high_15, 2),
-                    "base_duration": f"{base_length_months} Months",
+                    "base_duration": f"{actual_base_length_months} Months",
                     "vol_surge": round((current_volume / base_df['ADV_50'].iloc[-1]) * 100, 1),
                     "ud_ratio": round(ud_ratio, 2)
                 }
@@ -243,7 +267,7 @@ def evaluate_medium_base(ticker, pre_df=None):
                     "price": round(current_close, 2),
                     "base_high": round(base_high, 2),
                     "handle_pivot": round(handle_high_15, 2),
-                    "base_duration": f"{base_length_months} Months",
+                    "base_duration": f"{actual_base_length_months} Months",
                     "distance_pct": round(((base_high - current_close) / base_high) * 100, 1),
                     "ud_ratio": round(ud_ratio, 2)
                 }

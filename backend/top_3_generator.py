@@ -55,10 +55,18 @@ def generate_top_3():
     
     print(f"Scanning {len(all_files)} files for confluence...")
     
+    import time
+    current_time = time.time()
+    
     for filepath in all_files:
         filename = os.path.basename(filepath)
         # Skip output files
         if "Top_3_Trade_Plans" in filename or "playbook" in filename.lower():
+            continue
+            
+        # Skip files older than 24 hours (86400 seconds)
+        if current_time - os.path.getmtime(filepath) > 86400:
+            print(f"Skipping stale file: {filename}")
             continue
             
         tickers = extract_tickers_from_file(filepath)

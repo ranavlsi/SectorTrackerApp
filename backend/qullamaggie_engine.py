@@ -49,6 +49,24 @@ def evaluate_qullamaggie_setup(ticker, pre_df=None):
         df['SMA_20'] = df['Close'].rolling(window=20).mean()
         df['SMA_50_Vol'] = df['Volume'].rolling(window=50).mean()
 
+        # --- Episodic Pivot Check (Bypass standard VCP rules) ---
+        from advanced_quant_utils import score_episodic_pivot
+        df = score_episodic_pivot(df)
+        if df['EP_Score'].iloc[-1] >= 50.0:
+            curr_price = df['Close'].iloc[-1]
+            gap_high = df['High'].iloc[-1]
+            gap_low = df['Low'].iloc[-1]
+            
+            if curr_price >= gap_low:
+                return {
+                    "status": "TRIGGERED",
+                    "ticker": ticker,
+                    "adr": round(adr_20, 1),
+                    "price": round(curr_price, 2),
+                    "breakout_level": round(gap_high, 2),
+                    "sma_support": "Episodic Pivot"
+                }
+
         # 4. HTF / Prior Move Detection (The Parabolic Pole)
         last_40_days = df.iloc[-41:-1].copy() # Exclude today
         
@@ -79,15 +97,31 @@ def evaluate_qullamaggie_setup(ticker, pre_df=None):
         min_close_3 = df['Close'].iloc[-4:-1].min()
         sma_10_prev = df['SMA_10'].iloc[-2]
         
-        is_surfing = (min_low_3 <= sma_10_prev * 1.05) and (min_close_3 > sma_10_prev * 0.98)
+        is_surfing = (min_low_3 <= sma_10_prev * 1.05) and (min_close_3 > sma_10_prev * 0.95)
         if not is_surfing:
             return None
 
-        # 6. Volatility Contraction (ATR Crush)
-        atr_3_prev = df['ATR_3'].iloc[-2]
-        atr_20_prev = df['ATR_20'].iloc[-2]
-        if (atr_3_prev / atr_20_prev) >= 0.70:
-            return None # Volatility has not crushed enough
+        # 6. Adaptive Volatility Contraction & Price Action (AI Quant Engine)
+        from advanced_quant_utils import adaptive_volatility_screener, add_price_action_signals, is_vcp_adaptive
+        
+        # We process the df through the advanced models
+        df = adaptive_volatility_screener(df, contraction_days=5, adr_days=20, adr_multiplier=1.2)
+        df = add_price_action_signals(df, consolidation_window=10)
+        
+        # An adaptive VCP must mathematically pass the RMV normalization (Current 5-day range <= 1.2x of its 20-day ADR)
+        is_tight_adaptive = df['Is_Tight_ADR'].iloc[-2]
+        
+        # It must also exhibit at least one pure supply exhaustion signal (NR7 or Inside Bar)
+        has_supply_exhaustion = df['NR7'].iloc[-2] or df['IB'].iloc[-2] or df['II'].iloc[-2]
+        
+        # Or, the pure statistical VCP check passes
+        is_pure_vcp = is_vcp_adaptive(df)
+        
+        if not (is_tight_adaptive or is_pure_vcp):
+            return None # Failed dynamic volatility contraction
+            
+        if not (has_supply_exhaustion or is_pure_vcp):
+            return None # Failed micro-structure supply exhaustion
 
         # 7. Intraday Breakout Trigger (Current price > 15-day Swing High)
         curr_price = df['Close'].iloc[-1]

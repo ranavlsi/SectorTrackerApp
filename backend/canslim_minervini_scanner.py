@@ -180,15 +180,14 @@ def run_scanner():
     query = f"SELECT * FROM read_parquet('{parquet_path}') ORDER BY Date"
     df_bulk = duckdb.query(query).to_df()
     
-    unique_tickers = df_bulk['Ticker'].unique()
-    print(f"Scanning {len(unique_tickers)} tickers for CAN SLIM & Minervini setups (Local Lakehouse Mode).")
+    grouped = df_bulk.groupby('Ticker')
+    print(f"Scanning {len(grouped)} stocks for CANSLIM setups (Local Lakehouse Mode)...")
     
-    # Phase 1: Bulk Download Technicals
     passing_tech = []
     
-    for ticker in unique_tickers:
+    for ticker, ticker_df in grouped:
         try:
-            ticker_df = df_bulk[df_bulk['Ticker'] == ticker].copy()
+            ticker_df = ticker_df.copy()
             ticker_df = ticker_df.sort_values('Date').set_index('Date')
             
             if not ticker_df.empty:

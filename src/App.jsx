@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
@@ -14,6 +14,7 @@ import LiveAgentsDashboard from './LiveAgentsDashboard'
 import RsLineScanner from './RsLineScanner'
 import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 import { PieChart as PieChartIcon } from 'lucide-react';
+import { ScreenerDescriptions } from './ScreenerInfo';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -36,31 +37,36 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 const ScreenerCategories = {
-  relative_strength: { title: "Highest Relative Strength", icon: <TrendingUp color="#10b981" /> },
-  early_stage_2: { title: "Early Stage 2 Breakouts", icon: <Activity color="#4facfe" /> },
-  darvas_breakout: { title: "Darvas Box Breakouts", icon: <Compass color="#a855f7" /> },
-  breakout_retest: { title: "Breakout Pivot Retest", icon: <ActivitySquare color="#fbbf24" /> },
-  base_pullback_ma: { title: "Squat Base & SMA Support", icon: <Filter color="#14b8a6" /> },
-  fresh_52w_high: { title: "Fresh 52-Week Highs", icon: <TrendingUp color="#f59e0b" /> },
-  all_time_high: { title: "All-Time Highs", icon: <BarChart2 color="#eab308" /> },
-  hve_volume: { title: "Volume Climax (HVE)", icon: <AlertCircle color="#3b82f6" /> },
-  hve_consolidation: { title: "Consolidation post-HVE", icon: <Filter color="#14b8a6" /> },
-  post_earning_reaction: { title: "Power Earnings Gap Up", icon: <TrendingUp color="#a855f7" /> },
-  post_earning_consolidation: { title: "Earnings Gap Consolidation", icon: <ActivitySquare color="#8b5cf6" /> },
-  weekly_cup_handle: { title: "Weekly Cup & Handle", icon: <Compass color="#4facfe" /> },
-  monthly_cup_handle: { title: "Monthly Cup & Handle", icon: <Compass color="#a855f7" /> },
-  ipo_avwap: { title: "IPO AVWAP Bounce", icon: <Crosshair color="#ec4899" /> },
-  bullish_candlestick: { title: "Bullish Candlestick", icon: <TrendingUp color="#22c55e" /> },
-  bearish_candlestick: { title: "Bearish Candlestick", icon: <TrendingUp color="#ef4444" style={{ transform: 'rotate(180deg)' }} /> },
-  reversal: { title: "Oversold Reversal", icon: <RefreshCw color="#ef4444" /> },
-  zacks_rank_1: { title: "Zacks Rank #1 (Strong Buy)", icon: <BookOpen color="#10b981" /> },
-  pending_breakout: { title: "Pending Breakout (Squeeze)", icon: <ActivitySquare color="#f43f5e" /> },
-  long_base_breakout: { title: "3-Year Long Base", icon: <Compass color="#3b82f6" /> },
-  medium_base_breakout: { title: "Medium Base (3mo - 2yr)", icon: <Compass color="#a855f7" /> },
-  qullamaggie_setup: { title: "Qullamaggie Episodic Pivot", icon: <TrendingUp color="#8b5cf6" /> },
-  rs_divergence: { title: "RS Line Divergence (New High)", icon: <Activity color="#10b981" /> }
+  relative_strength: { title: "Highest Relative Strength", icon: <TrendingUp color="#10b981" />, desc: "Top momentum stocks exhibiting the highest relative strength vs the S&P 500." },
+  early_stage_2: { title: "Early Stage 2 Breakouts", icon: <Activity color="#4facfe" />, desc: "Stocks newly transitioning from a Stage 1 base into a Stage 2 uptrend with volume conviction." },
+  darvas_about_to: { title: "Darvas: About to Breakout", icon: <Compass color="#a855f7" />, desc: "Nicolas Darvas boxes coiling tightly near their all-time highs, anticipating an imminent breakout." },
+  darvas_strong: { title: "Darvas: Yesterday's Breakouts", icon: <CheckCircle2 color="#10b981" />, desc: "Stocks that successfully breached the upper limit of their Darvas Box in the prior trading session." },
+  breakout_retest: { title: "Breakout Pivot Retest", icon: <ActivitySquare color="#fbbf24" />, desc: "A+ setups pulling back to perfectly retest a former breakout pivot on light volume." },
+  base_pullback_ma: { title: "Squat Base & SMA Support", icon: <Filter color="#14b8a6" />, desc: "Squat bases finding strict mathematical support on the 10-day or 20-day moving average." },
+  fresh_52w_high: { title: "Fresh 52-Week Highs", icon: <TrendingUp color="#f59e0b" />, desc: "Momentum leaders printing new 1-year highs." },
+  all_time_high: { title: "All-Time Highs", icon: <BarChart2 color="#eab308" />, desc: "Elite market leaders currently trading at all-time historic highs in blue sky territory." },
+  hve_volume: { title: "Volume Climax (HVE)", icon: <AlertCircle color="#3b82f6" />, desc: "Massive institutional 'High Volume Events' acting as footprints of accumulation or distribution." },
+  hve_consolidation: { title: "Consolidation post-HVE", icon: <Filter color="#14b8a6" />, desc: "Tight price consolidation immediately following a massive volume climax, signaling absorption." },
+  post_earning_reaction: { title: "Power Earnings Gap Up", icon: <TrendingUp color="#a855f7" />, desc: "Explosive gap-up moves triggered immediately after a massive earnings surprise." },
+  post_earning_consolidation: { title: "Earnings Gap Consolidation", icon: <ActivitySquare color="#8b5cf6" />, desc: "High and tight flag structures forming strictly after a Power Earnings Gap." },
+  weekly_cup_handle: { title: "Weekly Cup & Handle", icon: <Compass color="#4facfe" />, desc: "Classic CANSLIM weekly cup with handle formations ready for multimonth macro advances." },
+  monthly_cup_handle: { title: "Monthly Cup & Handle", icon: <Compass color="#a855f7" />, desc: "Massive multi-year cup and handle bases designed for institutional super-cycle investments." },
+  ipo_avwap: { title: "IPO AVWAP Bounce", icon: <Crosshair color="#ec4899" />, desc: "Recent IPOs pulling back and defending the crucial Anchored VWAP from their IPO debut day." },
+  bullish_candlestick: { title: "Bullish Candlestick", icon: <TrendingUp color="#22c55e" />, desc: "Bullish engulfing or massive hammer candles appearing at crucial structural support levels." },
+  bearish_candlestick: { title: "Bearish Candlestick", icon: <TrendingUp color="#ef4444" style={{ transform: 'rotate(180deg)' }} />, desc: "Bearish engulfing or shooting stars signaling trend exhaustion at the top of a run." },
+  reversal: { title: "Oversold Reversal", icon: <RefreshCw color="#ef4444" />, desc: "Deep oversold (RSI < 40) snapback setups flashing bullish reversal candle patterns." },
+  zacks_rank_1: { title: "Zacks Rank #1 (Strong Buy)", icon: <BookOpen color="#10b981" />, desc: "Strict fundamental filter showing only stocks with upward earnings estimate revisions and PEG < 2." },
+  pending_breakout: { title: "Pending Breakout (Squeeze)", icon: <ActivitySquare color="#f43f5e" />, desc: "Extremely tight VCPs with dry volume, mathematically pre-coiled for an explosive gap-up." },
+  long_base_breakout: { title: "3-Year Long Base", icon: <Compass color="#3b82f6" />, desc: "Massive 3-year structural bases breaking out, signaling a new secular macro paradigm." },
+  medium_base_breakout: { title: "Medium Base (3mo - 2yr)", icon: <Compass color="#a855f7" />, desc: "Standard 3 to 24 month bases adhering to strict Minervini depth and VCP tightness rules." },
+  low_volume_breakout: { title: "Quiet Breakout (>1.0x Vol)", icon: <ActivitySquare color="#a855f7" />, desc: "Mathematically confirmed medium base breakouts that lacked the explosive 1.5x pocket pivot volume." },
+  qullamaggie_setup: { title: "Qullamaggie Episodic Pivot", icon: <TrendingUp color="#8b5cf6" />, desc: "Episodic pivots defined by Kristjan Qullamaggie: High-momentum, catalyst-driven, tight base breakouts." },
+  rs_divergence: { title: "RS Line Divergence (New High)", icon: <Activity color="#10b981" />, desc: "Alpha indicator: The stock's Relative Strength line is making a new high *before* price does." },
+  bull_flag_breakout: { title: "Bull Flag Breakout", icon: <TrendingUp color="#38bdf8" />, desc: ">15% pole rally followed by a tight <12% pullback flag, actively breaking out today on 1.5x volume." },
+  bull_flag_pending: { title: "Bull Flag Pending Breakout", icon: <ActivitySquare color="#f43f5e" />, desc: "Perfectly formed Bull Flags currently coiling inside the flag structure waiting for the volume trigger." },
+  universal_takeout: { title: "Universal Takeout", icon: <CheckCircle2 color="#eab308" />, desc: "Sequential higher-low compression anticipating or confirming an overhead structural takeout." },
+  earnings_surge: { title: "Earnings Surge (PEDP)", icon: <TrendingUp color="#ec4899" />, desc: "High Post-Earnings Drift Potential: Massive EPS beats corroborated by heavy upward analyst estimate revisions." }
 }
-
 const ScreenerPill = ({ item, rank, onClick }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [healthData, setHealthData] = useState(null);
@@ -161,8 +167,9 @@ function App() {
   const [modalData, setModalData] = useState(null)
   const [expandedCategories, setExpandedCategories] = useState({})
   const [collapsedCategories, setCollapsedCategories] = useState(
-    Object.keys(ScreenerCategories).reduce((acc, key) => { acc[key] = true; return acc; }, {})
+    Object.keys(ScreenerCategories).reduce((acc, key) => ({ ...acc, [key]: true }), {})
   )
+  const [infoVisible, setInfoVisible] = useState({});
   
   // Full-Stack Search State
   const [searchQuery, setSearchQuery] = useState('')
@@ -198,6 +205,23 @@ function App() {
   const [searchedGex, setSearchedGex] = useState(null)
   const [gexLoading, setGexLoading] = useState(false)
   const [gexError, setGexError] = useState('')
+  
+  // Historical DNA State
+  const [dnaData, setDnaData] = useState(null)
+  const [loadingDna, setLoadingDna] = useState(false)
+  
+  const fetchDNA = async (ticker) => {
+    setLoadingDna(true);
+    setDnaData(null);
+    try {
+      const res = await fetch(`/api/dna?ticker=${ticker}`);
+      const data = await res.json();
+      setDnaData(data);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoadingDna(false);
+  };
   
   // Playbook State
   const [playbookContent, setPlaybookContent] = useState('')
@@ -247,11 +271,16 @@ function App() {
         .then(res => res.text())
         .then(text => setPlaybookContent(text))
         .catch(err => console.error("Error loading playbook:", err))
+        
+      fetch('/intraday_results.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(json => setIntradayData(json.results || []))
+        .catch(err => console.error("Error loading intraday data:", err))
     };
 
     fetchAllData();
-    // Auto-refresh main dashboard data every 10 minutes
-    const dataInterval = setInterval(fetchAllData, 600000);
+    // Auto-refresh main dashboard data every 1 minute
+    const dataInterval = setInterval(fetchAllData, 60000);
       
     // Live Agent Slack-Channel Integration
     const eventSource = new EventSource('/api/stream');
@@ -331,6 +360,90 @@ function App() {
     }
   };
 
+  const isDecliningStage = (stage) => {
+    if (!stage) return false;
+    const s = stage.toLowerCase();
+    return s.includes('stage 4') || s.includes('declining') || s.includes('breakdown') || s.includes('stage 3') || s.includes('distribution');
+  };
+
+  const multiTimeframeFocusList = useMemo(() => {
+    if (!data || !data.rrg) return [];
+    
+    const monthly = data.rrg.monthly || [];
+    const weekly = data.rrg.weekly || [];
+    const daily = data.rrg.daily || [];
+
+    const focusStocksMap = new Map();
+
+    monthly.forEach(mSector => {
+      if (!mSector.trail || mSector.trail.length === 0) return;
+      const mCur = mSector.trail[mSector.trail.length - 1];
+      
+      const wSector = weekly.find(s => s.ticker === mSector.ticker);
+      if (!wSector || !wSector.trail || wSector.trail.length === 0) return;
+      const wCur = wSector.trail[wSector.trail.length - 1];
+
+      const dSector = daily.find(s => s.ticker === mSector.ticker);
+      if (!dSector || !dSector.trail || dSector.trail.length < 2) return;
+      const dCur = dSector.trail[dSector.trail.length - 1];
+      const dPrev = dSector.trail[dSector.trail.length - 2];
+
+      // Logic: Monthly Y > 100, Weekly X > 100, Daily Y > 100 and Y hooking up
+      if (mCur.y > 100 && wCur.x > 100 && dCur.y > 100 && dCur.y > dPrev.y) {
+        if (mSector.top_stocks) {
+          mSector.top_stocks.forEach(stock => {
+            if (isDecliningStage(stock.stage)) return;
+            focusStocksMap.set(stock.ticker, {
+              ...stock,
+              sectorName: mSector.name,
+              sectorTicker: mSector.ticker
+            });
+          });
+        }
+      }
+    });
+
+    return Array.from(focusStocksMap.values()).sort((a, b) => b.rs_spy_1mo - a.rs_spy_1mo).slice(0, 15);
+  }, [data]);
+
+  const emergingLeadersList = useMemo(() => {
+    if (!data || !data.rrg) return [];
+    
+    const weekly = data.rrg.weekly || [];
+    const daily = data.rrg.daily || [];
+
+    const emergingStocksMap = new Map();
+
+    weekly.forEach(wSector => {
+      if (!wSector.trail || wSector.trail.length === 0) return;
+      const wCur = wSector.trail[wSector.trail.length - 1];
+
+      const dSector = daily.find(s => s.ticker === wSector.ticker);
+      if (!dSector || !dSector.trail || dSector.trail.length < 2) return;
+      const dCur = dSector.trail[dSector.trail.length - 1];
+      const dPrev = dSector.trail[dSector.trail.length - 2];
+
+      // Logic: Weekly is Improving / Early Rotation (wX < 105 and wY > 95)
+      // OR Daily is hooking up strongly into leadership (dY > 100 and dY > dPrev)
+      if ((wCur.x < 105 && wCur.y > 95) || (dCur.y > 100 && dCur.y > dPrev.y)) {
+        if (wSector.top_stocks) {
+          wSector.top_stocks.forEach(stock => {
+            if (isDecliningStage(stock.stage)) return;
+            // We only want FRESH emerging leaders, not mature/extended Stage 2 stocks like FTNT
+            if (stock.dist_200sma && stock.dist_200sma > 20) return;
+            emergingStocksMap.set(stock.ticker, {
+              ...stock,
+              sectorName: wSector.name,
+              sectorTicker: wSector.ticker
+            });
+          });
+        }
+      }
+    });
+
+    return Array.from(emergingStocksMap.values()).sort((a, b) => b.rs_spy_1mo - a.rs_spy_1mo).slice(0, 15);
+  }, [data]);
+
   if (!data || !data.rrg) {
     return <div className="loading"><RefreshCw size={48} /><h2>Loading Sector Tracker Engine...</h2></div>
   }
@@ -401,6 +514,8 @@ function App() {
     }
   }
   
+
+
   const fetchTickerData = async (ticker) => {
     setIsSearching(true);
     setSearchError(null);
@@ -429,6 +544,7 @@ function App() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
+    setDnaData(null); // Reset DNA when searching a new ticker
     fetchTickerData(searchQuery.trim().toUpperCase());
   }
 
@@ -865,6 +981,17 @@ function App() {
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{config.icon} {config.title}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Info 
+                      size={18} 
+                      color="rgba(255,255,255,0.4)" 
+                      style={{ cursor: 'pointer', transition: 'color 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#4facfe'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          setInfoVisible(prev => ({ ...prev, [key]: !prev[key] }));
+                      }} 
+                    />
                     {expandedCategories[key] && !collapsedCategories[key] && (
                         <span 
                             style={{ fontSize: '0.75rem', padding: '4px 10px', background: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderRadius: '12px', border: '1px solid #4facfe' }}
@@ -879,6 +1006,12 @@ function App() {
                     {collapsedCategories[key] ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                   </div>
                 </h3>
+                
+                {infoVisible[key] && (
+                  <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '6px', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '1rem', borderLeft: '3px solid #4facfe' }}>
+                    {ScreenerDescriptions[key] || config.desc}
+                  </div>
+                )}
                 
                 {!collapsedCategories[key] && (
                   screenerData[key] && screenerData[key].length > 0 ? (
@@ -1283,6 +1416,7 @@ function App() {
       {activeTab === 'dashboard' && (
         <>
           <div className="timeframe-toggles">
+            <button className={timeframe === 'intraday' ? 'active' : ''} onClick={() => { setTimeframe('intraday'); setHiddenLines({}); setIsTop5Isolated(false); }}>Intraday (15m)</button>
             <button className={timeframe === 'daily' ? 'active' : ''} onClick={() => { setTimeframe('daily'); setHiddenLines({}); setIsTop5Isolated(false); }}>Daily (Short-Term)</button>
             <button className={timeframe === 'weekly' ? 'active' : ''} onClick={() => { setTimeframe('weekly'); setHiddenLines({}); setIsTop5Isolated(false); }}>Weekly (Medium-Term)</button>
             <button className={timeframe === 'monthly' ? 'active' : ''} onClick={() => { setTimeframe('monthly'); setHiddenLines({}); setIsTop5Isolated(false); }}>Monthly (Structural)</button>
@@ -1454,8 +1588,67 @@ function App() {
                   {moneyFlow.deadMoney.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
                 </div>
               </div>
-
             </div>
+          </div>
+
+          {/* Multi-Timeframe Focus List */}
+          <div className="glass-card" style={{ marginTop: '20px' }}>
+            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
+              🔥 Multi-Timeframe Focus List
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '15px' }}>
+              Top stocks from sectors exhibiting structural alignment (Leading on Monthly/Weekly, hooking up on Daily).
+            </p>
+            {multiTimeframeFocusList.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+                {multiTimeframeFocusList.map((stock, idx) => (
+                  <div key={`${stock.ticker}-${idx}`} onClick={() => fetchTickerData(stock.ticker)} style={{ cursor: 'pointer', background: 'rgba(15, 23, 42, 0.6)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', transition: 'transform 0.2s, border 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.border = '1px solid #4facfe' }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.border = '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <strong style={{ fontSize: '1.2rem', color: '#4facfe' }}>{stock.ticker}</strong>
+                      <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px', color: '#fff' }}>{stock.sectorName}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                      <span style={{ color: stock.stage?.includes('2') ? '#10b981' : '#f59e0b' }}>{stock.stage}</span>
+                      <span style={{ color: stock.momentum_color === 'bullish' ? '#10b981' : stock.momentum_color === 'bearish' ? '#ef4444' : '#f59e0b', fontWeight: 'bold' }}>{stock.momentum_text.split(' ')[0]} {stock.rs_spy_1mo > 0 ? `+${stock.rs_spy_1mo.toFixed(1)}%` : `${stock.rs_spy_1mo.toFixed(1)}%`} RS</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                <p style={{ color: '#94a3b8' }}>No stocks currently meet the strict multi-timeframe alignment criteria.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Emerging Leaders Focus List */}
+          <div className="glass-card" style={{ marginTop: '20px' }}>
+            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
+              🌱 Emerging Leaders (Early Rotation)
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '15px' }}>
+              Top stocks from sectors transitioning into the Improving quadrant with immediate short-term momentum.
+            </p>
+            {emergingLeadersList.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+                {emergingLeadersList.map((stock, idx) => (
+                  <div key={`${stock.ticker}-${idx}-emerging`} onClick={() => fetchTickerData(stock.ticker)} style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s, border 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.border = '1px solid #10b981' }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.border = '1px solid rgba(16, 185, 129, 0.3)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <strong style={{ fontSize: '1.2rem', color: '#10b981' }}>{stock.ticker}</strong>
+                      <span style={{ fontSize: '0.8rem', background: 'rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '12px', color: '#fff' }}>{stock.sectorName}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                      <span style={{ color: stock.stage?.includes('2') ? '#10b981' : '#f59e0b' }}>{stock.stage}</span>
+                      <span style={{ color: stock.momentum_color === 'bullish' ? '#10b981' : stock.momentum_color === 'bearish' ? '#ef4444' : '#f59e0b', fontWeight: 'bold' }}>{stock.momentum_text.split(' ')[0]} {stock.rs_spy_1mo > 0 ? `+${stock.rs_spy_1mo.toFixed(1)}%` : `${stock.rs_spy_1mo.toFixed(1)}%`} RS</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                <p style={{ color: '#10b981' }}>No early-rotation sectors currently detected.</p>
+              </div>
+            )}
           </div>
 
           {/* Detailed Sector Rankings */}
@@ -1563,6 +1756,87 @@ function App() {
                          </p>
                        </div>
                      )}
+
+                     {/* HISTORICAL DNA PROFILE */}
+                     <div className="neo-panel" style={{ marginBottom: '1.5rem', background: 'rgba(15, 23, 42, 0.4)' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #1e293b', paddingBottom: '0.5rem' }}>
+                         <h3 style={{ margin: 0, color: '#ec4899', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                           <BarChart2 size={18} /> 10-Year Historical DNA
+                         </h3>
+                         <button 
+                           onClick={() => fetchDNA(expertTickerData.ticker)} 
+                           disabled={loadingDna}
+                           style={{ background: '#ec4899', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: loadingDna ? 'not-allowed' : 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                         >
+                           {loadingDna ? <Loader size={14} className="spin" /> : <Activity size={14} />} 
+                           {loadingDna ? 'Analyzing...' : 'Generate Profile'}
+                         </button>
+                       </div>
+                       
+                       {dnaData && !dnaData.error && (
+                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Moving Average Respect Matrix</span>
+                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+                               {Object.entries(dnaData.ma_respect).map(([ma, score]) => (
+                                 <div key={ma} style={{ textAlign: 'center' }}>
+                                   <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{ma}</div>
+                                   <div style={{ fontWeight: 'bold', color: ma === dnaData.best_ma ? '#10b981' : '#e2e8f0' }}>{score}%</div>
+                                 </div>
+                               ))}
+                             </div>
+                             <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#10b981' }}>
+                               ► Highest respect: {dnaData.best_ma}
+                             </div>
+                           </div>
+                           
+                           <div style={{ display: 'flex', gap: '10px' }}>
+                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Max Ext. 50-SMA</span>
+                               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>+{dnaData.max_ext_50}%</div>
+                             </div>
+                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Max Ext. 200-SMA</span>
+                               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>+{dnaData.max_ext_200}%</div>
+                             </div>
+                           </div>
+                           
+                           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Max Streak Potential</span>
+                             <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                               <div>Consecutive Up Days: <span style={{ color: '#fff', fontWeight: 'bold' }}>{dnaData.max_green_streak}</span></div>
+                               <div>Best Run (&gt;10EMA): <span style={{ color: '#10b981', fontWeight: 'bold' }}>+{dnaData.max_run_above_10ema}%</span></div>
+                             </div>
+                           </div>
+                           
+                           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #3b82f6' }}>
+                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Whale Activity (Trend Verification)</span>
+                             <div style={{ color: '#e2e8f0', fontSize: '0.9rem', marginTop: '0.5rem', lineHeight: '1.4' }}>{dnaData.whale_insight}</div>
+                           </div>
+                           
+                           <div style={{ display: 'flex', gap: '10px' }}>
+                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #a855f7' }}>
+                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Current Structural Pattern</span>
+                               <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e2e8f0', marginTop: '0.5rem' }}>{dnaData.current_pattern}</div>
+                             </div>
+                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #f59e0b' }}>
+                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Consolidation Timing Estimate</span>
+                               <div style={{ fontSize: '0.95rem', color: '#e2e8f0', marginTop: '0.5rem' }}>{dnaData.consolidation_timing}</div>
+                             </div>
+                           </div>
+                           
+                           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Technical Adherence Score</span>
+                             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: dnaData.technical_score >= 60 ? '#10b981' : '#ef4444' }}>
+                               {dnaData.technical_score}/100
+                             </div>
+                           </div>
+                         </div>
+                       )}
+                       {dnaData && dnaData.error && (
+                         <div style={{ color: '#ef4444', padding: '1rem' }}>{dnaData.error}</div>
+                       )}
+                     </div>
 
 
                      <div className="neo-panel" style={{ marginBottom: '1.5rem' }}>
@@ -1884,12 +2158,12 @@ function App() {
             
             {chatHistory.filter(m => m.isBroadcast).map((msg, idx) => (
               <div key={idx} style={{ alignSelf: 'flex-start', background: `rgba(${msg.color === '#10b981' ? '16, 185, 129' : msg.color === '#ef4444' ? '239, 68, 68' : '139, 92, 246'}, 0.1)`, border: `1px solid ${msg.color}`, padding: '8px 12px', borderRadius: '8px', width: '100%' }}>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#e2e8f0', lineHeight: '1.4' }}>
+                <div style={{ margin: 0, fontSize: '0.85rem', color: '#e2e8f0', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
                   <strong style={{ color: msg.color, display: 'block', marginBottom: '4px', fontSize: '0.75rem', textTransform: 'uppercase' }}>
                     {msg.council}
                   </strong>
-                  {msg.text}
-                </p>
+                  <ReactMarkdown>{msg.text.replace(/\*/g, '**')}</ReactMarkdown>
+                </div>
                 {msg.payload ? (
                   <button 
                     onClick={() => { setBriefingData(msg.payload); setActiveTab('briefing'); }}

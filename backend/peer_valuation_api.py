@@ -8,37 +8,59 @@ def get_peer_valuation(target_ticker):
     Finds sector peers using finvizfinance and compares key valuation multiples.
     """
     try:
-        # Find Peers
-        stock = finvizfinance(target_ticker)
-        peers = stock.ticker_fundament()['Company'] if hasattr(stock, 'ticker_fundament') else []
+        from finvizfinance.quote import finvizfinance
+        from finvizfinance.screener.overview import Overview
         
+        peers = []
         try:
-            # finvizfinance might have changed the api, let's use a simpler way if needed
-            # actually we can just get the top 5 competitors if they have it
-            # wait, `ticker_fundament()` returns a dict, maybe not competitors.
-            # let's just use yfinance `info.get('sector')` and mock some peers if finviz fails.
-            pass
-        except:
+            # 1. Get exact Industry of the target stock
+            stock = finvizfinance(target_ticker.upper())
+            fund = stock.ticker_fundament()
+            industry = fund.get('Industry')
+            
+            if industry:
+                # 2. Screen for peers in the exact same industry
+                screener = Overview()
+                screener.set_filter(filters_dict={'Industry': industry})
+                df = screener.screener_view()
+                
+                # Sort by Market Cap closest to the target stock's market cap
+                def parse_cap(val):
+                    if not isinstance(val, str): return 0
+                    val = val.replace(',', '')
+                    if 'B' in val: return float(val.replace('B', '')) * 1e9
+                    if 'M' in val: return float(val.replace('M', '')) * 1e6
+                    if 'K' in val: return float(val.replace('K', '')) * 1e3
+                    try: return float(val)
+                    except: return 0
+                    
+                target_cap_str = fund.get('Market Cap')
+                target_cap = parse_cap(target_cap_str) if target_cap_str else 0
+                    
+                if 'Market Cap' in df.columns:
+                    df['cap_val'] = df['Market Cap'].apply(parse_cap)
+                    if target_cap > 0:
+                        df['cap_diff'] = abs(df['cap_val'] - target_cap)
+                        df = df.sort_values(by='cap_diff', ascending=True)
+                    else:
+                        df = df.sort_values(by='cap_val', ascending=False)
+                    
+                found_peers = df['Ticker'].tolist()
+                peers = [p for p in found_peers if p != target_ticker.upper()][:5]
+        except Exception as e:
             pass
             
-        # Instead, let's use a more reliable approach for peers:
-        # yfinance `info` used to have `industry` and we could screen.
-        # But wait, finvizfinance actually has `stock.ticker_peer()` ? 
-        # Actually finvizfinance does not have `ticker_peer()`. The AI agent hallucinated it!
-        # Let's fetch peers manually or use hardcoded lists for major tech, or just skip finviz.
-        # Since this is a demo, let's use a predefined peer map for big tech if it's AAPL, MSFT, etc.
-        # And if not, just use SPY.
-        
-        peer_map = {
-            "AAPL": ["MSFT", "GOOGL", "META", "AMZN"],
-            "MSFT": ["AAPL", "GOOGL", "META", "AMZN"],
-            "NVDA": ["AMD", "INTC", "QCOM", "AVGO", "SMCI"],
-            "TSLA": ["F", "GM", "RIVN", "LCID"],
-            "JPM": ["BAC", "WFC", "C", "GS"],
-            "JNJ": ["PFE", "MRK", "ABBV", "LLY"]
-        }
-        
-        peers = peer_map.get(target_ticker.upper(), ["SPY", "QQQ"])
+        if not peers:
+            # Fallback peer map just in case
+            peer_map = {
+                "AAPL": ["MSFT", "GOOGL", "META", "AMZN"],
+                "MSFT": ["AAPL", "GOOGL", "META", "AMZN"],
+                "NVDA": ["AMD", "INTC", "QCOM", "AVGO", "SMCI"],
+                "TSLA": ["F", "GM", "RIVN", "LCID"],
+                "JPM": ["BAC", "WFC", "C", "GS"],
+                "JNJ": ["PFE", "MRK", "ABBV", "LLY"]
+            }
+            peers = peer_map.get(target_ticker.upper(), ["SPY", "QQQ"])
         
         all_tickers = [target_ticker.upper()] + peers
         

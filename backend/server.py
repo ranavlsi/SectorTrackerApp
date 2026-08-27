@@ -9,6 +9,7 @@ from fundamental_data_api import get_fundamental_history
 from sec_filings_api import get_recent_filings
 from peer_valuation_api import get_peer_valuation
 from macro_outlook_engine import get_macro_outlook
+from historical_dna_engine import calculate_dna
 
 app = Flask(__name__)
 CORS(app)
@@ -67,6 +68,20 @@ def fundamentals():
         return jsonify(data)
     except Exception as e:
         print(f"Error processing fundamentals for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/dna', methods=['GET'])
+@cache.cached(query_string=True)
+def get_dna():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    ticker = ticker.upper()
+    try:
+        data = calculate_dna(ticker)
+        if "error" in data: return jsonify(data), 500
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error processing DNA for {ticker}: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/sync_lakehouse', methods=['POST'])

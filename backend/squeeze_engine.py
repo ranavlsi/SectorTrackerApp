@@ -29,8 +29,9 @@ def run_squeeze_engine():
             short_pct = info.get('shortPercentOfFloat', 0)
             short_ratio = info.get('shortRatio', 0)
             
-            # Use 5% short float or 3 days to cover as minimum criteria
-            if (short_pct and short_pct > 0.05) or (short_ratio and short_ratio > 3):
+            # Use a strict criteria: Either >15% short float (massive absolute short interest), 
+            # OR >5% short float AND >3 days to cover (high relative short interest combined with low liquidity)
+            if (short_pct and short_pct > 0.15) or (short_pct and short_pct > 0.05 and short_ratio and short_ratio > 3):
                 if ticker not in df: continue
                 ticker_df = df[ticker].dropna()
                 if ticker_df.empty or len(ticker_df) < 20: continue

@@ -134,6 +134,12 @@ def get_fundamentals(ticker_symbol):
             "vgm": vgm_score
         }
         
+        # Adjust Zacks Rank Proxy to prevent conflicts: if VGM is D or F, rank cannot be 1 or 2
+        if vgm_score in ['D', 'F']:
+            rank = max(rank, 4)
+        elif vgm_score == 'C':
+            rank = max(rank, 3)
+        
         # History
         history = []
         try:

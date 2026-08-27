@@ -62,7 +62,8 @@ def generate_playbook():
     md_content += "Welcome to the Daily AI Playbook. Based on the overnight convergence of technical setups, fundamental momentum, and breakout scanners, here are the top high-probability trade setups for today.\n\n"
     md_content += "---\n\n"
 
-    for i, (ticker, score) in enumerate(top_tickers, 1):
+    valid_count = 1
+    for ticker, score in top_tickers:
         try:
             t = yf.Ticker(ticker)
             # Fetch 1 year of data for structural analysis (200 SMA needs 200 days)
@@ -87,7 +88,7 @@ def generate_playbook():
             
             reasons_md = "\n*   ".join(ticker_reasons[ticker][:4]) # Top 4 reasons
             
-            md_content += f"### {i}. {ticker} - High Confluence Setup\n"
+            md_content += f"### {valid_count}. {ticker} - High Confluence Setup\n"
             md_content += f"**Confluence Score:** {score} points\n\n"
             md_content += f"**Quantitative Reasoning:**\n*   {reasons_md}\n\n"
             md_content += f"**Algorithmic Trade Plan:**\n"
@@ -102,6 +103,7 @@ def generate_playbook():
             md_content += f"*   **RSI:** {rsi_val}\n\n"
             
             md_content += "---\n\n"
+            valid_count += 1
             
         except Exception as e:
             print(f"[Playbook Generator] Error processing {ticker}: {e}")

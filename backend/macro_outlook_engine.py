@@ -7,40 +7,56 @@ def get_macro_outlook(ticker):
     In a real environment, this would call OpenAI/Anthropic with FRED data + news.
     """
     
-    # Mock some sector mappings
-    sector_map = {
-        "AAPL": "Consumer Electronics / Tech Hardware",
-        "MSFT": "Enterprise Software / Cloud Computing",
-        "NVDA": "Semiconductors / AI Infrastructure",
-        "TSLA": "Electric Vehicles / Clean Energy",
-        "JPM": "Financials / Banking"
-    }
+    import yfinance as yf
     
-    sector = sector_map.get(ticker.upper(), "General Equities")
+    try:
+        yf_ticker = yf.Ticker(ticker.upper())
+        info = yf_ticker.info
+        sector = info.get("sector", "General Equities")
+        industry = info.get("industry", "Diversified")
+        long_name = info.get("longName", ticker.upper())
+    except:
+        sector = "General Equities"
+        industry = "Diversified"
+        long_name = ticker.upper()
     
-    # Mock LLM generated markdown content
-    content = f"""## 3-Year Macro Outlook: {sector}
+    # Generate dynamic tailored content
+    if sector == "Technology":
+        tailwinds = f"1. **AI & Cloud Migration:** Accelerating enterprise adoption of AI tools acts as a massive secular tailwind for {industry}.\n2. **Margin Expansion:** Subscription and SaaS models in {industry} continue to provide high-margin recurring revenue."
+        headwinds = f"1. **Valuation Multiples:** {sector} multiples remain stretched, leaving little room for earnings misses.\n2. **Regulatory Risk:** Increased antitrust scrutiny over large tech platforms."
+        conclusion = f"The {industry} space remains a structural winner. We favor companies with dominant ecosystem moats and strong free cash flow generation over unprofitable growth names."
+    elif sector == "Healthcare":
+        tailwinds = f"1. **Demographic Shifts:** Aging populations provide an unstoppable secular demand trend for {industry}.\n2. **Innovation Cycle:** Breakthroughs in GLP-1s and genomics are creating new billion-dollar end markets."
+        headwinds = f"1. **Regulatory Pressure:** Ongoing political debates regarding drug pricing and Medicare negotiations.\n2. **Patent Cliffs:** Several major {industry} players face looming loss of exclusivity."
+        conclusion = f"{industry} offers a defensive posture with embedded growth. Focus on pipelines with late-stage assets and companies with diversified revenue bases."
+    elif sector == "Financial Services":
+        tailwinds = f"1. **Net Interest Margins:** 'Higher for longer' interest rates support sustained NIMs for traditional banking.\n2. **Capital Markets Recovery:** A rebound in M&A and IPO activity provides a catalyst for {industry}."
+        headwinds = f"1. **Credit Risk:** Rising delinquencies in commercial real estate (CRE) and consumer credit cards.\n2. **Deposit Flight:** Fierce competition for yield continues to pressure deposit bases."
+        conclusion = f"The {sector} sector requires a focus on balance sheet quality. We prefer {industry} firms with fortress balance sheets and diversified non-interest income."
+    else:
+        tailwinds = f"1. **Supply Chain Normalization:** Input costs have stabilized, allowing {industry} to rebuild structural margins.\n2. **Consumer Resilience:** Demand within {sector} remains remarkably stable despite macroeconomic uncertainties."
+        headwinds = f"1. **Wage Inflation:** Sticky labor costs continue to compress operating leverage for {industry}.\n2. **Rate Sensitivity:** Elevated borrowing costs limit aggressive capital expenditure and M&A."
+        conclusion = f"The {sector} sector is navigating a mid-cycle transition. Within {industry}, we favor high-quality, cash-flow generative leaders with strong pricing power."
+
+    content = f"""## 3-Year Macro Outlook: {sector} ({industry})
 
 **Current Macro Climate:** 
-The broader macroeconomic environment remains defined by stabilizing interest rates around 4.5% - 5.0% and steady GDP growth. Inflation (CPI) has largely cooled to the Fed's 2% target, removing the immediate threat of aggressive tightening. This provides a supportive backdrop for capital expenditures and consumer spending.
+The broader macroeconomic environment for **{long_name}** remains defined by stabilizing interest rates and steady GDP growth. Inflation has largely cooled, removing the immediate threat of aggressive tightening. This provides a supportive backdrop for {industry} going forward.
 
 ### Key Sector Tailwinds 🚀
-1. **Supply Chain Normalization:** Input costs have drastically reduced compared to the pandemic peaks, allowing for structural margin expansion.
-2. **Technological Integration:** Rapid adoption of AI and automation within {sector} is driving significant productivity gains.
-3. **Resilient Consumer Demand:** Despite higher borrowing costs, secular trends in {sector} remain highly inelastic.
+{tailwinds}
 
 ### Key Sector Risks & Headwinds ⚠️
-1. **Geopolitical Fragmentation:** Ongoing trade tensions and decoupling strategies pose risks to international revenue streams and globalized supply chains.
-2. **Regulatory Scrutiny:** Increased antitrust and compliance regulations are expected to increase operational overhead in the next 24 months.
-3. **Valuation Compression:** As growth normalizes, multiples may compress if earnings growth fails to outpace the cost of capital.
+{headwinds}
 
 ### Strategic Conclusion
-The {sector} sector is entering a mature phase of the business cycle. We expect a **rotation towards high-quality, cash-flow generative leaders** within the sector. Companies with deep moats, pricing power, and low leverage will significantly outperform unprofitable growth peers over the next 36 months.
+{conclusion}
 """
 
     return {
         "ticker": ticker,
         "sector": sector,
+        "industry": industry,
         "outlook": content
     }
 

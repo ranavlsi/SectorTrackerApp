@@ -1,115 +1,115 @@
 {
-    "date": "May 30, 2026",
+    "date": "August 22, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $756.48, moving +1.85% over the last 5 days. Structurally, the market remains bullish above its 50-day moving average. Focus on high relative strength leaders that survived the week.",
+        "text": "The S&P 500 closed the week at $765.72, moving -1.37% over the last 5 days. Structurally, the market remains bullish above its 50-day moving average. Focus on high relative strength leaders that survived the week.",
         "bias": "Bullish",
-        "spy_weekly_return": "+1.85%"
+        "spy_weekly_return": "-1.37%"
     },
     "stocks_that_ran": [
         {
-            "ticker": "SEDG",
-            "return": "+21.19%",
-            "price": "$76.35",
+            "ticker": "FCX",
+            "return": "+15.30%",
+            "price": "$76.66",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "ARM",
-            "return": "+18.46%",
-            "price": "$353.29",
+            "ticker": "HOOD",
+            "return": "+13.15%",
+            "price": "$108.13",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "ASTS",
-            "return": "+17.85%",
-            "price": "$113.41",
+            "ticker": "MRK",
+            "return": "+12.30%",
+            "price": "$152.55",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "ALAB",
-            "return": "+15.11%",
-            "price": "$342.85",
+            "ticker": "VRTX",
+            "return": "+8.36%",
+            "price": "$548.05",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "AMD",
-            "return": "+14.79%",
-            "price": "$516.10",
+            "ticker": "EOG",
+            "return": "+7.32%",
+            "price": "$153.05",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         }
     ],
     "about_to_fly": [
         {
-            "ticker": "AVGO",
-            "price": "$446.77",
-            "dist_ath": "0.5%",
+            "ticker": "V",
+            "price": "$371.04",
+            "dist_ath": "0.8%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
-            "ticker": "ROKU",
-            "price": "$130.18",
-            "dist_ath": "2.5%",
-            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
-        },
-        {
-            "ticker": "TSM",
-            "price": "$418.45",
-            "dist_ath": "2.8%",
-            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
-        },
-        {
-            "ticker": "AMZN",
-            "price": "$270.64",
-            "dist_ath": "2.8%",
+            "ticker": "JNJ",
+            "price": "$270.24",
+            "dist_ath": "2.3%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
             "ticker": "BIIB",
-            "price": "$196.00",
-            "dist_ath": "4.8%",
+            "price": "$216.78",
+            "dist_ath": "2.4%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        },
+        {
+            "ticker": "UNP",
+            "price": "$308.05",
+            "dist_ath": "2.5%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        },
+        {
+            "ticker": "MA",
+            "price": "$580.63",
+            "dist_ath": "3.5%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         }
     ],
     "top_3_picks": [
         {
-            "ticker": "AVGO",
-            "entry_price": "$366.43 - 418.48",
-            "stop_loss": "$348.11",
-            "profit_target": "$448.90",
-            "setup_type": "Mean Reversion Pullback",
-            "reasoning": "Stock is structurally extended. Wait for the Deep Value Box convergence of the 21 EMA, Anchored VWAP, and Fibonacci retracement layers.",
+            "ticker": "V",
+            "entry_price": "$372.12",
+            "stop_loss": "$362.50",
+            "profit_target": "$400.99",
+            "setup_type": "Trend Continuation Pivot",
+            "reasoning": "Resting at dynamic support. Buy the dip at the nearest EMA or VWAP level.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
                 "momentum_color": "bullish",
-                "rsi": 57.8
+                "rsi": 55.9
             }
         },
         {
-            "ticker": "ROKU",
-            "entry_price": "$134.79 - 140.13",
-            "stop_loss": "$128.74",
-            "profit_target": "$149.94",
+            "ticker": "JNJ",
+            "entry_price": "$277.01",
+            "stop_loss": "$268.89",
+            "profit_target": "$301.36",
             "setup_type": "Composite Breakout (VCP)",
             "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
                 "momentum_color": "bullish",
-                "rsi": 51.4
+                "rsi": 71.6
             }
         },
         {
-            "ticker": "TSM",
-            "entry_price": "$434.86 - 452.08",
-            "stop_loss": "$413.09",
-            "profit_target": "$489.27",
+            "ticker": "BIIB",
+            "entry_price": "$222.74",
+            "stop_loss": "$214.41",
+            "profit_target": "$247.71",
             "setup_type": "Composite Breakout (VCP)",
             "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
                 "momentum_color": "warning",
-                "rsi": 53.3
+                "rsi": 66.7
             }
         }
     ]

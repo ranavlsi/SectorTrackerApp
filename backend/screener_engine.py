@@ -12,6 +12,8 @@ from long_base_scanner import evaluate_long_base, evaluate_medium_base
 from pending_breakout_engine import detect_pending_breakout
 from qullamaggie_engine import evaluate_qullamaggie_setup
 from darvas_box_scanner import calculate_darvas_box
+from bull_flag_scanner import detect_bull_flag
+from earnings_surprise_scanner import evaluate_earnings_surprise
 
 warnings.filterwarnings('ignore')
 
@@ -156,12 +158,12 @@ def run_screener(custom_universe=None):
             'TQQQ', 'SQQQ', 'SOXL', 'SOXS', 'UPRO', 'SPXU', 'TNA', 'TZA', 'UDOW', 'SDOW', 'URTY', 'SRTY', 'FAS', 'FAZ', 'LABU', 'LABD', 'NUGT', 'DUST', 'JNUG', 'JDST', 'UCO', 'SCO', 'BOIL', 'KOLD', 'YINN', 'YANG', 'CWEB', 'KWEB', 'FXI', 'GUSH', 'DRIP', 'ERX', 'ERY', 'TECL', 'TECS', 'WEBL', 'WEBS', 'FNGU', 'FNGD', 'BULZ', 'BERZ', 'DPST', 'NAIL', 'RETL', 'CURE', 'DFEN', 'HIBL', 'HIBS', 'MIDU', 'PILL', 'SPXL', 'SPXS', 'SPYU', 'TDF', 'TYD', 'TYO', 'UBOT', 'UTSL', 'WANT', 'BITU', 'SBIT', 'CONL', 'NVDL', 'NVD', 'TSLL', 'TSLQ', 'TSLR', 'AMZU', 'AMZD', 'GGLL', 'GGLS', 'AAPU', 'AAPD', 'MSFU', 'MSFD', 'UVXY', 'VIXY', 'SVIX', 'BITO', 'IBIT', 'FBTC', 'ARKB', 'BITB', 'EZBC', 'BRRR', 'HODL', 'BTCW', 'GBTC'
         }
         all_tickers = [t for t in all_tickers if t not in ETF_BLOCKLIST]
-        # -----------------------------------
         if custom_universe is not None:
             dynamic_universe = [t for t in custom_universe if t in all_tickers]
             print(f"Filtered Lakehouse to {len(dynamic_universe)} requested stocks.")
         else:
             dynamic_universe = all_tickers
+            print(f"Running Unified Expert Screener on all {len(dynamic_universe)} stocks in Lakehouse (expect ~10 mins)...")
         # We also need SPY for relative strength.
         if 'SPY' in grouped.groups:
             spy_df = grouped.get_group('SPY').set_index('Date')
@@ -183,6 +185,33 @@ def run_screener(custom_universe=None):
         
     max_days = len(spy_close)
     
+    print("Calculating Market Breadth & Health Regime...")
+    try:
+        from advanced_quant_utils import MarketHealthMonitor, AdaptiveScreener
+        spy_df_full = pd.DataFrame({'Close': spy_close})
+        spy_df_full['SMA_50'] = spy_df_full['Close'].rolling(50).mean()
+        spy_df_full['SMA_200'] = spy_df_full['Close'].rolling(200).mean()
+        
+        if lakehouse_mode:
+            # Fast vectorized breadth calculation
+            lake_df['SMA_50'] = lake_df.groupby('Ticker')['Close'].transform(lambda x: x.rolling(50).mean())
+            last_date = lake_df['Date'].max()
+            today_df = lake_df[lake_df['Date'] == last_date]
+            pct_above_50 = (today_df['Close'] > today_df['SMA_50']).mean() * 100
+        else:
+            pct_above_50 = 50.0
+            
+        breadth_df = pd.DataFrame({'Pct_Above_50_SMA': [pct_above_50] * len(spy_df_full)})
+        health_monitor = MarketHealthMonitor(spy_df_full, breadth_df)
+        adaptive_screener = AdaptiveScreener(health_monitor)
+        market_regime, dynamic_criteria = adaptive_screener.generate_dynamic_criteria()
+        print(f"--- MARKET REGIME DETECTED: {market_regime} ---")
+        print(f"Dynamic RS Requirement: {dynamic_criteria['min_rs_rating']:.1f}")
+    except Exception as e:
+        print(f"Market Regime calc failed: {e}")
+        market_regime = "Moderate"
+        dynamic_criteria = {'min_rs_rating': 80, 'max_base_depth': 0.25}
+    
     results = {
         "relative_strength": [],
         "fresh_52w_high": [],
@@ -191,7 +220,8 @@ def run_screener(custom_universe=None):
         "bullish_candlestick": [],
         "bearish_candlestick": [],
         "early_stage_2": [],
-        "darvas_breakout": [],
+        "darvas_strong": [],
+        "darvas_about_to": [],
         "breakout_retest": [],
         "base_pullback_ma": [],
         "reversal": [],
@@ -204,9 +234,14 @@ def run_screener(custom_universe=None):
         "zacks_rank_1": [],
         "long_base_breakout": [],
         "medium_base_breakout": [],
+        "low_volume_breakout": [],
         "pending_breakout": [],
         "qullamaggie_setup": [],
-        "rs_divergence": []
+        "rs_divergence": [],
+        "bull_flag_breakout": [],
+        "bull_flag_pending": [],
+        "universal_takeout": [],
+        "earnings_surge": []
     }
     
     # We will collect highly-trending candidates here and check their fundamentals in bulk at the end
@@ -271,6 +306,12 @@ def run_screener(custom_universe=None):
                 status_short = "Confirmed" if "CONFIRMED" in mb_res['status'] else "Coiled"
                 dur = mb_res.get('base_duration', '3M')
                 results["medium_base_breakout"].append({"ticker": ticker, "metric": f"{dur} | {status_short}"})
+            else:
+                # If it failed the strict pocket pivot check, try catching it with a relaxed 1.0x volume check
+                low_vol_res = evaluate_medium_base(ticker, pre_df=ticker_df, min_volume_multiplier=1.0)
+                if low_vol_res and "CONFIRMED" in low_vol_res['status']:
+                    dur = low_vol_res.get('base_duration', '3M')
+                    results["low_volume_breakout"].append({"ticker": ticker, "metric": f"{dur} | Quiet Breakout (>1.0x Vol)"})
             
             pb_res = detect_pending_breakout(ticker, pre_df=ticker_df)
             if pb_res:
@@ -279,7 +320,20 @@ def run_screener(custom_universe=None):
             if curr_c >= 2.0 and vol.iloc[-20:].mean() >= 100000:
                 qm_res = evaluate_qullamaggie_setup(ticker, pre_df=ticker_df)
                 if qm_res:
-                    results["qullamaggie_setup"].append({"ticker": ticker, "metric": f"Triggered | ADR: {qm_res['adr']} | SMA: {qm_res['sma_support']}"})
+                    actual_status = qm_res.get('status', 'PENDING')
+                    display_status = "Pending Breakout" if actual_status == "PENDING" else actual_status.title()
+                    results["qullamaggie_setup"].append({"ticker": ticker, "metric": f"{display_status} | ADR: {qm_res['adr']} | SMA: {qm_res['sma_support']}"})
+            
+            # Earnings Surprise & Revisions Scanner
+            earn_res = evaluate_earnings_surprise(ticker)
+            if earn_res:
+                up_rev = earn_res.get('upgrades_30d', 0)
+                score = earn_res.get('score', 0)
+                eps = earn_res.get('eps_surprise_pct', 0)
+                results["earnings_surge"].append({
+                    "ticker": ticker,
+                    "metric": f"PEDP Score: {score}/100 | EPS: +{eps}% | Upgrades: {up_rev}"
+                })
         except Exception as e:
             pass
 
@@ -345,16 +399,16 @@ def run_screener(custom_universe=None):
             if curr_h >= prev_high_52w:
                 results["fresh_52w_high"].append({"ticker": ticker, "metric": f"New High: ${curr_h:.2f}"})
         
-        ath_4y = close.max()
+        ath_4y = float(close.max())
         if curr_c >= ath_4y * 0.98:
             # Verify true All-Time High by fetching max history for this specific stock
             try:
-                if lakehouse_mode:
-                    true_ath = ath_4y # Use 4y proxy to avoid network
-                else:
-                    from yahooquery import Ticker as YQTicker
-                    hist_max = YQTicker(ticker).history(period="max", interval="1mo")
-                    true_ath = hist_max['high'].max() if (hist_max is not None and not hist_max.empty) else ath_4y
+                # Always verify true ATH over the network because the local lakehouse 
+                # only holds 2-4 years of data. This prevents pandemic-era runners 
+                # like SNOW ($429 true ATH) from falsely triggering on a 4-year high.
+                from yahooquery import Ticker as YQTicker
+                hist_max = YQTicker(ticker).history(period="max", interval="1mo")
+                true_ath = float(hist_max['high'].max()) if (hist_max is not None and not hist_max.empty) else ath_4y
                 
                 if curr_c >= true_ath * 0.95:
                     results["all_time_high"].append({"ticker": ticker, "metric": f"ATH: ${true_ath:.2f}"})
@@ -403,26 +457,37 @@ def run_screener(custom_universe=None):
             elif val < 0:
                 results["bearish_candlestick"].append({"ticker": ticker, "metric": f"Bearish {common_name}"})
             
-        # 4. Candlesticks (Hammer, Engulfing, Hikkake)
-        if is_aaaa: print("Starting Candlesticks...")
+        # 4. Early Stage 2 Breakout (Requires Upward Moving Average Slopes & Alignment)
+        if is_aaaa: print("Starting Early Stage 2 Breakout Check...")
         if len(close) >= 200:
+            sma20 = close.rolling(20).mean()
+            sma50 = close.rolling(50).mean()
             sma200 = close.rolling(200).mean()
-            curr_sma = sma200.iloc[-1]
-            prev_sma = sma200.iloc[-5]
-            prev_c = close.iloc[-5]
+            curr_sma = float(sma200.iloc[-1])
+            curr_sma50 = float(sma50.iloc[-1])
+            curr_sma20 = float(sma20.iloc[-1])
+            prev_sma = float(sma200.iloc[-5])
+            prev_c = float(close.iloc[-5])
             
-            # Price crossed above 200 SMA in last 5 days
+            # Calculate moving average slopes (% change over recent periods)
+            slope20 = (curr_sma20 - float(sma20.iloc[-5])) / float(sma20.iloc[-5]) * 100
+            slope50 = (curr_sma50 - float(sma50.iloc[-10])) / float(sma50.iloc[-10]) * 100
+            slope200 = (curr_sma - float(sma200.iloc[-20])) / float(sma200.iloc[-20]) * 100
+            
+            # Price crossed above 200 SMA in last 10 days
             crosses = (close > sma200) & (close.shift(1) <= sma200.shift(1))
-            if crosses.iloc[-5:].any() and curr_c > curr_sma:
-                results["early_stage_2"].append({"ticker": ticker, "metric": f"Crossed 200 SMA (${curr_sma:.2f})"})
+            # Require price > 200 SMA, price > 50 SMA, AND moving average slopes moving up!
+            if crosses.iloc[-10:].any() and curr_c > curr_sma and curr_c > curr_sma50:
+                if slope20 > 0 and slope50 > -0.2 and slope200 >= -0.5:
+                    results["early_stage_2"].append({"ticker": ticker, "metric": f"Crossed 200 SMA (${curr_sma:.2f})"})
                 
         # 7. Darvas Breakout (Using Authentic Algorithmic Logic)
         try:
             db_status, db_top, db_bottom, db_msg = calculate_darvas_box(ticker_df)
             if db_status == "STRONG_BREAKOUT":
-                results["darvas_breakout"].append({"ticker": ticker, "metric": f"Cleared ${db_top:.2f} | {db_msg}", "score": 2.0})
+                results["darvas_strong"].append({"ticker": ticker, "metric": f"Cleared ${db_top:.2f} | {db_msg}", "score": 2.0})
             elif db_status == "ABOUT_TO_BREAKOUT":
-                results["darvas_breakout"].append({"ticker": ticker, "metric": f"Tight Coil against ${db_top:.2f}", "score": 1.0})
+                results["darvas_about_to"].append({"ticker": ticker, "metric": f"Tight Coil against ${db_top:.2f}", "score": 1.0})
         except Exception as e:
             pass
                 
@@ -436,8 +501,16 @@ def run_screener(custom_universe=None):
             
             # Did we breakout recently?
             if recent_high > pivot:
+                # Validate that this was a true base (spent at least 15 days of the 60-day base below the pivot line)
+                days_below_pivot = (base_highs < pivot * 0.99).sum()
+                is_true_base = days_below_pivot >= 15
+                
                 peak_idx = recent_data.values.argmax() 
                 days_since_peak = len(recent_data) - peak_idx
+                
+                # Validate that the pullback never structurally violated the pivot (crashing heavily beneath it)
+                pullback_min_low = low.iloc[-days_since_peak:].min()
+                did_not_violate = pullback_min_low >= pivot * 0.96
                 
                 curr_l = low.iloc[-1]
                 curr_h = high.iloc[-1]
@@ -447,8 +520,8 @@ def run_screener(custom_universe=None):
                 # 1. Pullback Speed & Structure
                 is_orderly_pullback = 2 <= days_since_peak <= 8
                 
-                # Check proximity to pivot
-                if is_orderly_pullback and (pivot * 0.985 < curr_c <= pivot * 1.05) and (pivot * 0.97 <= curr_l <= pivot * 1.015):
+                # Check proximity to pivot and our new structural integrity flags
+                if is_true_base and did_not_violate and is_orderly_pullback and (pivot * 0.985 < curr_c <= pivot * 1.05) and (pivot * 0.97 <= curr_l <= pivot * 1.015):
                     
                     # 2. Wick Structure (Rejection Tail)
                     lower_wick = min(curr_o, curr_c) - curr_l
@@ -487,12 +560,22 @@ def run_screener(custom_universe=None):
                 
                 # Fell back below pivot
                 if curr_c < pivot:
-                    # Found support on 10 SMA (Low must touch but not violate by more than 3%)
-                    if (sma10 * 0.97 <= curr_l <= sma10 * 1.01) and curr_c >= sma10 * 0.99:
-                        results["base_pullback_ma"].append({"ticker": ticker, "metric": f"Squat Support at 10-SMA (${sma10:.2f})"})
-                    # Found support on 20 SMA
-                    elif (sma20 * 0.97 <= curr_l <= sma20 * 1.01) and curr_c >= sma20 * 0.99:
-                        results["base_pullback_ma"].append({"ticker": ticker, "metric": f"Squat Support at 20-SMA (${sma20:.2f})"})
+                    # Macro uptrend prerequisite (SMA50 > SMA200 and SMA50 sloping up over 3 weeks)
+                    sma50_series = close.rolling(50).mean()
+                    sma50 = sma50_series.iloc[-1]
+                    sma50_15d_ago = sma50_series.iloc[-15] if len(sma50_series) >= 15 else sma50
+                    sma200 = close.rolling(200).mean().iloc[-1]
+                    
+                    is_uptrend = (sma50 > sma200) if not pd.isna(sma200) else True
+                    sma50_sloping_up = (sma50 > sma50_15d_ago)
+                    
+                    if is_uptrend and curr_c > sma50 and sma50_sloping_up:
+                        # Found support on 10 SMA (Low must touch but not violate by more than 3%)
+                        if (sma10 * 0.97 <= curr_l <= sma10 * 1.01) and curr_c >= sma10 * 0.99:
+                            results["base_pullback_ma"].append({"ticker": ticker, "metric": f"Squat Support at 10-SMA (${sma10:.2f})"})
+                        # Found support on 20 SMA
+                        elif (sma20 * 0.97 <= curr_l <= sma20 * 1.01) and curr_c >= sma20 * 0.99:
+                            results["base_pullback_ma"].append({"ticker": ticker, "metric": f"Squat Support at 20-SMA (${sma20:.2f})"})
                 
         # 8. Reversal
         delta = close.diff()
@@ -509,20 +592,32 @@ def run_screener(custom_universe=None):
         # 9. High Volume Event (HVE) (Smart Volume Climax)
         curr_vol = vol.iloc[-1]
         
-        if len(vol) >= 63:
-            vol_63d_max = vol.iloc[-63:].max()
-            vol_252d_max = vol.iloc[-252:].max() if len(vol) >= 252 else vol_63d_max
+        if len(vol) >= 21:
+            vol_21d_max = vol.iloc[-21:].max()
+            vol_63d_max = vol.iloc[-63:].max() if len(vol) >= 63 else vol_21d_max
+            vol_126d_max = vol.iloc[-126:].max() if len(vol) >= 126 else vol_63d_max
+            vol_252d_max = vol.iloc[-252:].max() if len(vol) >= 252 else vol_126d_max
+            vol_lifetime_max = vol.max()
             
-            # The volume must be the absolute HIGHEST volume in the last quarter OR year
-            is_smart_hve = (curr_vol >= vol_63d_max * 0.95) or (curr_vol >= vol_252d_max * 0.95)
+            hve_tier = None
+            if curr_vol >= vol_lifetime_max * 0.95:
+                hve_tier = "Lifetime High Volume"
+            elif curr_vol >= vol_252d_max * 0.95:
+                hve_tier = "Yearly High Volume"
+            elif curr_vol >= vol_126d_max * 0.95:
+                hve_tier = "Half-Yearly High Volume"
+            elif curr_vol >= vol_63d_max * 0.95:
+                hve_tier = "Quarterly High Volume"
+            elif curr_vol >= vol_21d_max * 0.95:
+                hve_tier = "Monthly High Volume"
             
             # Must be a massive positive green day (Close > Prev Close, Close > Open, and closing near the High)
             is_bullish_day = (curr_c > prev_c) and (curr_c > curr_o) and (curr_c >= high.iloc[-1] * 0.90)
             
-            if is_smart_hve and is_bullish_day:
-                avg_vol = vol.iloc[-50:].mean()
-                vol_mult = curr_vol / avg_vol
-                results["hve_volume"].append({"ticker": ticker, "metric": f"Max Vol Climax ({vol_mult:.1f}x Avg)", "score": float(vol_mult)})
+            if hve_tier and is_bullish_day:
+                avg_vol = vol.iloc[-50:].mean() if len(vol) >= 50 else vol.mean()
+                vol_mult = curr_vol / avg_vol if avg_vol > 0 else 1.0
+                results["hve_volume"].append({"ticker": ticker, "metric": f"{hve_tier} ({vol_mult:.1f}x Avg)", "score": float(vol_mult)})
             
         # 10. Consolidation after Positive HVE (Smart Volume)
         positive_hve_days = []
@@ -602,6 +697,41 @@ def run_screener(custom_universe=None):
             if check_cup_and_handle(weekly_df, is_monthly=False):
                 results["weekly_cup_handle"].append({"ticker": ticker, "metric": "Weekly Cup & Handle"})
                 
+            # 12.5 Universal Takeout (Upgraded)
+            if len(weekly_df) >= 3 and len(close) >= 200:
+                sma200 = close.rolling(200).mean().iloc[-1]
+                sma50 = close.rolling(50).mean().iloc[-1]
+                
+                # Context Filter: Must be in a structural Stage 2 Uptrend
+                if curr_c > sma50 and sma50 > sma200:
+                    low_2 = weekly_df['Low'].iloc[-3]
+                    low_1 = weekly_df['Low'].iloc[-2]
+                    low_0 = weekly_df['Low'].iloc[-1]
+                    high_2 = weekly_df['High'].iloc[-3]
+                    high_1 = weekly_df['High'].iloc[-2]
+                    takeout_high = max(high_1, high_2) # Target the structural peak of the coil
+                    curr_val = weekly_df['Close'].iloc[-1]
+                    curr_high = weekly_df['High'].iloc[-1]
+                    
+                    # Wedge & Volatility Filter: The recent high (high_1) must compress under the prior peak (high_2) to form a true coil/handle.
+                    # It cannot just be making massive new highs (which is an uptrend, not a coil). We allow a tiny 1.5% overshoot.
+                    is_flat_top = (high_1 <= high_2 * 1.015) and (high_1 >= high_2 * 0.90)
+                    
+                    # Universal Condition: Sequential Higher Lows + Flat Top
+                    if low_0 > low_1 and low_1 > low_2 and is_flat_top:
+                        if curr_high > takeout_high:
+                            # Breakout confirmation: Current daily close must HOLD above the takeout level
+                            if curr_c > takeout_high:
+                                # Volume Filter: Breakout must occur on >1.5x average daily volume
+                                adv_50 = vol.rolling(50).mean().iloc[-1]
+                                if vol.iloc[-1] >= adv_50 * 1.5:
+                                    results["universal_takeout"].append({"ticker": ticker, "metric": f"Takeout Confirmed @ ${takeout_high:.2f} (Vol Surge)"})
+                        else:
+                            # Awaiting Takeout: Only show if within 10%
+                            distance = ((takeout_high - curr_val) / takeout_high) * 100
+                            if distance < 10.0:
+                                results["universal_takeout"].append({"ticker": ticker, "metric": f"Coiling: {distance:.1f}% to Takeout"})
+                
             # Resample to Monthly
             monthly_df = ticker_df.resample('ME').agg({'Open':'first', 'High':'max', 'Low':'min', 'Close':'last', 'Volume':'sum'}).dropna()
             if check_cup_and_handle(monthly_df, is_monthly=True):
@@ -620,6 +750,35 @@ def run_screener(custom_universe=None):
                 
                 if curr_c > sma50 and sma50 > sma200 and curr_c >= high_52w * 0.85:
                     zacks_candidates.append(ticker)
+                    
+            # -----------------------------------
+            # -----------------------------------
+            # 16. BULL FLAG BREAKOUT
+            # -----------------------------------
+            try:
+                flag_res = detect_bull_flag(ticker, ticker_df)
+                if flag_res["status"] == "triggered":
+                    results["bull_flag_breakout"].append({
+                        "ticker": ticker,
+                        "score": flag_res["score"],
+                        "pole_rally_pct": flag_res["details"]["pole_rally_pct"],
+                        "flag_duration": flag_res["details"]["flag_duration"],
+                        "rvol": flag_res["details"]["rvol"],
+                        "metric": f"Breakout @ ${flag_res['details']['breakout_price']} (Vol {flag_res['details']['rvol']}x)"
+                    })
+                elif flag_res["status"] == "pending":
+                    results["bull_flag_pending"].append({
+                        "ticker": ticker,
+                        "score": flag_res["score"],
+                        "pole_rally_pct": flag_res["details"]["pole_rally_pct"],
+                        "flag_duration": flag_res["details"]["flag_duration"],
+                        "rvol": flag_res["details"]["rvol"],
+                        "metric": f"Pending | Breakout > ${flag_res['details']['breakout_price']} (Score: {flag_res['score']})"
+                    })
+            except Exception as e:
+                import traceback
+                print(f"Bull Flag Error on {ticker}: {e}")
+                traceback.print_exc()
         except Exception as e:
             pass
 
@@ -719,7 +878,11 @@ def run_screener(custom_universe=None):
         
     for key in results:
         # 1. Filter out anything that mathematically failed the 1B market cap check
-        filtered_mcap = [r for r in results[key] if r["ticker"] in valid_market_caps]
+        # EXCEPT for Qullamaggie setups, which explicitly target explosive small caps
+        if "qullamaggie" in key.lower():
+            filtered_mcap = results[key]
+        else:
+            filtered_mcap = [r for r in results[key] if r["ticker"] in valid_market_caps]
         
         # 2. Sort by TECHNICAL SCORE descending (the true power of the setup)!
         # If score is perfectly tied or doesn't exist, fallback to dollar volume to keep the most liquid names at the top.
@@ -739,8 +902,8 @@ def run_screener(custom_universe=None):
         msg = f"🟢 **MASTER SCREENER COMPLETE** 🟢\n\n"
         
         has_alerts = False
-        if results.get("darvas_breakout"):
-            msg += f"📦 **Darvas Breakouts:**\n" + "\n".join([f"• {r['ticker']}: {r['metric']}" for r in results["darvas_breakout"][:5]]) + "\n\n"
+        if results.get("darvas_strong") or results.get("darvas_about_to"):
+            msg += f"📦 **Darvas Setups:**\n" + "\n".join([f"• {r['ticker']}: {r['metric']}" for r in (results.get("darvas_strong", []) + results.get("darvas_about_to", []))[:5]]) + "\n\n"
             has_alerts = True
             
         if results.get("hve_consolidation"):

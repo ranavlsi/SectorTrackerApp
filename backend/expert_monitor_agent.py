@@ -5,27 +5,80 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
-RESULTS_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_results.json'
+import os
+
+EXPERT_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_results.json'
+RS_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/public/rs_scanner_results.json'
+SQUEEZE_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/public/squeeze_results.json'
+ROLLING_CACHE_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/rolling_watch.json'
 WEBHOOK_URL = 'http://127.0.0.1:5000/api/webhook_alert'
 
 def get_target_tickers():
+    now_ts = time.time()
+    rolling_cache = {}
+    
+    if os.path.exists(ROLLING_CACHE_FILE):
+        try:
+            with open(ROLLING_CACHE_FILE, 'r') as f:
+                rolling_cache = json.load(f)
+        except:
+            pass
+            
+    fresh_tickers = set()
+    
+    # 1. Expert Screener
     try:
-        with open(RESULTS_FILE, 'r') as f:
+        with open(EXPERT_FILE, 'r') as f:
             data = json.load(f)
-        
-        tickers = set()
-        for category, items in data.items():
+        for cat, items in data.items():
             for item in items:
-                if 'ticker' in item:
-                    tickers.add(item['ticker'])
-        return list(tickers)
-    except Exception as e:
-        print(f"Error loading screener results: {e}")
-        return []
+                if 'ticker' in item: fresh_tickers.add(item['ticker'])
+    except: pass
+    
+    # 2. RS Line
+    try:
+        with open(RS_FILE, 'r') as f:
+            data = json.load(f)
+        for cat, items in data.items():
+            for item in items:
+                if 'ticker' in item: fresh_tickers.add(item['ticker'])
+    except: pass
+    
+    # 3. Squeeze Radar
+    try:
+        with open(SQUEEZE_FILE, 'r') as f:
+            data = json.load(f)
+        for cat, items in data.items():
+            for item in items:
+                if 'ticker' in item: fresh_tickers.add(item['ticker'])
+    except: pass
+    
+    # Update cache
+    for t in fresh_tickers:
+        rolling_cache[t] = now_ts
+        
+    # Prune older than 30 days (2592000 seconds)
+    active_tickers = []
+    keys_to_delete = []
+    for t, ts in rolling_cache.items():
+        if now_ts - ts > 2592000:
+            keys_to_delete.append(t)
+        else:
+            active_tickers.append(t)
+            
+    for k in keys_to_delete:
+        del rolling_cache[k]
+        
+    # Save cache
+    os.makedirs(os.path.dirname(ROLLING_CACHE_FILE), exist_ok=True)
+    with open(ROLLING_CACHE_FILE, 'w') as f:
+        json.dump(rolling_cache, f)
+        
+    return active_tickers
 
 def send_alert(ticker, setup_name, color="#f59e0b"):
     payload = {
-        "council": "🎯 INTRADAY EXPERT",
+        "council": "🎯 MASTER 30-DAY RADAR",
         "ticker": ticker,
         "setup": setup_name,
         "color": color,
@@ -38,7 +91,7 @@ def send_alert(ticker, setup_name, color="#f59e0b"):
         print(f"Failed to send alert for {ticker}: {e}")
 
 def monitor_loop():
-    print("Starting Expert Monitor Agent...")
+    print("Starting Master 30-Day Rolling Monitor Agent...")
     from yahooquery import Ticker
     
     # Track which alerts have fired today to avoid spamming
@@ -60,7 +113,7 @@ def monitor_loop():
                 time.sleep(60)
                 continue
                 
-            print(f"[{now.strftime('%H:%M:%S')}] Polling {len(tickers)} tickers from Expert Screener via Alpaca...")
+            print(f"[{now.strftime('%H:%M:%S')}] Polling {len(tickers)} tickers from Rolling 30-Day Master Screener via Alpaca...")
             
             import os
             from dotenv import load_dotenv
