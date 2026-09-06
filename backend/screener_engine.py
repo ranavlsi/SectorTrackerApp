@@ -226,6 +226,7 @@ def run_screener(custom_universe=None):
         "darvas_about_to": [],
         "regression_channel_breakout": [],
         "val_rejection": [],
+        "val_rejection_fixed": [],
         "breakout_retest": [],
         "base_pullback_ma": [],
         "reversal": [],
