@@ -1,115 +1,103 @@
 {
-    "date": "August 22, 2026",
+    "date": "September 05, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $765.72, moving -1.37% over the last 5 days. Structurally, the market remains bullish above its 50-day moving average. Focus on high relative strength leaders that survived the week.",
+        "text": "The S&P 500 closed the week at $770.19, moving +0.11% over the last 5 days. Structurally, the market remains bullish above its 50-day moving average. Focus on high relative strength leaders that survived the week.",
         "bias": "Bullish",
-        "spy_weekly_return": "-1.37%"
+        "spy_weekly_return": "+0.11%"
     },
     "stocks_that_ran": [
         {
-            "ticker": "FCX",
-            "return": "+15.30%",
-            "price": "$76.66",
-            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
-        },
-        {
             "ticker": "HOOD",
-            "return": "+13.15%",
-            "price": "$108.13",
+            "return": "+17.12%",
+            "price": "$122.11",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "MRK",
-            "return": "+12.30%",
-            "price": "$152.55",
+            "ticker": "SMCI",
+            "return": "+6.77%",
+            "price": "$39.59",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "VRTX",
-            "return": "+8.36%",
-            "price": "$548.05",
+            "ticker": "NVDA",
+            "return": "+5.89%",
+            "price": "$230.36",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "EOG",
-            "return": "+7.32%",
-            "price": "$153.05",
+            "ticker": "REGN",
+            "return": "+4.22%",
+            "price": "$827.72",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        },
+        {
+            "ticker": "GILD",
+            "return": "+3.65%",
+            "price": "$151.00",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         }
     ],
     "about_to_fly": [
         {
-            "ticker": "V",
-            "price": "$371.04",
-            "dist_ath": "0.8%",
+            "ticker": "JPM",
+            "price": "$358.64",
+            "dist_ath": "2.1%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
-            "ticker": "JNJ",
-            "price": "$270.24",
-            "dist_ath": "2.3%",
+            "ticker": "AAPL",
+            "price": "$319.97",
+            "dist_ath": "7.1%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
-            "ticker": "BIIB",
-            "price": "$216.78",
-            "dist_ath": "2.4%",
-            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
-        },
-        {
-            "ticker": "UNP",
-            "price": "$308.05",
-            "dist_ath": "2.5%",
-            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
-        },
-        {
-            "ticker": "MA",
-            "price": "$580.63",
-            "dist_ath": "3.5%",
+            "ticker": "TSM",
+            "price": "$428.91",
+            "dist_ath": "10.5%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         }
     ],
     "top_3_picks": [
         {
-            "ticker": "V",
-            "entry_price": "$372.12",
-            "stop_loss": "$362.50",
-            "profit_target": "$400.99",
-            "setup_type": "Trend Continuation Pivot",
-            "reasoning": "Resting at dynamic support. Buy the dip at the nearest EMA or VWAP level.",
-            "health": {
-                "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
-                "momentum_color": "bullish",
-                "rsi": 55.9
-            }
-        },
-        {
-            "ticker": "JNJ",
-            "entry_price": "$277.01",
-            "stop_loss": "$268.89",
-            "profit_target": "$301.36",
+            "ticker": "JPM",
+            "entry_price": "$366.32",
+            "stop_loss": "$357.73",
+            "profit_target": "$392.09",
             "setup_type": "Composite Breakout (VCP)",
             "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
-                "momentum_color": "bullish",
-                "rsi": 71.6
+                "momentum_text": "\u267b\ufe0f Momentum Fading (Oversold Bounce)",
+                "momentum_color": "bounce",
+                "rsi": 47.0
             }
         },
         {
-            "ticker": "BIIB",
-            "entry_price": "$222.74",
-            "stop_loss": "$214.41",
-            "profit_target": "$247.71",
+            "ticker": "AAPL",
+            "entry_price": "$331.55",
+            "stop_loss": "$320.41",
+            "profit_target": "$364.99",
             "setup_type": "Composite Breakout (VCP)",
             "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
                 "momentum_color": "warning",
-                "rsi": 66.7
+                "rsi": 63.6
+            }
+        },
+        {
+            "ticker": "TSM",
+            "entry_price": "$436.77",
+            "stop_loss": "$420.84",
+            "profit_target": "$484.56",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\u267b\ufe0f Momentum Fading (Oversold Bounce)",
+                "momentum_color": "bounce",
+                "rsi": 48.7
             }
         }
     ]

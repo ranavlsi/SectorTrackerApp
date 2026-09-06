@@ -14,6 +14,8 @@ from qullamaggie_engine import evaluate_qullamaggie_setup
 from darvas_box_scanner import calculate_darvas_box
 from bull_flag_scanner import detect_bull_flag
 from earnings_surprise_scanner import evaluate_earnings_surprise
+from regression_channel_scanner import evaluate_regression_channel
+from volume_profile_scanner import evaluate_val_rejection
 
 warnings.filterwarnings('ignore')
 
@@ -222,6 +224,8 @@ def run_screener(custom_universe=None):
         "early_stage_2": [],
         "darvas_strong": [],
         "darvas_about_to": [],
+        "regression_channel_breakout": [],
+        "val_rejection": [],
         "breakout_retest": [],
         "base_pullback_ma": [],
         "reversal": [],
@@ -491,6 +495,24 @@ def run_screener(custom_universe=None):
         except Exception as e:
             pass
                 
+        # 8. Regression Channel Breakout
+        try:
+            reg_res = evaluate_regression_channel(ticker, df=ticker_df, lookback=120)
+            if reg_res:
+                results["regression_channel_breakout"].append({"ticker": ticker, "metric": reg_res["message"]})
+        except Exception:
+            pass
+            
+        # 9. Quarterly VAL Rejection
+        try:
+            val_res = evaluate_val_rejection(ticker, df=ticker_df, lookback=63)
+            if val_res:
+                if val_res.get("rolling_message"):
+                    results["val_rejection"].append({"ticker": ticker, "metric": val_res["rolling_message"]})
+                if val_res.get("fixed_message"):
+                    results["val_rejection_fixed"].append({"ticker": ticker, "metric": val_res["fixed_message"]})
+        except Exception:
+            pass
         # 7.5 Breakout Retest & Squat MA Support
         if len(high) >= 70:
             # Pivot is the max high from 70 days ago up to 10 days ago (the base)

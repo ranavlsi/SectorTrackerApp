@@ -1,0 +1,1 @@
+  val_rejection_fixed: { title: "Fixed Quarterly VAL Rejection", icon: <RefreshCw color="#3b82f6" />, desc: "Stocks experiencing a bullish rejection strictly off their Calendar Year-To-Date (Fixed Quarter) Value Area Low." },

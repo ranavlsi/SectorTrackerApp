@@ -1,0 +1,4 @@
+  qullamaggie_parabolic: { title: "Qullamaggie: Parabolic Flag", icon: <TrendingUp color="#3b82f6" />, desc: "Fast-moving momentum stocks forming tight flags after 3+ consecutive up days. (Excludes intraday fades: requires daily close near highs)." },
+  universal_takeout: { title: "Universal Takeout", icon: <Activity color="#8b5cf6" />, desc: "JAZZ Engine: Stocks taking out the highs of the previous two trading sessions with heavy volume." },
+  regression_channel_breakout: { title: "Linear Regression Breakout", icon: <TrendingUp color="#3b82f6" />, desc: "Stocks breaking out above the +2 Standard Deviation upper band of their 120-day Logarithmic Linear Regression Channel." },
+  val_rejection: { title: "Quarterly VAL Rejection", icon: <RefreshCw color="#10b981" />, desc: "Stocks experiencing a bullish rejection off their Value Area Low (VAL). The engine scans both Rolling Quarter (last 63 days) and Fixed Calendar Quarter (YTD) profiles." },

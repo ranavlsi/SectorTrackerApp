@@ -1,3 +1,62 @@
+## 🌋 Volume Climax Consolidation Scanner - September 04, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### ABCL
+- **Current Price:** $11.43
+- **Climax Date:** 2026-08-10 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 6.2x avg | MCap: $3.7B | AvgVol: 7.9M
+
+### SWKS
+- **Current Price:** $74.02
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.5x avg | MCap: $11.1B | AvgVol: 5.7M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 03, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### SWKS
+- **Current Price:** $71.50
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 3.5x avg | MCap: $10.8B | AvgVol: 5.6M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 02, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### UWMC
+- **Current Price:** $1.45
+- **Climax Date:** 2026-08-06 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 4.8x avg | MCap: $4.2B | AvgVol: 20.0M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 01, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### ABCL
+- **Current Price:** $11.28
+- **Climax Date:** 2026-08-10 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 6.2x avg | MCap: $3.7B | AvgVol: 8.3M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - August 31, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - August 28, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
 ## 🌋 Volume Climax Consolidation Scanner - August 27, 2026
 Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
 
