@@ -73,40 +73,51 @@ def evaluate_long_base(ticker, pre_df=None):
         if days_since_high < 252:
             return None # The peak was too recent; this is not a multi-year structural base
             
-        # 1. Depth Constraint (Max 35% drawdown)
-        if base_low < (base_high * 0.65):
-            return None # Base is too deep, considered broken structurally
+        # 1. Depth Constraint (Allow up to 45% drawdown for 2-3 year bases)
+        if base_low < (base_high * 0.55):
+            return None # Base is too deep (>45% drawdown), considered broken structurally
             
-        # 2. Moving Average Slope Filter
+        # 2. Moving Average Slope Filter (Stock must be above 200 SMA and 200 SMA cannot be in steep downtrend)
         sma_200_current = base_df['SMA_200'].iloc[-1]
         sma_200_past = base_df['SMA_200'].iloc[-20]
-        if current_close < sma_200_current or sma_200_current < sma_200_past:
-            return None # Not in a long-term uptrend / 200 SMA is flat or declining
+        if current_close < sma_200_current or sma_200_current < sma_200_past * 0.98:
+            return None # Not above 200 SMA or 200 SMA is declining significantly
             
-        # 3. The Coiled Spring (VCP check)
+        # 3. Volatility & Volume Coiling (Realistic VCP check near multi-year high)
         atr_10 = base_df['ATR_10'].iloc[-1]
         atr_50 = base_df['ATR_50'].iloc[-1]
-        is_coiled = atr_10 < (atr_50 * 0.5) # Short term volatility is half of long term
+        # ATR contraction: short-term ATR <= 85% of 50-day ATR or tight range < 8% over last 10 days
+        recent_10_high = base_df['High'].iloc[-10:].max()
+        recent_10_low = base_df['Low'].iloc[-10:].min()
+        is_tight_range = (recent_10_high - recent_10_low) / current_close <= 0.08
+        is_atr_coiled = atr_10 <= (atr_50 * 0.85) if (atr_50 and atr_50 > 0) else False
+        is_coiled = is_tight_range or is_atr_coiled
         
-        # Add Volume Contraction verification
+        # Volume Contraction: 10-day volume <= 50-day average volume
         adv_10 = base_df['Volume'].rolling(window=10).mean().iloc[-1]
         adv_50 = base_df['Volume'].rolling(window=50).mean().iloc[-1]
-        is_vol_coiled = adv_10 < (adv_50 * 0.75)
+        is_vol_coiled = adv_10 <= (adv_50 * 1.05) if (adv_50 and adv_50 > 0) else True
         is_coiled = is_coiled and is_vol_coiled
         
         # Check Scenarios
-        is_about_to_breakout = (current_close >= base_high * 0.90) and (current_close <= base_high) and is_coiled
+        # Scenario A: Coiling within 10% of 3-year pivot (About to breakout)
+        dist_from_high_pct = round(((base_high - current_close) / base_high) * 100, 1)
+        is_about_to_breakout = (current_close >= base_high * 0.90) and (current_close <= base_high * 1.01) and is_coiled
         
-        # User explicitly requested 150% volume surge for breakout
-        is_confirmed_breakout = (current_close > base_high) and (current_volume >= base_df['ADV_50'].iloc[-1] * 1.50)
+        # Scenario B: Confirmed Breakout (closing at new 3-year high or broke out in the last 5 days with volume conviction)
+        recent_5_high = base_df['High'].iloc[-5:].max()
+        has_broken_out = current_close > base_high or recent_5_high > base_high
+        is_confirmed_breakout = has_broken_out and (current_volume >= adv_50 * 1.20 or adv_10 >= adv_50 * 1.10)
         
         if is_confirmed_breakout:
+            vol_ratio = round((current_volume / adv_50) * 100, 1) if (adv_50 and adv_50 > 0) else 100.0
             return {
                 "ticker": ticker,
                 "status": "CONFIRMED BREAKOUT",
                 "price": round(current_close, 2),
                 "base_high": round(base_high, 2),
-                "vol_surge": round((current_volume / base_df['ADV_50'].iloc[-1]) * 100, 1)
+                "vol_surge": vol_ratio,
+                "distance_pct": 0.0
             }
         elif is_about_to_breakout:
             return {
@@ -114,7 +125,7 @@ def evaluate_long_base(ticker, pre_df=None):
                 "status": "ABOUT TO BREAKOUT (COILED)",
                 "price": round(current_close, 2),
                 "base_high": round(base_high, 2),
-                "distance_pct": round(((base_high - current_close) / base_high) * 100, 1)
+                "distance_pct": max(0.0, dist_from_high_pct)
             }
             
         return None

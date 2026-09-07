@@ -335,6 +335,10 @@
     {
       "ticker": "FRNM",
       "metric": "New High: $17.18"
+    },
+    {
+      "ticker": "NMM",
+      "metric": "New High: $92.70"
     }
   ],
   "all_time_high": [
@@ -501,6 +505,10 @@
     {
       "ticker": "ITRI",
       "metric": "Bullish Piercing Line"
+    },
+    {
+      "ticker": "TAC",
+      "metric": "Bullish Engulfing"
     },
     {
       "ticker": "TILE",
@@ -755,12 +763,12 @@
       "metric": "Crossed 200 SMA ($30.17)"
     },
     {
-      "ticker": "OR",
-      "metric": "Crossed 200 SMA ($36.81)"
-    },
-    {
       "ticker": "BLTE",
       "metric": "Crossed 200 SMA ($157.88)"
+    },
+    {
+      "ticker": "OR",
+      "metric": "Crossed 200 SMA ($36.81)"
     },
     {
       "ticker": "GOLD",
@@ -1452,12 +1460,12 @@
       "metric": "FVG Support ($85.28-$88.00) + 10-day SMA Confluence"
     },
     {
-      "ticker": "CRH",
-      "metric": "FVG Support ($94.37-$95.03) + 10-day SMA Confluence"
-    },
-    {
       "ticker": "APO",
       "metric": "FVG Support ($132.08-$136.93) + 10-day SMA Confluence"
+    },
+    {
+      "ticker": "CRH",
+      "metric": "FVG Support ($94.37-$95.03) + 10-day SMA Confluence"
     },
     {
       "ticker": "HUM",
@@ -1667,12 +1675,12 @@
       "metric": "Squat Support at 10-SMA ($26.35)"
     },
     {
-      "ticker": "TVTX",
-      "metric": "Squat Support at 20-SMA ($64.70)"
-    },
-    {
       "ticker": "CHEF",
       "metric": "Squat Support at 10-SMA ($113.35)"
+    },
+    {
+      "ticker": "TVTX",
+      "metric": "Squat Support at 20-SMA ($64.70)"
     },
     {
       "ticker": "CRGY",
@@ -1736,77 +1744,82 @@
     {
       "ticker": "BLTE",
       "metric": "Half-Yearly High Volume (3.9x Avg)",
-      "score": 3.910704606152808
+      "score": 3.927654239264011
     },
     {
       "ticker": "GPI",
       "metric": "Monthly High Volume (2.2x Avg)",
-      "score": 2.2455495010038877
+      "score": 2.2458628186227085
     },
     {
       "ticker": "ANDE",
       "metric": "Monthly High Volume (2.1x Avg)",
-      "score": 2.113775443419072
+      "score": 2.113785890484567
     },
     {
       "ticker": "KMT",
       "metric": "Monthly High Volume (2.1x Avg)",
-      "score": 2.0607006130231533
+      "score": 2.060707686041507
     },
     {
       "ticker": "WWW",
       "metric": "Monthly High Volume (2.0x Avg)",
-      "score": 2.0423346545386356
+      "score": 2.042456705888313
     },
     {
       "ticker": "UNFI",
       "metric": "Monthly High Volume (2.0x Avg)",
-      "score": 1.9734950359113
+      "score": 1.987399973542472
     },
     {
       "ticker": "DHT",
       "metric": "Monthly High Volume (1.6x Avg)",
-      "score": 1.6066870261042743
+      "score": 1.6077293275772517
     },
     {
       "ticker": "AEHR",
       "metric": "Monthly High Volume (1.6x Avg)",
-      "score": 1.581613458549622
+      "score": 1.5899194788548996
     },
     {
       "ticker": "ALAB",
       "metric": "Monthly High Volume (1.5x Avg)",
-      "score": 1.4657579157961598
+      "score": 1.482940839572586
     },
     {
       "ticker": "IESC",
       "metric": "Monthly High Volume (1.5x Avg)",
-      "score": 1.464928668426803
+      "score": 1.4661197733854896
     },
     {
       "ticker": "LEU",
       "metric": "Monthly High Volume (1.4x Avg)",
-      "score": 1.4025026429534393
+      "score": 1.4032472166050587
     },
     {
       "ticker": "OC",
       "metric": "Monthly High Volume (1.3x Avg)",
-      "score": 1.3422250382700254
+      "score": 1.3423178610538422
     },
     {
       "ticker": "VFC",
       "metric": "Monthly High Volume (1.1x Avg)",
-      "score": 1.1136490030839352
+      "score": 1.113982415166965
     },
     {
       "ticker": "KNX",
       "metric": "Monthly High Volume (1.1x Avg)",
-      "score": 1.0856146518265117
+      "score": 1.074696622103549
     },
     {
       "ticker": "FLEX",
-      "metric": "Monthly High Volume (1.0x Avg)",
-      "score": 1.0304721619734054
+      "metric": "Monthly High Volume (1.1x Avg)",
+      "score": 1.0689606387083825
+    },
+    {
+      "ticker": "BE",
+      "metric": "Monthly High Volume (1.1x Avg)",
+      "score": 1.0510079537280264
     }
   ],
   "hve_consolidation": [
@@ -1855,20 +1868,12 @@
   ],
   "post_earning_consolidation": [
     {
-      "ticker": "MRNA",
-      "metric": "Holding Gap 12d"
-    },
-    {
       "ticker": "CRM",
       "metric": "Holding Gap 6d"
     },
     {
       "ticker": "CRWD",
       "metric": "Holding Gap 6d"
-    },
-    {
-      "ticker": "COIN",
-      "metric": "Holding Gap 10d"
     },
     {
       "ticker": "MRK",
@@ -1883,8 +1888,8 @@
       "metric": "Holding Gap 6d"
     },
     {
-      "ticker": "ANF",
-      "metric": "Holding Gap 7d"
+      "ticker": "EL",
+      "metric": "Holding Gap 12d"
     },
     {
       "ticker": "EAT",
@@ -1899,6 +1904,10 @@
       "metric": "Holding Gap 19d"
     },
     {
+      "ticker": "ZIM",
+      "metric": "Holding Gap 16d"
+    },
+    {
       "ticker": "PPC",
       "metric": "Holding Gap 12d"
     },
@@ -1909,10 +1918,6 @@
     {
       "ticker": "ABUS",
       "metric": "Holding Gap 10d"
-    },
-    {
-      "ticker": "OGC",
-      "metric": "Holding Gap 12d"
     }
   ],
   "weekly_cup_handle": [
@@ -2107,13 +2112,13 @@
       "score": 5
     },
     {
-      "ticker": "ZETA",
-      "metric": "Score: 5 | PEG: 0.77",
+      "ticker": "GPN",
+      "metric": "Score: 5 | PEG: 0.23",
       "score": 5
     },
     {
-      "ticker": "GPN",
-      "metric": "Score: 5 | PEG: 0.23",
+      "ticker": "ZETA",
+      "metric": "Score: 5 | PEG: 0.77",
       "score": 5
     },
     {
@@ -2327,7 +2332,80 @@
       "score": 4
     }
   ],
-  "long_base_breakout": [],
+  "long_base_breakout": [
+    {
+      "ticker": "AFG",
+      "metric": "Coiled | Dist: 5.0%"
+    },
+    {
+      "ticker": "AWK",
+      "metric": "Coiled | Dist: 9.5%"
+    },
+    {
+      "ticker": "BCPC",
+      "metric": "Coiled | Dist: 7.8%"
+    },
+    {
+      "ticker": "CNH",
+      "metric": "Confirmed | Dist: 0.0%"
+    },
+    {
+      "ticker": "CVBF",
+      "metric": "Coiled | Dist: 8.0%"
+    },
+    {
+      "ticker": "EG",
+      "metric": "Coiled | Dist: 8.9%"
+    },
+    {
+      "ticker": "HOMB",
+      "metric": "Coiled | Dist: 8.4%"
+    },
+    {
+      "ticker": "HTO",
+      "metric": "Coiled | Dist: 8.7%"
+    },
+    {
+      "ticker": "IEX",
+      "metric": "Coiled | Dist: 9.2%"
+    },
+    {
+      "ticker": "JBBB",
+      "metric": "Coiled | Dist: 4.5%"
+    },
+    {
+      "ticker": "MA",
+      "metric": "Coiled | Dist: 3.7%"
+    },
+    {
+      "ticker": "MTCH",
+      "metric": "Coiled | Dist: 6.7%"
+    },
+    {
+      "ticker": "OZK",
+      "metric": "Coiled | Dist: 6.0%"
+    },
+    {
+      "ticker": "PRU",
+      "metric": "Coiled | Dist: 6.5%"
+    },
+    {
+      "ticker": "QSR",
+      "metric": "Coiled | Dist: 3.7%"
+    },
+    {
+      "ticker": "SSB",
+      "metric": "Coiled | Dist: 5.5%"
+    },
+    {
+      "ticker": "UUP",
+      "metric": "Coiled | Dist: 8.5%"
+    },
+    {
+      "ticker": "XYLD",
+      "metric": "Coiled | Dist: 4.1%"
+    }
+  ],
   "medium_base_breakout": [
     {
       "ticker": "AAPL",
@@ -2942,7 +3020,7 @@
       "score": 41.2,
       "pole_rally_pct": 48.2,
       "flag_duration": "6 Days",
-      "rvol": 0.5,
+      "rvol": 0.6,
       "metric": "Pending | Breakout > $36.15 (Score: 41.2)"
     },
     {
@@ -2966,7 +3044,7 @@
       "score": 36.0,
       "pole_rally_pct": 70.9,
       "flag_duration": "7 Days",
-      "rvol": 0.3,
+      "rvol": 0.4,
       "metric": "Pending | Breakout > $19.65 (Score: 36.0)"
     },
     {
@@ -3046,7 +3124,7 @@
       "score": 25.2,
       "pole_rally_pct": 59.1,
       "flag_duration": "5 Days",
-      "rvol": 0.6,
+      "rvol": 0.5,
       "metric": "Pending | Breakout > $48.37 (Score: 25.2)"
     },
     {
@@ -3118,7 +3196,7 @@
       "score": 17.3,
       "pole_rally_pct": 56.5,
       "flag_duration": "7 Days",
-      "rvol": 0.9,
+      "rvol": 0.8,
       "metric": "Pending | Breakout > $5.9 (Score: 17.3)"
     },
     {
@@ -3182,7 +3260,7 @@
       "score": 14.5,
       "pole_rally_pct": 41.2,
       "flag_duration": "3 Days",
-      "rvol": 1.3,
+      "rvol": 1.4,
       "metric": "Pending | Breakout > $44.06 (Score: 14.5)"
     },
     {
@@ -3454,12 +3532,12 @@
       "metric": "PEDP Score: 60.0/100 | EPS: +1209.0% | Upgrades: 0"
     },
     {
-      "ticker": "WDC",
-      "metric": "PEDP Score: 60.0/100 | EPS: +787.0% | Upgrades: 0"
-    },
-    {
       "ticker": "BE",
       "metric": "PEDP Score: 60.0/100 | EPS: +9183.0% | Upgrades: 0"
+    },
+    {
+      "ticker": "WDC",
+      "metric": "PEDP Score: 60.0/100 | EPS: +787.0% | Upgrades: 0"
     },
     {
       "ticker": "WMT",
