@@ -305,8 +305,16 @@ def run_screener(custom_universe=None):
                 lb_res = evaluate_long_base(ticker, pre_df=ticker_df)
                 
             if lb_res:
-                status_short = "Confirmed" if "CONFIRMED" in lb_res['status'] else "Coiled"
-                results["long_base_breakout"].append({"ticker": ticker, "metric": f"{status_short} | Dist: {lb_res.get('distance_pct', '0')}%"})
+                is_conf = "CONFIRMED" in lb_res['status']
+                status_short = "Confirmed" if is_conf else "Coiled"
+                dist = lb_res.get('distance_pct', 0.0)
+                # Score: Confirmed breakouts get 100+ points, coiled get 100 - distance
+                lb_score = 150.0 if is_conf else max(50.0, 100.0 - float(dist))
+                results["long_base_breakout"].append({
+                    "ticker": ticker, 
+                    "metric": f"{status_short} | Dist: {dist}%",
+                    "score": lb_score
+                })
                 
             mb_res = evaluate_medium_base(ticker, pre_df=ticker_df)
             if mb_res:

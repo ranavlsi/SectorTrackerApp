@@ -200,8 +200,10 @@ export const ScreenerDescriptions = {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <strong>Algorithm Architecture:</strong>
       <ul style={{ margin: 0, paddingLeft: '20px' }}>
-        <li><strong>Structure:</strong> Base is &gt; 3 years long (750+ trading days).</li>
-        <li><strong>Math:</strong> The stock crosses the absolute highest peak of the last 3 years on &gt; 2x relative volume.</li>
+        <li><strong>Structure:</strong> Multi-year accumulation base &gt; 1 to 3 years (252 to 750 trading days) with max drawdown &le; 45%.</li>
+        <li><strong>Trend:</strong> Price trading strictly above the 200-day SMA with long-term upward trend alignment.</li>
+        <li><strong>Coiling (VCP):</strong> Short-term volatility and volume contract near the multi-year pivot roof (within 10%).</li>
+        <li><strong>Breakout:</strong> Confirmed upon crossing the 3-year resistance pivot with institutional volume conviction (&ge; 1.2x ADV).</li>
       </ul>
     </div>
   ),

@@ -2334,76 +2334,119 @@
   ],
   "long_base_breakout": [
     {
-      "ticker": "AFG",
-      "metric": "Coiled | Dist: 5.0%"
-    },
-    {
-      "ticker": "AWK",
-      "metric": "Coiled | Dist: 9.5%"
-    },
-    {
-      "ticker": "BCPC",
-      "metric": "Coiled | Dist: 7.8%"
-    },
-    {
       "ticker": "CNH",
-      "metric": "Confirmed | Dist: 0.0%"
-    },
-    {
-      "ticker": "CVBF",
-      "metric": "Coiled | Dist: 8.0%"
-    },
-    {
-      "ticker": "EG",
-      "metric": "Coiled | Dist: 8.9%"
-    },
-    {
-      "ticker": "HOMB",
-      "metric": "Coiled | Dist: 8.4%"
-    },
-    {
-      "ticker": "HTO",
-      "metric": "Coiled | Dist: 8.7%"
-    },
-    {
-      "ticker": "IEX",
-      "metric": "Coiled | Dist: 9.2%"
-    },
-    {
-      "ticker": "JBBB",
-      "metric": "Coiled | Dist: 4.5%"
+      "metric": "Confirmed | Dist: 0.0%",
+      "score": 150.0
     },
     {
       "ticker": "MA",
-      "metric": "Coiled | Dist: 3.7%"
-    },
-    {
-      "ticker": "MTCH",
-      "metric": "Coiled | Dist: 6.7%"
-    },
-    {
-      "ticker": "OZK",
-      "metric": "Coiled | Dist: 6.0%"
-    },
-    {
-      "ticker": "PRU",
-      "metric": "Coiled | Dist: 6.5%"
+      "metric": "Coiled | Dist: 3.7%",
+      "score": 96.3
     },
     {
       "ticker": "QSR",
-      "metric": "Coiled | Dist: 3.7%"
-    },
-    {
-      "ticker": "SSB",
-      "metric": "Coiled | Dist: 5.5%"
-    },
-    {
-      "ticker": "UUP",
-      "metric": "Coiled | Dist: 8.5%"
+      "metric": "Coiled | Dist: 3.7%",
+      "score": 96.3
     },
     {
       "ticker": "XYLD",
-      "metric": "Coiled | Dist: 4.1%"
+      "metric": "Coiled | Dist: 4.1%",
+      "score": 95.9
+    },
+    {
+      "ticker": "JBBB",
+      "metric": "Coiled | Dist: 4.5%",
+      "score": 95.5
+    },
+    {
+      "ticker": "AFG",
+      "metric": "Coiled | Dist: 5.0%",
+      "score": 95.0
+    },
+    {
+      "ticker": "SSB",
+      "metric": "Coiled | Dist: 5.5%",
+      "score": 94.5
+    },
+    {
+      "ticker": "OZK",
+      "metric": "Coiled | Dist: 6.0%",
+      "score": 94.0
+    },
+    {
+      "ticker": "EFC",
+      "metric": "Coiled | Dist: 6.5%",
+      "score": 93.5
+    },
+    {
+      "ticker": "PRU",
+      "metric": "Coiled | Dist: 6.5%",
+      "score": 93.5
+    },
+    {
+      "ticker": "MTCH",
+      "metric": "Coiled | Dist: 6.7%",
+      "score": 93.3
+    },
+    {
+      "ticker": "BCPC",
+      "metric": "Coiled | Dist: 7.8%",
+      "score": 92.2
+    },
+    {
+      "ticker": "CVBF",
+      "metric": "Coiled | Dist: 8.0%",
+      "score": 92.0
+    },
+    {
+      "ticker": "KNG",
+      "metric": "Coiled | Dist: 8.1%",
+      "score": 91.9
+    },
+    {
+      "ticker": "HOMB",
+      "metric": "Coiled | Dist: 8.4%",
+      "score": 91.6
+    },
+    {
+      "ticker": "UUP",
+      "metric": "Coiled | Dist: 8.5%",
+      "score": 91.5
+    },
+    {
+      "ticker": "HTO",
+      "metric": "Coiled | Dist: 8.7%",
+      "score": 91.3
+    },
+    {
+      "ticker": "FRME",
+      "metric": "Coiled | Dist: 8.8%",
+      "score": 91.2
+    },
+    {
+      "ticker": "EG",
+      "metric": "Coiled | Dist: 8.9%",
+      "score": 91.1
+    },
+    {
+      "ticker": "IEX",
+      "metric": "Coiled | Dist: 9.2%",
+      "score": 90.8
+    },
+    {
+      "ticker": "AWK",
+      "metric": "Coiled | Dist: 9.5%",
+      "score": 90.5
+    },
+    {
+      "ticker": "CSWC",
+      "metric": "Coiled | Dist: 9.7%",
+      "score": 90.3
+    },
+    {
+      "ticker": "FSUN",
+      "metric": "Coiled | Dist: 9.7%",
+      "score": 90.3
     }
   ],
   "medium_base_breakout": [
