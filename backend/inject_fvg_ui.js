@@ -1,0 +1,1 @@
+  fvg_sma_confluence: { title: "SMC: FVG + SMA Confluence", icon: <Target color="#ec4899" />, desc: "Smart Money Concepts: Price is retracing perfectly into a recent Bullish Fair Value Gap (FVG) that also aligns with a key SMA (10, 20, or 50)." },

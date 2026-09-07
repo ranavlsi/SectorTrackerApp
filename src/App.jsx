@@ -61,6 +61,7 @@ const ScreenerCategories = {
   regression_channel_breakout: { title: "Linear Regression Breakout", icon: <TrendingUp color="#3b82f6" />, desc: "Stocks breaking out above the +2 Standard Deviation upper band of their 120-day Logarithmic Linear Regression Channel." },
   val_rejection: { title: "Rolling VAL Rejection", icon: <RefreshCw color="#10b981" />, desc: "Stocks experiencing a bullish rejection off their Value Area Low (VAL). The engine scans both Rolling Quarter (last 63 days) and Fixed Calendar Quarter (YTD) profiles." },
   val_rejection_fixed: { title: "Fixed Quarterly VAL Rejection", icon: <RefreshCw color="#3b82f6" />, desc: "Stocks experiencing a bullish rejection strictly off their Calendar Year-To-Date (Fixed Quarter) Value Area Low." },
+  fvg_sma_confluence: { title: "SMC: FVG + SMA Confluence", icon: <Crosshair color="#ec4899" />, desc: "Smart Money Concepts: Price is retracing perfectly into a recent Bullish Fair Value Gap (FVG) that also aligns with a key SMA (10, 20, or 50)." },
   pending_breakout: { title: "Pending Breakout (Squeeze)", icon: <ActivitySquare color="#f43f5e" />, desc: "Extremely tight VCPs with dry volume, mathematically pre-coiled for an explosive gap-up." },
   long_base_breakout: { title: "3-Year Long Base", icon: <Compass color="#3b82f6" />, desc: "Massive 3-year structural bases breaking out, signaling a new secular macro paradigm." },
   medium_base_breakout: { title: "Medium Base (3mo - 2yr)", icon: <Compass color="#a855f7" />, desc: "Standard 3 to 24 month bases adhering to strict Minervini depth and VCP tightness rules." },
@@ -1007,7 +1008,7 @@ function App() {
                       S.N.I.P Matrix: RS Rating &gt; 80, VCP, Earnings Growth &gt; 15%
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {deepvueData.leaders.map(item => (
+                      {deepvueData.leaders.slice(0, expandedCategories.deepvue_leaders ? 20 : 5).map(item => (
                         <ScreenerPill 
                           key={item.ticker} 
                           item={{
@@ -1017,6 +1018,30 @@ function App() {
                           onClick={() => fetchTickerData(item.ticker)} 
                         />
                       ))}
+                      {deepvueData.leaders.length > 5 && (
+                        <button 
+                          onClick={() => setExpandedCategories(prev => ({ ...prev, deepvue_leaders: !prev.deepvue_leaders }))}
+                          style={{ 
+                            background: 'rgba(255, 215, 0, 0.05)', 
+                            border: '1px dashed rgba(255, 215, 0, 0.3)', 
+                            color: '#ffd700', 
+                            padding: '0.5rem', 
+                            borderRadius: '4px', 
+                            cursor: 'pointer', 
+                            marginTop: '0.5rem',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            gap: '5px'
+                          }}
+                        >
+                          {expandedCategories.deepvue_leaders ? (
+                            <><ChevronUp size={16} /> Fold Up</>
+                          ) : (
+                            <><ChevronDown size={16} /> View {Math.min(20, deepvueData.leaders.length)} / {deepvueData.leaders.length} Leaders</>
+                          )}
+                        </button>
+                      )}
                     </div>
 
                     {deepvueData.active_vcp && deepvueData.active_vcp.length > 0 && (
@@ -1025,7 +1050,7 @@ function App() {
                           <Crosshair size={14} /> Tightly Coiled (VCP)
                         </h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {deepvueData.active_vcp.map(item => (
+                          {deepvueData.active_vcp.slice(0, expandedCategories.deepvue_vcp ? 20 : 5).map(item => (
                             <ScreenerPill 
                               key={`vcp-${item.ticker}`} 
                               item={{
@@ -1035,6 +1060,30 @@ function App() {
                               onClick={() => fetchTickerData(item.ticker)} 
                             />
                           ))}
+                          {deepvueData.active_vcp.length > 5 && (
+                            <button 
+                              onClick={() => setExpandedCategories(prev => ({ ...prev, deepvue_vcp: !prev.deepvue_vcp }))}
+                              style={{ 
+                                background: 'rgba(255, 215, 0, 0.05)', 
+                                border: '1px dashed rgba(255, 215, 0, 0.3)', 
+                                color: '#ffd700', 
+                                padding: '0.5rem', 
+                                borderRadius: '4px', 
+                                cursor: 'pointer', 
+                                marginTop: '0.5rem',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                gap: '5px'
+                              }}
+                            >
+                              {expandedCategories.deepvue_vcp ? (
+                                <><ChevronUp size={16} /> Fold Up</>
+                              ) : (
+                                <><ChevronDown size={16} /> View {Math.min(20, deepvueData.active_vcp.length)} / {deepvueData.active_vcp.length} VCP Setups</>
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}

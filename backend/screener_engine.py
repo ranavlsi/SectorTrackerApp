@@ -15,6 +15,7 @@ from darvas_box_scanner import calculate_darvas_box
 from bull_flag_scanner import detect_bull_flag
 from earnings_surprise_scanner import evaluate_earnings_surprise
 from regression_channel_scanner import evaluate_regression_channel
+from fvg_sma_scanner import evaluate_fvg_sma_confluence
 from volume_profile_scanner import evaluate_val_rejection
 
 warnings.filterwarnings('ignore')
@@ -227,6 +228,7 @@ def run_screener(custom_universe=None):
         "regression_channel_breakout": [],
         "val_rejection": [],
         "val_rejection_fixed": [],
+        "fvg_sma_confluence": [],
         "breakout_retest": [],
         "base_pullback_ma": [],
         "reversal": [],
@@ -514,6 +516,14 @@ def run_screener(custom_universe=None):
                     results["val_rejection_fixed"].append({"ticker": ticker, "metric": val_res["fixed_message"]})
         except Exception:
             pass
+        # 9.5 FVG + SMA Confluence
+        try:
+            fvg_res = evaluate_fvg_sma_confluence(ticker, df=ticker_df)
+            if fvg_res:
+                results["fvg_sma_confluence"].append({"ticker": ticker, "metric": fvg_res["metric"]})
+        except Exception:
+            pass
+            
         # 7.5 Breakout Retest & Squat MA Support
         if len(high) >= 70:
             # Pivot is the max high from 70 days ago up to 10 days ago (the base)
