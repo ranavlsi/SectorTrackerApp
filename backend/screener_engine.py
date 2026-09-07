@@ -714,11 +714,23 @@ def run_screener(custom_universe=None):
                         results["post_earning_reaction"].append({"ticker": ticker, "metric": f"Gap Up +{gap_pct:.1f}%", "score": float(gap_pct)})
                     else:
                         # Happened 6-20 days ago, check if consolidating (holding the gap)
-                        # Current price must be above the gap day's low, and below gap day's high * 1.05
                         gap_low = low.iloc[i]
                         flag_high = high.iloc[i+1:-1].max() if days_since > 1 else high.iloc[i]
-                        # Must hold the gap low, must not have exceeded gap high by >10% structurally, AND today's close must NOT be breaking out of the flag high!
-                        if curr_c > gap_low and high.iloc[i:].max() < day_c * 1.10 and curr_c <= flag_high * 1.01:
+                        
+                        # 1. Strict Gap Hold: Closes and lows must hold the gap day's low
+                        lowest_close_since_gap = close.iloc[i:].min()
+                        lowest_low_since_gap = low.iloc[i:].min()
+                        
+                        # 2. Drawdown from flag high must not exceed 15%
+                        flag_high_real = high.iloc[i:].max()
+                        max_drawdown = (flag_high_real - lowest_low_since_gap) / flag_high_real
+                        
+                        is_holding_gap = lowest_close_since_gap >= gap_low * 0.98 and lowest_low_since_gap >= gap_low * 0.95
+                        is_tight = max_drawdown <= 0.15
+                        not_explosive = flag_high_real < day_c * 1.15
+                        not_breaking_out = curr_c <= flag_high * 1.01
+                        
+                        if is_holding_gap and is_tight and not_explosive and not_breaking_out:
                             results["post_earning_consolidation"].append({"ticker": ticker, "metric": f"Holding Gap {days_since}d"})
                     break # Stop looking after finding the most recent one
 
