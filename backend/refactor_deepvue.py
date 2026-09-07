@@ -43,23 +43,24 @@ def run_deepvue_scan():
     
     results = []
     
-    # 1. First Pass: Technicals & RS
-    print("[DeepVue Engine] Scanning technicals for all stocks...")
+    print("[DeepVue Engine] Scanning technicals and liquidity for all stocks...")
     for ticker, group in grouped:
         try:
             hist = group.set_index('Date')
             if len(hist) < 200: continue
             
-            # Technicals: 21 EMA > 50 SMA > 200 SMA
+            current_price = hist['Close'].iloc[-1]
+            if current_price < 10: continue # Must be > $10
+            
+            avg_vol_20 = hist['Volume'].rolling(20).mean().iloc[-1]
+            if (avg_vol_20 * current_price) < 5000000: continue # Must have > $5M average daily dollar volume
+            
             ema_21 = hist['Close'].ewm(span=21, adjust=False).mean().iloc[-1]
             sma_50 = hist['Close'].rolling(50).mean().iloc[-1]
             sma_200 = hist['Close'].rolling(200).mean().iloc[-1]
-            current_price = hist['Close'].iloc[-1]
             
             is_uptrend = (current_price > ema_21) and (ema_21 > sma_50) and (sma_50 > sma_200)
-            
-            if not is_uptrend:
-                continue # Skip stocks not in an uptrend to save calculation time
+            if not is_uptrend: continue
                 
             rs_score = calculate_rs_rating(hist, spy_perf_val)
             vcp_setup = check_vcp(hist)
@@ -81,35 +82,46 @@ def run_deepvue_scan():
     for i, res in enumerate(results):
         percent_rank = int((i / max(1, len(results) - 1)) * 99)
         res["rs_rating"] = percent_rank if percent_rank > 0 else 1
-        if res["rs_rating"] > 70:
+        if res["rs_rating"] > 80: # DeepVue leaders are typically RS > 80
             top_candidates.append(res)
             
-    print(f"[DeepVue Engine] Found {len(top_candidates)} Uptrend stocks with RS > 70. Fetching fundamentals...")
+    print(f"[DeepVue Engine] Found {len(top_candidates)} high-liquidity Uptrend stocks with RS > 80. Fetching fundamentals and Market Cap...")
     
-    # 2. Second Pass: Bulk Fundamentals via YahooQuery
     final_leaders = []
     if top_candidates:
         from yahooquery import Ticker as YQTicker
         tickers_list = [c["ticker"] for c in top_candidates]
         
-        # Batch requests to avoid overwhelming YQ
         batch_size = 500
         z_fin = {}
+        z_details = {}
         for i in range(0, len(tickers_list), batch_size):
             batch = tickers_list[i:i+batch_size]
             yq_t = YQTicker(batch, asynchronous=True)
             batch_fin = yq_t.financial_data
             if isinstance(batch_fin, dict):
                 z_fin.update(batch_fin)
+            batch_det = yq_t.summary_detail
+            if isinstance(batch_det, dict):
+                z_details.update(batch_det)
                 
         for res in top_candidates:
             ticker = res["ticker"]
+            
+            # Market Cap filter (> $1B)
+            d_data = z_details.get(ticker, {})
+            mcap = 0
+            if isinstance(d_data, dict):
+                mcap = d_data.get('marketCap', 0)
+                
+            if mcap < 1000000000:
+                continue # Skip stocks under $1B Market Cap
+            
             f_data = z_fin.get(ticker, {})
             if isinstance(f_data, dict):
                 rev_growth = f_data.get('revenueGrowth', 0)
                 eps_growth = f_data.get('earningsGrowth', 0)
                 
-                # YahooQuery returns actual percentages (e.g., 0.15 for 15%) or sometimes strings. Let's cast safely.
                 try: rev_growth = float(rev_growth) if rev_growth else 0
                 except: rev_growth = 0
                 try: eps_growth = float(eps_growth) if eps_growth else 0
@@ -132,7 +144,7 @@ def run_deepvue_scan():
     with open(output_path, 'w') as f:
         json.dump({"leaders": final_leaders, "active_vcp": active_vcp}, f)
         
-    print(f"[DeepVue Engine] Scan complete. Found {len(final_leaders)} true market leaders. Saved to deepvue_results.json")
+    print(f"[DeepVue Engine] Scan complete. Found {len(final_leaders)} TRUE market leaders. Saved to deepvue_results.json")
 
 if __name__ == "__main__":
     run_deepvue_scan()
