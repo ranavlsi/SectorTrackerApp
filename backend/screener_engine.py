@@ -16,7 +16,7 @@ from bull_flag_scanner import detect_bull_flag
 from earnings_surprise_scanner import evaluate_earnings_surprise
 from regression_channel_scanner import evaluate_regression_channel
 from fvg_sma_scanner import evaluate_fvg_sma_confluence
-from volume_profile_scanner import evaluate_val_rejection
+from volume_profile_scanner import evaluate_volume_profile_rejections, evaluate_val_rejection
 
 warnings.filterwarnings('ignore')
 
@@ -228,6 +228,8 @@ def run_screener(custom_universe=None):
         "regression_channel_breakout": [],
         "val_rejection": [],
         "val_rejection_fixed": [],
+        "vah_rejection": [],
+        "poc_rejection": [],
         "fvg_sma_confluence": [],
         "breakout_retest": [],
         "base_pullback_ma": [],
@@ -514,14 +516,41 @@ def run_screener(custom_universe=None):
         except Exception:
             pass
             
-        # 9. Quarterly VAL Rejection
+        # 9. Volume Profile Rejections (VAL, VAH, POC Pullback Tests)
         try:
-            val_res = evaluate_val_rejection(ticker, df=ticker_df, lookback=63)
-            if val_res:
-                if val_res.get("rolling_message"):
-                    results["val_rejection"].append({"ticker": ticker, "metric": val_res["rolling_message"]})
-                if val_res.get("fixed_message"):
-                    results["val_rejection_fixed"].append({"ticker": ticker, "metric": val_res["fixed_message"]})
+            vp_res = evaluate_volume_profile_rejections(ticker, df=ticker_df, lookback=63)
+            if vp_res:
+                # VAL Rejections (Rolling & Fixed)
+                val_data = vp_res.get("val")
+                if val_data:
+                    if val_data.get("rolling_message"):
+                        results["val_rejection"].append({
+                            "ticker": ticker, 
+                            "metric": val_data["rolling_message"],
+                            "score": val_data.get("score", 85.0)
+                        })
+                    if val_data.get("fixed_message"):
+                        results["val_rejection_fixed"].append({
+                            "ticker": ticker, 
+                            "metric": val_data["fixed_message"],
+                            "score": val_data.get("score", 85.0)
+                        })
+                # VAH Pullback Support Rejection
+                vah_data = vp_res.get("vah")
+                if vah_data:
+                    results["vah_rejection"].append({
+                        "ticker": ticker,
+                        "metric": vah_data["metric"],
+                        "score": vah_data.get("score", 90.0)
+                    })
+                # POC Pullback Support Rejection
+                poc_data = vp_res.get("poc")
+                if poc_data:
+                    results["poc_rejection"].append({
+                        "ticker": ticker,
+                        "metric": poc_data["metric"],
+                        "score": poc_data.get("score", 90.0)
+                    })
         except Exception:
             pass
         # 9.5 FVG + SMA Confluence

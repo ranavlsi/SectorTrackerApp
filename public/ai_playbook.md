@@ -1,52 +1,75 @@
-# 🤖 Quantitative AI Playbook
+# 🏆 Master Analyst: Top 3 Trade Plans
+**Date:** September 08, 2026
 
-**Date:** Monday, September 07, 2026
-
-Welcome to the Daily AI Playbook. Based on the overnight convergence of technical setups, fundamental momentum, and breakout scanners, here are the top high-probability trade setups for today.
-
----
-
-### 1. LPLA - High Confluence Setup
-**Confluence Score:** 8 points
-
-**Quantitative Reasoning:**
-*   **Weekly Cup Handle**: Weekly Cup & Handle
-*   **Monthly Cup Handle**: Monthly Cup & Handle
-*   **Zacks Rank 1**: Score: 5 | PEG: 0.46
-*   **Medium Base Breakout**: 7 Months | Coiled
-
-**Algorithmic Trade Plan:**
-*   **Entry Zone:** $359.88 (Current Market Price)
-*   **Stop Loss:** $343.63 (Dynamic trailing support)
-*   **Profit Target:** $408.64 (2.5R Risk/Reward)
-
-**Technical Health Card:**
-*   **Structural Stage:** Stage 1 (Basing)
-*   **Momentum:** ♻️ Momentum Fading (Oversold Bounce)
-*   **RSI:** 42.8
+By cross-referencing all Desktop scan results and backend algorithmic output, here are the absolute best 3 setups for today based on extreme multi-scanner confluence:
 
 ---
 
-### 2. DELL - High Confluence Setup
-**Confluence Score:** 6 points
+### 1. SLDE
+* **Confluence Score:** 6 (Found in: darvas_box_alerts.md, earnings_gap_alerts.md, canslim_minervini_alerts.csv, candlestick_pullback_alerts.md)
+**🎯 Algorithmic Trade Plan:**
+- Ideal Entry: $23.33
+- Target (3 ATR): $28.04
+- Stop Loss (1.5 ATR): $19.62
+- Risk %: 15.9%
 
-**Quantitative Reasoning:**
-*   **Fresh 52W High**: New High: $534.99
-*   **All Time High**: ATH: $534.99
-*   **Post Earning Reaction**: Gap Up +8.7%
-*   **Zacks Rank 1**: Score: 5 | PEG: 0.62
+**📊 Fundamentals:**
+- Trailing P/E: 5.9589376
+- Net Profit Margin: 40.0%
+- YoY Revenue Growth: 47.9%
 
-**Algorithmic Trade Plan:**
-*   **Entry Zone:** $536.49 (Current Market Price)
-*   **Stop Loss:** $478.78 (Dynamic trailing support)
-*   **Profit Target:** $680.76 (2.5R Risk/Reward)
+**🔥 Options Flow (Exp: 2026-09-18):**
+- Max Pain: $17.5
+- Put/Call Ratio: 0.12
 
-**Technical Health Card:**
-*   **Structural Stage:** Stage 2 (Advancing)
-*   **Momentum:** 🔥 Momentum Building (Bullish)
-*   **RSI:** 59.0
+**📰 Social Sentiment & Catalysts:**
+- Best Value Stocks to Buy for September 2nd (Zacks)
+- Best Value Stocks to Buy for August 25th (Zacks)
+- Slide Insurance Holdings, Inc. (SLDE) Hits Fresh High: Is There Still Room to Run? (Zacks)
+
+### 2. EZPW
+* **Confluence Score:** 6 (Found in: darvas_box_alerts.md, earnings_gap_alerts.md, canslim_minervini_alerts.csv, candlestick_pullback_alerts.md)
+**🎯 Algorithmic Trade Plan:**
+- Ideal Entry: $34.46
+- Target (3 ATR): $42.80
+- Stop Loss (1.5 ATR): $25.06
+- Risk %: 27.3%
+
+**📊 Fundamentals:**
+- Trailing P/E: 16.74372
+- Net Profit Margin: 10.0%
+- YoY Revenue Growth: 34.7%
+
+**🔥 Options Flow (Exp: 2026-09-18):**
+- Max Pain: $30.0
+- Put/Call Ratio: 0.84
+
+**📰 Social Sentiment & Catalysts:**
+- EZCORP (EZPW) Beat Expectations, Is The Stock Still Cheap? (Simply Wall St.)
+- EZCORP (EZPW) Stock Looks Reasonable, Not a Clear Bargain (Simply Wall St.)
+- Why Is Ezcorp (EZPW) Up 14.1% Since Last Earnings Report? (Zacks)
+
+### 3. IMAX
+* **Confluence Score:** 6 (Found in: darvas_box_alerts.md, earnings_gap_alerts.md, canslim_minervini_alerts.csv, candlestick_pullback_alerts.md)
+**🎯 Algorithmic Trade Plan:**
+- Ideal Entry: $53.26
+- Target (3 ATR): $61.42
+- Stop Loss (1.5 ATR): $50.54
+- Risk %: 5.1%
+
+**📊 Fundamentals:**
+- Trailing P/E: 70.73972
+- Net Profit Margin: 9.8%
+- YoY Revenue Growth: 12.2%
+
+**🔥 Options Flow (Exp: 2026-09-18):**
+- Max Pain: $55.0
+- Put/Call Ratio: 17.41
+
+**📰 Social Sentiment & Catalysts:**
+- 2 Services Stocks to Own for Decades and 1 We Avoid (StockStory)
+- Ride This Roller Coaster if You Dare. Consider the 6% REIT That Bought It, Too. (Barrons.com)
+- IMAX CFO Natasha Fernandes Sells $1.1 Million in Stock -- Should Investors Cash-in After the Stock Surged 78%? (Motley Fool)
 
 ---
-
-> [!IMPORTANT]
-> Always adhere to your stop losses. These trade plans are quantitatively generated and assume a 1% portfolio risk per trade.
+*Generated automatically before market open.*

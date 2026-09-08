@@ -265,5 +265,25 @@ export const ScreenerDescriptions = {
         <li><strong>Status:</strong> The stock is currently coiled perfectly inside the flag limits and has not yet breached the top. Waiting for the volume catalyst.</li>
       </ul>
     </div>
+  ),
+  vah_rejection: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (Volume Profile VAH Support):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>Expansion Context:</strong> Stock recently traded well above the 63-day Value Area High (VAH), establishing institutional value expansion.</li>
+        <li><strong>Pullback Test:</strong> Low dips into or right around the VAH level (-1.5% to +1.0%) to test former resistance as new support.</li>
+        <li><strong>Bullish Rejection:</strong> Price confirms support by closing at or above VAH (+0.0% to +5.0%) with green candle or upper-half close.</li>
+      </ul>
+    </div>
+  ),
+  poc_rejection: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (Volume Profile POC Support):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>High-Volume Node:</strong> Identifies the exact Point of Control (POC) price level where the heaviest volume transacted over the last 63 trading days.</li>
+        <li><strong>Pullback Retest:</strong> Stock pulls back from higher levels to retest the institutional fair value node.</li>
+        <li><strong>Accumulation Bounce:</strong> Price refuses downward continuation, printing a bullish rejection bounce (+0.0% to +5.0%) off the POC.</li>
+      </ul>
+    </div>
   )
 };

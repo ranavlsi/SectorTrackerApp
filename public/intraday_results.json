@@ -1,1 +1,1 @@
-{"results": []}
+{"results": [{"ticker": "COIN", "orb_pivot": 181.145, "current_price": 181.63, "vol_multiplier": 2.4334600760456273, "call_put_ratio": 1.580361383716295, "vwap_slope": -0.007720085071174401, "hvn_proxy": 184.17448333333334}, {"ticker": "BA", "orb_pivot": 213.1, "current_price": 213.145, "vol_multiplier": 0.6633906633906633, "call_put_ratio": 1.1354925393728064, "vwap_slope": 0.001343859988228749, "hvn_proxy": 210.59605}]}
