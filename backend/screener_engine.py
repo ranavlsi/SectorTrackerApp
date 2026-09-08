@@ -229,7 +229,9 @@ def run_screener(custom_universe=None):
         "val_rejection": [],
         "val_rejection_fixed": [],
         "vah_rejection": [],
+        "vah_rejection_fixed": [],
         "poc_rejection": [],
+        "poc_rejection_fixed": [],
         "fvg_sma_confluence": [],
         "breakout_retest": [],
         "base_pullback_ma": [],
@@ -535,7 +537,7 @@ def run_screener(custom_universe=None):
                             "metric": val_data["fixed_message"],
                             "score": val_data.get("score", 85.0)
                         })
-                # VAH Pullback Support Rejection
+                # VAH Pullback Support Rejection (Rolling & Fixed)
                 vah_data = vp_res.get("vah")
                 if vah_data:
                     results["vah_rejection"].append({
@@ -543,13 +545,27 @@ def run_screener(custom_universe=None):
                         "metric": vah_data["metric"],
                         "score": vah_data.get("score", 90.0)
                     })
-                # POC Pullback Support Rejection
+                vah_f_data = vp_res.get("vah_fixed")
+                if vah_f_data:
+                    results["vah_rejection_fixed"].append({
+                        "ticker": ticker,
+                        "metric": vah_f_data["metric"],
+                        "score": vah_f_data.get("score", 90.0)
+                    })
+                # POC Pullback Support Rejection (Rolling & Fixed)
                 poc_data = vp_res.get("poc")
                 if poc_data:
                     results["poc_rejection"].append({
                         "ticker": ticker,
                         "metric": poc_data["metric"],
                         "score": poc_data.get("score", 90.0)
+                    })
+                poc_f_data = vp_res.get("poc_fixed")
+                if poc_f_data:
+                    results["poc_rejection_fixed"].append({
+                        "ticker": ticker,
+                        "metric": poc_f_data["metric"],
+                        "score": poc_f_data.get("score", 90.0)
                     })
         except Exception:
             pass

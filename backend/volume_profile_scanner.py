@@ -141,7 +141,9 @@ def evaluate_volume_profile_rejections(ticker, df=None, lookback=63):
         
         out = {
             "vah": None,
+            "vah_fixed": None,
             "poc": None,
+            "poc_fixed": None,
             "val": None
         }
         
@@ -180,6 +182,17 @@ def evaluate_volume_profile_rejections(ticker, df=None, lookback=63):
             if len(fixed_df) >= 15:
                 vp_fixed = calculate_volume_profile(fixed_df, bins=100, va_pct=0.70)
                 if vp_fixed:
+                    # Fixed VAH
+                    vah_f = evaluate_level_bounce(vp_fixed['vah'], fixed_df, curr_close, curr_open, curr_low, curr_high, f"Fixed VAH (Q{quarter})")
+                    if vah_f:
+                        out["vah_fixed"] = {"metric": vah_f["message"], "score": vah_f["score"], "level": vah_f["level"]}
+                    
+                    # Fixed POC
+                    poc_f = evaluate_level_bounce(vp_fixed['poc'], fixed_df, curr_close, curr_open, curr_low, curr_high, f"Fixed POC (Q{quarter})")
+                    if poc_f:
+                        out["poc_fixed"] = {"metric": poc_f["message"], "score": poc_f["score"], "level": poc_f["level"]}
+
+                    # Fixed VAL
                     val_fixed = vp_fixed['val']
                     last_3_fixed = fixed_df.iloc[-3:]
                     touched_val_fixed = any(last_3_fixed['Low'] <= (val_fixed * 1.005))
@@ -190,7 +203,7 @@ def evaluate_volume_profile_rejections(ticker, df=None, lookback=63):
                             out["val"] = {}
                         out["val"]["fixed_message"] = f"Bouncing +{dist_f:.1f}% off ${val_fixed:.2f} (Q{quarter})"
 
-        if out["vah"] or out["poc"] or out["val"]:
+        if out["vah"] or out["vah_fixed"] or out["poc"] or out["poc_fixed"] or out["val"]:
             return out
             
         return None

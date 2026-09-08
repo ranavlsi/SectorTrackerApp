@@ -268,7 +268,7 @@ export const ScreenerDescriptions = {
   ),
   vah_rejection: (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <strong>Algorithm Architecture (Volume Profile VAH Support):</strong>
+      <strong>Algorithm Architecture (Rolling VAH Support):</strong>
       <ul style={{ margin: 0, paddingLeft: '20px' }}>
         <li><strong>Expansion Context:</strong> Stock recently traded well above the 63-day Value Area High (VAH), establishing institutional value expansion.</li>
         <li><strong>Pullback Test:</strong> Low dips into or right around the VAH level (-1.5% to +1.0%) to test former resistance as new support.</li>
@@ -276,13 +276,33 @@ export const ScreenerDescriptions = {
       </ul>
     </div>
   ),
+  vah_rejection_fixed: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (Fixed Quarterly VAH Support):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>Fixed Quarter Anchor:</strong> Volume profile is anchored to the start of the current calendar quarter (e.g. Q1, Q2, Q3, Q4).</li>
+        <li><strong>Pullback Support:</strong> Price pulls back from higher levels to retest the fixed calendar quarter VAH roof.</li>
+        <li><strong>Confirmation:</strong> Bullish rejection bounce off the quarterly expansion boundary.</li>
+      </ul>
+    </div>
+  ),
   poc_rejection: (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <strong>Algorithm Architecture (Volume Profile POC Support):</strong>
+      <strong>Algorithm Architecture (Rolling POC Support):</strong>
       <ul style={{ margin: 0, paddingLeft: '20px' }}>
         <li><strong>High-Volume Node:</strong> Identifies the exact Point of Control (POC) price level where the heaviest volume transacted over the last 63 trading days.</li>
         <li><strong>Pullback Retest:</strong> Stock pulls back from higher levels to retest the institutional fair value node.</li>
         <li><strong>Accumulation Bounce:</strong> Price refuses downward continuation, printing a bullish rejection bounce (+0.0% to +5.0%) off the POC.</li>
+      </ul>
+    </div>
+  ),
+  poc_rejection_fixed: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (Fixed Quarterly POC Support):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>Fixed Quarter Anchor:</strong> Volume profile anchored to the start of the current calendar quarter.</li>
+        <li><strong>Quarterly POC:</strong> The highest-volume price node formed since the quarter began.</li>
+        <li><strong>Institutional Defense:</strong> Pullback retest bounces off this quarterly fair value magnet.</li>
       </ul>
     </div>
   )
