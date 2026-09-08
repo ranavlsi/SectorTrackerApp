@@ -3681,128 +3681,13 @@
   ],
   "vah_rejection": [
     {
-      "ticker": "NBR",
-      "metric": "Bouncing +-0.2% off VAH $91.00",
-      "score": 100.2
-    },
-    {
-      "ticker": "EWN",
-      "metric": "Bouncing +-0.2% off VAH $69.22",
-      "score": 100.2
-    },
-    {
-      "ticker": "AMZN",
-      "metric": "Bouncing +-0.1% off VAH $258.84",
-      "score": 100.1
-    },
-    {
-      "ticker": "SHOP",
-      "metric": "Bouncing +-0.1% off VAH $145.18",
-      "score": 100.1
-    },
-    {
-      "ticker": "VIG",
-      "metric": "Bouncing +-0.1% off VAH $242.19",
-      "score": 100.1
-    },
-    {
-      "ticker": "CGDV",
-      "metric": "Bouncing +-0.1% off VAH $50.13",
-      "score": 100.1
-    },
-    {
-      "ticker": "KB",
-      "metric": "Bouncing +-0.1% off VAH $128.75",
-      "score": 100.1
-    },
-    {
-      "ticker": "KSA",
-      "metric": "Bouncing +-0.1% off VAH $38.55",
-      "score": 100.1
-    },
-    {
-      "ticker": "VIRT",
-      "metric": "Bouncing +0.0% off VAH $64.40",
-      "score": 100.0
-    },
-    {
-      "ticker": "FMDE",
-      "metric": "Bouncing +-0.0% off VAH $42.14",
-      "score": 100.0
-    },
-    {
-      "ticker": "HCI",
-      "metric": "Bouncing +-0.0% off VAH $187.65",
-      "score": 100.0
-    },
-    {
-      "ticker": "BBEU",
-      "metric": "Bouncing +0.0% off VAH $79.99",
-      "score": 100.0
-    },
-    {
-      "ticker": "PEN",
-      "metric": "Bouncing +0.1% off VAH $321.98",
-      "score": 99.9
-    },
-    {
-      "ticker": "DXJ",
-      "metric": "Bouncing +0.1% off VAH $179.74",
-      "score": 99.9
-    },
-    {
-      "ticker": "SR",
-      "metric": "Bouncing +0.1% off VAH $82.63",
-      "score": 99.9
-    },
-    {
-      "ticker": "CBRE",
-      "metric": "Bouncing +0.2% off VAH $147.59",
-      "score": 99.8
-    },
-    {
       "ticker": "HBM",
       "metric": "Bouncing +0.2% off VAH $27.37",
       "score": 99.8
     },
     {
-      "ticker": "GLNG",
-      "metric": "Bouncing +0.2% off VAH $52.04",
-      "score": 99.8
-    },
-    {
-      "ticker": "EZU",
-      "metric": "Bouncing +0.2% off VAH $70.33",
-      "score": 99.8
-    },
-    {
-      "ticker": "FEZ",
-      "metric": "Bouncing +0.2% off VAH $70.52",
-      "score": 99.8
-    },
-    {
-      "ticker": "MOO",
-      "metric": "Bouncing +0.2% off VAH $87.62",
-      "score": 99.8
-    },
-    {
-      "ticker": "JAVA",
-      "metric": "Bouncing +0.2% off VAH $82.70",
-      "score": 99.8
-    },
-    {
-      "ticker": "VYM",
-      "metric": "Bouncing +0.3% off VAH $163.81",
-      "score": 99.7
-    },
-    {
-      "ticker": "SBAC",
-      "metric": "Bouncing +0.3% off VAH $188.82",
-      "score": 99.7
-    },
-    {
-      "ticker": "IWS",
-      "metric": "Bouncing +0.3% off VAH $169.70",
+      "ticker": "CORT",
+      "metric": "Bouncing +0.3% off VAH $111.33",
       "score": 99.7
     },
     {
@@ -3811,19 +3696,9 @@
       "score": 99.7
     },
     {
-      "ticker": "DBEF",
-      "metric": "Bouncing +0.3% off VAH $55.82",
-      "score": 99.7
-    },
-    {
       "ticker": "TILE",
       "metric": "Bouncing +0.3% off VAH $37.14",
       "score": 99.7
-    },
-    {
-      "ticker": "JNJ",
-      "metric": "Bouncing +0.4% off VAH $274.11",
-      "score": 99.6
     },
     {
       "ticker": "IWR",
@@ -3831,18 +3706,8 @@
       "score": 99.6
     },
     {
-      "ticker": "IYW",
-      "metric": "Bouncing +0.4% off VAH $252.26",
-      "score": 99.6
-    },
-    {
       "ticker": "JLL",
       "metric": "Bouncing +0.4% off VAH $361.05",
-      "score": 99.6
-    },
-    {
-      "ticker": "MOAT",
-      "metric": "Bouncing +0.4% off VAH $111.23",
       "score": 99.6
     },
     {
@@ -3861,11 +3726,6 @@
       "score": 99.6
     },
     {
-      "ticker": "FELG",
-      "metric": "Bouncing +0.4% off VAH $44.28",
-      "score": 99.6
-    },
-    {
       "ticker": "COF",
       "metric": "Bouncing +0.5% off VAH $218.44",
       "score": 99.5
@@ -3876,28 +3736,8 @@
       "score": 99.5
     },
     {
-      "ticker": "SPYG",
-      "metric": "Bouncing +0.5% off VAH $121.10",
-      "score": 99.5
-    },
-    {
-      "ticker": "IWB",
-      "metric": "Bouncing +0.5% off VAH $419.29",
-      "score": 99.5
-    },
-    {
-      "ticker": "IUSV",
-      "metric": "Bouncing +0.5% off VAH $114.10",
-      "score": 99.5
-    },
-    {
       "ticker": "PK",
       "metric": "Bouncing +0.5% off VAH $15.19",
-      "score": 99.5
-    },
-    {
-      "ticker": "SPTM",
-      "metric": "Bouncing +0.5% off VAH $92.90",
       "score": 99.5
     },
     {
@@ -3906,262 +3746,192 @@
       "score": 99.5
     },
     {
-      "ticker": "FTCS",
-      "metric": "Bouncing +0.5% off VAH $99.12",
-      "score": 99.5
-    },
-    {
-      "ticker": "ALLW",
-      "metric": "Bouncing +0.5% off VAH $30.02",
-      "score": 99.5
-    },
-    {
-      "ticker": "RSP",
-      "metric": "Bouncing +0.6% off VAH $217.77",
-      "score": 99.4
-    },
-    {
-      "ticker": "VTI",
-      "metric": "Bouncing +0.6% off VAH $377.62",
-      "score": 99.4
-    },
-    {
       "ticker": "BX",
       "metric": "Bouncing +0.6% off VAH $135.35",
       "score": 99.4
+    },
+    {
+      "ticker": "TW",
+      "metric": "Bouncing +0.6% off VAH $105.57",
+      "score": 99.4
+    },
+    {
+      "ticker": "OBDC",
+      "metric": "Bouncing +0.6% off VAH $11.33",
+      "score": 99.4
+    },
+    {
+      "ticker": "BUSE",
+      "metric": "Bouncing +0.6% off VAH $30.47",
+      "score": 99.4
+    },
+    {
+      "ticker": "CUBI",
+      "metric": "Bouncing +0.6% off VAH $80.60",
+      "score": 99.4
+    },
+    {
+      "ticker": "V",
+      "metric": "Bouncing +0.7% off VAH $372.54",
+      "score": 99.3
+    },
+    {
+      "ticker": "IYH",
+      "metric": "Bouncing +0.7% off VAH $71.90",
+      "score": 99.3
+    },
+    {
+      "ticker": "GLD",
+      "metric": "Bouncing +0.8% off VAH $403.64",
+      "score": 99.2
+    },
+    {
+      "ticker": "IAUM",
+      "metric": "Bouncing +0.8% off VAH $43.84",
+      "score": 99.2
+    },
+    {
+      "ticker": "RITM",
+      "metric": "Bouncing +0.8% off VAH $10.00",
+      "score": 99.2
+    },
+    {
+      "ticker": "FTDR",
+      "metric": "Bouncing +0.8% off VAH $81.94",
+      "score": 99.2
+    },
+    {
+      "ticker": "SA",
+      "metric": "Bouncing +0.8% off VAH $31.58",
+      "score": 99.2
+    },
+    {
+      "ticker": "CHTR",
+      "metric": "Bouncing +0.9% off VAH $150.58",
+      "score": 99.1
+    },
+    {
+      "ticker": "APO",
+      "metric": "Bouncing +0.9% off VAH $132.51",
+      "score": 99.1
+    },
+    {
+      "ticker": "NVS",
+      "metric": "Bouncing +0.9% off VAH $158.51",
+      "score": 99.1
+    },
+    {
+      "ticker": "RACE",
+      "metric": "Bouncing +0.9% off VAH $406.21",
+      "score": 99.1
+    },
+    {
+      "ticker": "TTE",
+      "metric": "Bouncing +0.9% off VAH $87.81",
+      "score": 99.1
+    },
+    {
+      "ticker": "IMNM",
+      "metric": "Bouncing +0.9% off VAH $26.51",
+      "score": 99.1
+    },
+    {
+      "ticker": "DXPE",
+      "metric": "Bouncing +0.9% off VAH $182.44",
+      "score": 99.1
+    },
+    {
+      "ticker": "GLDM",
+      "metric": "Bouncing +1.0% off VAH $86.89",
+      "score": 99.0
+    },
+    {
+      "ticker": "FAST",
+      "metric": "Bouncing +1.0% off VAH $49.11",
+      "score": 99.0
+    },
+    {
+      "ticker": "ZBH",
+      "metric": "Bouncing +1.0% off VAH $97.12",
+      "score": 99.0
+    },
+    {
+      "ticker": "VCTR",
+      "metric": "Bouncing +1.0% off VAH $112.59",
+      "score": 99.0
+    },
+    {
+      "ticker": "OMF",
+      "metric": "Bouncing +1.0% off VAH $63.97",
+      "score": 99.0
+    },
+    {
+      "ticker": "DJCO",
+      "metric": "Bouncing +1.0% off VAH $621.54",
+      "score": 99.0
+    },
+    {
+      "ticker": "PICK",
+      "metric": "Bouncing +1.0% off VAH $64.41",
+      "score": 99.0
+    },
+    {
+      "ticker": "AVNT",
+      "metric": "Bouncing +1.0% off VAH $42.97",
+      "score": 99.0
+    },
+    {
+      "ticker": "MLYS",
+      "metric": "Bouncing +1.0% off VAH $27.94",
+      "score": 99.0
+    },
+    {
+      "ticker": "EOG",
+      "metric": "Bouncing +1.1% off VAH $143.65",
+      "score": 98.9
+    },
+    {
+      "ticker": "AMLX",
+      "metric": "Bouncing +1.1% off VAH $33.72",
+      "score": 98.9
+    },
+    {
+      "ticker": "BIZD",
+      "metric": "Bouncing +1.1% off VAH $13.18",
+      "score": 98.9
+    },
+    {
+      "ticker": "HURN",
+      "metric": "Bouncing +1.1% off VAH $153.53",
+      "score": 98.9
+    },
+    {
+      "ticker": "BP",
+      "metric": "Bouncing +1.2% off VAH $43.28",
+      "score": 98.8
+    },
+    {
+      "ticker": "RBRK",
+      "metric": "Bouncing +1.2% off VAH $92.54",
+      "score": 98.8
+    },
+    {
+      "ticker": "SCCO",
+      "metric": "Bouncing +1.2% off VAH $196.39",
+      "score": 98.8
+    },
+    {
+      "ticker": "OWL",
+      "metric": "Bouncing +1.2% off VAH $11.61",
+      "score": 98.8
+    },
+    {
+      "ticker": "PSLV",
+      "metric": "Bouncing +1.2% off VAH $21.45",
+      "score": 98.8
     }
   ],
   "poc_rejection": [
-    {
-      "ticker": "PH",
-      "metric": "Bouncing +-0.2% off POC $964.21",
-      "score": 100.2
-    },
-    {
-      "ticker": "BALL",
-      "metric": "Bouncing +-0.2% off POC $62.79",
-      "score": 100.2
-    },
-    {
-      "ticker": "IWY",
-      "metric": "Bouncing +-0.2% off POC $289.78",
-      "score": 100.2
-    },
-    {
-      "ticker": "CGUS",
-      "metric": "Bouncing +-0.2% off POC $45.24",
-      "score": 100.2
-    },
-    {
-      "ticker": "RYAN",
-      "metric": "Bouncing +-0.2% off POC $41.99",
-      "score": 100.2
-    },
-    {
-      "ticker": "CAR",
-      "metric": "Bouncing +-0.2% off POC $138.98",
-      "score": 100.2
-    },
-    {
-      "ticker": "SPHD",
-      "metric": "Bouncing +-0.2% off POC $52.38",
-      "score": 100.2
-    },
-    {
-      "ticker": "TMSL",
-      "metric": "Bouncing +-0.2% off POC $42.85",
-      "score": 100.2
-    },
-    {
-      "ticker": "CPER",
-      "metric": "Bouncing +-0.2% off POC $40.02",
-      "score": 100.2
-    },
-    {
-      "ticker": "VMRK",
-      "metric": "Bouncing +-0.1% off POC $65.44",
-      "score": 100.1
-    },
-    {
-      "ticker": "ZTS",
-      "metric": "Bouncing +-0.1% off POC $75.85",
-      "score": 100.1
-    },
-    {
-      "ticker": "TRMB",
-      "metric": "Bouncing +-0.1% off POC $59.54",
-      "score": 100.1
-    },
-    {
-      "ticker": "BMO",
-      "metric": "Bouncing +-0.1% off POC $175.54",
-      "score": 100.1
-    },
-    {
-      "ticker": "SCHV",
-      "metric": "Bouncing +-0.1% off POC $34.87",
-      "score": 100.1
-    },
-    {
-      "ticker": "SCHA",
-      "metric": "Bouncing +-0.1% off POC $34.58",
-      "score": 100.1
-    },
-    {
-      "ticker": "CBSH",
-      "metric": "Bouncing +-0.1% off POC $58.44",
-      "score": 100.1
-    },
-    {
-      "ticker": "FESM",
-      "metric": "Bouncing +-0.1% off POC $47.39",
-      "score": 100.1
-    },
-    {
-      "ticker": "SPYD",
-      "metric": "Bouncing +-0.1% off POC $49.67",
-      "score": 100.1
-    },
-    {
-      "ticker": "TPC",
-      "metric": "Bouncing +-0.1% off POC $88.32",
-      "score": 100.1
-    },
-    {
-      "ticker": "SUN",
-      "metric": "Bouncing +-0.1% off POC $75.66",
-      "score": 100.1
-    },
-    {
-      "ticker": "PUK",
-      "metric": "Bouncing +-0.1% off POC $27.77",
-      "score": 100.1
-    },
-    {
-      "ticker": "FLYW",
-      "metric": "Bouncing +-0.1% off POC $18.56",
-      "score": 100.1
-    },
-    {
-      "ticker": "CPK",
-      "metric": "Bouncing +-0.1% off POC $132.82",
-      "score": 100.1
-    },
-    {
-      "ticker": "BRC",
-      "metric": "Bouncing +-0.1% off POC $90.27",
-      "score": 100.1
-    },
-    {
-      "ticker": "PWB",
-      "metric": "Bouncing +-0.1% off POC $156.20",
-      "score": 100.1
-    },
-    {
-      "ticker": "IJH",
-      "metric": "Bouncing +-0.0% off POC $75.87",
-      "score": 100.0
-    },
-    {
-      "ticker": "AFL",
-      "metric": "Bouncing +0.0% off POC $117.19",
-      "score": 100.0
-    },
-    {
-      "ticker": "LPLA",
-      "metric": "Bouncing +-0.0% off POC $359.49",
-      "score": 100.0
-    },
-    {
-      "ticker": "VRSN",
-      "metric": "Bouncing +-0.0% off POC $292.22",
-      "score": 100.0
-    },
-    {
-      "ticker": "TMF",
-      "metric": "Bouncing +-0.0% off POC $30.89",
-      "score": 100.0
-    },
-    {
-      "ticker": "CZR",
-      "metric": "Bouncing +0.0% off POC $29.67",
-      "score": 100.0
-    },
-    {
-      "ticker": "MIAX",
-      "metric": "Bouncing +0.0% off POC $42.37",
-      "score": 100.0
-    },
-    {
-      "ticker": "CGGO",
-      "metric": "Bouncing +0.0% off POC $40.55",
-      "score": 100.0
-    },
-    {
-      "ticker": "MMS",
-      "metric": "Bouncing +0.0% off POC $57.66",
-      "score": 100.0
-    },
-    {
-      "ticker": "IWF",
-      "metric": "Bouncing +0.1% off POC $123.34",
-      "score": 99.9
-    },
-    {
-      "ticker": "MDY",
-      "metric": "Bouncing +0.1% off POC $690.81",
-      "score": 99.9
-    },
-    {
-      "ticker": "SPMD",
-      "metric": "Bouncing +0.1% off POC $66.40",
-      "score": 99.9
-    },
-    {
-      "ticker": "PNFP",
-      "metric": "Bouncing +0.1% off POC $100.94",
-      "score": 99.9
-    },
-    {
-      "ticker": "EDV",
-      "metric": "Bouncing +0.1% off POC $60.21",
-      "score": 99.9
-    },
-    {
-      "ticker": "ONB",
-      "metric": "Bouncing +0.1% off POC $26.02",
-      "score": 99.9
-    },
-    {
-      "ticker": "CFR",
-      "metric": "Bouncing +0.1% off POC $162.43",
-      "score": 99.9
-    },
-    {
-      "ticker": "CVCO",
-      "metric": "Bouncing +0.1% off POC $565.39",
-      "score": 99.9
-    },
-    {
-      "ticker": "NMIH",
-      "metric": "Bouncing +0.1% off POC $44.77",
-      "score": 99.9
-    },
-    {
-      "ticker": "NNI",
-      "metric": "Bouncing +0.1% off POC $127.24",
-      "score": 99.9
-    },
-    {
-      "ticker": "GOVZ",
-      "metric": "Bouncing +0.1% off POC $33.72",
-      "score": 99.9
-    },
-    {
-      "ticker": "QQQ",
-      "metric": "Bouncing +0.2% off POC $717.21",
-      "score": 99.8
-    },
     {
       "ticker": "CAT",
       "metric": "Bouncing +0.2% off POC $812.17",
@@ -4178,142 +3948,242 @@
       "score": 99.8
     },
     {
-      "ticker": "RY",
-      "metric": "Bouncing +0.2% off POC $210.22",
+      "ticker": "ALLE",
+      "metric": "Bouncing +0.2% off POC $156.73",
       "score": 99.8
+    },
+    {
+      "ticker": "KLAR",
+      "metric": "Bouncing +0.2% off POC $14.38",
+      "score": 99.8
+    },
+    {
+      "ticker": "LI",
+      "metric": "Bouncing +0.2% off POC $12.34",
+      "score": 99.8
+    },
+    {
+      "ticker": "XNTK",
+      "metric": "Bouncing +0.2% off POC $360.61",
+      "score": 99.8
+    },
+    {
+      "ticker": "AX",
+      "metric": "Bouncing +0.2% off POC $97.72",
+      "score": 99.8
+    },
+    {
+      "ticker": "BOTZ",
+      "metric": "Bouncing +0.2% off POC $35.88",
+      "score": 99.8
+    },
+    {
+      "ticker": "IWM",
+      "metric": "Bouncing +0.3% off POC $295.12",
+      "score": 99.7
+    },
+    {
+      "ticker": "AZN",
+      "metric": "Bouncing +0.3% off POC $162.23",
+      "score": 99.7
+    },
+    {
+      "ticker": "XME",
+      "metric": "Bouncing +0.3% off POC $118.23",
+      "score": 99.7
+    },
+    {
+      "ticker": "CP",
+      "metric": "Bouncing +0.3% off POC $91.36",
+      "score": 99.7
+    },
+    {
+      "ticker": "TRU",
+      "metric": "Bouncing +0.3% off POC $79.67",
+      "score": 99.7
+    },
+    {
+      "ticker": "VTWO",
+      "metric": "Bouncing +0.3% off POC $119.29",
+      "score": 99.7
+    },
+    {
+      "ticker": "NLY",
+      "metric": "Bouncing +0.3% off POC $22.74",
+      "score": 99.7
+    },
+    {
+      "ticker": "ALLY",
+      "metric": "Bouncing +0.3% off POC $43.59",
+      "score": 99.7
+    },
+    {
+      "ticker": "ARE",
+      "metric": "Bouncing +0.3% off POC $52.50",
+      "score": 99.7
+    },
+    {
+      "ticker": "JBTM",
+      "metric": "Bouncing +0.3% off POC $117.41",
+      "score": 99.7
+    },
+    {
+      "ticker": "ACIW",
+      "metric": "Bouncing +0.3% off POC $52.79",
+      "score": 99.7
+    },
+    {
+      "ticker": "GATX",
+      "metric": "Bouncing +0.3% off POC $177.56",
+      "score": 99.7
+    },
+    {
+      "ticker": "FEOE",
+      "metric": "Bouncing +0.3% off POC $56.00",
+      "score": 99.7
+    },
+    {
+      "ticker": "BJ",
+      "metric": "Bouncing +0.4% off POC $92.84",
+      "score": 99.6
+    },
+    {
+      "ticker": "EWBC",
+      "metric": "Bouncing +0.4% off POC $130.28",
+      "score": 99.6
+    },
+    {
+      "ticker": "BCS",
+      "metric": "Bouncing +0.4% off POC $26.89",
+      "score": 99.6
+    },
+    {
+      "ticker": "YOU",
+      "metric": "Bouncing +0.4% off POC $44.16",
+      "score": 99.6
+    },
+    {
+      "ticker": "ALGM",
+      "metric": "Bouncing +0.4% off POC $36.47",
+      "score": 99.6
+    },
+    {
+      "ticker": "CHPY",
+      "metric": "Bouncing +0.4% off POC $66.87",
+      "score": 99.6
+    },
+    {
+      "ticker": "SPB",
+      "metric": "Bouncing +0.4% off POC $88.13",
+      "score": 99.6
+    },
+    {
+      "ticker": "PRDO",
+      "metric": "Bouncing +0.4% off POC $33.06",
+      "score": 99.6
+    },
+    {
+      "ticker": "CCOI",
+      "metric": "Bouncing +0.4% off POC $10.01",
+      "score": 99.6
+    },
+    {
+      "ticker": "SFBS",
+      "metric": "Bouncing +0.4% off POC $42.95",
+      "score": 99.6
+    },
+    {
+      "ticker": "BA",
+      "metric": "Bouncing +0.5% off POC $211.15",
+      "score": 99.5
+    },
+    {
+      "ticker": "KRE",
+      "metric": "Bouncing +0.5% off POC $74.87",
+      "score": 99.5
+    },
+    {
+      "ticker": "AVY",
+      "metric": "Bouncing +0.5% off POC $174.25",
+      "score": 99.5
+    },
+    {
+      "ticker": "NTRS",
+      "metric": "Bouncing +0.5% off POC $185.77",
+      "score": 99.5
+    },
+    {
+      "ticker": "TECL",
+      "metric": "Bouncing +0.5% off POC $204.34",
+      "score": 99.5
+    },
+    {
+      "ticker": "ZION",
+      "metric": "Bouncing +0.5% off POC $69.03",
+      "score": 99.5
+    },
+    {
+      "ticker": "LKQ",
+      "metric": "Bouncing +0.5% off POC $25.42",
+      "score": 99.5
+    },
+    {
+      "ticker": "ASB",
+      "metric": "Bouncing +0.5% off POC $30.91",
+      "score": 99.5
+    },
+    {
+      "ticker": "IRDM",
+      "metric": "Bouncing +0.5% off POC $46.98",
+      "score": 99.5
+    },
+    {
+      "ticker": "EWL",
+      "metric": "Bouncing +0.5% off POC $62.84",
+      "score": 99.5
+    },
+    {
+      "ticker": "USB",
+      "metric": "Bouncing +0.6% off POC $62.97",
+      "score": 99.4
+    },
+    {
+      "ticker": "BAI",
+      "metric": "Bouncing +0.6% off POC $44.30",
+      "score": 99.4
+    },
+    {
+      "ticker": "LOGI",
+      "metric": "Bouncing +0.6% off POC $101.40",
+      "score": 99.4
+    },
+    {
+      "ticker": "SRRK",
+      "metric": "Bouncing +0.6% off POC $55.00",
+      "score": 99.4
+    },
+    {
+      "ticker": "COLM",
+      "metric": "Bouncing +0.6% off POC $57.37",
+      "score": 99.4
+    },
+    {
+      "ticker": "CVBF",
+      "metric": "Bouncing +0.6% off POC $22.47",
+      "score": 99.4
+    },
+    {
+      "ticker": "CASH",
+      "metric": "Bouncing +0.6% off POC $82.73",
+      "score": 99.4
+    },
+    {
+      "ticker": "FBK",
+      "metric": "Bouncing +0.6% off POC $56.64",
+      "score": 99.4
     }
   ],
   "vah_rejection_fixed": [
-    {
-      "ticker": "NVDA",
-      "metric": "Bouncing +-0.2% off Fixed VAH (Q3) $230.73",
-      "score": 100.2
-    },
-    {
-      "ticker": "FMDE",
-      "metric": "Bouncing +-0.2% off Fixed VAH (Q3) $42.20",
-      "score": 100.2
-    },
-    {
-      "ticker": "TRIN",
-      "metric": "Bouncing +-0.2% off Fixed VAH (Q3) $18.25",
-      "score": 100.2
-    },
-    {
-      "ticker": "CVE",
-      "metric": "Bouncing +-0.1% off Fixed VAH (Q3) $32.39",
-      "score": 100.1
-    },
-    {
-      "ticker": "UEC",
-      "metric": "Bouncing +-0.1% off Fixed VAH (Q3) $11.55",
-      "score": 100.1
-    },
-    {
-      "ticker": "GSAT",
-      "metric": "Bouncing +-0.1% off Fixed VAH (Q3) $82.45",
-      "score": 100.1
-    },
-    {
-      "ticker": "PRCH",
-      "metric": "Bouncing +-0.1% off Fixed VAH (Q3) $17.96",
-      "score": 100.1
-    },
-    {
-      "ticker": "EQT",
-      "metric": "Bouncing +0.0% off Fixed VAH (Q3) $55.15",
-      "score": 100.0
-    },
-    {
-      "ticker": "HDV",
-      "metric": "Bouncing +0.0% off Fixed VAH (Q3) $29.40",
-      "score": 100.0
-    },
-    {
-      "ticker": "EG",
-      "metric": "Bouncing +-0.0% off Fixed VAH (Q3) $380.98",
-      "score": 100.0
-    },
-    {
-      "ticker": "IWS",
-      "metric": "Bouncing +0.0% off Fixed VAH (Q3) $170.21",
-      "score": 100.0
-    },
-    {
-      "ticker": "DXJ",
-      "metric": "Bouncing +-0.0% off Fixed VAH (Q3) $180.03",
-      "score": 100.0
-    },
-    {
-      "ticker": "MNPR",
-      "metric": "Bouncing +0.0% off Fixed VAH (Q3) $117.52",
-      "score": 100.0
-    },
-    {
-      "ticker": "OXY",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $59.99",
-      "score": 99.9
-    },
-    {
-      "ticker": "BKR",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $63.46",
-      "score": 99.9
-    },
-    {
-      "ticker": "DAR",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $65.12",
-      "score": 99.9
-    },
-    {
-      "ticker": "IYW",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $253.16",
-      "score": 99.9
-    },
-    {
-      "ticker": "EHC",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $121.62",
-      "score": 99.9
-    },
-    {
-      "ticker": "DFAC",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $45.66",
-      "score": 99.9
-    },
-    {
-      "ticker": "AAAU",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $43.67",
-      "score": 99.9
-    },
-    {
-      "ticker": "VNOM",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $44.37",
-      "score": 99.9
-    },
-    {
-      "ticker": "OBDC",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $11.39",
-      "score": 99.9
-    },
-    {
-      "ticker": "RSPT",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $64.12",
-      "score": 99.9
-    },
-    {
-      "ticker": "MUX",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $20.06",
-      "score": 99.9
-    },
-    {
-      "ticker": "EWD",
-      "metric": "Bouncing +0.1% off Fixed VAH (Q3) $53.08",
-      "score": 99.9
-    },
-    {
-      "ticker": "DVN",
-      "metric": "Bouncing +0.2% off Fixed VAH (Q3) $47.97",
-      "score": 99.8
-    },
     {
       "ticker": "WAT",
       "metric": "Bouncing +0.2% off Fixed VAH (Q3) $408.40",
@@ -4322,16 +4192,6 @@
     {
       "ticker": "RGEN",
       "metric": "Bouncing +0.2% off Fixed VAH (Q3) $167.23",
-      "score": 99.8
-    },
-    {
-      "ticker": "SCHB",
-      "metric": "Bouncing +0.2% off Fixed VAH (Q3) $29.66",
-      "score": 99.8
-    },
-    {
-      "ticker": "IWR",
-      "metric": "Bouncing +0.2% off Fixed VAH (Q3) $111.61",
       "score": 99.8
     },
     {
@@ -4345,26 +4205,6 @@
       "score": 99.8
     },
     {
-      "ticker": "CRC",
-      "metric": "Bouncing +0.2% off Fixed VAH (Q3) $54.11",
-      "score": 99.8
-    },
-    {
-      "ticker": "DIVO",
-      "metric": "Bouncing +0.2% off Fixed VAH (Q3) $48.30",
-      "score": 99.8
-    },
-    {
-      "ticker": "EWG",
-      "metric": "Bouncing +0.2% off Fixed VAH (Q3) $43.80",
-      "score": 99.8
-    },
-    {
-      "ticker": "SPY",
-      "metric": "Bouncing +0.3% off Fixed VAH (Q3) $767.81",
-      "score": 99.7
-    },
-    {
       "ticker": "BMRN",
       "metric": "Bouncing +0.3% off Fixed VAH (Q3) $66.31",
       "score": 99.7
@@ -4375,23 +4215,8 @@
       "score": 99.7
     },
     {
-      "ticker": "VDE",
-      "metric": "Bouncing +0.3% off Fixed VAH (Q3) $180.05",
-      "score": 99.7
-    },
-    {
       "ticker": "PCVX",
       "metric": "Bouncing +0.3% off Fixed VAH (Q3) $60.99",
-      "score": 99.7
-    },
-    {
-      "ticker": "IQLT",
-      "metric": "Bouncing +0.3% off Fixed VAH (Q3) $51.43",
-      "score": 99.7
-    },
-    {
-      "ticker": "DFAU",
-      "metric": "Bouncing +0.3% off Fixed VAH (Q3) $53.12",
       "score": 99.7
     },
     {
@@ -4410,18 +4235,8 @@
       "score": 99.6
     },
     {
-      "ticker": "SCHX",
-      "metric": "Bouncing +0.4% off Fixed VAH (Q3) $30.25",
-      "score": 99.6
-    },
-    {
-      "ticker": "HSIC",
-      "metric": "Bouncing +0.4% off Fixed VAH (Q3) $89.42",
-      "score": 99.6
-    },
-    {
-      "ticker": "AVUS",
-      "metric": "Bouncing +0.4% off Fixed VAH (Q3) $130.72",
+      "ticker": "KMX",
+      "metric": "Bouncing +0.4% off Fixed VAH (Q3) $63.05",
       "score": 99.6
     },
     {
@@ -4430,261 +4245,446 @@
       "score": 99.6
     },
     {
-      "ticker": "HCI",
-      "metric": "Bouncing +0.4% off Fixed VAH (Q3) $186.95",
+      "ticker": "AKRE",
+      "metric": "Bouncing +0.4% off Fixed VAH (Q3) $59.30",
       "score": 99.6
+    },
+    {
+      "ticker": "SGOL",
+      "metric": "Bouncing +0.5% off Fixed VAH (Q3) $42.04",
+      "score": 99.5
+    },
+    {
+      "ticker": "IAU",
+      "metric": "Bouncing +0.6% off Fixed VAH (Q3) $82.90",
+      "score": 99.4
+    },
+    {
+      "ticker": "TW",
+      "metric": "Bouncing +0.6% off Fixed VAH (Q3) $105.61",
+      "score": 99.4
+    },
+    {
+      "ticker": "EXPO",
+      "metric": "Bouncing +0.7% off Fixed VAH (Q3) $67.86",
+      "score": 99.3
+    },
+    {
+      "ticker": "ITIC",
+      "metric": "Bouncing +0.7% off Fixed VAH (Q3) $295.92",
+      "score": 99.3
+    },
+    {
+      "ticker": "NVS",
+      "metric": "Bouncing +0.8% off Fixed VAH (Q3) $158.79",
+      "score": 99.2
+    },
+    {
+      "ticker": "FCFS",
+      "metric": "Bouncing +0.8% off Fixed VAH (Q3) $223.93",
+      "score": 99.2
+    },
+    {
+      "ticker": "VRDN",
+      "metric": "Bouncing +0.8% off Fixed VAH (Q3) $22.74",
+      "score": 99.2
+    },
+    {
+      "ticker": "CON",
+      "metric": "Bouncing +0.8% off Fixed VAH (Q3) $34.21",
+      "score": 99.2
+    },
+    {
+      "ticker": "OKE",
+      "metric": "Bouncing +0.9% off Fixed VAH (Q3) $94.61",
+      "score": 99.1
+    },
+    {
+      "ticker": "HAE",
+      "metric": "Bouncing +0.9% off Fixed VAH (Q3) $102.02",
+      "score": 99.1
+    },
+    {
+      "ticker": "CLBK",
+      "metric": "Bouncing +1.0% off Fixed VAH (Q3) $11.58",
+      "score": 99.0
+    },
+    {
+      "ticker": "V",
+      "metric": "Bouncing +1.1% off Fixed VAH (Q3) $370.86",
+      "score": 98.9
+    },
+    {
+      "ticker": "IDCC",
+      "metric": "Bouncing +1.1% off Fixed VAH (Q3) $334.11",
+      "score": 98.9
+    },
+    {
+      "ticker": "PPC",
+      "metric": "Bouncing +1.1% off Fixed VAH (Q3) $30.14",
+      "score": 98.9
+    },
+    {
+      "ticker": "DJCO",
+      "metric": "Bouncing +1.1% off Fixed VAH (Q3) $621.30",
+      "score": 98.9
+    },
+    {
+      "ticker": "CVNA",
+      "metric": "Bouncing +1.2% off Fixed VAH (Q3) $73.70",
+      "score": 98.8
+    },
+    {
+      "ticker": "IYM",
+      "metric": "Bouncing +1.3% off Fixed VAH (Q3) $188.59",
+      "score": 98.7
+    },
+    {
+      "ticker": "MLYS",
+      "metric": "Bouncing +1.3% off Fixed VAH (Q3) $27.84",
+      "score": 98.7
+    },
+    {
+      "ticker": "AGM",
+      "metric": "Bouncing +1.3% off Fixed VAH (Q3) $224.93",
+      "score": 98.7
+    },
+    {
+      "ticker": "APO",
+      "metric": "Bouncing +1.4% off Fixed VAH (Q3) $131.84",
+      "score": 98.6
+    },
+    {
+      "ticker": "BWA",
+      "metric": "Bouncing +1.4% off Fixed VAH (Q3) $66.62",
+      "score": 98.6
+    },
+    {
+      "ticker": "EGO",
+      "metric": "Bouncing +1.4% off Fixed VAH (Q3) $42.41",
+      "score": 98.6
+    },
+    {
+      "ticker": "IFF",
+      "metric": "Bouncing +1.4% off Fixed VAH (Q3) $85.19",
+      "score": 98.6
+    },
+    {
+      "ticker": "SQM",
+      "metric": "Bouncing +1.4% off Fixed VAH (Q3) $75.36",
+      "score": 98.6
+    },
+    {
+      "ticker": "PRGS",
+      "metric": "Bouncing +1.4% off Fixed VAH (Q3) $43.44",
+      "score": 98.6
+    },
+    {
+      "ticker": "CTVA",
+      "metric": "Bouncing +1.5% off Fixed VAH (Q3) $86.53",
+      "score": 98.5
+    },
+    {
+      "ticker": "INCY",
+      "metric": "Bouncing +1.5% off Fixed VAH (Q3) $124.89",
+      "score": 98.5
+    },
+    {
+      "ticker": "PSLV",
+      "metric": "Bouncing +1.5% off Fixed VAH (Q3) $21.37",
+      "score": 98.5
+    },
+    {
+      "ticker": "NOV",
+      "metric": "Bouncing +1.5% off Fixed VAH (Q3) $21.08",
+      "score": 98.5
+    },
+    {
+      "ticker": "PVLA",
+      "metric": "Bouncing +1.5% off Fixed VAH (Q3) $154.89",
+      "score": 98.5
+    },
+    {
+      "ticker": "VIRT",
+      "metric": "Bouncing +1.6% off Fixed VAH (Q3) $63.42",
+      "score": 98.4
+    },
+    {
+      "ticker": "RVMD",
+      "metric": "Bouncing +1.7% off Fixed VAH (Q3) $206.44",
+      "score": 98.3
+    },
+    {
+      "ticker": "ADM",
+      "metric": "Bouncing +1.7% off Fixed VAH (Q3) $83.19",
+      "score": 98.3
+    },
+    {
+      "ticker": "NESR",
+      "metric": "Bouncing +1.7% off Fixed VAH (Q3) $34.17",
+      "score": 98.3
+    },
+    {
+      "ticker": "PPLT",
+      "metric": "Bouncing +1.7% off Fixed VAH (Q3) $16.22",
+      "score": 98.3
+    },
+    {
+      "ticker": "HSAI",
+      "metric": "Bouncing +1.7% off Fixed VAH (Q3) $18.57",
+      "score": 98.3
     }
   ],
   "poc_rejection_fixed": [
     {
-      "ticker": "BALL",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $62.79",
-      "score": 100.2
+      "ticker": "KRE",
+      "metric": "Bouncing +0.2% off Fixed POC (Q3) $75.12",
+      "score": 99.8
     },
     {
-      "ticker": "SCHV",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $34.87",
-      "score": 100.2
+      "ticker": "MDY",
+      "metric": "Bouncing +0.2% off Fixed POC (Q3) $689.97",
+      "score": 99.8
     },
     {
-      "ticker": "IWY",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $289.78",
-      "score": 100.2
+      "ticker": "ETR",
+      "metric": "Bouncing +0.2% off Fixed POC (Q3) $107.03",
+      "score": 99.8
     },
     {
-      "ticker": "BXP",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $67.81",
-      "score": 100.2
+      "ticker": "KLAR",
+      "metric": "Bouncing +0.2% off Fixed POC (Q3) $14.38",
+      "score": 99.8
     },
     {
-      "ticker": "EFG",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $124.74",
-      "score": 100.2
+      "ticker": "FESM",
+      "metric": "Bouncing +0.2% off Fixed POC (Q3) $47.25",
+      "score": 99.8
     },
     {
-      "ticker": "FAS",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $182.41",
-      "score": 100.2
+      "ticker": "AIPO",
+      "metric": "Bouncing +0.2% off Fixed POC (Q3) $29.00",
+      "score": 99.8
     },
     {
-      "ticker": "CBSH",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $58.46",
-      "score": 100.2
+      "ticker": "FEOE",
+      "metric": "Bouncing +0.2% off Fixed POC (Q3) $56.00",
+      "score": 99.8
     },
     {
-      "ticker": "CAR",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $138.99",
-      "score": 100.2
+      "ticker": "AZN",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $162.23",
+      "score": 99.7
     },
     {
-      "ticker": "BIZD",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $13.35",
-      "score": 100.2
+      "ticker": "SPMO",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $149.33",
+      "score": 99.7
     },
     {
-      "ticker": "SPHD",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $52.39",
-      "score": 100.2
+      "ticker": "CMS",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $68.27",
+      "score": 99.7
     },
     {
-      "ticker": "MLPX",
-      "metric": "Bouncing +-0.2% off Fixed POC (Q3) $75.76",
-      "score": 100.2
+      "ticker": "PEG",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $73.49",
+      "score": 99.7
     },
     {
-      "ticker": "SRE",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $84.11",
-      "score": 100.1
+      "ticker": "BJ",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $92.94",
+      "score": 99.7
     },
     {
-      "ticker": "ROK",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $434.04",
-      "score": 100.1
+      "ticker": "TRU",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $79.66",
+      "score": 99.7
     },
     {
-      "ticker": "VRSN",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $292.46",
-      "score": 100.1
+      "ticker": "NLY",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $22.75",
+      "score": 99.7
     },
     {
-      "ticker": "DTE",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $136.17",
-      "score": 100.1
+      "ticker": "ARE",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $52.50",
+      "score": 99.7
     },
     {
-      "ticker": "BMO",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $175.57",
-      "score": 100.1
+      "ticker": "VMI",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $479.98",
+      "score": 99.7
     },
     {
-      "ticker": "IEX",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $223.85",
-      "score": 100.1
+      "ticker": "SDOW",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $22.77",
+      "score": 99.7
     },
     {
-      "ticker": "ASHR",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $34.24",
-      "score": 100.1
+      "ticker": "JBTM",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $117.41",
+      "score": 99.7
     },
     {
-      "ticker": "ACIW",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $53.00",
-      "score": 100.1
+      "ticker": "SAIC",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $126.35",
+      "score": 99.7
     },
     {
-      "ticker": "TPC",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $88.26",
-      "score": 100.1
+      "ticker": "DLB",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $61.75",
+      "score": 99.7
     },
     {
-      "ticker": "FTSM",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $59.78",
-      "score": 100.1
+      "ticker": "KNTK",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $54.29",
+      "score": 99.7
     },
     {
-      "ticker": "CTRI",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $20.56",
-      "score": 100.1
+      "ticker": "OII",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $51.22",
+      "score": 99.7
     },
     {
-      "ticker": "NASA",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $23.54",
-      "score": 100.1
+      "ticker": "TCBI",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $98.34",
+      "score": 99.7
     },
     {
-      "ticker": "CWT",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $50.10",
-      "score": 100.1
+      "ticker": "GATX",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $177.56",
+      "score": 99.7
     },
     {
-      "ticker": "CBC",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $32.66",
-      "score": 100.1
+      "ticker": "XNTK",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $360.44",
+      "score": 99.7
     },
     {
-      "ticker": "NOMD",
-      "metric": "Bouncing +-0.1% off Fixed POC (Q3) $11.65",
-      "score": 100.1
+      "ticker": "IOSP",
+      "metric": "Bouncing +0.3% off Fixed POC (Q3) $93.66",
+      "score": 99.7
     },
     {
-      "ticker": "GS",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $1038.52",
-      "score": 100.0
+      "ticker": "XLB",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $52.26",
+      "score": 99.6
     },
     {
-      "ticker": "RDDT",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $154.52",
-      "score": 100.0
+      "ticker": "TSCO",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $34.86",
+      "score": 99.6
     },
     {
-      "ticker": "PH",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $962.61",
-      "score": 100.0
+      "ticker": "THC",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $263.97",
+      "score": 99.6
     },
     {
-      "ticker": "ZTS",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $75.81",
-      "score": 100.0
+      "ticker": "NTRS",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $185.87",
+      "score": 99.6
     },
     {
-      "ticker": "QLD",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $90.64",
-      "score": 100.0
+      "ticker": "ZION",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $69.07",
+      "score": 99.6
     },
     {
-      "ticker": "TRMB",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $59.45",
-      "score": 100.0
+      "ticker": "YOU",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $44.16",
+      "score": 99.6
     },
     {
-      "ticker": "CP",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $91.61",
-      "score": 100.0
+      "ticker": "MIAX",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $42.21",
+      "score": 99.6
     },
     {
-      "ticker": "PHM",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $124.44",
-      "score": 100.0
+      "ticker": "VNT",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $33.17",
+      "score": 99.6
     },
     {
-      "ticker": "PNFP",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $100.98",
-      "score": 100.0
+      "ticker": "IRDM",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $47.00",
+      "score": 99.6
     },
     {
-      "ticker": "SPSM",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $56.51",
-      "score": 100.0
+      "ticker": "BBT",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $31.76",
+      "score": 99.6
     },
     {
-      "ticker": "FRT",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $117.13",
-      "score": 100.0
+      "ticker": "AMSC",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $29.45",
+      "score": 99.6
     },
     {
-      "ticker": "FCN",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $151.71",
-      "score": 100.0
+      "ticker": "PFS",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $23.63",
+      "score": 99.6
     },
     {
-      "ticker": "RYAN",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $41.92",
-      "score": 100.0
+      "ticker": "SFBS",
+      "metric": "Bouncing +0.4% off Fixed POC (Q3) $42.95",
+      "score": 99.6
     },
     {
-      "ticker": "WLK",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $74.79",
-      "score": 100.0
+      "ticker": "BA",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $211.15",
+      "score": 99.5
     },
     {
-      "ticker": "ZROZ",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $58.86",
-      "score": 100.0
+      "ticker": "CRS",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $472.94",
+      "score": 99.5
     },
     {
-      "ticker": "CVCO",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $566.02",
-      "score": 100.0
+      "ticker": "GH",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $160.68",
+      "score": 99.5
     },
     {
-      "ticker": "ESNT",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $69.16",
-      "score": 100.0
+      "ticker": "AVY",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $174.14",
+      "score": 99.5
     },
     {
-      "ticker": "SPYD",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $49.63",
-      "score": 100.0
+      "ticker": "WSO",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $313.43",
+      "score": 99.5
     },
     {
-      "ticker": "SPB",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $88.54",
-      "score": 100.0
+      "ticker": "BAI",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $44.39",
+      "score": 99.5
     },
     {
-      "ticker": "BKU",
-      "metric": "Bouncing +-0.0% off Fixed POC (Q3) $46.38",
-      "score": 100.0
+      "ticker": "FLG",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $13.45",
+      "score": 99.5
     },
     {
-      "ticker": "TOWN",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $37.58",
-      "score": 100.0
+      "ticker": "ASB",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $30.91",
+      "score": 99.5
     },
     {
-      "ticker": "TMSL",
-      "metric": "Bouncing +0.0% off Fixed POC (Q3) $42.77",
-      "score": 100.0
+      "ticker": "SDVY",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $43.23",
+      "score": 99.5
     },
     {
-      "ticker": "MCHP",
-      "metric": "Bouncing +0.1% off Fixed POC (Q3) $74.12",
-      "score": 99.9
+      "ticker": "AMBQ",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $57.17",
+      "score": 99.5
     },
     {
-      "ticker": "EQIX",
-      "metric": "Bouncing +0.1% off Fixed POC (Q3) $1034.78",
-      "score": 99.9
+      "ticker": "INDB",
+      "metric": "Bouncing +0.5% off Fixed POC (Q3) $83.48",
+      "score": 99.5
     }
   ]
 }

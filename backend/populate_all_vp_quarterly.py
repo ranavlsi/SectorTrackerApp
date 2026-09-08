@@ -82,4 +82,4 @@ data["poc_rejection_fixed"] = poc_fixed_items[:50]
 with open(path, 'w') as f:
     json.dump(data, f, indent=2)
 
-print("Successfully updated public/screener_results.json with both Rolling and Fixed Quarterly VAH & POC rejections!")
+print("Successfully refreshed public/screener_results.json with strictly filtered VAH/POC rejection data!")

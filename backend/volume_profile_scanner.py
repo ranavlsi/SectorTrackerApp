@@ -70,27 +70,34 @@ def evaluate_level_bounce(level, df_slice, curr_c, curr_o, curr_l, curr_h, level
     last_3 = df_slice.iloc[-3:]
     prior_20 = df_slice.iloc[-20:]
     
-    # 1. Price came from above this level (prior peak clearly above)
-    was_above = prior_20['High'].max() >= level * 1.015
+    # 1. Price came from a genuine uptrend/expansion above this level:
+    # Look at the period before the current 3-day test (days -20 to -3)
+    prior_peak = df_slice['High'].iloc[-20:-2].max() if len(df_slice) >= 20 else df_slice['High'].iloc[:-2].max()
+    was_above = prior_peak >= level * 1.03  # Must have rallied at least 3% above the level
     if not was_above:
         return None
         
-    # 2. Tested level: low dipped into or right around the level (-1.5% to +1.0%)
-    tested_level = any((last_3['Low'] <= level * 1.01) & (last_3['Low'] >= level * 0.985))
-    if not tested_level:
+    # 2. Genuine Pullback:
+    # The price must have pulled back from that peak toward the level
+    pulled_back = any(last_3['Low'] <= level * 1.01) and any(last_3['Low'] >= level * 0.98)
+    if not pulled_back:
         return None
         
-    # 3. Holding & Bouncing: Close must be holding at/above level and not extended (> +5.0%)
-    holding = curr_c >= level * 0.998 and curr_c <= level * 1.055
+    # 3. Holding strictly above level:
+    # Today's close must be strictly above the level (Close > level * 1.002) and not extended (< level * 1.04)
+    holding = (curr_c > level * 1.002) and (curr_c <= level * 1.045)
     if not holding:
         return None
         
-    # 4. Candlestick Confirmation:
-    # Closed green OR printed a bottom wick (close in upper 45% of day's range)
+    # 4. Strict Bullish Candlestick Rejection:
+    # Must close in the upper 55% of the daily range (showing clear lower wick / buyers stepping in)
+    # AND cannot be a heavy red distribution candle (Close >= Open * 0.998)
     candle_range = curr_h - curr_l
-    close_in_upper = (curr_c - curr_l) >= (candle_range * 0.45) if candle_range > 0 else True
-    green_or_wick = (curr_c >= curr_o * 0.995) or close_in_upper
-    if not green_or_wick:
+    if candle_range <= 0:
+        return None
+    close_in_upper = (curr_c - curr_l) / candle_range >= 0.50
+    not_heavy_red = curr_c >= curr_o
+    if not (close_in_upper or not_heavy_red):
         return None
         
     dist = ((curr_c - level) / level) * 100
