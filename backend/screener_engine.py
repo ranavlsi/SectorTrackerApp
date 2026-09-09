@@ -61,29 +61,40 @@ def get_dynamic_universe():
 
 import talib
 
-CDL_PATTERNS = {
+CDL_REVERSAL_PATTERNS = {
     'CDLMORNINGSTAR': 'Morning Star',
-    'CDLEVENINGSTAR': 'Evening Star',
     'CDLABANDONEDBABY': 'Abandoned Baby',
     'CDLENGULFING': 'Engulfing',
-    'CDL3WHITESOLDIERS': '3 White Soldiers',
-    'CDL3BLACKCROWS': '3 Black Crows',
     'CDLPIERCING': 'Piercing Line',
-    'CDLDARKCLOUDCOVER': 'Dark Cloud Cover',
     'CDLHOMINGPIGEON': 'Homing Pigeon',
-    'CDLHIKKAKE': 'Hikkake',
     'CDLSTICKSANDWICH': 'Stick Sandwich',
     'CDLBREAKAWAY': 'Breakaway',
     'CDLUNIQUE3RIVER': 'Unique 3 River',
     'CDLCONCEALBABYSWALL': 'Conceal Baby Swallow',
+    'CDLHAMMER': 'Hammer'
+}
+
+CDL_CONTINUATION_PATTERNS = {
+    'CDL3WHITESOLDIERS': '3 White Soldiers',
     'CDLRISEFALL3METHODS': '3 Methods',
     'CDLMATHOLD': 'Mat Hold',
     'CDLTASUKIGAP': 'Tasuki Gap',
     'CDLSEPARATINGLINES': 'Separating Lines',
+    'CDLGAPSIDESIDEWHITE': 'Side-by-Side White'
+}
+
+CDL_TRAP_PATTERNS = {
+    'CDLHIKKAKE': 'Hikkake'
+}
+
+CDL_BEARISH_PATTERNS = {
+    'CDLEVENINGSTAR': 'Evening Star',
+    'CDLENGULFING': 'Engulfing',
+    'CDL3BLACKCROWS': '3 Black Crows',
+    'CDLDARKCLOUDCOVER': 'Dark Cloud Cover',
+    'CDLHIKKAKE': 'Hikkake',
     'CDLSTALLEDPATTERN': 'Deliberation',
-    'CDLGAPSIDESIDEWHITE': 'Side-by-Side White',
-    'CDLGAPSIDESIDEWHITE': 'Side-by-Side White',
-    'CDLHAMMER': 'Hammer'
+    'CDLABANDONEDBABY': 'Abandoned Baby'
 }
 
 def check_cup_and_handle(df, is_monthly=False):
@@ -290,6 +301,8 @@ def run_screener(custom_universe=None):
         
         curr_c = close.iloc[-1]
         curr_o = open_s.iloc[-1]
+        curr_h = high.iloc[-1]
+        curr_l = low.iloc[-1]
         
         dollar_vol_20d = float(curr_c * vol.iloc[-20:].mean())
         dollar_vol_dict[ticker] = dollar_vol_20d
@@ -445,37 +458,93 @@ def run_screener(custom_universe=None):
             if abs(curr_c - curr_avwap) / curr_avwap < 0.03 and curr_c >= curr_avwap * 0.99:
                 results["ipo_avwap"].append({"ticker": ticker, "metric": f"AVWAP: ${curr_avwap:.2f}"})
                 
-        # 5. Multi-Day Candlestick Patterns via TA-Lib
+        # 5. Multi-Day Candlestick Patterns (Reversals, Continuations, Traps)
         has_bullish_candle = False
-        for func_name, common_name in CDL_PATTERNS.items():
-            func = getattr(talib, func_name)
-            res = func(open_s, high, low, close)
-            val = res.iloc[-1]
-            if val > 0:
-                # Universal Bullish Candlestick Filters
-                day_range = high.iloc[-1] - low.iloc[-1]
-                if day_range == 0: continue
-                
-                close_pct = (curr_c - low.iloc[-1]) / day_range
-                sma_10 = close.rolling(10).mean().iloc[-1]
-                avg_vol_10 = vol.rolling(10).mean().iloc[-1]
-                
-                # 1. Must close in upper half of range (buyers held control)
-                if close_pct < 0.50: continue
-                
-                # 2. Must occur during a short-term pullback (below 10 SMA) to be a valid reversal
-                if curr_c > sma_10: continue
-                
-                # 3. Must have institutional volume backing (>20% above avg)
-                if vol.iloc[-1] < avg_vol_10 * 1.2: continue
+        curr_l = low.iloc[-1]
+        curr_h = high.iloc[-1]
+        day_range = curr_h - curr_l
+        close_pct = (curr_c - curr_l) / day_range if day_range > 0 else 0.5
+        sma_10 = close.rolling(10).mean().iloc[-1] if len(close) >= 10 else curr_c
+        sma_20 = close.rolling(20).mean().iloc[-1] if len(close) >= 20 else curr_c
+        avg_vol_10 = vol.rolling(10).mean().iloc[-1] if len(vol) >= 10 else vol.mean()
 
-                if func_name == 'CDLHIKKAKE':
-                    # Strict Hikkake filter: Must be a strong green candle closing near the top of its range
-                    if curr_c <= curr_o or close_pct < 0.70: continue 
-                    
-                results["bullish_candlestick"].append({"ticker": ticker, "metric": f"Bullish {common_name}"})
-                has_bullish_candle = True
-            elif val < 0:
+        detected_bullish = []
+
+        # --- A. Reversal Patterns ---
+        for func_name, common_name in CDL_REVERSAL_PATTERNS.items():
+            func = getattr(talib, func_name)
+            val = func(open_s, high, low, close).iloc[-1]
+            if val > 0:
+                # Reversal context: Must close in upper half and occur near or below 10-SMA (pullback)
+                # Volume must not be completely dead (> 0.85x average)
+                if close_pct >= 0.48 and curr_c <= sma_10 * 1.015 and vol.iloc[-1] >= avg_vol_10 * 0.85:
+                    detected_bullish.append(f"Bullish {common_name}")
+
+        # Geometric Morning Star fallback (TA-Lib's gap requirement is too rigid for equities)
+        if len(close) >= 3 and not any("Morning Star" in p for p in detected_bullish):
+            c_m2, o_m2 = close.iloc[-3], open_s.iloc[-3]
+            c_m1, o_m1 = close.iloc[-2], open_s.iloc[-2]
+            c_0, o_0 = curr_c, curr_o
+            b_m2 = abs(c_m2 - o_m2)
+            b_m1 = abs(c_m1 - o_m1)
+            mid_m2 = (c_m2 + o_m2) / 2.0
+            # Day -2: Red candle, Day -1: Small star/indecision body, Day 0: Strong green closing > mid of Day -2
+            if c_m2 < o_m2 and b_m2 > 0 and b_m1 <= b_m2 * 0.45 and c_0 > o_0 and c_0 > mid_m2:
+                if close_pct >= 0.55 and vol.iloc[-1] >= avg_vol_10 * 0.90:
+                    detected_bullish.append("Bullish Morning Star")
+
+        # --- B. Continuation Patterns ---
+        for func_name, common_name in CDL_CONTINUATION_PATTERNS.items():
+            func = getattr(talib, func_name)
+            val = func(open_s, high, low, close).iloc[-1]
+            if val > 0:
+                # Continuation context: Must close in upper 50% and hold at/above short-term trend
+                if close_pct >= 0.50 and curr_c >= sma_10 * 0.985:
+                    detected_bullish.append(f"Bullish {common_name}")
+
+        # Practical 3 White Soldiers fallback (TA-Lib requires zero wicks and rigid opens inside prior body)
+        if len(close) >= 4 and not any("3 White Soldiers" in p for p in detected_bullish):
+            c1, c2, c3 = close.iloc[-3], close.iloc[-2], curr_c
+            o1, o2, o3 = open_s.iloc[-3], open_s.iloc[-2], curr_o
+            l1, l2, l3 = low.iloc[-3], low.iloc[-2], curr_l
+            h1, h2, h3 = high.iloc[-3], high.iloc[-2], curr_h
+            # 3 green days, sequential higher closes, closing in upper 55% each day, holding above 10-SMA
+            if c1 > o1 and c2 > o2 and c3 > o3 and c3 > c2 and c2 > c1 and c3 >= sma_10:
+                rng2 = h2 - l2
+                rng3 = h3 - l3
+                if rng2 > 0 and rng3 > 0 and ((c3 - l3) / rng3 >= 0.55) and ((c2 - l2) / rng2 >= 0.50):
+                    if vol.iloc[-1] >= avg_vol_10 * 1.05:
+                        detected_bullish.append("Bullish 3 White Soldiers")
+
+        # Practical Bullish Harami / Inside Bar Coil fallback
+        if len(close) >= 3 and not any("Harami" in p or "Engulfing" in p for p in detected_bullish):
+            c_prev, o_prev = close.iloc[-2], open_s.iloc[-2]
+            h_prev, l_prev = high.iloc[-2], low.iloc[-2]
+            if c_prev < o_prev: # Prev day red
+                # Inside bar: Today's range completely inside yesterday's range, green close
+                if curr_h <= h_prev and curr_l >= l_prev and curr_c > curr_o:
+                    if curr_c <= sma_10 * 1.02:
+                        detected_bullish.append("Bullish Harami (Inside Bar)")
+
+        # --- C. Trap Patterns (Hikkake) ---
+        for func_name, common_name in CDL_TRAP_PATTERNS.items():
+            func = getattr(talib, func_name)
+            val = func(open_s, high, low, close).iloc[-1]
+            if val > 0:
+                # Must be a strong green candle closing near the top of its range
+                if curr_c > curr_o and close_pct >= 0.65 and vol.iloc[-1] >= avg_vol_10 * 1.1:
+                    detected_bullish.append(f"Bullish {common_name}")
+
+        # Register detected bullish patterns
+        for pat in detected_bullish:
+            results["bullish_candlestick"].append({"ticker": ticker, "metric": pat})
+            has_bullish_candle = True
+
+        # Bearish Candlestick Patterns
+        for func_name, common_name in CDL_BEARISH_PATTERNS.items():
+            func = getattr(talib, func_name)
+            val = func(open_s, high, low, close).iloc[-1]
+            if val < 0:
                 results["bearish_candlestick"].append({"ticker": ticker, "metric": f"Bearish {common_name}"})
             
         # 4. Early Stage 2 Breakout (Requires Upward Moving Average Slopes & Alignment)

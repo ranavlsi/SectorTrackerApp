@@ -479,40 +479,204 @@
   ],
   "bullish_candlestick": [
     {
-      "ticker": "CRDO",
+      "ticker": "ABUS",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "ABVX",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "ACHR",
       "metric": "Bullish Engulfing"
     },
     {
-      "ticker": "SUNB",
+      "ticker": "ADSK",
+      "metric": "Bullish Hammer"
+    },
+    {
+      "ticker": "AEE",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AEVA",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AGIO",
       "metric": "Bullish Engulfing"
     },
     {
-      "ticker": "ODFL",
-      "metric": "Bullish Homing Pigeon"
+      "ticker": "AGX",
+      "metric": "Bullish Morning Star"
     },
     {
-      "ticker": "OC",
+      "ticker": "AIPO",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AIR",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "ALB",
       "metric": "Bullish Engulfing"
     },
     {
-      "ticker": "VAC",
+      "ticker": "ALKT",
+      "metric": "Bullish Hammer"
+    },
+    {
+      "ticker": "ALM",
+      "metric": "Bullish Morning Star"
+    },
+    {
+      "ticker": "AMBQ",
+      "metric": "Bullish Morning Star"
+    },
+    {
+      "ticker": "AMD",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AMDL",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AMPX",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AMX",
+      "metric": "Bullish Hammer"
+    },
+    {
+      "ticker": "APG",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "APLD",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AXTI",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AXTU",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "AXTX",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "BE",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "BEG",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "BEP",
+      "metric": "Bullish Morning Star"
+    },
+    {
+      "ticker": "BEX",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "BHYP",
       "metric": "Bullish Hikkake"
     },
     {
-      "ticker": "WRBY",
-      "metric": "Bullish Piercing Line"
+      "ticker": "BIDU",
+      "metric": "Bullish Hammer"
     },
     {
-      "ticker": "ITRI",
-      "metric": "Bullish Piercing Line"
-    },
-    {
-      "ticker": "TAC",
+      "ticker": "BKD",
       "metric": "Bullish Engulfing"
     },
     {
-      "ticker": "TILE",
+      "ticker": "BNL",
+      "metric": "Bullish Morning Star"
+    },
+    {
+      "ticker": "BTCI",
+      "metric": "Bullish Hikkake"
+    },
+    {
+      "ticker": "CALM",
+      "metric": "Bullish Harami (Inside Bar)"
+    },
+    {
+      "ticker": "CECO",
+      "metric": "Bullish Separating Lines"
+    },
+    {
+      "ticker": "CEVA",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CIEN",
+      "metric": "Bullish Morning Star"
+    },
+    {
+      "ticker": "CLSK",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CNK",
+      "metric": "Bullish Morning Star"
+    },
+    {
+      "ticker": "CRAK",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CRWG",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CRWU",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CRWV",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CTRE",
+      "metric": "Bullish Homing Pigeon"
+    },
+    {
+      "ticker": "CVI",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CWVX",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CXW",
+      "metric": "Bullish 3 White Soldiers"
+    },
+    {
+      "ticker": "CYTK",
       "metric": "Bullish Engulfing"
+    },
+    {
+      "ticker": "DDOG",
+      "metric": "Bullish Hammer"
+    },
+    {
+      "ticker": "DDOG",
+      "metric": "Bullish Hikkake"
+    },
+    {
+      "ticker": "DIS",
+      "metric": "Bullish Hammer"
     }
   ],
   "bearish_candlestick": [

@@ -152,9 +152,9 @@ export const ScreenerDescriptions = {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <strong>Algorithm Architecture:</strong>
       <ul style={{ margin: 0, paddingLeft: '20px' }}>
-        <li><strong>Engulfing:</strong> Today's body completely engulfs yesterday's body.</li>
-        <li><strong>Hammer:</strong> Lower wick is &gt; 2x the size of the real body, upper wick is practically non-existent.</li>
-        <li>Occurs while the stock is in an oversold state (RSI &lt; 40) or at a 50-SMA support level.</li>
+        <li><strong>Reversal Setups (Hammer, Morning Star, Piercing Line, Engulfing, Harami):</strong> Occurs during a short-term pullback near or below the 10-day SMA, closing in the upper 50% of the range on active volume.</li>
+        <li><strong>Continuation Setups (3 White Soldiers, Mat Hold, Rising 3 Methods, Tasuki Gap):</strong> Momentum continuation patterns requiring price to hold above the 10-day SMA in an active uptrend on institutional volume expansion.</li>
+        <li><strong>Trap Patterns (Bullish Hikkake):</strong> Inside bar false breakdown followed by an immediate aggressive reclaim closing near the highs, trapping early breakdown shorts.</li>
       </ul>
     </div>
   ),
