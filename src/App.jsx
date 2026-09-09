@@ -55,6 +55,7 @@ const ScreenerCategories = {
   bullish_candlestick: { title: "Bullish Candlestick", icon: <TrendingUp color="#22c55e" />, desc: "Bullish engulfing or massive hammer candles appearing at crucial structural support levels." },
   bearish_candlestick: { title: "Bearish Candlestick", icon: <TrendingUp color="#ef4444" style={{ transform: 'rotate(180deg)' }} />, desc: "Bearish engulfing or shooting stars signaling trend exhaustion at the top of a run." },
   reversal: { title: "Oversold Reversal", icon: <RefreshCw color="#ef4444" />, desc: "Deep oversold (RSI < 40) snapback setups flashing bullish reversal candle patterns." },
+  smc_divergence_reversal: { title: "SMC: Divergence + Liquidity Grab + CHoCH", icon: <Zap color="#10b981" />, desc: "Smart Money Concepts: Bullish RSI divergence resolved with a Liquidity Grab (stop sweep) and Change of Character (CHoCH / W-bottom structural shift)." },
   zacks_rank_1: { title: "Zacks Rank #1 (Strong Buy)", icon: <BookOpen color="#10b981" />, desc: "Strict fundamental filter showing only stocks with upward earnings estimate revisions and PEG < 2." },
   qullamaggie_parabolic: { title: "Qullamaggie: Parabolic Flag", icon: <TrendingUp color="#3b82f6" />, desc: "Fast-moving momentum stocks forming tight flags after 3+ consecutive up days. (Excludes intraday fades: requires daily close near highs)." },
   universal_takeout: { title: "Universal Takeout", icon: <Activity color="#8b5cf6" />, desc: "JAZZ Engine: Stocks taking out the highs of the previous two trading sessions with heavy volume." },

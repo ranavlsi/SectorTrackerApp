@@ -176,6 +176,17 @@ export const ScreenerDescriptions = {
       </ul>
     </div>
   ),
+  smc_divergence_reversal: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (SMC Divergence + Liquidity Grab + CHoCH):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>Momentum Divergence:</strong> Price prints a lower low or double bottom over 15–35 days, while 14-day RSI prints a distinct higher low (+2.5 to +20+ pts).</li>
+        <li><strong>Liquidity Grab (Stop Sweep):</strong> The second trough wicks below the prior swing low to trigger retail stop-loss orders, but closes back above the level (Turtle Soup / false breakdown).</li>
+        <li><strong>Change of Character (CHoCH):</strong> Price breaks above the interim swing high (market structure shift from lower highs to higher highs).</li>
+        <li><strong>Trigger & Confirmation:</strong> Reclaims the 10-day EMA and closes green or in the upper 45% of today's range.</li>
+      </ul>
+    </div>
+  ),
   zacks_rank_1: (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <strong>Algorithm Architecture (Fundamental Check):</strong>

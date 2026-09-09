@@ -17,6 +17,7 @@ from earnings_surprise_scanner import evaluate_earnings_surprise
 from regression_channel_scanner import evaluate_regression_channel
 from fvg_sma_scanner import evaluate_fvg_sma_confluence
 from volume_profile_scanner import evaluate_volume_profile_rejections, evaluate_val_rejection
+from divergence_reversal_scanner import evaluate_divergence_reversal
 
 warnings.filterwarnings('ignore')
 
@@ -236,6 +237,7 @@ def run_screener(custom_universe=None):
         "breakout_retest": [],
         "base_pullback_ma": [],
         "reversal": [],
+        "smc_divergence_reversal": [],
         "hve_volume": [],
         "hve_consolidation": [],
         "post_earning_reaction": [],
@@ -674,6 +676,18 @@ def run_screener(custom_universe=None):
         if not rsi.empty and rsi.iloc[-1] < 40 and has_bullish_candle:
             # Score is distance below 40 (deeper oversold = higher score)
             results["reversal"].append({"ticker": ticker, "metric": f"RSI {rsi.iloc[-1]:.1f} + Bullish Candle", "score": float(40 - rsi.iloc[-1])})
+            
+        # 8.5 SMC Bullish Divergence Reversal (Liquidity Grab / CHoCH / W-Bottom)
+        try:
+            div_res = evaluate_divergence_reversal(ticker, df=ticker_df)
+            if div_res:
+                results["smc_divergence_reversal"].append({
+                    "ticker": ticker,
+                    "metric": div_res["metric"],
+                    "score": div_res["score"]
+                })
+        except Exception:
+            pass
             
         # 9. High Volume Event (HVE) (Smart Volume Climax)
         curr_vol = vol.iloc[-1]

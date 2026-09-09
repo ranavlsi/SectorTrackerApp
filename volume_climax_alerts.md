@@ -1,3 +1,13 @@
+## 🌋 Volume Climax Consolidation Scanner - September 08, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### SWKS
+- **Current Price:** $75.38
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.5x avg | MCap: $11.3B | AvgVol: 5.6M
+
+---
+
 ## 🌋 Volume Climax Consolidation Scanner - September 07, 2026
 Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
 

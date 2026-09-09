@@ -4686,5 +4686,257 @@
       "metric": "Bouncing +0.5% off Fixed POC (Q3) $83.48",
       "score": 99.5
     }
+  ],
+  "smc_divergence_reversal": [
+    {
+      "ticker": "CSHI",
+      "metric": "CHoCH | +23.0pts RSI Div",
+      "score": 118.0
+    },
+    {
+      "ticker": "ZSL",
+      "metric": "Liquidity Grab + CHoCH | +10.0pts RSI Div",
+      "score": 115.0
+    },
+    {
+      "ticker": "BLBD",
+      "metric": "Liquidity Grab + CHoCH | +9.4pts RSI Div",
+      "score": 114.4
+    },
+    {
+      "ticker": "AROC",
+      "metric": "Liquidity Grab + CHoCH | +8.1pts RSI Div",
+      "score": 113.1
+    },
+    {
+      "ticker": "NI",
+      "metric": "Liquidity Grab + CHoCH | +6.4pts RSI Div",
+      "score": 111.4
+    },
+    {
+      "ticker": "WD",
+      "metric": "Liquidity Grab + CHoCH | +5.4pts RSI Div",
+      "score": 110.4
+    },
+    {
+      "ticker": "DTE",
+      "metric": "Liquidity Grab + CHoCH | +5.0pts RSI Div",
+      "score": 110.0
+    },
+    {
+      "ticker": "ENB",
+      "metric": "Liquidity Grab + CHoCH | +4.4pts RSI Div",
+      "score": 109.4
+    },
+    {
+      "ticker": "FRVO",
+      "metric": "Liquidity Grab + CHoCH | +4.3pts RSI Div",
+      "score": 109.3
+    },
+    {
+      "ticker": "JBHT",
+      "metric": "Liquidity Grab + CHoCH | +3.8pts RSI Div",
+      "score": 108.8
+    },
+    {
+      "ticker": "DTM",
+      "metric": "Liquidity Grab + CHoCH | +2.9pts RSI Div",
+      "score": 107.9
+    },
+    {
+      "ticker": "FTS",
+      "metric": "Liquidity Grab + CHoCH | +2.9pts RSI Div",
+      "score": 107.9
+    },
+    {
+      "ticker": "SLAB",
+      "metric": "CHoCH | +12.2pts RSI Div",
+      "score": 107.2
+    },
+    {
+      "ticker": "VTIP",
+      "metric": "CHoCH | +11.6pts RSI Div",
+      "score": 106.6
+    },
+    {
+      "ticker": "SH",
+      "metric": "CHoCH | +11.2pts RSI Div",
+      "score": 106.2
+    },
+    {
+      "ticker": "STIP",
+      "metric": "CHoCH | +10.4pts RSI Div",
+      "score": 105.4
+    },
+    {
+      "ticker": "STAG",
+      "metric": "CHoCH | +10.1pts RSI Div",
+      "score": 105.1
+    },
+    {
+      "ticker": "VIV",
+      "metric": "CHoCH | +10.1pts RSI Div",
+      "score": 105.1
+    },
+    {
+      "ticker": "CNP",
+      "metric": "CHoCH | +9.5pts RSI Div",
+      "score": 104.5
+    },
+    {
+      "ticker": "BUD",
+      "metric": "CHoCH | +9.3pts RSI Div",
+      "score": 104.3
+    },
+    {
+      "ticker": "FPS",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +12.6pts RSI Div",
+      "score": 102.6
+    },
+    {
+      "ticker": "TXNM",
+      "metric": "CHoCH | +6.4pts RSI Div",
+      "score": 101.4
+    },
+    {
+      "ticker": "CMC",
+      "metric": "CHoCH | +5.8pts RSI Div",
+      "score": 100.8
+    },
+    {
+      "ticker": "CNM",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +10.1pts RSI Div",
+      "score": 100.1
+    },
+    {
+      "ticker": "TBUX",
+      "metric": "CHoCH | +4.9pts RSI Div",
+      "score": 99.9
+    },
+    {
+      "ticker": "WSO",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +9.8pts RSI Div",
+      "score": 99.8
+    },
+    {
+      "ticker": "PDFS",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +9.8pts RSI Div",
+      "score": 99.8
+    },
+    {
+      "ticker": "VST",
+      "metric": "CHoCH | +4.7pts RSI Div",
+      "score": 99.7
+    },
+    {
+      "ticker": "CAT",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +9.6pts RSI Div",
+      "score": 99.6
+    },
+    {
+      "ticker": "LGN",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +9.3pts RSI Div",
+      "score": 99.3
+    },
+    {
+      "ticker": "GSY",
+      "metric": "CHoCH | +3.9pts RSI Div",
+      "score": 98.9
+    },
+    {
+      "ticker": "GTX",
+      "metric": "CHoCH | +3.8pts RSI Div",
+      "score": 98.8
+    },
+    {
+      "ticker": "ETR",
+      "metric": "CHoCH | +3.7pts RSI Div",
+      "score": 98.7
+    },
+    {
+      "ticker": "FAZ",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +8.7pts RSI Div",
+      "score": 98.7
+    },
+    {
+      "ticker": "TAN",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +8.4pts RSI Div",
+      "score": 98.4
+    },
+    {
+      "ticker": "AEP",
+      "metric": "CHoCH | +3.2pts RSI Div",
+      "score": 98.2
+    },
+    {
+      "ticker": "CHRW",
+      "metric": "CHoCH | +3.2pts RSI Div",
+      "score": 98.2
+    },
+    {
+      "ticker": "ESI",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +8.0pts RSI Div",
+      "score": 98.0
+    },
+    {
+      "ticker": "UUP",
+      "metric": "CHoCH | +2.9pts RSI Div",
+      "score": 97.9
+    },
+    {
+      "ticker": "FLDR",
+      "metric": "CHoCH | +2.9pts RSI Div",
+      "score": 97.9
+    },
+    {
+      "ticker": "SOLS",
+      "metric": "CHoCH | +2.8pts RSI Div",
+      "score": 97.8
+    },
+    {
+      "ticker": "DOCN",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +7.7pts RSI Div",
+      "score": 97.7
+    },
+    {
+      "ticker": "PEG",
+      "metric": "CHoCH | +2.7pts RSI Div",
+      "score": 97.7
+    },
+    {
+      "ticker": "TBLL",
+      "metric": "CHoCH | +2.7pts RSI Div",
+      "score": 97.7
+    },
+    {
+      "ticker": "SEDG",
+      "metric": "CHoCH | +2.6pts RSI Div",
+      "score": 97.6
+    },
+    {
+      "ticker": "OLN",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +7.2pts RSI Div",
+      "score": 97.2
+    },
+    {
+      "ticker": "ENPH",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +6.8pts RSI Div",
+      "score": 96.8
+    },
+    {
+      "ticker": "VECO",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +5.7pts RSI Div",
+      "score": 95.7
+    },
+    {
+      "ticker": "BEPC",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +5.6pts RSI Div",
+      "score": 95.6
+    },
+    {
+      "ticker": "WEC",
+      "metric": "Liquidity Grab + EMA-10 Reclaimed | +5.2pts RSI Div",
+      "score": 95.2
+    }
   ]
 }
