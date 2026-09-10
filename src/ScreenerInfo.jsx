@@ -5,9 +5,9 @@ export const ScreenerDescriptions = {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <strong>Algorithm Architecture:</strong>
       <ul style={{ margin: 0, paddingLeft: '20px' }}>
-        <li>Calculates the trailing momentum of the stock against the benchmark (SPY).</li>
-        <li>Filters out strictly for stocks possessing an RS Rating &gt; 90 (Top 10% of the entire market).</li>
-        <li>Ensures the stock is trading above its 50-day and 200-day Simple Moving Averages.</li>
+        <li><strong>Multi-Timeframe Composite RS:</strong> Dynamically weights trailing performance vs SPY: <strong>45% 5-Day Velocity</strong>, <strong>35% 20-Day Momentum</strong>, and <strong>20% 63-Day Trend</strong>.</li>
+        <li><strong>🔥 Fresh RS High:</strong> Flags stocks whose RS line reached a new 20-day high today, signaling active leadership acceleration.</li>
+        <li><strong>Trend Gate:</strong> Price &gt; 50-SMA &gt; 200-SMA, within 25% of 52-week high, and dollar volume &gt; $15M.</li>
       </ul>
     </div>
   ),

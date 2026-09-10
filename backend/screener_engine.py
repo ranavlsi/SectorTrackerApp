@@ -385,10 +385,21 @@ def run_screener(custom_universe=None):
             stock_aligned, spy_aligned = close.align(spy_close, join='inner')
             rs_line = stock_aligned / spy_aligned
             
-            # Simple 1-Month RS performance vs SPY (Current vs 20 trading days ago)
-            rs_1mo = ((stock_aligned.iloc[-1] / spy_aligned.iloc[-1]) / (stock_aligned.iloc[-20] / spy_aligned.iloc[-20]) - 1) * 100
+            # Multi-Timeframe Composite Relative Strength vs SPY
+            # Blends 5-day velocity (45%), 20-day momentum (35%), and 63-day trend (20%)
+            # to dynamically reward emerging leaders breaking out THIS WEEK over stale month-old moves.
+            rs_5d = ((stock_aligned.iloc[-1] / spy_aligned.iloc[-1]) / (stock_aligned.iloc[-5] / spy_aligned.iloc[-5]) - 1) * 100 if len(stock_aligned) >= 5 else 0.0
+            rs_20d = ((stock_aligned.iloc[-1] / spy_aligned.iloc[-1]) / (stock_aligned.iloc[-20] / spy_aligned.iloc[-20]) - 1) * 100 if len(stock_aligned) >= 20 else 0.0
+            rs_63d = ((stock_aligned.iloc[-1] / spy_aligned.iloc[-1]) / (stock_aligned.iloc[-63] / spy_aligned.iloc[-63]) - 1) * 100 if len(stock_aligned) >= 63 else rs_20d
             
-            if rs_1mo > 10:
+            composite_rs = (0.45 * rs_5d) + (0.35 * rs_20d) + (0.20 * rs_63d)
+            
+            # Detect Fresh RS Line High (RS line printing new 20-day high today)
+            rs_20d_max = rs_line.iloc[-22:-2].max() if len(rs_line) >= 22 else rs_line.max()
+            is_fresh_rs_high = rs_line.iloc[-1] >= rs_20d_max
+            
+            # Must show positive relative strength across both short and medium timeframes
+            if composite_rs > 8.0 or rs_5d > 5.0 or (rs_20d > 10.0 and rs_5d > -2.0):
                 # Strict Trend Filter to remove "clutter" (random gap ups, broken stocks)
                 if len(close) >= 200:
                     sma50 = close.rolling(50).mean().iloc[-1]
@@ -401,7 +412,11 @@ def run_screener(custom_universe=None):
                         # 1. Price > 50 SMA > 200 SMA (Structural Uptrend)
                         # 2. Within 25% of 52-week high (Not a bottom bounce)
                         if curr_c > sma50 and sma50 > sma200 and curr_c >= high_52w * 0.75:
-                            results["relative_strength"].append({"ticker": ticker, "metric": f"+{rs_1mo:.1f}% vs SPY", "score": float(rs_1mo)})
+                            prefix = "🔥 Fresh High | " if is_fresh_rs_high else ""
+                            metric_str = f"{prefix}+{rs_5d:.1f}% 5D | +{rs_20d:.1f}% 20D"
+                            # Fresh RS Highs get a +15 score bonus for active leadership expansion
+                            final_score = float(composite_rs + (15.0 if is_fresh_rs_high else 0.0))
+                            results["relative_strength"].append({"ticker": ticker, "metric": metric_str, "score": final_score})
             
             # RS Divergence (RS line hits new 3-month high, but Price has been consolidating for >5 days)
             if len(stock_aligned) >= 63:
