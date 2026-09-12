@@ -1310,17 +1310,63 @@ function App() {
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                 </linearGradient>
+                <linearGradient id="healthColorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={1}/> {/* Risk-On >= 60 */}
+                  <stop offset="40%" stopColor="#10b981" stopOpacity={1}/>
+                  <stop offset="50%" stopColor="#f59e0b" stopOpacity={1}/> {/* Cautious 40-59 */}
+                  <stop offset="60%" stopColor="#f59e0b" stopOpacity={1}/>
+                  <stop offset="65%" stopColor="#ef4444" stopOpacity={1}/> {/* Risk-Off < 40 */}
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
+                </linearGradient>
               </defs>
             </svg>
 
-            {/* Chart 1: Composite Market Health Oscillator */}
-            <div className="glass-card" style={{ padding: '0', overflow: 'hidden', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+            {/* Chart 1: Composite Market Health Oscillator (Color-Coded Risk-On / Cautious / Risk-Off) */}
+            <div className="glass-card" style={{ padding: '0', overflow: 'hidden', border: `1px solid ${marketHealth.current_health.health_regime_color || '#f59e0b'}40` }}>
               <div style={{ padding: '2rem 2rem 0 2rem' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{width: 12, height: 12, borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 10px #f59e0b'}}></span>
-                  Master Composite Health Oscillator (0-100)
-                </h3>
-                <div style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '3px solid #f59e0b', padding: '1rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.95rem', color: '#fde68a' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <h3 style={{ margin: 0, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span style={{width: 14, height: 14, borderRadius: '50%', background: marketHealth.current_health.health_regime_color || '#f59e0b', boxShadow: `0 0 12px ${marketHealth.current_health.health_regime_color || '#f59e0b'}`}}></span>
+                    Master Composite Health Oscillator (0-100)
+                  </h3>
+                  
+                  {/* Health Regime Status Badge */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ 
+                      padding: '4px 12px', 
+                      borderRadius: '20px', 
+                      fontSize: '0.85rem', 
+                      fontWeight: 'bold', 
+                      background: `${marketHealth.current_health.health_regime_color || '#f59e0b'}25`, 
+                      color: marketHealth.current_health.health_regime_color || '#f59e0b',
+                      border: `1px solid ${marketHealth.current_health.health_regime_color || '#f59e0b'}60`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: marketHealth.current_health.health_regime_color || '#f59e0b' }}></span>
+                      {marketHealth.current_health.health_regime === 'RISK_ON' ? 'RISK-ON (BULLISH)' : marketHealth.current_health.health_regime === 'CAUTIOUS' ? 'CAUTIOUS (CHOPPY)' : 'RISK-OFF (DEFENSIVE)'}
+                    </span>
+                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                      ({marketHealth.current_health.score_value}/100)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Visual Regime Legend Guide */}
+                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '2px', background: '#10b981' }}></span> Risk-On (&ge;60)
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '2px', background: '#f59e0b' }}></span> Cautious (40-59)
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '2px', background: '#ef4444' }}></span> Risk-Off (&lt;40)
+                  </span>
+                </div>
+
+                <div style={{ background: `${marketHealth.current_health.health_regime_color || '#f59e0b'}10`, borderLeft: `3px solid ${marketHealth.current_health.health_regime_color || '#f59e0b'}`, padding: '1rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.95rem', color: '#f8fafc' }}>
                   <strong>ALGO INSIGHT:</strong> {marketHealth.current_health.chart_observations.oscillator}
                 </div>
               </div>
@@ -1331,11 +1377,29 @@ function App() {
                     <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b'}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="left" stroke="#64748b" tick={{fill: '#64748b'}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" tick={{fill: '#f59e0b'}} domain={[0, 100]} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }} />
+                    
+                    {/* Regime Zone Reference Areas */}
+                    <ReferenceArea yAxisId="right" y1={60} y2={100} fill="#10b981" fillOpacity={0.06} />
+                    <ReferenceArea yAxisId="right" y1={40} y2={60} fill="#f59e0b" fillOpacity={0.05} />
+                    <ReferenceArea yAxisId="right" y1={0} y2={40} fill="#ef4444" fillOpacity={0.07} />
+                    
+                    <ReferenceLine y={60} yAxisId="right" stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.6} label={{ position: 'right', value: 'Risk-On (60)', fill: '#10b981', fontSize: 10 }} />
+                    <ReferenceLine y={40} yAxisId="right" stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.6} label={{ position: 'right', value: 'Risk-Off (40)', fill: '#ef4444', fontSize: 10 }} />
+                    
+                    <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }} 
+                      formatter={(val, name, item) => {
+                        if (name === 'Composite Health') {
+                          const state = item.payload.health_label || (val >= 60 ? 'Risk-On' : val >= 40 ? 'Cautious' : 'Risk-Off');
+                          return [`${val}/100 [${state}]`, name];
+                        }
+                        if (name === 'SPY Price') return [`$${val.toFixed(2)}`, name];
+                        return [val, name];
+                      }}
+                    />
                     <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
-                    <ReferenceLine y={50} yAxisId="right" stroke="#64748b" strokeDasharray="3 3" />
                     <Area yAxisId="left" type="monotone" dataKey="spy" name="SPY Price" stroke="#94a3b8" fillOpacity={1} fill="url(#colorSpy)" strokeWidth={2} />
-                    <Line yAxisId="right" type="monotone" dataKey="health_oscillator" name="Composite Health" stroke="#f59e0b" strokeWidth={4} dot={false} style={{ filter: 'drop-shadow(0px 0px 6px rgba(245, 158, 11, 0.8))' }} />
+                    {/* Dynamic Health Oscillator line shaded according to regime */}
+                    <Line yAxisId="right" type="monotone" dataKey="health_oscillator" name="Composite Health" stroke="url(#healthColorGradient)" strokeWidth={4} dot={{ r: 3, fill: marketHealth.current_health.health_regime_color || '#f59e0b', strokeWidth: 0 }} style={{ filter: 'drop-shadow(0px 0px 8px rgba(245, 158, 11, 0.6))' }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -1344,27 +1408,118 @@ function App() {
             {/* Grid for Dual Charts */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
               
-              {/* Chart 2: McClellan Oscillator */}
+              {/* Chart 2: McClellan Oscillator (With Institutional OB/OS Lines + SPY Buy/Sell Signals) */}
               <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#f1f5f9' }}>McClellan Oscillator (MCO)</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '8px' }}>
+                  <h3 style={{ margin: 0, color: '#f1f5f9' }}>McClellan Oscillator (MCO) & SPY Signals</h3>
+                  <div style={{ display: 'flex', gap: '10px', fontSize: '0.75rem' }}>
+                    <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(16,185,129,0.15)', padding: '2px 8px', borderRadius: '12px' }}>
+                      ▲ BUY Signal
+                    </span>
+                    <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(239,68,68,0.15)', padding: '2px 8px', borderRadius: '12px' }}>
+                      ▼ SELL Signal
+                    </span>
+                  </div>
+                </div>
+
                 <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.8rem', marginBottom: '1.5rem', borderRadius: '4px', fontSize: '0.85rem', color: '#cbd5e1' }}>
                   {marketHealth.current_health.chart_observations.mco}
                 </div>
-                <div style={{ height: '250px' }}>
+                
+                <div style={{ height: '280px' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={marketHealth.historical_data}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                       <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <ReferenceLine y={0} stroke="#475569" strokeWidth={2} />
-                      <ReferenceLine y={50} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'OB', fill: '#ef4444', fontSize: 10 }} />
-                      <ReferenceLine y={-50} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'insideBottomLeft', value: 'OS', fill: '#10b981', fontSize: 10 }} />
-                      <Bar dataKey="mco" name="MCO" radius={[2, 2, 0, 0]}>
+                      <YAxis yAxisId="mco" stroke="#64748b" tick={{fill: '#64748b', fontSize: 11}} domain={[-900, 700]} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="spy" orientation="right" stroke="#94a3b8" tick={{fill: '#94a3b8', fontSize: 11}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
+                      
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} 
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div style={{ background: 'rgba(15, 23, 42, 0.98)', border: '1px solid rgba(255,255,255,0.15)', padding: '10px 14px', borderRadius: '8px', minWidth: '180px' }}>
+                                <p style={{ margin: '0 0 6px 0', color: '#94a3b8', fontSize: '0.8rem' }}>{data.date}</p>
+                                <p style={{ margin: '0 0 4px 0', color: data.mco >= 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                                  MCO: {data.mco}
+                                </p>
+                                <p style={{ margin: '0 0 4px 0', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                  SPY: ${data.spy?.toFixed(2)}
+                                </p>
+                                {data.mco_signal && (
+                                  <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <span style={{ 
+                                      display: 'inline-block',
+                                      padding: '2px 8px', 
+                                      borderRadius: '4px', 
+                                      fontSize: '0.75rem', 
+                                      fontWeight: 'bold',
+                                      background: data.mco_signal === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                      color: data.mco_signal === 'BUY' ? '#10b981' : '#ef4444',
+                                      border: `1px solid ${data.mco_signal === 'BUY' ? '#10b981' : '#ef4444'}`
+                                    }}>
+                                      {data.mco_signal}: {data.mco_signal_type}
+                                    </span>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#cbd5e1' }}>
+                                      {data.mco_signal_note}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+
+                      <Legend wrapperStyle={{ fontSize: 11, paddingTop: '8px' }} />
+                      
+                      {/* Zero Line */}
+                      <ReferenceLine yAxisId="mco" y={0} stroke="#475569" strokeWidth={2} />
+
+                      {/* Institutional Overbought Thresholds */}
+                      <ReferenceLine yAxisId="mco" y={300} stroke="#f59e0b" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'Overbought (+300)', fill: '#f59e0b', fontSize: 9 }} />
+                      <ReferenceLine yAxisId="mco" y={500} stroke="#ef4444" strokeDasharray="2 2" strokeOpacity={0.7} label={{ position: 'insideTopLeft', value: 'Extreme OB (+500)', fill: '#ef4444', fontSize: 9 }} />
+                      
+                      {/* Institutional Oversold Thresholds */}
+                      <ReferenceLine yAxisId="mco" y={-300} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'insideBottomLeft', value: 'Oversold (-300)', fill: '#10b981', fontSize: 9 }} />
+                      <ReferenceLine yAxisId="mco" y={-500} stroke="#059669" strokeDasharray="2 2" strokeOpacity={0.7} label={{ position: 'insideBottomLeft', value: 'Extreme OS (-500)', fill: '#34d399', fontSize: 9 }} />
+                      
+                      {/* SPY Comparison Line on Secondary Axis */}
+                      <Line yAxisId="spy" type="monotone" dataKey="spy" name="SPY Price" stroke="#64748b" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
+                      
+                      {/* MCO Histogram Bars */}
+                      <Bar yAxisId="mco" dataKey="mco" name="McClellan Oscillator" radius={[2, 2, 0, 0]}>
                         {marketHealth.historical_data.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.mco > 0 ? '#10b981' : '#ef4444'} fillOpacity={0.8} />
+                          <Cell key={`cell-${index}`} fill={entry.mco > 0 ? '#10b981' : '#ef4444'} fillOpacity={entry.mco_signal ? 1.0 : 0.65} />
                         ))}
                       </Bar>
+
+                      {/* Buy Signals (rendered as green triangles/dots on SPY line) */}
+                      <Line 
+                        yAxisId="mco" 
+                        type="monotone" 
+                        dataKey={(d) => d.mco_signal === 'BUY' ? d.mco : null} 
+                        name="▲ BUY Signal" 
+                        stroke="#10b981" 
+                        strokeWidth={0}
+                        dot={{ r: 6, fill: '#10b981', stroke: '#064e3b', strokeWidth: 2 }} 
+                        isAnimationActive={false}
+                      />
+
+                      {/* Sell Signals (rendered as red circles/dots on SPY line) */}
+                      <Line 
+                        yAxisId="mco" 
+                        type="monotone" 
+                        dataKey={(d) => d.mco_signal === 'SELL' ? d.mco : null} 
+                        name="▼ SELL Signal" 
+                        stroke="#ef4444" 
+                        strokeWidth={0}
+                        dot={{ r: 6, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 2 }} 
+                        isAnimationActive={false}
+                      />
+
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
