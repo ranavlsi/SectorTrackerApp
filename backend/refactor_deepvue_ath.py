@@ -10,22 +10,23 @@ def calculate_rs_rating(hist, spy_perf_val):
     rs_diff = (stock_perf - spy_perf_val) * 100
     return round(rs_diff, 2)
 
+try:
+    from trade_council import TradeCouncil
+except ImportError:
+    TradeCouncil = None
+
 def check_vcp(hist):
-    if len(hist) < 20: return False
-    tr1 = hist['High'] - hist['Low']
-    tr2 = abs(hist['High'] - hist['Close'].shift(1))
-    tr3 = abs(hist['Low'] - hist['Close'].shift(1))
-    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    atr_20 = tr.rolling(20).mean()
-    atr_3 = tr.rolling(3).mean()
-    is_vol_contracting = atr_3.iloc[-1] < (atr_20.iloc[-1] * 0.5)
-    recent_high = hist['High'].iloc[-5:].max()
-    recent_low = hist['Low'].iloc[-5:].min()
-    is_price_tight = (recent_high - recent_low) / hist['Close'].iloc[-1] < 0.05
-    avg_vol_20 = hist['Volume'].rolling(20).mean().iloc[-1]
-    avg_vol_3 = hist['Volume'].iloc[-3:].mean()
-    is_vol_dry = avg_vol_3 < (avg_vol_20 * 0.75)
-    return is_vol_contracting and is_price_tight and is_vol_dry
+    if len(hist) < 60: return False
+    sma50 = hist['Close'].rolling(50).mean().iloc[-1]
+    sma150 = hist['Close'].rolling(min(150, len(hist))).mean().iloc[-1]
+    sma200 = hist['Close'].rolling(min(200, len(hist))).mean().iloc[-1]
+    current_price = hist['Close'].iloc[-1]
+    if not (current_price > sma50 and sma50 > sma150 and sma150 > sma200):
+        return False
+    if TradeCouncil:
+        is_vcp, _ = TradeCouncil._detect_vcp_waves(hist)
+        return is_vcp
+    return False
 
 def run_deepvue_scan():
     print("[DeepVue Engine] Loading market data from Lakehouse...")

@@ -1,14 +1,14 @@
 {
     "date": "September 12, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 11.4/100 (Extreme Fear / Washout). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
+        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 39.2/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
         "bias": "Cautious",
         "spy_weekly_return": "-1.15%",
         "regime": "RISK_OFF"
     },
     "regime_briefing": {
-        "score_value": 11.4,
-        "score_label": "Extreme Fear / Washout",
+        "score_value": 39.2,
+        "score_label": "Bearish / Deteriorating",
         "regime_status": "RISK_OFF",
         "regime_color": "#ef4444",
         "recommended_exposure": "Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash)",

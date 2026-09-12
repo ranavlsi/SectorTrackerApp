@@ -10,77 +10,105 @@ class TradeCouncil:
     @staticmethod
     def _detect_vcp_waves(hist: pd.DataFrame):
         """
-        Mark Minervini Volatility Contraction Pattern (VCP) Quantitative Detector:
-        1. Analyzes 20-75 day base structure.
-        2. Detects swing peaks and troughs.
-        3. STRICT DISQUALIFIER: Downward channel (Peak2 < Peak1 AND Trough2 < Trough1) is NEVER a VCP.
-        4. Lower Lows (Trough2 < Trough1) is NEVER a VCP.
-        5. Requires contracting wave depths (Depth2 < Depth1 * 0.85).
-        6. Requires right-side pivot proximity (within 8% of pivot peak).
-        7. Requires right-side volatility contraction (ATR5 <= ATR20 * 0.92).
+        Authentic Mark Minervini Volatility Contraction Pattern (VCP) Quantitative Detector:
+        1. Analyzes 20-65 session base structure.
+        2. Base High (Pivot) must be established at least 15 sessions ago (prevents young bases / flags like MGNI, SNOW).
+        3. Proximity: Current price must be on right side, within 7% of base high.
+        4. T1 Contraction: Drop from base high to base low must be 8% to 35%.
+        5. Base low must have formed at least 7 sessions ago to allow time for secondary wave.
+        6. T2 Contraction: Subsequent rally to T2 peak, followed by T2 pullback.
+        7. HIGHER LOW: T2 low must be strictly higher than Base Low (Trough 1).
+        8. CONTRACTION: T2 depth must contract by at least 20% relative to T1 depth (T2 <= T1 * 0.80).
+        9. Anti-Downward Channel: Last 5 sessions must not be cascading lower highs.
+        10. Volatility & Volume Contraction on right side (ATR5 <= ATR20 * 0.90, Vol5 <= Vol50 * 1.10).
         """
-        if len(hist) < 50 or find_peaks is None:
+        if len(hist) < 65:
             return False, {}
             
-        base_window = min(75, len(hist))
-        base_df = hist.iloc[-base_window:]
-        
-        peak_indices, _ = find_peaks(base_df['High'].values, distance=5, prominence=base_df['High'].std()*0.25)
-        trough_indices, _ = find_peaks(-base_df['Low'].values, distance=5, prominence=base_df['Low'].std()*0.25)
-        
-        if len(peak_indices) < 2 or len(trough_indices) < 2:
-            return False, {}
-            
-        waves = []
-        for p_idx in peak_indices:
-            subs = [t for t in trough_indices if t > p_idx]
-            if subs:
-                t_idx = subs[0]
-                p_price = base_df['High'].iloc[p_idx]
-                t_price = base_df['Low'].iloc[t_idx]
-                depth = (p_price - t_price) / p_price
-                waves.append({'depth': depth, 'peak': p_price, 'trough': t_price, 'p_idx': p_idx, 't_idx': t_idx})
-                
-        if len(waves) < 2:
-            return False, {}
-            
-        w1, w2 = waves[-2], waves[-1]
-        
-        # Immediate Disqualifier 1: Downward channel (Lower High + Lower Low)
-        if w2['peak'] < w1['peak'] and w2['trough'] < w1['trough']:
-            return False, {}
-            
-        # Immediate Disqualifier 2: Lower Low
-        if w2['trough'] < w1['trough']:
-            return False, {}
-            
-        # Wave depth contraction: W2 must contract by at least 15% relative to W1
-        contracting_depth = w2['depth'] < (w1['depth'] * 0.85)
-        
-        # Proximity to pivot: must be within 8% of highest base peak
-        highest_peak = max(w1['peak'], w2['peak'])
         current_price = hist['Close'].iloc[-1]
-        dist_to_piv = (highest_peak - current_price) / highest_peak
-        near_pivot = 0.0 <= dist_to_piv <= 0.08
         
-        # Volatility drying up on right side (ATR contraction)
+        # 1. Base Window
+        base_window = min(65, len(hist))
+        base_df = hist.tail(base_window).copy()
+        
+        # 2. Base High (Left side of base)
+        high_idx = base_df['High'].values.argmax()
+        days_since_base_high = base_window - 1 - high_idx
+        base_high = base_df['High'].iloc[high_idx]
+        
+        # Base must have had time to construct (at least 15 trading days)
+        if days_since_base_high < 15:
+            return False, {}
+            
+        # Must be on the right side of the base, within 7% of base high
+        dist_to_pivot = (base_high - current_price) / base_high
+        if dist_to_pivot > 0.07 or dist_to_pivot < -0.01:
+            return False, {}
+            
+        # 3. Wave 1 Contraction (Drop from Base High to Base Low)
+        post_high = base_df.iloc[high_idx:]
+        t1_low_idx = post_high['Low'].values.argmin()
+        base_low = post_high['Low'].iloc[t1_low_idx]
+        t1_depth = (base_high - base_low) / base_high
+        
+        if t1_depth < 0.08 or t1_depth > 0.35:
+            return False, {}
+            
+        days_since_t1_low = len(post_high) - 1 - t1_low_idx
+        if days_since_t1_low < 7:
+            return False, {}
+            
+        # 4. Wave 2 Contraction (Subsequent Rally & Secondary Pullback)
+        post_t1 = post_high.iloc[t1_low_idx:]
+        t2_peak_idx = post_t1['High'].values.argmax()
+        t2_peak = post_t1['High'].iloc[t2_peak_idx]
+        
+        if t2_peak > base_high * 1.015:
+            return False, {}
+            
+        post_t2_peak = post_t1.iloc[t2_peak_idx:]
+        if len(post_t2_peak) < 3:
+            return False, {}
+            
+        t2_low = post_t2_peak['Low'].min()
+        t2_depth = (t2_peak - t2_low) / t2_peak
+        
+        # Rule: T2 low must be HIGHER than base low
+        if t2_low <= base_low:
+            return False, {}
+            
+        # Rule: Depth of T2 must contract relative to T1 (at least 20% contraction)
+        if t2_depth >= (t1_depth * 0.80):
+            return False, {}
+            
+        # 5. Anti-Downward Channel: Last 5 sessions must NOT be cascading lower highs
+        last5 = hist.tail(5)
+        if last5['High'].iloc[-1] < last5['High'].iloc[0] and last5['Low'].iloc[-1] < last5['Low'].iloc[0] and current_price < hist['Close'].iloc[-5]:
+            high_diffs = last5['High'].diff().dropna()
+            if (high_diffs < 0).sum() >= 3:
+                return False, {}
+                
+        # 6. Supply Exhaustion & Volatility Compression
         hl = hist['High'] - hist['Low']
         hc = (hist['High'] - hist['Close'].shift()).abs()
         lc = (hist['Low'] - hist['Close'].shift()).abs()
         tr = pd.concat([hl, hc, lc], axis=1).max(axis=1)
         atr5 = tr.rolling(5).mean().iloc[-1]
         atr20 = tr.rolling(min(20, len(hist))).mean().iloc[-1]
-        vol_contracting = atr5 <= (atr20 * 0.92)
-        
-        if contracting_depth and near_pivot and vol_contracting:
-            return True, {
-                'w1_depth': f"{w1['depth']*100:.1f}%",
-                'w2_depth': f"{w2['depth']*100:.1f}%",
-                'pivot': highest_peak,
-                't2_low': w2['trough']
-            }
+        if atr5 > (atr20 * 0.90):
+            return False, {}
             
-        return False, {}
+        vol5 = hist['Volume'].tail(5).mean()
+        vol50 = hist['Volume'].rolling(min(50, len(hist))).mean().iloc[-1]
+        if vol5 > (vol50 * 1.10):
+            return False, {}
+            
+        return True, {
+            'w1_depth': f"{t1_depth*100:.1f}%",
+            'w2_depth': f"{t2_depth*100:.1f}%",
+            'pivot': base_high,
+            't2_low': t2_low
+        }
 
     @staticmethod
     def _volatility_agent(hist: pd.DataFrame):
