@@ -19,18 +19,21 @@ LAKEHOUSE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'
 
 EXCLUDED_TICKERS = {
     'SPY', 'QQQ', 'IWM', 'DIA', 'TZA', 'SOXL', 'SOXS', 'NVDL', 'MSTU', 'MSTZ',
-    'CONL', 'FNGU', 'FNGD', 'TQQQ', 'SQQQ', 'UPRO', 'SPXU', 'UVXY', 'VXX'
+    'CONL', 'FNGU', 'FNGD', 'TQQQ', 'SQQQ', 'UPRO', 'SPXU', 'UVXY', 'VXX',
+    'BWET', 'GUSH', 'DRIP', 'LABU', 'LABD', 'BOIL', 'KOLD', 'YINN', 'YANG',
+    'BITX', 'BITO', 'TSLL', 'TSLS', 'TECL', 'TECS', 'FAS', 'FAZ', 'XHLD', 'CCUP'
 }
 
-def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=25.0, min_rs_excess=5.0, max_results=50):
+def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=20.0, min_rs_excess=5.0, max_results=50):
     """
     Scans the historical Lakehouse database for stocks adhering to William O'Neil's 
     5 Market Chop Rules for Next-Leg Leaders:
     1. Stage 2 Trend Defense: Price > 50-SMA and 50-SMA > 200-SMA.
-    2. Outperforming Relative Strength: RS Line vs SPY > 3-month baseline.
-    3. Proper Basing Depth: Consolidation shelf within 25% of 52-week highs.
-    4. Volume Dry-Up (VDU): 5-day volume contracting relative to 50-day average.
-    5. Guardian MA Respect: Holding institutional defense average without 21-SMA sell breakdown.
+    2. Anti-Extension Shield: Rejects stocks extended >10% from 20-SMA or >30% from 50-SMA (anti-chasing).
+    3. Outperforming Relative Strength: RS Line vs SPY > 3-month baseline.
+    4. Proper Basing Depth: Consolidation shelf within 20% of 52-week highs.
+    5. Volume Dry-Up (VDU): 5-day volume contracting relative to 50-day average.
+    6. Guardian MA Respect: Holding institutional defense average without 21-SMA sell breakdown.
     """
     if not os.path.exists(LAKEHOUSE_PATH):
         print(f"Lakehouse path not found: {LAKEHOUSE_PATH}")
@@ -77,6 +80,7 @@ def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=25.0, 
         if dollar_vol < min_dollar_vol:
             continue
 
+        sma20 = float(df['Close'].rolling(20).mean().iloc[-1])
         sma50 = float(df['Close'].rolling(50).mean().iloc[-1])
         sma200 = float(df['Close'].rolling(min(200, len(df))).mean().iloc[-1])
 
@@ -84,14 +88,21 @@ def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=25.0, 
         if close < sma50 or sma50 < (sma200 * 0.98):
             continue
 
-        # Rule 2: High & Tight Base Shelf (within max_dist_high% of 52-week high)
+        # Rule 2: Anti-Extension / Anti-Chasing Filter (William O'Neil & Mark Minervini)
+        # Reject stocks that already made a massive vertical run and are extended from moving averages.
+        ext_20sma = ((close - sma20) / sma20) * 100.0
+        ext_50sma = ((close - sma50) / sma50) * 100.0
+        if ext_20sma > 10.0 or ext_50sma > 30.0:
+            continue
+
+        # Rule 3: High & Tight Base Shelf (within max_dist_high% of 52-week high)
         high_52w = float(df['High'].max())
         dist_high = float(((high_52w - close) / high_52w) * 100.0)
         if dist_high > max_dist_high:
             continue
 
-        # Rule 3: RS Outperformance vs SPY (3-month excess return)
-        ret_3m = float((close - df['Close'].iloc[-63]) / df['Close'].iloc[-63] if len(df) >= 63 else 0.0)
+        # Rule 4: RS Outperformance vs SPY (3-month excess return)
+        ret_3m = float((close - df['Close'].iloc[-63]) / df['Close'].iloc[-63]) if len(df) >= 63 else 0.0
         rs_excess = float((ret_3m - spy_ret_3m) * 100.0)
         if rs_excess < min_rs_excess:
             continue
@@ -100,6 +111,8 @@ def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=25.0, 
         vol5 = float(df['Volume'].tail(5).mean())
         vol50 = float(df['Volume'].tail(50).mean())
         vdu = float(vol5 / vol50) if vol50 > 0 else 1.0
+        if vdu > 1.20:
+            continue  # Reject chasing / erratic volume explosions
 
         # Rule 5: Ross Haber Personality & Guardian MA Integrity
         adr = calculate_adr_metrics(df) if calculate_adr_metrics else {"adr_10d": 2.5, "adr_20d": 2.5, "adr_50d": 2.5}
@@ -112,9 +125,9 @@ def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=25.0, 
         guardian = detect_guardian_ma(df) if detect_guardian_ma else {"guardian_ma": "21-SMA", "respect_score": 70.0}
         plan = TradeCouncil.evaluate(ticker, df)
 
-        # Composite O'Neil Incubation Score
+        # Composite O'Neil Incubation Score (Prioritizing tight non-extended bases with dry volume)
         vdu_bonus = 25.0 if vdu <= 0.75 else (15.0 if vdu <= 0.90 else (5.0 if vdu <= 1.05 else 0.0))
-        score = (min(rs_excess, 120.0) * 0.45) + ((25.0 - dist_high) * 1.5) + vdu_bonus + (guardian['respect_score'] * 0.2)
+        score = (min(rs_excess, 100.0) * 0.40) + ((20.0 - dist_high) * 1.8) + vdu_bonus + (guardian['respect_score'] * 0.25)
 
         metric_str = f"RS: +{rs_excess:.1f}% | VDU: {vdu:.2f}x | {guardian['guardian_ma']} ({guardian['respect_score']}%)"
 
