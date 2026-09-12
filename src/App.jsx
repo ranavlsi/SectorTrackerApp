@@ -17,6 +17,7 @@ import { PieChart as PieChartIcon } from 'lucide-react';
 import { ScreenerDescriptions } from './ScreenerInfo';
 import { MarketHealthGuideCard, MarketHealthRadarMatrix, RegimePlaybookCard } from './MarketHealthGuideCard';
 import { StockPersonalityBadge, RossHaberPersonalityPanel } from './StockPersonalityBadge';
+import WeeklyPlaybookDashboard from './WeeklyPlaybookDashboard';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -1193,77 +1194,10 @@ function App() {
 
       {/* Weekly Playbook Tab */}
       {activeTab === 'playbook' && weeklyPlaybook && (
-        <div style={{ marginTop: '2rem' }}>
-          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
-            <h2 style={{ margin: '0 0 1rem 0', color: '#4facfe', display: 'flex', alignItems: 'center', gap: '10px' }}><Compass size={24}/> Weekly Market Summary ({weeklyPlaybook.date})</h2>
-            <p style={{ fontSize: '1.2rem', lineHeight: '1.6', color: '#e2e8f0', margin: '0 0 1rem 0' }}>{weeklyPlaybook.market_summary.text}</p>
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
-            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #10b981' }}>
-              <h3 style={{ margin: '0 0 1rem 0', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}><TrendingUp size={18}/> Stocks That Ran (Top 5)</h3>
-              {weeklyPlaybook.stocks_that_ran.map(s => (
-                <div key={s.ticker} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0' }}>
-                  <strong style={{ color: '#fff' }}>{s.ticker}</strong>
-                  <span style={{ color: '#10b981' }}>{s.return}</span>
-                </div>
-              ))}
-            </div>
-            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #f43f5e' }}>
-              <h3 style={{ margin: '0 0 1rem 0', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '8px' }}><ActivitySquare size={18}/> About to Fly (Squeeze)</h3>
-              {weeklyPlaybook.about_to_fly.map(s => (
-                <div key={s.ticker} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0' }}>
-                  <strong style={{ color: '#fff' }}>{s.ticker}</strong>
-                  <span style={{ color: '#f59e0b' }}>{s.dist_ath} from ATH</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <h2 style={{ margin: '2rem 0 1rem 0', color: '#fff' }}>🤖 Top 3 AI Trade Plans for Next Week</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-            {weeklyPlaybook.top_3_picks.map((pick, i) => (
-              <div key={pick.ticker} className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(79,172,254,0.1) 0%, rgba(0,242,254,0.05) 100%)', border: '1px solid rgba(79,172,254,0.3)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem', color: '#fff', textShadow: '0 0 10px rgba(79,172,254,0.5)' }}>#{i+1} {pick.ticker}</h2>
-                    <span style={{ display: 'inline-block', padding: '4px 10px', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>{pick.setup_type}</span>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: '0', fontSize: '0.9rem', color: '#94a3b8' }}>Entry Zone</p>
-                    <p style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: '#fff', fontWeight: 'bold' }}>{pick.entry_price}</p>
-                    <p style={{ margin: '0', fontSize: '0.9rem', color: '#94a3b8' }}>Stop Loss</p>
-                    <p style={{ margin: '0', fontSize: '1.2rem', color: '#ef4444', fontWeight: 'bold' }}>{pick.stop_loss}</p>
-                  </div>
-                </div>
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', marginTop: '1rem' }}>
-                  <p style={{ margin: '0', color: '#e2e8f0', lineHeight: '1.5' }}><strong>Reasoning:</strong> {pick.reasoning}</p>
-                  <p style={{ margin: '1rem 0 1rem 0', color: '#10b981', fontWeight: 'bold' }}>🎯 Target: {pick.profit_target}</p>
-                  
-                  {pick.health && (
-                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', borderLeft: `3px solid ${pick.health.momentum_color}` }}>
-                      <h4 style={{ margin: '0 0 10px 0', color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase' }}>Technical Health Card</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                        <div>
-                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Structural Stage</span>
-                           <div style={{ color: pick.health.stage.includes('Stage 2') ? '#10b981' : '#e2e8f0', fontWeight: 'bold', fontSize: '0.9rem' }}>{pick.health.stage}</div>
-                        </div>
-                        <div>
-                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Momentum</span>
-                           <div style={{ color: pick.health.momentum_color, fontWeight: 'bold', fontSize: '0.9rem' }}>{pick.health.momentum_text}</div>
-                        </div>
-                        <div>
-                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>RSI</span>
-                           <div style={{ color: pick.health.rsi > 70 ? '#ef4444' : pick.health.rsi < 30 ? '#10b981' : '#e2e8f0', fontWeight: 'bold', fontSize: '0.9rem' }}>{pick.health.rsi}</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <WeeklyPlaybookDashboard 
+          playbook={weeklyPlaybook} 
+          onTickerClick={fetchTickerData} 
+        />
       )}
 
       {/* Market Health Dashboard Tab */}

@@ -1,104 +1,534 @@
 {
-    "date": "September 05, 2026",
+    "date": "September 12, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $770.19, moving +0.11% over the last 5 days. Structurally, the market remains bullish above its 50-day moving average. Focus on high relative strength leaders that survived the week.",
-        "bias": "Bullish",
-        "spy_weekly_return": "+0.11%"
+        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 30.1/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
+        "bias": "Cautious",
+        "spy_weekly_return": "-1.15%",
+        "regime": "RISK_OFF"
     },
+    "regime_briefing": {
+        "score_value": 30.1,
+        "score_label": "Bearish / Deteriorating",
+        "regime_status": "RISK_OFF",
+        "regime_color": "#ef4444",
+        "recommended_exposure": "Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash)",
+        "exposure_percent": 20,
+        "mco_status": "Oversold",
+        "mco_value": -515.9,
+        "breadth_above_50": 41.3,
+        "breadth_above_200": 46.9,
+        "actionable_takeaway": "Market internals are in a defensive distribution regime. Protect open capital, raise cash, and preserve psychological energy for the next confirmed follow-through day.",
+        "distribution_warning": true
+    },
+    "sector_rotation": {
+        "leading_sectors": [
+            {
+                "ticker": "XLK",
+                "name": "Technology",
+                "rs_ratio": 111.1,
+                "rs_momentum": 107.7,
+                "top_stocks": [
+                    "CSCO",
+                    "INTC",
+                    "AMD"
+                ],
+                "status": "Leading",
+                "color": "#10b981"
+            },
+            {
+                "ticker": "SMH",
+                "name": "Semiconductors",
+                "rs_ratio": 110.0,
+                "rs_momentum": 109.3,
+                "top_stocks": [
+                    "ADI",
+                    "TXN",
+                    "AMD"
+                ],
+                "status": "Leading",
+                "color": "#10b981"
+            },
+            {
+                "ticker": "ICLN",
+                "name": "Clean Energy",
+                "rs_ratio": 109.1,
+                "rs_momentum": 108.0,
+                "top_stocks": [
+                    "BE",
+                    "VWS.CO",
+                    "NXT"
+                ],
+                "status": "Leading",
+                "color": "#10b981"
+            }
+        ],
+        "lagging_sectors": [
+            {
+                "ticker": "IBB",
+                "name": "Biotechnology",
+                "rs_ratio": 82.4,
+                "rs_momentum": 86.2,
+                "top_stocks": [
+                    "MRNA",
+                    "ILMN",
+                    "NTRA"
+                ],
+                "status": "Lagging",
+                "color": "#ef4444"
+            },
+            {
+                "ticker": "URNM",
+                "name": "Uranium",
+                "rs_ratio": 81.3,
+                "rs_momentum": 83.7,
+                "top_stocks": [
+                    "KAP",
+                    "CCO.TO",
+                    "U-U.TO"
+                ],
+                "status": "Lagging",
+                "color": "#ef4444"
+            },
+            {
+                "ticker": "XME",
+                "name": "Metals & Mining",
+                "rs_ratio": 78.9,
+                "rs_momentum": 79.5,
+                "top_stocks": [
+                    "CDE",
+                    "NEM",
+                    "FCX"
+                ],
+                "status": "Lagging",
+                "color": "#ef4444"
+            }
+        ]
+    },
+    "focus_list": [
+        {
+            "ticker": "JPM",
+            "entry_price": "$363.42",
+            "stop_loss": "$355.01",
+            "profit_target": "$388.66",
+            "risk_pct": "2.3%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 1.6%). Institutional anchor: 50-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 56.8
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 1.6,
+                "adr_20d": 1.54,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 50.0
+            }
+        },
+        {
+            "ticker": "BAC",
+            "entry_price": "$63.94",
+            "stop_loss": "$62.30",
+            "profit_target": "$68.87",
+            "risk_pct": "2.6%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 1.8%). Institutional anchor: 50-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 58.6
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 1.8,
+                "adr_20d": 1.74,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 52.1
+            }
+        },
+        {
+            "ticker": "TSM",
+            "entry_price": "$445.28",
+            "stop_loss": "$430.45",
+            "profit_target": "$489.76",
+            "risk_pct": "3.3%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 2.04%). Institutional anchor: 21-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 58.9
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 2.04,
+                "adr_20d": 2.04,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "21-SMA",
+                "guardian_respect_score": 69.9
+            }
+        },
+        {
+            "ticker": "AMZN",
+            "entry_price": "$268.12",
+            "stop_loss": "$259.68",
+            "profit_target": "$293.45",
+            "risk_pct": "3.1%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 1.9%). Institutional anchor: 10-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\u267b\ufe0f Momentum Fading (Oversold Bounce)",
+                "momentum_color": "bounce",
+                "rsi": 48.0
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 1.9,
+                "adr_20d": 1.88,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "10-SMA",
+                "guardian_respect_score": 41.0
+            }
+        },
+        {
+            "ticker": "COP",
+            "entry_price": "$139.18",
+            "stop_loss": "$135.23",
+            "profit_target": "$151.02",
+            "risk_pct": "2.8%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 1.97%). Institutional anchor: 50-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
+                "momentum_color": "warning",
+                "rsi": 56.5
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 1.97,
+                "adr_20d": 1.93,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 66.7
+            }
+        },
+        {
+            "ticker": "CVX",
+            "entry_price": "$217.81",
+            "stop_loss": "$211.63",
+            "profit_target": "$236.36",
+            "risk_pct": "2.8%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 1.7%). Institutional anchor: 10-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
+                "momentum_color": "warning",
+                "rsi": 65.2
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 1.7,
+                "adr_20d": 1.66,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "10-SMA",
+                "guardian_respect_score": 50.9
+            }
+        },
+        {
+            "ticker": "AAPL",
+            "entry_price": "$337.00",
+            "stop_loss": "$325.52",
+            "profit_target": "$371.47",
+            "risk_pct": "3.4%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 2.7%). Institutional anchor: 10-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 70.6
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 2.7,
+                "adr_20d": 2.32,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "10-SMA",
+                "guardian_respect_score": 43.7
+            }
+        },
+        {
+            "ticker": "BIIB",
+            "entry_price": "$226.37",
+            "stop_loss": "$217.81",
+            "profit_target": "$252.06",
+            "risk_pct": "3.8%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 2.68%). Institutional anchor: 50-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 50.5
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 2.68,
+                "adr_20d": 2.39,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 73.9
+            }
+        }
+    ],
+    "top_3_picks": [
+        {
+            "ticker": "JPM",
+            "entry_price": "$363.42",
+            "stop_loss": "$355.01",
+            "profit_target": "$388.66",
+            "risk_pct": "2.3%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 1.6%). Institutional anchor: 50-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 56.8
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 1.6,
+                "adr_20d": 1.54,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 50.0
+            }
+        },
+        {
+            "ticker": "BAC",
+            "entry_price": "$63.94",
+            "stop_loss": "$62.30",
+            "profit_target": "$68.87",
+            "risk_pct": "2.6%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 1.8%). Institutional anchor: 50-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 58.6
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 1.8,
+                "adr_20d": 1.74,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 52.1
+            }
+        },
+        {
+            "ticker": "TSM",
+            "entry_price": "$445.28",
+            "stop_loss": "$430.45",
+            "profit_target": "$489.76",
+            "risk_pct": "3.3%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Composite Breakout (VCP)",
+            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 2.04%). Institutional anchor: 21-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
+                "momentum_color": "bullish",
+                "rsi": 58.9
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 2.04,
+                "adr_20d": 2.04,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "21-SMA",
+                "guardian_respect_score": 69.9
+            }
+        }
+    ],
+    "character_change_watch": [
+        {
+            "ticker": "ABBV",
+            "price": "$257.12",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "21-SMA",
+            "adr_10d": 2.05,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        },
+        {
+            "ticker": "ADBE",
+            "price": "$252.23",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "21-SMA",
+            "adr_10d": 3.34,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        },
+        {
+            "ticker": "AMGN",
+            "price": "$377.35",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "50-SMA",
+            "adr_10d": 2.23,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        },
+        {
+            "ticker": "ASML",
+            "price": "$1698.30",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "50-SMA",
+            "adr_10d": 2.26,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        },
+        {
+            "ticker": "CELH",
+            "price": "$27.22",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "10-SMA",
+            "adr_10d": 3.98,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        },
+        {
+            "ticker": "DIS",
+            "price": "$106.55",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "50-SMA",
+            "adr_10d": 1.84,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        }
+    ],
     "stocks_that_ran": [
         {
-            "ticker": "HOOD",
-            "return": "+17.12%",
-            "price": "$122.11",
+            "ticker": "AMD",
+            "return": "+13.15%",
+            "price": "$516.13",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
             "ticker": "SMCI",
-            "return": "+6.77%",
-            "price": "$39.59",
-            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
-        },
-        {
-            "ticker": "NVDA",
             "return": "+5.89%",
-            "price": "$230.36",
+            "price": "$40.10",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "REGN",
-            "return": "+4.22%",
-            "price": "$827.72",
+            "ticker": "TSM",
+            "return": "+3.89%",
+            "price": "$433.24",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "GILD",
-            "return": "+3.65%",
-            "price": "$151.00",
+            "ticker": "XOM",
+            "return": "+2.33%",
+            "price": "$165.99",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        },
+        {
+            "ticker": "CVX",
+            "return": "+1.30%",
+            "price": "$214.06",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         }
     ],
     "about_to_fly": [
         {
             "ticker": "JPM",
-            "price": "$358.64",
-            "dist_ath": "2.1%",
+            "price": "$356.23",
+            "dist_ath": "2.8%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
-            "ticker": "AAPL",
-            "price": "$319.97",
-            "dist_ath": "7.1%",
+            "ticker": "BAC",
+            "price": "$62.69",
+            "dist_ath": "3.9%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
             "ticker": "TSM",
-            "price": "$428.91",
-            "dist_ath": "10.5%",
+            "price": "$433.24",
+            "dist_ath": "9.6%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
-        }
-    ],
-    "top_3_picks": [
-        {
-            "ticker": "JPM",
-            "entry_price": "$366.32",
-            "stop_loss": "$357.73",
-            "profit_target": "$392.09",
-            "setup_type": "Composite Breakout (VCP)",
-            "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
-            "health": {
-                "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\u267b\ufe0f Momentum Fading (Oversold Bounce)",
-                "momentum_color": "bounce",
-                "rsi": 47.0
-            }
         },
         {
-            "ticker": "AAPL",
-            "entry_price": "$331.55",
-            "stop_loss": "$320.41",
-            "profit_target": "$364.99",
-            "setup_type": "Composite Breakout (VCP)",
-            "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
-            "health": {
-                "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
-                "momentum_color": "warning",
-                "rsi": 63.6
-            }
+            "ticker": "AMZN",
+            "price": "$256.78",
+            "dist_ath": "10.6%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
-            "ticker": "TSM",
-            "entry_price": "$436.77",
-            "stop_loss": "$420.84",
-            "profit_target": "$484.56",
-            "setup_type": "Composite Breakout (VCP)",
-            "reasoning": "Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter.",
-            "health": {
-                "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\u267b\ufe0f Momentum Fading (Oversold Bounce)",
-                "momentum_color": "bounce",
-                "rsi": 48.7
-            }
+            "ticker": "PLTR",
+            "price": "$167.23",
+            "dist_ath": "19.4%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         }
     ]
 }

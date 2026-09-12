@@ -102,6 +102,15 @@ def run_rs_scanner_api():
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
+@app.route('/api/run_weekly_playbook', methods=['POST'])
+def run_weekly_playbook_api():
+    try:
+        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "weekly_playbook_engine.py")
+        subprocess.Popen([sys.executable, script_path])
+        return jsonify({"status": "started", "message": "Weekly Playbook 2.0 generation started in background."})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
 @app.route('/api/deep_fundamentals', methods=['GET'])
 @cache.cached(query_string=True)
 def deep_fundamentals():

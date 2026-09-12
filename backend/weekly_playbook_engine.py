@@ -8,6 +8,7 @@ from datetime import datetime
 
 # Import TradeCouncil and UNIVERSE
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append("/Users/amitkumar/Desktop/SectorTrackerApp/backend")
 try:
     from trade_council import TradeCouncil
 except ImportError:
@@ -28,7 +29,21 @@ except ImportError:
     def calculate_rsi(c): return pd.Series(0)
     def calculate_momentum_fade(m,s,r): return "Unknown", "#94a3b8"
 
+try:
+    from stock_personality_engine import (
+        calculate_adr_metrics,
+        classify_personality,
+        detect_guardian_ma,
+        detect_character_change,
+        get_stock_personality_profile
+    )
+except ImportError:
+    print("Warning: Could not import stock_personality_engine")
+    calculate_adr_metrics = None
+
 OUTPUT_FILE = "/Users/amitkumar/Desktop/SectorTrackerApp/public/weekly_playbook.json"
+MARKET_HEALTH_FILE = "/Users/amitkumar/Desktop/SectorTrackerApp/public/market_health.json"
+SECTOR_FLOW_FILE = "/Users/amitkumar/Desktop/SectorTrackerApp/public/sector_flow.json"
 
 def calculate_squeeze(df):
     """Returns True if Bollinger Bands are inside Keltner Channels (TTM Squeeze)."""
@@ -50,8 +65,139 @@ def calculate_squeeze(df):
     squeeze_on = (df['BB_up'] < df['KC_up']) & (df['BB_down'] > df['KC_down'])
     return bool(squeeze_on.iloc[-5:].any()) # Check if squeeze fired in the last 5 days
 
+def get_macro_regime():
+    """Reads live market health data and creates the Weekly Regime Briefing."""
+    if os.path.exists(MARKET_HEALTH_FILE):
+        try:
+            with open(MARKET_HEALTH_FILE, 'r') as f:
+                data = json.load(f)
+                ch = data.get('current_health', {})
+                score = float(ch.get('score_value', 50.0))
+                label = ch.get('score_label', 'Neutral')
+                mco_status = ch.get('mco_status', 'Neutral')
+                mco_val = float(ch.get('mco_value', 0.0))
+                p50 = float(ch.get('pct_above_50_value', 50.0))
+                p200 = float(ch.get('pct_above_200_value', 50.0))
+
+                if score >= 65:
+                    rec_exposure = "Aggressive / Risk-On: 80% - 100% Invested"
+                    exposure_pct = 90
+                    color = "#10b981"
+                    status = "RISK_ON"
+                    takeaway = "Market breadth is supportive and constructive. Size up core leaders at technical pivot breakouts with full conviction."
+                elif score >= 45:
+                    rec_exposure = "Selective / Moderate: 40% - 60% Invested"
+                    exposure_pct = 50
+                    color = "#f59e0b"
+                    status = "CAUTIOUS"
+                    takeaway = "Selective tape. Focus exclusively on top sector leaders with tight ATR compression. Avoid chasing extended breakouts and take partial profits into strength."
+                else:
+                    rec_exposure = "Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash)"
+                    exposure_pct = 20
+                    color = "#ef4444"
+                    status = "RISK_OFF"
+                    takeaway = "Market internals are in a defensive distribution regime. Protect open capital, raise cash, and preserve psychological energy for the next confirmed follow-through day."
+
+                return {
+                    "score_value": score,
+                    "score_label": label,
+                    "regime_status": status,
+                    "regime_color": color,
+                    "recommended_exposure": rec_exposure,
+                    "exposure_percent": exposure_pct,
+                    "mco_status": mco_status,
+                    "mco_value": round(mco_val, 1),
+                    "breadth_above_50": round(p50, 1),
+                    "breadth_above_200": round(p200, 1),
+                    "actionable_takeaway": takeaway,
+                    "distribution_warning": score < 45 or "Deteriorating" in label or "Bearish" in label
+                }
+        except Exception as e:
+            print(f"Error reading market health: {e}")
+
+    return {
+        "score_value": 50.0,
+        "score_label": "Neutral",
+        "regime_status": "NEUTRAL",
+        "regime_color": "#f59e0b",
+        "recommended_exposure": "Moderate: 50% Invested",
+        "exposure_percent": 50,
+        "mco_status": "Neutral",
+        "mco_value": 0.0,
+        "breadth_above_50": 50.0,
+        "breadth_above_200": 50.0,
+        "actionable_takeaway": "Maintain balanced exposure and adhere to strict stop losses.",
+        "distribution_warning": False
+    }
+
+def get_sector_rotation():
+    """Reads sector flow RRG data and identifies top leading & lagging sectors."""
+    if os.path.exists(SECTOR_FLOW_FILE):
+        try:
+            with open(SECTOR_FLOW_FILE, 'r') as f:
+                data = json.load(f)
+                rrg_items = data.get('rrg', {}).get('daily', []) or data.get('rrg', {}).get('intraday', [])
+                
+                sector_ranks = []
+                for sec in rrg_items:
+                    t = sec.get('ticker')
+                    name = sec.get('name', t)
+                    trail = sec.get('trail', [])
+                    last_pt = trail[-1] if trail else {'x': 100, 'y': 100}
+                    x = last_pt.get('x', 100)
+                    y = last_pt.get('y', 100)
+                    score = (x - 100) + (y - 100) * 0.5
+                    top_stocks = [s.get('ticker') for s in sec.get('top_stocks', [])[:3]]
+                    
+                    sector_ranks.append({
+                        'ticker': t,
+                        'name': name,
+                        'x': round(x, 1),
+                        'y': round(y, 1),
+                        'score': score,
+                        'top_stocks': top_stocks
+                    })
+
+                sector_ranks.sort(key=lambda s: s['score'], reverse=True)
+                
+                leading = []
+                for s in sector_ranks[:3]:
+                    leading.append({
+                        "ticker": s['ticker'],
+                        "name": s['name'],
+                        "rs_ratio": s['x'],
+                        "rs_momentum": s['y'],
+                        "top_stocks": s['top_stocks'],
+                        "status": "Leading",
+                        "color": "#10b981"
+                    })
+                    
+                lagging = []
+                for s in sector_ranks[-3:]:
+                    lagging.append({
+                        "ticker": s['ticker'],
+                        "name": s['name'],
+                        "rs_ratio": s['x'],
+                        "rs_momentum": s['y'],
+                        "top_stocks": s['top_stocks'],
+                        "status": "Lagging",
+                        "color": "#ef4444"
+                    })
+
+                return {
+                    "leading_sectors": leading,
+                    "lagging_sectors": lagging
+                }
+        except Exception as e:
+            print(f"Error reading sector flow: {e}")
+
+    return {
+        "leading_sectors": [],
+        "lagging_sectors": []
+    }
+
 def generate_weekly_playbook():
-    print(f"Generating Weekly Playbook for {len(UNIVERSE)} stocks...")
+    print(f"Generating Weekly Playbook 2.0 for {len(UNIVERSE)} stocks...")
     
     tickers = list(set(UNIVERSE))
     
@@ -72,40 +218,66 @@ def generate_weekly_playbook():
         
     spy_df = grouped.get_group('SPY').set_index('Date')
         
-    spy_close = spy_df['Close'].iloc[-1]
-    spy_5d_ret = (spy_close - spy_df['Close'].iloc[-6]) / spy_df['Close'].iloc[-6] * 100
-    spy_50sma = spy_df['Close'].rolling(50).mean().iloc[-1]
+    spy_close = float(spy_df['Close'].iloc[-1])
+    spy_5d_ret = float((spy_close - spy_df['Close'].iloc[-6]) / spy_df['Close'].iloc[-6] * 100)
+    spy_50sma = float(spy_df['Close'].rolling(50).mean().iloc[-1])
+    
+    # 1. Macro Regime Briefing
+    regime_briefing = get_macro_regime()
+    
+    # 2. Sector Flow Rotation
+    sector_rotation = get_sector_rotation()
     
     market_summary = {
-        "text": f"The S&P 500 closed the week at ${spy_close:.2f}, moving {spy_5d_ret:+.2f}% over the last 5 days. Structurally, the market remains {'bullish above its 50-day moving average' if spy_close > spy_50sma else 'defensive below its 50-day moving average'}. Focus on high relative strength leaders that survived the week.",
-        "bias": "Bullish" if spy_close > spy_50sma else "Bearish",
-        "spy_weekly_return": f"{spy_5d_ret:+.2f}%"
+        "text": f"The S&P 500 closed the week at ${spy_close:.2f}, moving {spy_5d_ret:+.2f}% over the last 5 days. Structurally, the market is {'bullish above its 50-day moving average' if spy_close > spy_50sma else 'defensive below its 50-day moving average'}. Macro Health Score is {regime_briefing['score_value']}/100 ({regime_briefing['score_label']}). Recommended Exposure: {regime_briefing['recommended_exposure']}.",
+        "bias": "Bullish" if spy_close > spy_50sma and regime_briefing['score_value'] >= 50 else ("Cautious" if spy_close > spy_50sma else "Bearish"),
+        "spy_weekly_return": f"{spy_5d_ret:+.2f}%",
+        "regime": regime_briefing['regime_status']
     }
 
-    # Analyze Universe
+    # 3. Analyze Universe for Focus List, Squeeze, Runs, and Character Changes
     results = []
+    character_change_watch = []
+    
     for ticker in tickers:
         try:
             if ticker not in grouped.groups: continue
             df = grouped.get_group(ticker).set_index('Date').dropna()
             if len(df) < 60: continue
             
-            close = df['Close'].iloc[-1]
-            high_52w = df['High'].max() # 1y of data downloaded, so max() is the 52w high
-            sma50 = df['Close'].rolling(50).mean().iloc[-1]
-            sma200 = df['Close'].rolling(200).mean().iloc[-1]
+            close = float(df['Close'].iloc[-1])
+            high_52w = float(df['High'].max())
+            sma50 = float(df['Close'].rolling(50).mean().iloc[-1])
+            sma200 = float(df['Close'].rolling(200).mean().iloc[-1])
             
             # Weekly (5-day) return
-            return_5d = (close - df['Close'].iloc[-6]) / df['Close'].iloc[-6] * 100
+            return_5d = float((close - df['Close'].iloc[-6]) / df['Close'].iloc[-6] * 100)
             
             # Distance from 52-week high
-            dist_52w = ((high_52w - close) / high_52w) * 100
+            dist_52w = float(((high_52w - close) / high_52w) * 100)
             
             # Structural trend
             uptrend = (close > sma50) and (sma50 > sma200)
             
             # Volatility Squeeze
             is_squeezing = calculate_squeeze(df.copy())
+            
+            # Ross Haber Personality & Character Change
+            adr_metrics = calculate_adr_metrics(df) if calculate_adr_metrics else {"adr_10d": 3.0, "adr_20d": 3.0, "adr_50d": 3.0}
+            char = detect_character_change(df, adr_metrics['adr_10d'], adr_metrics['adr_50d']) if detect_character_change else {}
+            
+            if char.get('character_change_detected'):
+                guardian = detect_guardian_ma(df) if detect_guardian_ma else {"guardian_ma": "21-SMA"}
+                character_change_watch.append({
+                    "ticker": ticker,
+                    "price": f"${close:.2f}",
+                    "status": char.get('status', 'SELL_RULE_TRIGGERED'),
+                    "warning_level": char.get('warning_level', 'HIGH'),
+                    "signal": char.get('signal', 'Breakdown below 21-day SMA.'),
+                    "guardian_ma": guardian.get('guardian_ma', '21-SMA'),
+                    "adr_10d": adr_metrics['adr_10d'],
+                    "action": "Trim / Tighten Stops / Avoid New Buys"
+                })
             
             results.append({
                 "ticker": ticker,
@@ -114,12 +286,17 @@ def generate_weekly_playbook():
                 "dist_52w": dist_52w,
                 "uptrend": uptrend,
                 "is_squeezing": is_squeezing,
-                "df": df # Save for TradeCouncil later
+                "adr_metrics": adr_metrics,
+                "character_change": char,
+                "df": df
             })
         except Exception as e:
             continue
 
-    # Find "Stocks That Ran" (Top 5-day gainers in an uptrend)
+    # Sort Character Change Watchlist by severity (HIGH first, then by largest market presence)
+    character_change_watch.sort(key=lambda x: (0 if x['warning_level'] == 'HIGH' else 1, x['ticker']))
+
+    # Stocks That Ran (Top 5-day gainers in an uptrend)
     uptrend_stocks = [r for r in results if r['uptrend'] and r['close'] >= 10.0]
     stocks_that_ran = sorted(uptrend_stocks, key=lambda x: x['return_5d'], reverse=True)[:5]
     
@@ -132,12 +309,12 @@ def generate_weekly_playbook():
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         })
 
-    # Find "About to Fly" (Tight Squeeze near 52w high)
+    # About to Fly (Tight Squeeze near 52w high)
     squeezing_stocks = [r for r in uptrend_stocks if r['is_squeezing'] and r['dist_52w'] <= 25.0]
-    stocks_to_fly = sorted(squeezing_stocks, key=lambda x: x['dist_52w'])[:10] # Top 10 closest to ATH
+    stocks_to_fly = sorted(squeezing_stocks, key=lambda x: x['dist_52w'])[:10]
     
     fly_payload = []
-    for s in stocks_to_fly[:5]: # Send top 5 to UI array
+    for s in stocks_to_fly[:5]:
         fly_payload.append({
             "ticker": s['ticker'],
             "price": f"${s['close']:.2f}",
@@ -145,16 +322,21 @@ def generate_weekly_playbook():
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         })
 
-    # Select Top 3 Picks (From the Squeezing/Uptrend list)
-    # If not enough squeezing, fallback to top momentum stocks.
-    pool = stocks_to_fly if len(stocks_to_fly) >= 3 else (stocks_to_fly + stocks_that_ran)
+    # 4. Curate True Market Leaders Focus List (6-8 Curated Stocks)
+    # Filter candidates: uptrend, close to ATH, NOT in character change breakdown
+    focus_candidates = [
+        r for r in uptrend_stocks 
+        if not (r['character_change'].get('character_change_detected') and r['character_change'].get('warning_level') == 'HIGH')
+    ]
+    # Rank candidates by proximity to ATH + squeeze bonus
+    focus_candidates.sort(key=lambda x: x['dist_52w'] - (10.0 if x['is_squeezing'] else 0.0))
     
-    top_3_payload = []
+    focus_list_payload = []
     selected_tickers = set()
     
-    print("Evaluating Top 3 Picks via TradeCouncil...")
-    for s in pool:
-        if len(top_3_payload) >= 3:
+    print("Evaluating Focus List Candidates via TradeCouncil & Ross Haber Engine...")
+    for s in focus_candidates:
+        if len(focus_list_payload) >= 8:
             break
         if s['ticker'] in selected_tickers:
             continue
@@ -163,12 +345,19 @@ def generate_weekly_playbook():
             # Delegate strictly to Quantitative Trade Council
             plan = TradeCouncil.evaluate(s['ticker'], s['df'])
             
-            # Calculate Technical Health Card metrics
-            close = s['df']['Close']
-            sma200 = close.rolling(200).mean()
-            macd, signal = calculate_macd(close)
-            rsi = calculate_rsi(close)
-            stage = calculate_stage(close, sma200)
+            # Personality Profile
+            adr = s['adr_metrics']
+            personality = classify_personality(adr['adr_10d'], adr['adr_20d']) if classify_personality else {
+                "tier": "TIGHT_AND_ORDERLY", "tier_label": "Tight & Orderly", "tier_color": "#10b981", "badge_color": "rgba(16, 185, 129, 0.15)", "sizing_recommendation": "Full Position"
+            }
+            guardian = detect_guardian_ma(s['df']) if detect_guardian_ma else {"guardian_ma": "21-SMA", "respect_score": 80.0}
+            
+            # Technical Health Card metrics
+            close_s = s['df']['Close']
+            sma200 = close_s.rolling(200).mean()
+            macd, signal = calculate_macd(close_s)
+            rsi = calculate_rsi(close_s)
+            stage = calculate_stage(close_s, sma200)
             mom_text, mom_color = calculate_momentum_fade(macd, signal, rsi)
             
             health = {
@@ -178,27 +367,57 @@ def generate_weekly_playbook():
                 "rsi": round(float(rsi.iloc[-1]), 1) if not rsi.empty else 50.0
             }
             
-            # Dynamic reasoning based on the mathematically generated setup_type
-            if "Breakout" in plan['setup_type']:
-                reasoning = f"Composite Breakout Logic triggered. The 15-day pivot is primed. Ensure entry does not exceed the O'Neil 5% max chase filter."
-            elif "Pullback" in plan['setup_type']:
-                reasoning = f"Stock is structurally extended. Wait for the Deep Value Box convergence of the 21 EMA, Anchored VWAP, and Fibonacci retracement layers."
-            else:
-                reasoning = f"Resting at dynamic support. Buy the dip at the nearest EMA or VWAP level."
+            # Calculate Risk % and R:R
+            try:
+                entry_num = float(plan['entry_str'])
+                stop_num = float(plan['stop_loss'])
+                target_num = float(plan['profit_target'])
+                risk_pct = max(0.1, round(((entry_num - stop_num) / entry_num) * 100, 1))
+                reward_amt = target_num - entry_num
+                risk_amt = max(0.01, entry_num - stop_num)
+                rr_ratio = f"{round(reward_amt / risk_amt, 1)}:1"
+            except Exception:
+                risk_pct = 3.5
+                rr_ratio = "3.0:1"
                 
-            top_3_payload.append({
+            # Dynamic reasoning tailored to Ross Haber personality and setup
+            if "Breakout" in plan['setup_type']:
+                reasoning = f"Composite Breakout Logic triggered. The pivot is primed with {personality['tier_label']} character (ADR: {adr['adr_10d']}%). Institutional anchor: {guardian['guardian_ma']}. Sizing: {personality['sizing_recommendation']}. Ensure entry does not exceed the 5% max chase rule."
+            elif "Pullback" in plan['setup_type']:
+                reasoning = f"Controlled pullback into the {guardian['guardian_ma']} institutional support layer. {personality['tier_label']} personality allows an asymmetric risk/reward entry with risk capped at {risk_pct}%."
+            else:
+                reasoning = f"Consolidating tightly near 52-week highs. Holding firmly above the {guardian['guardian_ma']} ({guardian['respect_score']}% bounce rate). Ideal low-cheat entry."
+                
+            focus_item = {
                 "ticker": s['ticker'],
                 "entry_price": f"${plan['entry_str']}",
                 "stop_loss": f"${plan['stop_loss']:.2f}",
                 "profit_target": f"${plan['profit_target']:.2f}",
+                "risk_pct": f"{risk_pct}%",
+                "reward_risk": rr_ratio,
                 "setup_type": plan['setup_type'],
                 "reasoning": reasoning,
-                "health": health
-            })
+                "health": health,
+                "personality": {
+                    "personality_tier": personality.get("tier", "TIGHT_AND_ORDERLY"),
+                    "tier_label": personality.get("tier_label", "Tight & Orderly"),
+                    "tier_color": personality.get("tier_color", "#10b981"),
+                    "badge_color": personality.get("badge_color", "rgba(16, 185, 129, 0.15)"),
+                    "adr_10d": adr['adr_10d'],
+                    "adr_20d": adr['adr_20d'],
+                    "sizing_recommendation": personality.get("sizing_recommendation", "Full Position"),
+                    "guardian_ma": guardian.get("guardian_ma", "21-SMA"),
+                    "guardian_respect_score": guardian.get("respect_score", 80.0)
+                }
+            }
+            focus_list_payload.append(focus_item)
             selected_tickers.add(s['ticker'])
         except Exception as e:
             print(f"Error evaluating {s['ticker']}: {e}")
             continue
+
+    # Fallback if less than 3
+    top_3_payload = focus_list_payload[:3]
 
     # Final Payload Assembly
     date_str = datetime.now().strftime("%B %d, %Y")
@@ -206,15 +425,19 @@ def generate_weekly_playbook():
     final_json = {
         "date": date_str,
         "market_summary": market_summary,
+        "regime_briefing": regime_briefing,
+        "sector_rotation": sector_rotation,
+        "focus_list": focus_list_payload,
+        "top_3_picks": top_3_payload, # Kept for backwards compatibility
+        "character_change_watch": character_change_watch[:6],
         "stocks_that_ran": ran_payload,
-        "about_to_fly": fly_payload,
-        "top_3_picks": top_3_payload
+        "about_to_fly": fly_payload
     }
     
     with open(OUTPUT_FILE, "w") as f:
         json.dump(final_json, f, indent=4)
         
-    print(f"Successfully generated Weekly Playbook at {OUTPUT_FILE}")
+    print(f"Successfully generated Weekly Playbook 2.0 at {OUTPUT_FILE} with {len(focus_list_payload)} focus list stocks and {len(character_change_watch)} character change alerts.")
 
 if __name__ == "__main__":
     generate_weekly_playbook()
