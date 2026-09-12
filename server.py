@@ -24,6 +24,7 @@ from sec_filings_api import get_recent_filings
 from peer_valuation_api import get_peer_valuation
 from macro_outlook_engine import get_macro_outlook
 from historical_dna_engine import calculate_dna
+from stock_personality_engine import get_stock_personality_profile
 import requests
 from dotenv import load_dotenv
 
@@ -586,6 +587,13 @@ def search_stock():
         else:
             insight_parts.append(f"Caution: {ticker} is underperforming the S&P 500 by {abs(rs_spy):.1f}% over the last 20 days.")
 
+        # Ross Haber Stock Personality & Character Change Profile
+        personality_profile = get_stock_personality_profile(ticker, df=df)
+        if personality_profile and "tier_label" in personality_profile:
+            insight_parts.append(f"Ross Haber Personality: Classified as {personality_profile['tier_label']} (10D ADR: {personality_profile['adr_metrics']['adr_10d']}%, 20D ADR: {personality_profile['adr_metrics']['adr_20d']}%), respecting its {personality_profile['guardian_ma']}.")
+            if personality_profile.get("character_change", {}).get("character_change_detected"):
+                insight_parts.append(f"ALERT: {personality_profile['character_change']['signal']}")
+
         agent_insight = " ".join(insight_parts)
 
         return jsonify({
@@ -606,6 +614,7 @@ def search_stock():
                 "peg_ratio": float(peg) if peg else None
             },
             "trade_plan": trade_plan,
+            "personality": personality_profile,
             "news": news_data,
             "agent_insight": agent_insight
         })
@@ -1750,6 +1759,18 @@ def get_dna():
         return jsonify(data)
     except Exception as e:
         print(f"Error processing DNA for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/personality', methods=['GET'])
+def get_personality():
+    ticker = request.args.get('ticker')
+    if not ticker: return jsonify({"error": "No ticker provided"}), 400
+    ticker = ticker.upper()
+    try:
+        profile = get_stock_personality_profile(ticker)
+        return jsonify(profile)
+    except Exception as e:
+        print(f"Error calculating personality for {ticker}: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

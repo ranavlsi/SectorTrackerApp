@@ -8,6 +8,7 @@ import sys
 import time
 from dotenv import load_dotenv
 load_dotenv()
+from stock_personality_engine import classify_personality
 
 LAKEHOUSE_PATH = '/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/daily_ohlcv.parquet'
 OUTPUT_PATH = '/Users/amitkumar/Desktop/SectorTrackerApp/public/rs_scanner_results.json'
@@ -200,9 +201,10 @@ def run_rs_scanner():
         if (current_price / weekly_high) < 0.90:
             continue
         
-        # ADR% (over 20 weeks)
+        # ADR% (over 20 weeks) & Personality Classification
         recent_20 = weekly_52.iloc[-20:]
         adr_pct = calculate_adr(recent_20['high'], recent_20['low'])
+        pers = classify_personality(adr_pct, adr_pct)
         
         # Calculate Multi-Timeframe RS Peaks (1 bar = 1 week)
         rs_current = rs_ratio_normalized.iloc[-1]
@@ -242,6 +244,10 @@ def run_rs_scanner():
             "pattern_score": ch_analysis['score'],
             "pattern_details": ch_analysis['details'],
             "adr_pct": adr_pct,
+            "personality_tier": pers['tier'],
+            "personality_label": pers['tier_label'],
+            "personality_color": pers['tier_color'],
+            "personality_sizing": pers['sizing_recommendation'],
             "sparkline": rs_ratio_normalized.round(3).tolist(),
             "price": float(weekly_52['close'].iloc[-1]),
             "volume_20w_avg": float(weekly_52['volume'].iloc[-20:].mean()),

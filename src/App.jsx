@@ -16,6 +16,7 @@ import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { ScreenerDescriptions } from './ScreenerInfo';
 import { MarketHealthGuideCard, MarketHealthRadarMatrix, RegimePlaybookCard } from './MarketHealthGuideCard';
+import { StockPersonalityBadge, RossHaberPersonalityPanel } from './StockPersonalityBadge';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -152,9 +153,14 @@ const ScreenerPill = ({ item, rank, onClick }) => {
                     <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Entry: <strong style={{ color: '#fff' }}>${healthData.trade_plan.entry}</strong></p>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Risk: <strong style={{ color: '#fff' }}>{healthData.trade_plan.risk_pct}%</strong></p>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Stop: <strong style={{ color: '#ef4444' }}>${healthData.trade_plan.stop_loss}</strong></p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Target: <strong style={{ color: '#10b981' }}>${healthData.trade_plan.profit_target}</strong></p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#10b981' }}>Target: <strong style={{ color: '#10b981' }}>${healthData.trade_plan.profit_target}</strong></p>
                   </div>
                 </>
+              )}
+
+              {/* Ross Haber Stock Personality Card */}
+              {healthData.personality && (
+                <StockPersonalityBadge personality={healthData.personality} />
               )}
             </div>
           ) : (
@@ -2256,6 +2262,11 @@ function App() {
                          </p>
                        </div>
                      )}
+
+                      {/* ROSS HABER STOCK PERSONALITY PROFILE */}
+                      {expertTickerData.personality && (
+                        <RossHaberPersonalityPanel personality={expertTickerData.personality} />
+                      )}
 
                      {/* HISTORICAL DNA PROFILE */}
                      <div className="neo-panel" style={{ marginBottom: '1.5rem', background: 'rgba(15, 23, 42, 0.4)' }}>

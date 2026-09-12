@@ -86,8 +86,9 @@ export default function RsLineScanner({ onTickerClick }) {
     const [chOnly, setChOnly] = useState(false);
     const [zacksOnly, setZacksOnly] = useState(false);
     const [skipEarnings, setSkipEarnings] = useState(false);
-    const [minAdr, setMinAdr] = useState(3);
+    const [minAdr, setMinAdr] = useState(1);
     const [maxAdr, setMaxAdr] = useState(15);
+    const [personalityFilter, setPersonalityFilter] = useState('ALL'); // ALL, TIGHT, IN_BETWEEN, WIDE
     const [minMcap, setMinMcap] = useState(5);
     const [alertEmail, setAlertEmail] = useState('ranavlsi@gmail.com');
 
@@ -168,6 +169,16 @@ export default function RsLineScanner({ onTickerClick }) {
         if (skipEarnings && item.earnings_days !== 999 && item.earnings_days <= 14) return false;
         if (item.adr_pct < minAdr || item.adr_pct > maxAdr) return false;
         if (item.market_cap > 0 && (item.market_cap / 1e9) < minMcap) return false;
+        
+        // Ross Haber Personality Filter
+        if (personalityFilter === 'TIGHT') {
+            if (item.adr_pct > 3.5) return false;
+        } else if (personalityFilter === 'IN_BETWEEN') {
+            if (item.adr_pct <= 3.5 || item.adr_pct > 6.0) return false;
+        } else if (personalityFilter === 'WIDE') {
+            if (item.adr_pct <= 6.0) return false;
+        }
+
         return true;
     }).sort((a, b) => b.rs_rating - a.rs_rating);
 
@@ -248,6 +259,34 @@ export default function RsLineScanner({ onTickerClick }) {
                     <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '5px' }}>Min MCap ($B)</label>
                     <input type="number" value={minMcap} onChange={e => setMinMcap(Number(e.target.value))} style={{ width: '60px', padding: '5px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '4px' }} />
                 </div>
+                <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '5px' }}>Stock Personality (Ross Haber)</label>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                        {[
+                            { key: 'ALL', label: 'All' },
+                            { key: 'TIGHT', label: '🟢 Tight (≤3.5%)' },
+                            { key: 'IN_BETWEEN', label: '🟡 Mid (3.5-6%)' },
+                            { key: 'WIDE', label: '🔴 Wide (>6%)' }
+                        ].map(opt => (
+                            <button
+                                key={opt.key}
+                                onClick={() => setPersonalityFilter(opt.key)}
+                                style={{
+                                    background: personalityFilter === opt.key ? '#3b82f6' : 'rgba(255,255,255,0.05)',
+                                    color: personalityFilter === opt.key ? '#fff' : '#94a3b8',
+                                    border: personalityFilter === opt.key ? '1px solid #60a5fa' : '1px solid rgba(255,255,255,0.1)',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer',
+                                    fontWeight: personalityFilter === opt.key ? 'bold' : 'normal'
+                                }}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#e2e8f0' }}>
                         <input type="checkbox" checked={chOnly} onChange={e => setChOnly(e.target.checked)} />
@@ -303,6 +342,7 @@ export default function RsLineScanner({ onTickerClick }) {
                                 <th style={{ padding: '10px' }}>RS Sparkline</th>
                                 <th style={{ padding: '10px' }}>Zacks Rank</th>
                                 <th style={{ padding: '10px' }}>ADR%</th>
+                                <th style={{ padding: '10px' }}>Personality</th>
                                 <th style={{ padding: '10px' }}>Earnings</th>
                                 <th style={{ padding: '10px' }}>MCap</th>
                             </tr>
@@ -372,6 +412,21 @@ export default function RsLineScanner({ onTickerClick }) {
                                         </td>
                                         <td style={{ padding: '10px', color: (item.adr_pct < 3 || item.adr_pct > 15) ? '#ef4444' : '#10b981' }}>
                                             {item.adr_pct ? item.adr_pct.toFixed(1) + '%' : '-'}
+                                        </td>
+                                        <td style={{ padding: '10px' }}>
+                                            {item.adr_pct <= 3.5 ? (
+                                                <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid #10b981', padding: '2px 8px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 'bold' }}>
+                                                    Tight (Full)
+                                                </span>
+                                            ) : item.adr_pct <= 6.0 ? (
+                                                <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid #f59e0b', padding: '2px 8px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 'bold' }}>
+                                                    In-Between
+                                                </span>
+                                            ) : (
+                                                <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid #ef4444', padding: '2px 8px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 'bold' }}>
+                                                    Wide & Loose
+                                                </span>
+                                            )}
                                         </td>
                                         <td style={{ padding: '10px', color: earnColor, display: 'flex', alignItems: 'center', gap: '5px' }}>
                                             {(earnColor === '#ef4444' || earnColor === '#f59e0b') && <AlertCircle size={14} />} {earnText}
