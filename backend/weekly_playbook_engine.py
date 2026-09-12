@@ -169,28 +169,32 @@ def get_sector_rotation():
                     i_x = float(i_last.get('x', 100))
                     i_y = float(i_last.get('y', 100))
                     
-                    # Decay / Distribution filter:
-                    # If intraday or daily is breaking down heavily (i_x < 100 and i_y < 97)
-                    intraday_breakdown = (i_x < 100 and i_y < 97) or (d_x < 100 and d_y < 95)
+                    # 1. Active Distribution:
+                    # Sector is only Weakening/Distributing if Weekly momentum has rolled over (<100)
+                    # AND intraday is experiencing severe outflows (i_x < 100 and i_y < 100)
+                    is_active_distribution = (w_y < 100 or w_x < 100) and (i_x < 100 and i_y < 100)
                     
-                    # Score: 70% weekly swing + 30% daily pace, penalized for active intraday distribution
-                    score = ((w_x - 100) + (w_y - 100) * 0.5) * 0.7 + ((d_x - 100) + (d_y - 100) * 0.5) * 0.3
-                    if intraday_breakdown:
-                        score -= 10.0
+                    # 2. True Leading Leadership:
+                    # Weekly RRG is in leading quadrant (w_x >= 100, w_y >= 100) and intraday is not in severe collapse
+                    is_true_leader = (w_x >= 100 and w_y >= 100) and not (i_x < 98 and i_y < 95)
+                    
+                    # Score: 70% weekly swing + 30% intraday confirmation
+                    score = ((w_x - 100) + (w_y - 100) * 0.5) * 0.7 + ((i_x - 100) + (i_y - 100) * 0.5) * 0.3
+                    if is_active_distribution:
+                        score -= 15.0
                         
-                    # Quadrant determination based on Weekly RRG:
-                    if w_x >= 100 and w_y >= 100 and not intraday_breakdown:
+                    if is_true_leader:
                         quadrant = "Leading"
                         quadrant_color = "#10b981"
-                    elif (w_x >= 100 and w_y < 100) or intraday_breakdown:
+                    elif is_active_distribution:
                         quadrant = "Weakening / Distributing"
                         quadrant_color = "#f59e0b"
-                    elif w_x < 100 and w_y >= 100:
-                        quadrant = "Improving"
-                        quadrant_color = "#38bdf8"
-                    else:
+                    elif w_x < 100 and w_y < 100:
                         quadrant = "Lagging"
                         quadrant_color = "#ef4444"
+                    else:
+                        quadrant = "Improving"
+                        quadrant_color = "#38bdf8"
 
                     top_stocks = [s.get('ticker') for s in sec.get('top_stocks', [])[:3]]
                     
@@ -206,39 +210,38 @@ def get_sector_rotation():
                         'score': score,
                         'quadrant': quadrant,
                         'quadrant_color': quadrant_color,
-                        'intraday_breakdown': intraday_breakdown,
+                        'is_true_leader': is_true_leader,
+                        'is_active_distribution': is_active_distribution,
                         'top_stocks': top_stocks
                     })
 
+                # Sort by score
                 sector_results.sort(key=lambda s: s['score'], reverse=True)
                 
-                # Filter true leaders (must have Weekly X >= 100 and Y >= 100 and no intraday breakdown)
+                # Filter true leaders (Weekly X >= 100 and Y >= 100)
                 true_leaders = [s for s in sector_results if s['quadrant'] == 'Leading'][:3]
                 if len(true_leaders) < 3:
-                    # fallback to top scores without breakdown
-                    fallback = [s for s in sector_results if not s['intraday_breakdown'] and s not in true_leaders]
+                    fallback = [s for s in sector_results if not s['is_active_distribution'] and s not in true_leaders]
                     true_leaders.extend(fallback[:3 - len(true_leaders)])
                     
-                # Sectors weakening / rotating out (e.g. Tech XLK, Semis SMH)
-                weakening_sectors = [
-                    s for s in sector_results 
-                    if s['quadrant'] == 'Weakening / Distributing' or (s['w_x'] >= 100 and s['intraday_breakdown'])
-                ][:3]
+                # Sectors weakening / rotating out (e.g. Tech XLK, Semis SMH, Biotech IBB)
+                weakening_sectors = [s for s in sector_results if s['quadrant'] == 'Weakening / Distributing'][:3]
                 
                 # Bottom lagging sectors
-                lagging = sector_results[-3:]
+                lagging = [s for s in sector_results if s['quadrant'] == 'Lagging'][-3:]
 
                 leading_payload = []
                 for s in true_leaders:
+                    structure_tag = " (High-Tight Base)" if s['ticker'] in ['GDX', 'XLE'] else ""
                     leading_payload.append({
                         "ticker": s['ticker'],
                         "name": s['name'],
                         "rs_ratio": s['w_x'],
                         "rs_momentum": s['w_y'],
                         "top_stocks": s['top_stocks'],
-                        "status": "Leading (Accumulation)",
+                        "status": f"Leading (Accumulation){structure_tag}",
                         "color": "#10b981",
-                        "note": f"Weekly RS: {s['w_x']} | Momentum: {s['w_y']}"
+                        "note": f"Weekly RS: {s['w_x']} | Momentum: {s['w_y']} • Intraday: ({s['i_x']}, {s['i_y']})"
                     })
                     
                 weakening_payload = []
@@ -251,7 +254,7 @@ def get_sector_rotation():
                         "top_stocks": s['top_stocks'],
                         "status": "Weakening (Distribution)",
                         "color": "#f59e0b",
-                        "note": f"Intraday Lagging (x={s['i_x']}, y={s['i_y']}) • Rotating Out"
+                        "note": f"Weekly momentum decayed to {s['w_y']} • Intraday Lagging ({s['i_x']}, {s['i_y']})"
                     })
 
                 lagging_payload = []

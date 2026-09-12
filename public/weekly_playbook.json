@@ -1,13 +1,13 @@
 {
     "date": "September 12, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 33.8/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
+        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 24.5/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
         "bias": "Cautious",
         "spy_weekly_return": "-1.15%",
         "regime": "RISK_OFF"
     },
     "regime_briefing": {
-        "score_value": 33.8,
+        "score_value": 24.5,
         "score_label": "Bearish / Deteriorating",
         "regime_status": "RISK_OFF",
         "regime_color": "#ef4444",
@@ -32,9 +32,23 @@
                     "MPC",
                     "CVX"
                 ],
-                "status": "Leading (Accumulation)",
+                "status": "Leading (Accumulation) (High-Tight Base)",
                 "color": "#10b981",
-                "note": "Weekly RS: 117.4 | Momentum: 112.8"
+                "note": "Weekly RS: 117.4 | Momentum: 112.8 \u2022 Intraday: (116.8, 122.5)"
+            },
+            {
+                "ticker": "GDX",
+                "name": "Gold Miners",
+                "rs_ratio": 112.5,
+                "rs_momentum": 110.5,
+                "top_stocks": [
+                    "WPM.TO",
+                    "FNV.TO",
+                    "AEM.TO"
+                ],
+                "status": "Leading (Accumulation) (High-Tight Base)",
+                "color": "#10b981",
+                "note": "Weekly RS: 112.5 | Momentum: 110.5 \u2022 Intraday: (119.1, 128.8)"
             },
             {
                 "ticker": "XLC",
@@ -48,38 +62,10 @@
                 ],
                 "status": "Leading (Accumulation)",
                 "color": "#10b981",
-                "note": "Weekly RS: 102.7 | Momentum: 124.2"
-            },
-            {
-                "ticker": "ICLN",
-                "name": "Clean Energy",
-                "rs_ratio": 92.2,
-                "rs_momentum": 105.5,
-                "top_stocks": [
-                    "BE",
-                    "VWS.CO",
-                    "NXT"
-                ],
-                "status": "Leading (Accumulation)",
-                "color": "#10b981",
-                "note": "Weekly RS: 92.2 | Momentum: 105.5"
+                "note": "Weekly RS: 102.7 | Momentum: 124.2 \u2022 Intraday: (105.3, 112.4)"
             }
         ],
         "weakening_sectors": [
-            {
-                "ticker": "GDX",
-                "name": "Gold Miners",
-                "rs_ratio": 112.5,
-                "rs_momentum": 110.5,
-                "top_stocks": [
-                    "WPM.TO",
-                    "FNV.TO",
-                    "AEM.TO"
-                ],
-                "status": "Weakening (Distribution)",
-                "color": "#f59e0b",
-                "note": "Intraday Lagging (x=119.1, y=128.8) \u2022 Rotating Out"
-            },
             {
                 "ticker": "XLK",
                 "name": "Technology",
@@ -92,24 +78,66 @@
                 ],
                 "status": "Weakening (Distribution)",
                 "color": "#f59e0b",
-                "note": "Intraday Lagging (x=96.0, y=93.0) \u2022 Rotating Out"
+                "note": "Weekly momentum decayed to 99.9 \u2022 Intraday Lagging (96.0, 93.0)"
             },
             {
-                "ticker": "ARKK",
-                "name": "Innovation",
-                "rs_ratio": 108.7,
-                "rs_momentum": 106.9,
+                "ticker": "IBB",
+                "name": "Biotechnology",
+                "rs_ratio": 106.5,
+                "rs_momentum": 98.0,
                 "top_stocks": [
-                    "SPCX",
-                    "SHOP",
-                    "COIN"
+                    "MRNA",
+                    "ILMN",
+                    "NTRA"
                 ],
                 "status": "Weakening (Distribution)",
                 "color": "#f59e0b",
-                "note": "Intraday Lagging (x=91.0, y=102.7) \u2022 Rotating Out"
+                "note": "Weekly momentum decayed to 98.0 \u2022 Intraday Lagging (84.5, 81.3)"
+            },
+            {
+                "ticker": "URNM",
+                "name": "Uranium",
+                "rs_ratio": 92.5,
+                "rs_momentum": 102.2,
+                "top_stocks": [
+                    "KAP",
+                    "CCO.TO",
+                    "U-U.TO"
+                ],
+                "status": "Weakening (Distribution)",
+                "color": "#f59e0b",
+                "note": "Weekly momentum decayed to 102.2 \u2022 Intraday Lagging (82.8, 90.3)"
             }
         ],
         "lagging_sectors": [
+            {
+                "ticker": "XLRE",
+                "name": "Real Estate",
+                "rs_ratio": 83.7,
+                "rs_momentum": 88.2,
+                "top_stocks": [
+                    "AMT",
+                    "DLR",
+                    "EQIX"
+                ],
+                "status": "Lagging (Outflow)",
+                "color": "#ef4444",
+                "note": "Severe RS breakdown vs SPY (x=83.7)"
+            },
+            {
+                "ticker": "XLI",
+                "name": "Industrials",
+                "rs_ratio": 79.6,
+                "rs_momentum": 81.4,
+                "top_stocks": [
+                    "ETN",
+                    "GEV",
+                    "BA"
+                ],
+                "status": "Lagging (Outflow)",
+                "color": "#ef4444",
+                "note": "Severe RS breakdown vs SPY (x=79.6)"
+            },
             {
                 "ticker": "ITB",
                 "name": "Homebuilders",
@@ -123,34 +151,6 @@
                 "status": "Lagging (Outflow)",
                 "color": "#ef4444",
                 "note": "Severe RS breakdown vs SPY (x=78.6)"
-            },
-            {
-                "ticker": "XLP",
-                "name": "Consumer Staples",
-                "rs_ratio": 85.8,
-                "rs_momentum": 88.1,
-                "top_stocks": [
-                    "PG",
-                    "WMT",
-                    "PM"
-                ],
-                "status": "Lagging (Outflow)",
-                "color": "#ef4444",
-                "note": "Severe RS breakdown vs SPY (x=85.8)"
-            },
-            {
-                "ticker": "XLB",
-                "name": "Materials",
-                "rs_ratio": 82.6,
-                "rs_momentum": 83.4,
-                "top_stocks": [
-                    "SHW",
-                    "ECL",
-                    "NUE"
-                ],
-                "status": "Lagging (Outflow)",
-                "color": "#ef4444",
-                "note": "Severe RS breakdown vs SPY (x=82.6)"
             }
         ]
     },
