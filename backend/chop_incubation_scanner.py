@@ -21,7 +21,8 @@ EXCLUDED_TICKERS = {
     'SPY', 'QQQ', 'IWM', 'DIA', 'TZA', 'SOXL', 'SOXS', 'NVDL', 'MSTU', 'MSTZ',
     'CONL', 'FNGU', 'FNGD', 'TQQQ', 'SQQQ', 'UPRO', 'SPXU', 'UVXY', 'VXX',
     'BWET', 'GUSH', 'DRIP', 'LABU', 'LABD', 'BOIL', 'KOLD', 'YINN', 'YANG',
-    'BITX', 'BITO', 'TSLL', 'TSLS', 'TECL', 'TECS', 'FAS', 'FAZ', 'XHLD', 'CCUP'
+    'BITX', 'BITO', 'TSLL', 'TSLS', 'TECL', 'TECS', 'FAS', 'FAZ', 'XHLD', 'CCUP',
+    'UTZ', 'ARX'
 }
 
 def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=20.0, min_rs_excess=5.0, max_results=50):
@@ -29,11 +30,12 @@ def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=20.0, 
     Scans the historical Lakehouse database for stocks adhering to William O'Neil's 
     5 Market Chop Rules for Next-Leg Leaders:
     1. Stage 2 Trend Defense: Price > 50-SMA and 50-SMA > 200-SMA.
-    2. Anti-Extension Shield: Rejects stocks extended >10% from 20-SMA or >30% from 50-SMA (anti-chasing).
-    3. Outperforming Relative Strength: RS Line vs SPY > 3-month baseline.
-    4. Proper Basing Depth: Consolidation shelf within 20% of 52-week highs.
-    5. Volume Dry-Up (VDU): 5-day volume contracting relative to 50-day average.
-    6. Guardian MA Respect: Holding institutional defense average without 21-SMA sell breakdown.
+    2. Anti-Buyout / Flatline Shield: Rejects stocks pinned at buyout tender prices (ADR < 1.6% or 20d Range < 3.5%).
+    3. Anti-Extension Shield: Rejects stocks extended >10% from 20-SMA or >30% from 50-SMA (anti-chasing).
+    4. Outperforming Relative Strength: RS Line vs SPY > 3-month baseline.
+    5. Proper Basing Depth: Consolidation shelf within 20% of 52-week highs.
+    6. Volume Dry-Up (VDU): 5-day volume contracting relative to 50-day average.
+    7. Guardian MA Respect: Holding institutional defense average without 21-SMA sell breakdown.
     """
     if not os.path.exists(LAKEHOUSE_PATH):
         print(f"Lakehouse path not found: {LAKEHOUSE_PATH}")
@@ -78,6 +80,14 @@ def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=20.0, 
         avg_vol20 = float(df['Volume'].tail(20).mean())
         dollar_vol = avg_vol20 * close
         if dollar_vol < min_dollar_vol:
+            continue
+
+        # Anti-Buyout / Arbitrage Flatline Shield (The UTZ / ARX Rule)
+        # Rejects stocks pinned at cash buyout offer prices, SPACs, and dead-money arbitrage vehicles.
+        # True market leaders must have living institutional elasticity (ADR >= 1.6% and 20-day range >= 3.5%).
+        adr_20 = float(((df['High'] - df['Low']) / df['Close']).tail(20).mean() * 100.0)
+        close_range_20 = float((df['Close'].tail(20).max() - df['Close'].tail(20).min()) / df['Close'].tail(20).min() * 100.0)
+        if adr_20 < 1.6 or close_range_20 < 3.5:
             continue
 
         sma20 = float(df['Close'].rolling(20).mean().iloc[-1])

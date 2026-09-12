@@ -4820,11 +4820,6 @@
   ],
   "chop_incubation_leaders": [
     {
-      "ticker": "UTZ",
-      "metric": "RS: +97.0% | VDU: 0.37x | 23-EMA (65.0%)",
-      "score": 116.03
-    },
-    {
       "ticker": "TXG",
       "metric": "RS: +134.8% | VDU: 0.81x | 50-SMA (90.0%)",
       "score": 110.71
@@ -4833,11 +4828,6 @@
       "ticker": "OMER",
       "metric": "RS: +106.2% | VDU: 0.63x | 21-SMA (69.0%)",
       "score": 105.7
-    },
-    {
-      "ticker": "ARX",
-      "metric": "RS: +49.2% | VDU: 0.20x | 50-SMA (80.0%)",
-      "score": 100.15
     },
     {
       "ticker": "NSIT",
@@ -4885,11 +4875,6 @@
       "score": 86.59
     },
     {
-      "ticker": "SAN",
-      "metric": "RS: +13.2% | VDU: 0.50x | 50-SMA (81.5%)",
-      "score": 85.58
-    },
-    {
       "ticker": "ZETA",
       "metric": "RS: +46.3% | VDU: 0.57x | 21-SMA (78.7%)",
       "score": 84.76
@@ -4898,16 +4883,6 @@
       "ticker": "TBBB",
       "metric": "RS: +16.8% | VDU: 0.73x | 50-SMA (88.9%)",
       "score": 83.86
-    },
-    {
-      "ticker": "BBVA",
-      "metric": "RS: +23.6% | VDU: 0.63x | 10-SMA (53.8%)",
-      "score": 83.33
-    },
-    {
-      "ticker": "DV",
-      "metric": "RS: +28.4% | VDU: 0.72x | 23-EMA (60.2%)",
-      "score": 82.46
     },
     {
       "ticker": "PSNL",
@@ -4928,11 +4903,6 @@
       "ticker": "DINO",
       "metric": "RS: +48.3% | VDU: 0.83x | 23-EMA (72.9%)",
       "score": 81.6
-    },
-    {
-      "ticker": "ITGR",
-      "metric": "RS: +35.5% | VDU: 0.83x | 50-SMA (69.4%)",
-      "score": 81.4
     },
     {
       "ticker": "KB",
@@ -4975,16 +4945,6 @@
       "score": 76.45
     },
     {
-      "ticker": "ING",
-      "metric": "RS: +20.3% | VDU: 0.77x | 50-SMA (73.9%)",
-      "score": 76.41
-    },
-    {
-      "ticker": "FENY",
-      "metric": "RS: +10.0% | VDU: 0.69x | 10-SMA (52.1%)",
-      "score": 75.57
-    },
-    {
       "ticker": "NHC",
       "metric": "RS: +10.5% | VDU: 0.68x | 50-SMA (83.3%)",
       "score": 74.87
@@ -5005,29 +4965,9 @@
       "score": 74.49
     },
     {
-      "ticker": "HGER",
-      "metric": "RS: +16.7% | VDU: 0.72x | 23-EMA (32.2%)",
-      "score": 74.07
-    },
-    {
-      "ticker": "PDBC",
-      "metric": "RS: +13.0% | VDU: 0.71x | 21-SMA (41.1%)",
-      "score": 74.04
-    },
-    {
-      "ticker": "BCI",
-      "metric": "RS: +10.2% | VDU: 0.71x | 21-SMA (44.3%)",
-      "score": 73.95
-    },
-    {
       "ticker": "MATX",
       "metric": "RS: +10.9% | VDU: 0.84x | 21-SMA (80.6%)",
       "score": 73.79
-    },
-    {
-      "ticker": "EWT",
-      "metric": "RS: +5.0% | VDU: 0.67x | 21-SMA (54.4%)",
-      "score": 73.63
     },
     {
       "ticker": "KMX",
@@ -5038,11 +4978,6 @@
       "ticker": "PSX",
       "metric": "RS: +41.6% | VDU: 0.94x | 21-SMA (79.7%)",
       "score": 73.5
-    },
-    {
-      "ticker": "NWG",
-      "metric": "RS: +10.9% | VDU: 0.65x | 21-SMA (51.5%)",
-      "score": 73.32
     },
     {
       "ticker": "NUTX",
@@ -5068,6 +5003,71 @@
       "ticker": "CRM",
       "metric": "RS: +46.3% | VDU: 0.86x | 21-SMA (68.9%)",
       "score": 72.43
+    },
+    {
+      "ticker": "VEEV",
+      "metric": "RS: +61.4% | VDU: 0.62x | 21-SMA (57.4%)",
+      "score": 72.04
+    },
+    {
+      "ticker": "CLH",
+      "metric": "RS: +9.1% | VDU: 0.72x | 50-SMA (57.5%)",
+      "score": 72.0
+    },
+    {
+      "ticker": "HUM",
+      "metric": "RS: +5.0% | VDU: 0.67x | 50-SMA (67.4%)",
+      "score": 71.85
+    },
+    {
+      "ticker": "TVTX",
+      "metric": "RS: +24.1% | VDU: 0.88x | 10-SMA (71.4%)",
+      "score": 71.79
+    },
+    {
+      "ticker": "MPC",
+      "metric": "RS: +47.2% | VDU: 0.93x | 21-SMA (69.8%)",
+      "score": 71.52
+    },
+    {
+      "ticker": "COP",
+      "metric": "RS: +14.4% | VDU: 0.84x | 50-SMA (66.7%)",
+      "score": 71.43
+    },
+    {
+      "ticker": "DAR",
+      "metric": "RS: +11.2% | VDU: 0.73x | 50-SMA (73.5%)",
+      "score": 71.34
+    },
+    {
+      "ticker": "CRBG",
+      "metric": "RS: +17.6% | VDU: 0.82x | 23-EMA (59.4%)",
+      "score": 71.19
+    },
+    {
+      "ticker": "EWTX",
+      "metric": "RS: +24.4% | VDU: 0.86x | 50-SMA (100.0%)",
+      "score": 70.9
+    },
+    {
+      "ticker": "CHRD",
+      "metric": "RS: +9.3% | VDU: 0.85x | 23-EMA (73.4%)",
+      "score": 70.74
+    },
+    {
+      "ticker": "NET",
+      "metric": "RS: +31.1% | VDU: 0.87x | 50-SMA (84.2%)",
+      "score": 70.58
+    },
+    {
+      "ticker": "TALO",
+      "metric": "RS: +15.1% | VDU: 0.79x | 50-SMA (83.3%)",
+      "score": 70.46
+    },
+    {
+      "ticker": "WT",
+      "metric": "RS: +30.1% | VDU: 0.90x | 50-SMA (84.4%)",
+      "score": 70.4
     }
   ]
 }
