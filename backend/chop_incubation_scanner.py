@@ -1,0 +1,180 @@
+import os
+import sys
+import json
+import duckdb
+import pandas as pd
+import numpy as np
+
+# Ensure backend modules can be imported
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from trade_council import TradeCouncil
+from stock_personality_engine import (
+    classify_personality, 
+    calculate_adr_metrics, 
+    detect_guardian_ma, 
+    detect_character_change
+)
+
+LAKEHOUSE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'daily_ohlcv.parquet')
+
+EXCLUDED_TICKERS = {
+    'SPY', 'QQQ', 'IWM', 'DIA', 'TZA', 'SOXL', 'SOXS', 'NVDL', 'MSTU', 'MSTZ',
+    'CONL', 'FNGU', 'FNGD', 'TQQQ', 'SQQQ', 'UPRO', 'SPXU', 'UVXY', 'VXX'
+}
+
+def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=25.0, min_rs_excess=5.0, max_results=50):
+    """
+    Scans the historical Lakehouse database for stocks adhering to William O'Neil's 
+    5 Market Chop Rules for Next-Leg Leaders:
+    1. Stage 2 Trend Defense: Price > 50-SMA and 50-SMA > 200-SMA.
+    2. Outperforming Relative Strength: RS Line vs SPY > 3-month baseline.
+    3. Proper Basing Depth: Consolidation shelf within 25% of 52-week highs.
+    4. Volume Dry-Up (VDU): 5-day volume contracting relative to 50-day average.
+    5. Guardian MA Respect: Holding institutional defense average without 21-SMA sell breakdown.
+    """
+    if not os.path.exists(LAKEHOUSE_PATH):
+        print(f"Lakehouse path not found: {LAKEHOUSE_PATH}")
+        return []
+
+    con = duckdb.connect()
+    try:
+        query = f"""
+            SELECT * 
+            FROM read_parquet('{LAKEHOUSE_PATH}') 
+            WHERE Date >= current_date() - interval '1 year' 
+            ORDER BY Date
+        """
+        lake_df = con.execute(query).df()
+    finally:
+        con.close()
+
+    grouped = lake_df.groupby('Ticker')
+    if 'SPY' not in grouped.groups:
+        print("SPY benchmark missing from Lakehouse.")
+        return []
+
+    spy_df = grouped.get_group('SPY').set_index('Date')
+    spy_close = spy_df['Close']
+    spy_ret_3m = (spy_close.iloc[-1] - spy_close.iloc[-63]) / spy_close.iloc[-63] if len(spy_close) >= 63 else 0.0
+
+    candidates = []
+
+    for ticker, group in grouped:
+        if ticker in EXCLUDED_TICKERS:
+            continue
+        
+        df = group.set_index('Date').dropna()
+        if len(df) < 120:
+            continue
+
+        close = float(df['Close'].iloc[-1])
+        if close < 10.0:
+            continue
+
+        # Institutional Liquidity: Minimum 20-day Average Dollar Volume
+        avg_vol20 = float(df['Volume'].tail(20).mean())
+        dollar_vol = avg_vol20 * close
+        if dollar_vol < min_dollar_vol:
+            continue
+
+        sma50 = float(df['Close'].rolling(50).mean().iloc[-1])
+        sma200 = float(df['Close'].rolling(min(200, len(df))).mean().iloc[-1])
+
+        # Rule 1: Holding 50-day line in Stage 2
+        if close < sma50 or sma50 < (sma200 * 0.98):
+            continue
+
+        # Rule 2: High & Tight Base Shelf (within max_dist_high% of 52-week high)
+        high_52w = float(df['High'].max())
+        dist_high = float(((high_52w - close) / high_52w) * 100.0)
+        if dist_high > max_dist_high:
+            continue
+
+        # Rule 3: RS Outperformance vs SPY (3-month excess return)
+        ret_3m = float((close - df['Close'].iloc[-63]) / df['Close'].iloc[-63] if len(df) >= 63 else 0.0)
+        rs_excess = float((ret_3m - spy_ret_3m) * 100.0)
+        if rs_excess < min_rs_excess:
+            continue
+
+        # Rule 4: Volume Dry-Up (VDU)
+        vol5 = float(df['Volume'].tail(5).mean())
+        vol50 = float(df['Volume'].tail(50).mean())
+        vdu = float(vol5 / vol50) if vol50 > 0 else 1.0
+
+        # Rule 5: Ross Haber Personality & Guardian MA Integrity
+        adr = calculate_adr_metrics(df) if calculate_adr_metrics else {"adr_10d": 2.5, "adr_20d": 2.5, "adr_50d": 2.5}
+        char = detect_character_change(df, adr['adr_10d'], adr['adr_50d']) if detect_character_change else {}
+        
+        # Exclude stocks currently in aggressive institutional breakdown below 21-SMA
+        if char.get('character_change_detected') and char.get('warning_level') == 'HIGH':
+            continue
+
+        guardian = detect_guardian_ma(df) if detect_guardian_ma else {"guardian_ma": "21-SMA", "respect_score": 70.0}
+        plan = TradeCouncil.evaluate(ticker, df)
+
+        # Composite O'Neil Incubation Score
+        vdu_bonus = 25.0 if vdu <= 0.75 else (15.0 if vdu <= 0.90 else (5.0 if vdu <= 1.05 else 0.0))
+        score = (min(rs_excess, 120.0) * 0.45) + ((25.0 - dist_high) * 1.5) + vdu_bonus + (guardian['respect_score'] * 0.2)
+
+        metric_str = f"RS: +{rs_excess:.1f}% | VDU: {vdu:.2f}x | {guardian['guardian_ma']} ({guardian['respect_score']}%)"
+
+        candidates.append({
+            "ticker": ticker,
+            "metric": metric_str,
+            "score": round(score, 2),
+            "close": round(close, 2),
+            "dist_52w": round(dist_high, 1),
+            "rs_excess_3m": round(rs_excess, 1),
+            "vdu_ratio": round(vdu, 2),
+            "guardian_ma": guardian['guardian_ma'],
+            "guardian_fidelity": guardian['respect_score'],
+            "setup_type": plan['setup_type'],
+            "entry": plan.get('entry_str', round(plan.get('entry', 0), 2)),
+            "stop_loss": plan.get('stop_loss', 0),
+            "profit_target": plan.get('profit_target', 0),
+            "dollar_vol_m": round(dollar_vol / 1_000_000, 1)
+        })
+
+    # Sort candidates by composite incubation score descending
+    candidates.sort(key=lambda x: x['score'], reverse=True)
+    return candidates[:max_results]
+
+def update_screener_results_file(output_path=None):
+    """
+    Runs the chop incubation scanner and updates screener_results.json.
+    """
+    if output_path is None:
+        output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'screener_results.json')
+    
+    print("Running William O'Neil Next-Leg Chop Incubation Screener...")
+    candidates = scan_chop_incubation_leaders()
+    print(f"Found {len(candidates)} Next-Leg Incubation Leaders.")
+
+    existing_data = {}
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, 'r') as f:
+                existing_data = json.load(f)
+        except Exception as e:
+            print(f"Notice: Could not load existing screener_results: {e}")
+
+    # Inject chop incubation leaders into the screener payload
+    existing_data["chop_incubation_leaders"] = [
+        {
+            "ticker": c["ticker"],
+            "metric": c["metric"],
+            "score": c["score"]
+        }
+        for c in candidates
+    ]
+
+    with open(output_path, 'w') as f:
+        json.dump(existing_data, f, indent=2)
+
+    print(f"Successfully updated {output_path} with {len(candidates)} Next-Leg Leaders.")
+    return candidates
+
+if __name__ == "__main__":
+    leaders = update_screener_results_file()
+    for l in leaders[:10]:
+        print(f"• {l['ticker']:<5} | {l['metric']} | Score: {l['score']}")

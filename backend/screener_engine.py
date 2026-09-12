@@ -18,6 +18,7 @@ from regression_channel_scanner import evaluate_regression_channel
 from fvg_sma_scanner import evaluate_fvg_sma_confluence
 from volume_profile_scanner import evaluate_volume_profile_rejections, evaluate_val_rejection
 from divergence_reversal_scanner import evaluate_divergence_reversal
+from chop_incubation_scanner import scan_chop_incubation_leaders
 
 warnings.filterwarnings('ignore')
 
@@ -228,6 +229,7 @@ def run_screener(custom_universe=None):
         dynamic_criteria = {'min_rs_rating': 80, 'max_base_depth': 0.25}
     
     results = {
+        "chop_incubation_leaders": [],
         "relative_strength": [],
         "fresh_52w_high": [],
         "all_time_high": [],
@@ -1037,9 +1039,20 @@ def run_screener(custom_universe=None):
                     
                     if score >= 3:
                         results["zacks_rank_1"].append({"ticker": t, "metric": f"Score: {score} | PEG: {safe_peg}", "score": score})
+    # -----------------------------------
+    # O'NEIL NEXT-LEG CHOP INCUBATION LEADERS
+    # -----------------------------------
+    try:
+        print("Post-Scan Optimization: Running William O'Neil Next-Leg Chop Incubation scan...")
+        chop_leaders = scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_results=50)
+        results["chop_incubation_leaders"] = [
+            {"ticker": c["ticker"], "metric": c["metric"], "score": c["score"]}
+            for c in chop_leaders
+        ]
+        print(f"Added {len(results['chop_incubation_leaders'])} Next-Leg Incubation Leaders.")
     except Exception as e:
-        print(f"Failed to fetch Zacks Fundamentals: {e}")
-    
+        print(f"Failed to scan chop incubation leaders: {e}")
+        
     # -----------------------------------
     # POST-SCAN MARKET CAP ENFORCEMENT
     # -----------------------------------

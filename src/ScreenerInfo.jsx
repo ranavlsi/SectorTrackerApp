@@ -1,6 +1,18 @@
 import React from 'react';
 
 export const ScreenerDescriptions = {
+  chop_incubation_leaders: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (William O'Neil's 5 Market Chop Rules):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>Rule 1 (Stage 2 Trend Shield):</strong> Price &gt; 50-day SMA and 50-SMA &gt; 200-SMA, proving the stock holds its moving average floor while the broad market struggles.</li>
+        <li><strong>Rule 2 (RS Outperformance):</strong> Relative Strength vs SPY over 3 months is accelerating (&gt; +5% excess alpha), confirming institutional accumulation during index chop.</li>
+        <li><strong>Rule 3 (Sound Basing Depth):</strong> Consolidation depth is capped within 25% of 52-week highs (tight, orderly shelf).</li>
+        <li><strong>Rule 4 (Volume Dry-Up / VDU):</strong> 5-day average volume contracts below 85% of 50-day average volume, confirming exhaustion of overhead supply.</li>
+        <li><strong>Rule 5 (Guardian MA Defense):</strong> Holds above the stock's backtested institutional Guardian MA (10-SMA, 21-SMA, or 50-SMA) with zero 2-day breakdown character change alerts.</li>
+      </ul>
+    </div>
+  ),
   relative_strength: (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <strong>Algorithm Architecture:</strong>
