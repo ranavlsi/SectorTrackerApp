@@ -1039,6 +1039,9 @@ def run_screener(custom_universe=None):
                     
                     if score >= 3:
                         results["zacks_rank_1"].append({"ticker": t, "metric": f"Score: {score} | PEG: {safe_peg}", "score": score})
+    except Exception as e:
+        print(f"Failed to scan zacks candidates: {e}")
+
     # -----------------------------------
     # O'NEIL NEXT-LEG CHOP INCUBATION LEADERS
     # -----------------------------------

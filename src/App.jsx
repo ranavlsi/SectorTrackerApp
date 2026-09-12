@@ -18,6 +18,7 @@ import { ScreenerDescriptions } from './ScreenerInfo';
 import { MarketHealthGuideCard, MarketHealthRadarMatrix, RegimePlaybookCard } from './MarketHealthGuideCard';
 import { StockPersonalityBadge, RossHaberPersonalityPanel } from './StockPersonalityBadge';
 import WeeklyPlaybookDashboard from './WeeklyPlaybookDashboard';
+import SeasonalityRadarDashboard from './SeasonalityRadarDashboard';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -216,6 +217,9 @@ function App() {
   // Squeeze State
   const [squeezeData, setSqueezeData] = useState(null)
   
+  // Seasonality Radar State
+  const [seasonalityData, setSeasonalityData] = useState(null)
+  
   // DeepVue State
   const [deepvueData, setDeepvueData] = useState(null)
   
@@ -276,6 +280,11 @@ function App() {
         .then(res => res.json())
         .then(data => setSqueezeData(data))
         .catch(err => console.error("Error loading squeeze data:", err))
+        
+      fetch('/seasonality_results.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setSeasonalityData(data))
+        .catch(err => console.error("Error loading seasonality data:", err))
         
       fetch('/deepvue_results.json?t=' + new Date().getTime())
         .then(res => res.json())
@@ -766,6 +775,7 @@ function App() {
             </button>
           </div>
           <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
+          <button className={activeTab === 'seasonality' ? 'tab-active' : ''} onClick={() => setActiveTab('seasonality')}><Compass size={18} /> Seasonality Radar</button>
           <button className={activeTab === 'intraday' ? 'tab-active' : ''} onClick={fetchIntradayAlerts}><Radio size={18} /> Intraday Radar</button>
           <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
           <button className={activeTab === 'rslinescanner' ? 'tab-active' : ''} onClick={() => setActiveTab('rslinescanner')}><Star size={18} /> RS Line Scanner</button>
@@ -999,6 +1009,10 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'seasonality' && (
+        <SeasonalityRadarDashboard data={seasonalityData} onTickerClick={fetchTickerData} />
       )}
 
       {activeTab === 'screeners' && screenerData && (

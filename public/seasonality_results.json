@@ -1,0 +1,4455 @@
+{
+    "last_updated": "2026-09-12 18:56:28",
+    "current_month": "Sep",
+    "next_month": "Oct",
+    "top_picks": [
+        {
+            "ticker": "PWR",
+            "current_price": 650.5800170898438,
+            "score": 77,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 637.72,
+                "sma50": 646.61,
+                "sma200": 591.69,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -17.5,
+                "adr_pct": 3.24
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 70.0,
+                "cur_month_avg": 3.15,
+                "next_month_name": "Oct",
+                "next_month_win": 80.0,
+                "next_month_avg": 4.35,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 9.96,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 40,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 70,
+                        "avg_return": 5.0
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 2.0
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 6.0
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 1.2
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 80,
+                        "avg_return": 4.3
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 80,
+                        "avg_return": 6.8
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 50,
+                        "avg_return": -1.1
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.53,
+                "pcr_oi": 2.49,
+                "call_vol": 649,
+                "put_vol": 345,
+                "avg_iv": 68.3,
+                "implied_move_pct": 3.7,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "NET",
+            "current_price": 306.5299987792969,
+            "score": 77,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 294.1,
+                "sma50": 285.1,
+                "sma200": 224.57,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -7.7,
+                "adr_pct": 5.31
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 42.9,
+                "cur_month_avg": -1.75,
+                "next_month_name": "Oct",
+                "next_month_win": 71.4,
+                "next_month_avg": 15.48,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 57.1,
+                "next_quarter_avg": 18.93,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 57,
+                        "avg_return": 1.3
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 71,
+                        "avg_return": 11.0
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 57,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 43,
+                        "avg_return": -4.9
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 57,
+                        "avg_return": 9.3
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 71,
+                        "avg_return": 9.6
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 86,
+                        "avg_return": 8.8
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 71,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 43,
+                        "avg_return": -1.8
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 71,
+                        "avg_return": 15.5
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 57,
+                        "avg_return": 10.4
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 43,
+                        "avg_return": -5.0
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 2.3,
+                "pcr_oi": 0.87,
+                "call_vol": 1802,
+                "put_vol": 4136,
+                "avg_iv": 93.6,
+                "implied_move_pct": 0.0,
+                "bullish_flow": false
+            }
+        },
+        {
+            "ticker": "NVDA",
+            "current_price": 218.2899932861328,
+            "score": 76,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 219.94,
+                "sma50": 212.36,
+                "sma200": 197.11,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -7.5,
+                "adr_pct": 3.51
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": -2.03,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 4.89,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 13.05,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 7.0
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 6.3
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 4.5
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": -0.5
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 90,
+                        "avg_return": 14.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 6.3
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 6.6
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 5.8
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": -2.0
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 4.9
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 7.9
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 40,
+                        "avg_return": -1.5
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.46,
+                "pcr_oi": 0.59,
+                "call_vol": 144545,
+                "put_vol": 66648,
+                "avg_iv": 70.3,
+                "implied_move_pct": 1.6,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "DE",
+            "current_price": 675.739990234375,
+            "score": 74,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 647.11,
+                "sma50": 623.01,
+                "sma200": 570.25,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -4.3,
+                "adr_pct": 2.6
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": 0.95,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 2.0,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 11.3,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 5.2
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 30,
+                        "avg_return": 0.6
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 40,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 40,
+                        "avg_return": -1.0
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 3.6
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 70,
+                        "avg_return": 3.9
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": 1.4
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": 1.0
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 2.0
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 80,
+                        "avg_return": 8.1
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 60,
+                        "avg_return": 1.1
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 2.15,
+                "pcr_oi": 0.94,
+                "call_vol": 579,
+                "put_vol": 1247,
+                "avg_iv": 52.8,
+                "implied_move_pct": 3.2,
+                "bullish_flow": false
+            }
+        },
+        {
+            "ticker": "MPC",
+            "current_price": 395.92999267578125,
+            "score": 74,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 373.7,
+                "sma50": 332.45,
+                "sma200": 244.42,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -3.2,
+                "adr_pct": 2.88
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": 2.45,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 1.92,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 50.0,
+                "next_quarter_avg": 5.27,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 80,
+                        "avg_return": 5.4
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 60,
+                        "avg_return": 1.8
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 70,
+                        "avg_return": 2.4
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 70,
+                        "avg_return": 2.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 1.1
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 90,
+                        "avg_return": 7.1
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": 2.4
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 1.9
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 4.5
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 40,
+                        "avg_return": -1.8
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 1.37,
+                "pcr_oi": 1.2,
+                "call_vol": 1135,
+                "put_vol": 1555,
+                "avg_iv": 118.8,
+                "implied_move_pct": 5.1,
+                "bullish_flow": false
+            }
+        },
+        {
+            "ticker": "PLTR",
+            "current_price": 167.22999572753906,
+            "score": 73,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 175.55,
+                "sma50": 153.93,
+                "sma200": 151.52,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -19.4,
+                "adr_pct": 4.57
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 66.7,
+                "cur_month_avg": 4.61,
+                "next_month_name": "Oct",
+                "next_month_win": 83.3,
+                "next_month_avg": 6.09,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 50.0,
+                "next_quarter_avg": 35.11,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 50,
+                        "avg_return": 5.2
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": 1.3
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 17,
+                        "avg_return": -0.5
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 50,
+                        "avg_return": 15.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 83,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 83,
+                        "avg_return": 8.9
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": 6.5
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 67,
+                        "avg_return": 4.6
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 83,
+                        "avg_return": 6.1
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 35.6
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 33,
+                        "avg_return": -5.9
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.73,
+                "pcr_oi": 0.86,
+                "call_vol": 65239,
+                "put_vol": 47425,
+                "avg_iv": 112.5,
+                "implied_move_pct": 4.8,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "COIN",
+            "current_price": 175.25999450683594,
+            "score": 72,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 175.03,
+                "sma50": 165.05,
+                "sma200": 191.28,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -56.4,
+                "adr_pct": 6.46
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 16.7,
+                "cur_month_avg": -3.36,
+                "next_month_name": "Oct",
+                "next_month_win": 100.0,
+                "next_month_avg": 9.67,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 60.0,
+                "next_quarter_avg": 20.77,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 40,
+                        "avg_return": 3.5
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 6.9
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 40,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 40,
+                        "avg_return": -11.8
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 67,
+                        "avg_return": -0.4
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 50,
+                        "avg_return": 0.0
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 83,
+                        "avg_return": 12.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 17,
+                        "avg_return": -3.4
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 100,
+                        "avg_return": 9.7
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 40,
+                        "avg_return": 14.8
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 20,
+                        "avg_return": -7.3
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.5,
+                "pcr_oi": 0.48,
+                "call_vol": 36663,
+                "put_vol": 18245,
+                "avg_iv": 211.3,
+                "implied_move_pct": 6.9,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "ETN",
+            "current_price": 425.3699951171875,
+            "score": 72,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 415.84,
+                "sma50": 415.27,
+                "sma200": 380.92,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -11.0,
+                "adr_pct": 3.03
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": 1.42,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 1.36,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 80.0,
+                "next_quarter_avg": 5.3,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 60,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 2.9
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 40,
+                        "avg_return": -0.7
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 70,
+                        "avg_return": 3.4
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 70,
+                        "avg_return": 1.0
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 3.2
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 70,
+                        "avg_return": 4.6
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 40,
+                        "avg_return": 0.3
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": 1.4
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 1.4
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 5.7
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 50,
+                        "avg_return": -1.8
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.28,
+                "pcr_oi": 0.61,
+                "call_vol": 2312,
+                "put_vol": 636,
+                "avg_iv": 49.6,
+                "implied_move_pct": 0.0,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "AAPL",
+            "current_price": 332.2699890136719,
+            "score": 71,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 316.63,
+                "sma50": 317.83,
+                "sma200": 284.54,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -3.5,
+                "adr_pct": 2.36
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 40.0,
+                "cur_month_avg": -2.13,
+                "next_month_name": "Oct",
+                "next_month_win": 60.0,
+                "next_month_avg": 3.18,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 80.0,
+                "next_quarter_avg": 7.65,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 40,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 0.5
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 0.3
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": 2.2
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 3.7
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 100,
+                        "avg_return": 7.0
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 6.6
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 40,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 60,
+                        "avg_return": 3.2
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 60,
+                        "avg_return": 1.2
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.88,
+                "pcr_oi": 0.56,
+                "call_vol": 129551,
+                "put_vol": 113698,
+                "avg_iv": 47.1,
+                "implied_move_pct": 1.4,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "BAC",
+            "current_price": 62.689998626708984,
+            "score": 71,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 62.38,
+                "sma50": 61.72,
+                "sma200": 54.53,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -3.4,
+                "adr_pct": 1.73
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 50.0,
+                "cur_month_avg": -0.71,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 4.95,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 14.9,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 20,
+                        "avg_return": -5.2
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": 1.9
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 50,
+                        "avg_return": 0.0
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 1.9
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 70,
+                        "avg_return": 4.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": -0.0
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 50,
+                        "avg_return": -0.7
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 5.0
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 90,
+                        "avg_return": 8.9
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 70,
+                        "avg_return": 0.6
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.51,
+                "pcr_oi": 1.58,
+                "call_vol": 27145,
+                "put_vol": 13771,
+                "avg_iv": 78.1,
+                "implied_move_pct": 2.5,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "CRM",
+            "current_price": 247.72000122070312,
+            "score": 67,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 230.63,
+                "sma50": 198.61,
+                "sma200": 200.45,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -7.7,
+                "adr_pct": 4.82
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 30.0,
+                "cur_month_avg": -2.75,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 3.8,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 50.0,
+                "next_quarter_avg": 3.95,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 80,
+                        "avg_return": 5.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 40,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 40,
+                        "avg_return": -1.3
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 0.1
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 1.2
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 8.7
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 30,
+                        "avg_return": -2.8
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 3.8
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 60,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 30,
+                        "avg_return": -2.8
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 2.57,
+                "pcr_oi": 1.11,
+                "call_vol": 7677,
+                "put_vol": 19707,
+                "avg_iv": 92.6,
+                "implied_move_pct": 4.6,
+                "bullish_flow": false
+            }
+        },
+        {
+            "ticker": "TSM",
+            "current_price": 433.239990234375,
+            "score": 66,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 421.71,
+                "sma50": 418.93,
+                "sma200": 374.99,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -9.6,
+                "adr_pct": 2.28
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 70.0,
+                "cur_month_avg": 1.3,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 2.34,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 80.0,
+                "next_quarter_avg": 10.5,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 90,
+                        "avg_return": 7.8
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": -0.1
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": -1.2
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 80,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 80,
+                        "avg_return": 5.8
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 60,
+                        "avg_return": 5.4
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 0.2
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 70,
+                        "avg_return": 1.3
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 5.1
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.8,
+                "pcr_oi": 1.75,
+                "call_vol": 26067,
+                "put_vol": 20979,
+                "avg_iv": 63.3,
+                "implied_move_pct": 3.3,
+                "bullish_flow": false
+            }
+        }
+    ],
+    "seasonal_breakout_leaders": [
+        {
+            "ticker": "NET",
+            "current_price": 306.5299987792969,
+            "score": 77,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 294.1,
+                "sma50": 285.1,
+                "sma200": 224.57,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -7.7,
+                "adr_pct": 5.31
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 42.9,
+                "cur_month_avg": -1.75,
+                "next_month_name": "Oct",
+                "next_month_win": 71.4,
+                "next_month_avg": 15.48,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 57.1,
+                "next_quarter_avg": 18.93,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 57,
+                        "avg_return": 1.3
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 71,
+                        "avg_return": 11.0
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 57,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 43,
+                        "avg_return": -4.9
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 57,
+                        "avg_return": 9.3
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 71,
+                        "avg_return": 9.6
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 86,
+                        "avg_return": 8.8
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 71,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 43,
+                        "avg_return": -1.8
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 71,
+                        "avg_return": 15.5
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 57,
+                        "avg_return": 10.4
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 43,
+                        "avg_return": -5.0
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 2.3,
+                "pcr_oi": 0.87,
+                "call_vol": 1802,
+                "put_vol": 4136,
+                "avg_iv": 93.6,
+                "implied_move_pct": 0.0,
+                "bullish_flow": false
+            }
+        },
+        {
+            "ticker": "NVDA",
+            "current_price": 218.2899932861328,
+            "score": 76,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 219.94,
+                "sma50": 212.36,
+                "sma200": 197.11,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -7.5,
+                "adr_pct": 3.51
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": -2.03,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 4.89,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 13.05,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 7.0
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 6.3
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 4.5
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": -0.5
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 90,
+                        "avg_return": 14.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 6.3
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 6.6
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 5.8
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": -2.0
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 4.9
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 7.9
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 40,
+                        "avg_return": -1.5
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.46,
+                "pcr_oi": 0.59,
+                "call_vol": 144545,
+                "put_vol": 66648,
+                "avg_iv": 70.3,
+                "implied_move_pct": 1.6,
+                "bullish_flow": true
+            }
+        }
+    ],
+    "upcoming_monthly_tailwinds": [
+        {
+            "ticker": "PWR",
+            "current_price": 650.5800170898438,
+            "score": 77,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 637.72,
+                "sma50": 646.61,
+                "sma200": 591.69,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -17.5,
+                "adr_pct": 3.24
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 70.0,
+                "cur_month_avg": 3.15,
+                "next_month_name": "Oct",
+                "next_month_win": 80.0,
+                "next_month_avg": 4.35,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 9.96,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 40,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 70,
+                        "avg_return": 5.0
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 2.0
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 6.0
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 1.2
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 80,
+                        "avg_return": 4.3
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 80,
+                        "avg_return": 6.8
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 50,
+                        "avg_return": -1.1
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.53,
+                "pcr_oi": 2.49,
+                "call_vol": 649,
+                "put_vol": 345,
+                "avg_iv": 68.3,
+                "implied_move_pct": 3.7,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "NET",
+            "current_price": 306.5299987792969,
+            "score": 77,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 294.1,
+                "sma50": 285.1,
+                "sma200": 224.57,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -7.7,
+                "adr_pct": 5.31
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 42.9,
+                "cur_month_avg": -1.75,
+                "next_month_name": "Oct",
+                "next_month_win": 71.4,
+                "next_month_avg": 15.48,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 57.1,
+                "next_quarter_avg": 18.93,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 57,
+                        "avg_return": 1.3
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 71,
+                        "avg_return": 11.0
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 57,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 43,
+                        "avg_return": -4.9
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 57,
+                        "avg_return": 9.3
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 71,
+                        "avg_return": 9.6
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 86,
+                        "avg_return": 8.8
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 71,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 43,
+                        "avg_return": -1.8
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 71,
+                        "avg_return": 15.5
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 57,
+                        "avg_return": 10.4
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 43,
+                        "avg_return": -5.0
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 2.3,
+                "pcr_oi": 0.87,
+                "call_vol": 1802,
+                "put_vol": 4136,
+                "avg_iv": 93.6,
+                "implied_move_pct": 0.0,
+                "bullish_flow": false
+            }
+        },
+        {
+            "ticker": "NVDA",
+            "current_price": 218.2899932861328,
+            "score": 76,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 219.94,
+                "sma50": 212.36,
+                "sma200": 197.11,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -7.5,
+                "adr_pct": 3.51
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": -2.03,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 4.89,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 13.05,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 7.0
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 6.3
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 4.5
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": -0.5
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 90,
+                        "avg_return": 14.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 6.3
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 6.6
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 5.8
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": -2.0
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 4.9
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 7.9
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 40,
+                        "avg_return": -1.5
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.46,
+                "pcr_oi": 0.59,
+                "call_vol": 144545,
+                "put_vol": 66648,
+                "avg_iv": 70.3,
+                "implied_move_pct": 1.6,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "PLTR",
+            "current_price": 167.22999572753906,
+            "score": 73,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 175.55,
+                "sma50": 153.93,
+                "sma200": 151.52,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -19.4,
+                "adr_pct": 4.57
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 66.7,
+                "cur_month_avg": 4.61,
+                "next_month_name": "Oct",
+                "next_month_win": 83.3,
+                "next_month_avg": 6.09,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 50.0,
+                "next_quarter_avg": 35.11,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 50,
+                        "avg_return": 5.2
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": 1.3
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 17,
+                        "avg_return": -0.5
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 50,
+                        "avg_return": 15.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 83,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 83,
+                        "avg_return": 8.9
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": 6.5
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 67,
+                        "avg_return": 4.6
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 83,
+                        "avg_return": 6.1
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 35.6
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 33,
+                        "avg_return": -5.9
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.73,
+                "pcr_oi": 0.86,
+                "call_vol": 65239,
+                "put_vol": 47425,
+                "avg_iv": 112.5,
+                "implied_move_pct": 4.8,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "COIN",
+            "current_price": 175.25999450683594,
+            "score": 72,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 175.03,
+                "sma50": 165.05,
+                "sma200": 191.28,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -56.4,
+                "adr_pct": 6.46
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 16.7,
+                "cur_month_avg": -3.36,
+                "next_month_name": "Oct",
+                "next_month_win": 100.0,
+                "next_month_avg": 9.67,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 60.0,
+                "next_quarter_avg": 20.77,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 40,
+                        "avg_return": 3.5
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 6.9
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 40,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 40,
+                        "avg_return": -11.8
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 67,
+                        "avg_return": -0.4
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 50,
+                        "avg_return": 0.0
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 83,
+                        "avg_return": 12.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 17,
+                        "avg_return": -3.4
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 100,
+                        "avg_return": 9.7
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 40,
+                        "avg_return": 14.8
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 20,
+                        "avg_return": -7.3
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.5,
+                "pcr_oi": 0.48,
+                "call_vol": 36663,
+                "put_vol": 18245,
+                "avg_iv": 211.3,
+                "implied_move_pct": 6.9,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "BAC",
+            "current_price": 62.689998626708984,
+            "score": 71,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 62.38,
+                "sma50": 61.72,
+                "sma200": 54.53,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -3.4,
+                "adr_pct": 1.73
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 50.0,
+                "cur_month_avg": -0.71,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 4.95,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 14.9,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 20,
+                        "avg_return": -5.2
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": 1.9
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 50,
+                        "avg_return": 0.0
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 1.9
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 70,
+                        "avg_return": 4.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": -0.0
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 50,
+                        "avg_return": -0.7
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 5.0
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 90,
+                        "avg_return": 8.9
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 70,
+                        "avg_return": 0.6
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.51,
+                "pcr_oi": 1.58,
+                "call_vol": 27145,
+                "put_vol": 13771,
+                "avg_iv": 78.1,
+                "implied_move_pct": 2.5,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "CRM",
+            "current_price": 247.72000122070312,
+            "score": 67,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 230.63,
+                "sma50": 198.61,
+                "sma200": 200.45,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -7.7,
+                "adr_pct": 4.82
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 30.0,
+                "cur_month_avg": -2.75,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 3.8,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 50.0,
+                "next_quarter_avg": 3.95,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 80,
+                        "avg_return": 5.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 40,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 40,
+                        "avg_return": -1.3
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 0.1
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 1.2
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 8.7
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 30,
+                        "avg_return": -2.8
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 3.8
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 60,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 30,
+                        "avg_return": -2.8
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 2.57,
+                "pcr_oi": 1.11,
+                "call_vol": 7677,
+                "put_vol": 19707,
+                "avg_iv": 92.6,
+                "implied_move_pct": 4.6,
+                "bullish_flow": false
+            }
+        },
+        {
+            "ticker": "MS",
+            "current_price": 214.3800048828125,
+            "score": 64,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 214.66,
+                "sma50": 215.39,
+                "sma200": 190.43,
+                "above_20": false,
+                "above_50": false,
+                "bullish_alignment": false,
+                "dist_52w_pct": -7.2,
+                "adr_pct": 2.05
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 50.0,
+                "cur_month_avg": -1.48,
+                "next_month_name": "Oct",
+                "next_month_win": 80.0,
+                "next_month_avg": 3.28,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 15.1,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 80,
+                        "avg_return": 4.7
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 20,
+                        "avg_return": -2.0
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 30,
+                        "avg_return": -5.0
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 4.6
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 2.2
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 100,
+                        "avg_return": 5.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 50,
+                        "avg_return": -1.5
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 80,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 80,
+                        "avg_return": 9.4
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 70,
+                        "avg_return": 2.0
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.41,
+                "pcr_oi": 1.09,
+                "call_vol": 5756,
+                "put_vol": 2384,
+                "avg_iv": 74.1,
+                "implied_move_pct": 3.1,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "NFLX",
+            "current_price": 77.4000015258789,
+            "score": 63,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 79.44,
+                "sma50": 75.7,
+                "sma200": 86.24,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -38.3,
+                "adr_pct": 2.71
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 50.0,
+                "cur_month_avg": -1.35,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 6.42,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 8.88,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 9.2
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 80,
+                        "avg_return": 2.8
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 0.1
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 4.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 40,
+                        "avg_return": 1.0
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 50,
+                        "avg_return": -1.3
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 6.4
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 60,
+                        "avg_return": -0.5
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.42,
+                "pcr_oi": 0.54,
+                "call_vol": 70350,
+                "put_vol": 29866,
+                "avg_iv": 119.8,
+                "implied_move_pct": 3.4,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "GOOGL",
+            "current_price": 338.5,
+            "score": 61,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 340.89,
+                "sma50": 346.98,
+                "sma200": 336.38,
+                "above_20": false,
+                "above_50": false,
+                "bullish_alignment": false,
+                "dist_52w_pct": -17.1,
+                "adr_pct": 2.16
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 40.0,
+                "cur_month_avg": -1.5,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 3.37,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 7.3,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 90,
+                        "avg_return": 5.6
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 30,
+                        "avg_return": -3.4
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 60,
+                        "avg_return": -0.2
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 80,
+                        "avg_return": 6.9
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 70,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 40,
+                        "avg_return": -0.7
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 5.9
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 1.3
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 40,
+                        "avg_return": -1.5
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 3.4
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 3.2
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 60,
+                        "avg_return": 0.5
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.45,
+                "pcr_oi": 0.4,
+                "call_vol": 42962,
+                "put_vol": 19357,
+                "avg_iv": 48.9,
+                "implied_move_pct": 1.3,
+                "bullish_flow": true
+            }
+        }
+    ],
+    "options_backed_sweeps": [
+        {
+            "ticker": "PWR",
+            "current_price": 650.5800170898438,
+            "score": 77,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 637.72,
+                "sma50": 646.61,
+                "sma200": 591.69,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -17.5,
+                "adr_pct": 3.24
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 70.0,
+                "cur_month_avg": 3.15,
+                "next_month_name": "Oct",
+                "next_month_win": 80.0,
+                "next_month_avg": 4.35,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 9.96,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 40,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 70,
+                        "avg_return": 5.0
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 2.0
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 6.0
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 1.2
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 80,
+                        "avg_return": 4.3
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 80,
+                        "avg_return": 6.8
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 50,
+                        "avg_return": -1.1
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.53,
+                "pcr_oi": 2.49,
+                "call_vol": 649,
+                "put_vol": 345,
+                "avg_iv": 68.3,
+                "implied_move_pct": 3.7,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "NVDA",
+            "current_price": 218.2899932861328,
+            "score": 76,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 219.94,
+                "sma50": 212.36,
+                "sma200": 197.11,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -7.5,
+                "adr_pct": 3.51
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": -2.03,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 4.89,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 13.05,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 7.0
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 6.3
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 4.5
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": -0.5
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 90,
+                        "avg_return": 14.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 6.3
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 6.6
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 5.8
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": -2.0
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 4.9
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 7.9
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 40,
+                        "avg_return": -1.5
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.46,
+                "pcr_oi": 0.59,
+                "call_vol": 144545,
+                "put_vol": 66648,
+                "avg_iv": 70.3,
+                "implied_move_pct": 1.6,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "PLTR",
+            "current_price": 167.22999572753906,
+            "score": 73,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 175.55,
+                "sma50": 153.93,
+                "sma200": 151.52,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -19.4,
+                "adr_pct": 4.57
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 66.7,
+                "cur_month_avg": 4.61,
+                "next_month_name": "Oct",
+                "next_month_win": 83.3,
+                "next_month_avg": 6.09,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 50.0,
+                "next_quarter_avg": 35.11,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 50,
+                        "avg_return": 5.2
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": 1.3
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 17,
+                        "avg_return": -0.5
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 50,
+                        "avg_return": 15.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 83,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 83,
+                        "avg_return": 8.9
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": 6.5
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 67,
+                        "avg_return": 4.6
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 83,
+                        "avg_return": 6.1
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 35.6
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 33,
+                        "avg_return": -5.9
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.73,
+                "pcr_oi": 0.86,
+                "call_vol": 65239,
+                "put_vol": 47425,
+                "avg_iv": 112.5,
+                "implied_move_pct": 4.8,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "COIN",
+            "current_price": 175.25999450683594,
+            "score": 72,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 175.03,
+                "sma50": 165.05,
+                "sma200": 191.28,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -56.4,
+                "adr_pct": 6.46
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 16.7,
+                "cur_month_avg": -3.36,
+                "next_month_name": "Oct",
+                "next_month_win": 100.0,
+                "next_month_avg": 9.67,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 60.0,
+                "next_quarter_avg": 20.77,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 40,
+                        "avg_return": 3.5
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 6.9
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 40,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 40,
+                        "avg_return": -11.8
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 67,
+                        "avg_return": -0.4
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 50,
+                        "avg_return": 0.0
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 83,
+                        "avg_return": 12.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 17,
+                        "avg_return": -3.4
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 100,
+                        "avg_return": 9.7
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 40,
+                        "avg_return": 14.8
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 20,
+                        "avg_return": -7.3
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.5,
+                "pcr_oi": 0.48,
+                "call_vol": 36663,
+                "put_vol": 18245,
+                "avg_iv": 211.3,
+                "implied_move_pct": 6.9,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "ETN",
+            "current_price": 425.3699951171875,
+            "score": 72,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 415.84,
+                "sma50": 415.27,
+                "sma200": 380.92,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -11.0,
+                "adr_pct": 3.03
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": 1.42,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 1.36,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 80.0,
+                "next_quarter_avg": 5.3,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 60,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 2.9
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 40,
+                        "avg_return": -0.7
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 70,
+                        "avg_return": 3.4
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 70,
+                        "avg_return": 1.0
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 3.2
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 70,
+                        "avg_return": 4.6
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 40,
+                        "avg_return": 0.3
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": 1.4
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 1.4
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 5.7
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 50,
+                        "avg_return": -1.8
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.28,
+                "pcr_oi": 0.61,
+                "call_vol": 2312,
+                "put_vol": 636,
+                "avg_iv": 49.6,
+                "implied_move_pct": 0.0,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "AAPL",
+            "current_price": 332.2699890136719,
+            "score": 71,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 316.63,
+                "sma50": 317.83,
+                "sma200": 284.54,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -3.5,
+                "adr_pct": 2.36
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 40.0,
+                "cur_month_avg": -2.13,
+                "next_month_name": "Oct",
+                "next_month_win": 60.0,
+                "next_month_avg": 3.18,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 80.0,
+                "next_quarter_avg": 7.65,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 40,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 0.5
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 0.3
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": 2.2
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 3.7
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 100,
+                        "avg_return": 7.0
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 70,
+                        "avg_return": 6.6
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 40,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 60,
+                        "avg_return": 3.2
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 60,
+                        "avg_return": 1.2
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.88,
+                "pcr_oi": 0.56,
+                "call_vol": 129551,
+                "put_vol": 113698,
+                "avg_iv": 47.1,
+                "implied_move_pct": 1.4,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "BAC",
+            "current_price": 62.689998626708984,
+            "score": 71,
+            "setup_label": "STRONG SEASONAL TAILWIND",
+            "badge_color": "#3b82f6",
+            "technicals": {
+                "sma20": 62.38,
+                "sma50": 61.72,
+                "sma200": 54.53,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -3.4,
+                "adr_pct": 1.73
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 50.0,
+                "cur_month_avg": -0.71,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 4.95,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 14.9,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 3.1
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 20,
+                        "avg_return": -5.2
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": 1.9
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 50,
+                        "avg_return": 0.0
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 1.9
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 70,
+                        "avg_return": 4.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": -0.0
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 50,
+                        "avg_return": -0.7
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 5.0
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 90,
+                        "avg_return": 8.9
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 70,
+                        "avg_return": 0.6
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.51,
+                "pcr_oi": 1.58,
+                "call_vol": 27145,
+                "put_vol": 13771,
+                "avg_iv": 78.1,
+                "implied_move_pct": 2.5,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "MSFT",
+            "current_price": 495.6300048828125,
+            "score": 64,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 494.25,
+                "sma50": 453.12,
+                "sma200": 429.65,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -9.8,
+                "adr_pct": 2.03
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 40.0,
+                "cur_month_avg": -2.26,
+                "next_month_name": "Oct",
+                "next_month_win": 50.0,
+                "next_month_avg": 2.73,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 6.69,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 1.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 40,
+                        "avg_return": -0.9
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 60,
+                        "avg_return": 1.4
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 80,
+                        "avg_return": 4.2
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 70,
+                        "avg_return": 4.5
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 5.4
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 40,
+                        "avg_return": -2.3
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 50,
+                        "avg_return": 2.7
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 80,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 50,
+                        "avg_return": -0.3
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.51,
+                "pcr_oi": 0.48,
+                "call_vol": 17006,
+                "put_vol": 8706,
+                "avg_iv": 46.5,
+                "implied_move_pct": 1.1,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "MS",
+            "current_price": 214.3800048828125,
+            "score": 64,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 214.66,
+                "sma50": 215.39,
+                "sma200": 190.43,
+                "above_20": false,
+                "above_50": false,
+                "bullish_alignment": false,
+                "dist_52w_pct": -7.2,
+                "adr_pct": 2.05
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 50.0,
+                "cur_month_avg": -1.48,
+                "next_month_name": "Oct",
+                "next_month_win": 80.0,
+                "next_month_avg": 3.28,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 90.0,
+                "next_quarter_avg": 15.1,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 80,
+                        "avg_return": 4.7
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 20,
+                        "avg_return": -2.0
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 30,
+                        "avg_return": -5.0
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 4.6
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 2.2
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 100,
+                        "avg_return": 5.3
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 50,
+                        "avg_return": -1.5
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 80,
+                        "avg_return": 3.3
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 80,
+                        "avg_return": 9.4
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 70,
+                        "avg_return": 2.0
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.41,
+                "pcr_oi": 1.09,
+                "call_vol": 5756,
+                "put_vol": 2384,
+                "avg_iv": 74.1,
+                "implied_move_pct": 3.1,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "NFLX",
+            "current_price": 77.4000015258789,
+            "score": 63,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 79.44,
+                "sma50": 75.7,
+                "sma200": 86.24,
+                "above_20": false,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -38.3,
+                "adr_pct": 2.71
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 50.0,
+                "cur_month_avg": -1.35,
+                "next_month_name": "Oct",
+                "next_month_win": 70.0,
+                "next_month_avg": 6.42,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 8.88,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 9.2
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 80,
+                        "avg_return": 2.8
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": 0.1
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": -2.1
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 60,
+                        "avg_return": 4.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 40,
+                        "avg_return": 1.0
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 50,
+                        "avg_return": -1.3
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 70,
+                        "avg_return": 6.4
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 60,
+                        "avg_return": -0.5
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.42,
+                "pcr_oi": 0.54,
+                "call_vol": 70350,
+                "put_vol": 29866,
+                "avg_iv": 119.8,
+                "implied_move_pct": 3.4,
+                "bullish_flow": true
+            }
+        }
+    ],
+    "seasonal_traps_warning": [
+        {
+            "ticker": "XOM",
+            "current_price": 165.99000549316406,
+            "score": 60,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 162.28,
+                "sma50": 154.57,
+                "sma200": 144.05,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -4.7,
+                "adr_pct": 2.05
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 60.0,
+                "cur_month_avg": 0.87,
+                "next_month_name": "Oct",
+                "next_month_win": 40.0,
+                "next_month_avg": 0.92,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 3.01,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 5.2
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 60,
+                        "avg_return": 1.8
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 70,
+                        "avg_return": 1.2
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 2.1
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 30,
+                        "avg_return": -0.9
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 40,
+                        "avg_return": 1.4
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 40,
+                        "avg_return": -0.6
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 60,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 40,
+                        "avg_return": 0.9
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 80,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 60,
+                        "avg_return": -0.6
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.05,
+                "pcr_oi": 0.96,
+                "call_vol": 101250,
+                "put_vol": 5011,
+                "avg_iv": 61.7,
+                "implied_move_pct": 3.3,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "EOG",
+            "current_price": 147.36000061035156,
+            "score": 60,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 147.13,
+                "sma50": 142.62,
+                "sma200": 128.11,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -4.1,
+                "adr_pct": 2.28
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 50.0,
+                "cur_month_avg": -0.14,
+                "next_month_name": "Oct",
+                "next_month_win": 40.0,
+                "next_month_avg": 0.39,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 6.24,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 80,
+                        "avg_return": 4.7
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": -0.7
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 90,
+                        "avg_return": 1.1
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 60,
+                        "avg_return": 3.6
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 30,
+                        "avg_return": -0.6
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 2.0
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 70,
+                        "avg_return": 2.0
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 30,
+                        "avg_return": -3.4
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 50,
+                        "avg_return": -0.1
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 40,
+                        "avg_return": 0.4
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 6.0
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 40,
+                        "avg_return": -0.1
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.32,
+                "pcr_oi": 0.41,
+                "call_vol": 454,
+                "put_vol": 146,
+                "avg_iv": 67.5,
+                "implied_move_pct": 3.4,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "SNOW",
+            "current_price": 328.989990234375,
+            "score": 58,
+            "setup_label": "CONSTRUCTIVE CYCLE WATCH",
+            "badge_color": "#fbbf24",
+            "technicals": {
+                "sma20": 327.61,
+                "sma50": 303.51,
+                "sma200": 220.64,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -14.5,
+                "adr_pct": 5.38
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 16.7,
+                "cur_month_avg": -2.5,
+                "next_month_name": "Oct",
+                "next_month_win": 33.3,
+                "next_month_avg": 4.63,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 66.7,
+                "next_quarter_avg": 11.75,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 33,
+                        "avg_return": -1.5
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 0,
+                        "avg_return": -4.8
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 0,
+                        "avg_return": -11.3
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 33,
+                        "avg_return": -5.4
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 67,
+                        "avg_return": 15.5
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 67,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 67,
+                        "avg_return": 5.1
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 67,
+                        "avg_return": 5.2
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 17,
+                        "avg_return": -2.5
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 33,
+                        "avg_return": 4.6
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 14.8
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 33,
+                        "avg_return": -5.3
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.42,
+                "pcr_oi": 1.0,
+                "call_vol": 12532,
+                "put_vol": 5257,
+                "avg_iv": 80.5,
+                "implied_move_pct": 4.9,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "SLB",
+            "current_price": 56.060001373291016,
+            "score": 57,
+            "setup_label": "CYCLICAL UNDERPERFORMER",
+            "badge_color": "#ef4444",
+            "technicals": {
+                "sma20": 55.39,
+                "sma50": 51.39,
+                "sma200": 48.99,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": true,
+                "dist_52w_pct": -6.8,
+                "adr_pct": 3.84
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 30.0,
+                "cur_month_avg": -1.93,
+                "next_month_name": "Oct",
+                "next_month_win": 30.0,
+                "next_month_avg": 1.68,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 60.0,
+                "next_quarter_avg": 7.02,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 70,
+                        "avg_return": 7.8
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 50,
+                        "avg_return": 0.1
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 40,
+                        "avg_return": -4.7
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 40,
+                        "avg_return": -0.7
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 40,
+                        "avg_return": 0.1
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": -0.3
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 70,
+                        "avg_return": 2.6
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": -0.5
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 30,
+                        "avg_return": -1.9
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 30,
+                        "avg_return": 1.7
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 50,
+                        "avg_return": 3.5
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 80,
+                        "avg_return": 1.1
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.05,
+                "pcr_oi": 1.07,
+                "call_vol": 16946,
+                "put_vol": 766,
+                "avg_iv": 75.0,
+                "implied_move_pct": 3.7,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "AMD",
+            "current_price": 516.1300048828125,
+            "score": 51,
+            "setup_label": "CYCLICAL UNDERPERFORMER",
+            "badge_color": "#ef4444",
+            "technicals": {
+                "sma20": 482.04,
+                "sma50": 496.55,
+                "sma200": 346.91,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -11.7,
+                "adr_pct": 3.69
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 30.0,
+                "cur_month_avg": -1.23,
+                "next_month_name": "Oct",
+                "next_month_win": 40.0,
+                "next_month_avg": 1.22,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 16.6,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 60,
+                        "avg_return": 6.9
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 40,
+                        "avg_return": 1.7
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 50,
+                        "avg_return": -0.3
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 50,
+                        "avg_return": 5.3
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 70,
+                        "avg_return": 12.6
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 60,
+                        "avg_return": 5.6
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 80,
+                        "avg_return": 11.1
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 50,
+                        "avg_return": 3.4
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 30,
+                        "avg_return": -1.2
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 40,
+                        "avg_return": 1.2
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 70,
+                        "avg_return": 14.2
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 30,
+                        "avg_return": 0.7
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.41,
+                "pcr_oi": 0.57,
+                "call_vol": 28449,
+                "put_vol": 11719,
+                "avg_iv": 72.5,
+                "implied_move_pct": 0.0,
+                "bullish_flow": true
+            }
+        },
+        {
+            "ticker": "TSLA",
+            "current_price": 365.44000244140625,
+            "score": 48,
+            "setup_label": "CYCLICAL UNDERPERFORMER",
+            "badge_color": "#ef4444",
+            "technicals": {
+                "sma20": 355.13,
+                "sma50": 354.5,
+                "sma200": 398.93,
+                "above_20": true,
+                "above_50": true,
+                "bullish_alignment": false,
+                "dist_52w_pct": -26.7,
+                "adr_pct": 3.91
+            },
+            "seasonality": {
+                "cur_month_name": "Sep",
+                "cur_month_win": 40.0,
+                "cur_month_avg": 2.98,
+                "next_month_name": "Oct",
+                "next_month_win": 40.0,
+                "next_month_avg": 5.06,
+                "next_quarter_name": "Q4",
+                "next_quarter_win": 70.0,
+                "next_quarter_avg": 19.74,
+                "monthly_12": [
+                    {
+                        "month": 1,
+                        "name": "Jan",
+                        "win_rate": 60,
+                        "avg_return": 9.2
+                    },
+                    {
+                        "month": 2,
+                        "name": "Feb",
+                        "win_rate": 40,
+                        "avg_return": -2.7
+                    },
+                    {
+                        "month": 3,
+                        "name": "Mar",
+                        "win_rate": 30,
+                        "avg_return": -5.4
+                    },
+                    {
+                        "month": 4,
+                        "name": "Apr",
+                        "win_rate": 70,
+                        "avg_return": 4.0
+                    },
+                    {
+                        "month": 5,
+                        "name": "May",
+                        "win_rate": 50,
+                        "avg_return": 2.3
+                    },
+                    {
+                        "month": 6,
+                        "name": "Jun",
+                        "win_rate": 70,
+                        "avg_return": 10.2
+                    },
+                    {
+                        "month": 7,
+                        "name": "Jul",
+                        "win_rate": 60,
+                        "avg_return": 4.1
+                    },
+                    {
+                        "month": 8,
+                        "name": "Aug",
+                        "win_rate": 60,
+                        "avg_return": 9.4
+                    },
+                    {
+                        "month": 9,
+                        "name": "Sep",
+                        "win_rate": 40,
+                        "avg_return": 3.0
+                    },
+                    {
+                        "month": 10,
+                        "name": "Oct",
+                        "win_rate": 40,
+                        "avg_return": 5.1
+                    },
+                    {
+                        "month": 11,
+                        "name": "Nov",
+                        "win_rate": 60,
+                        "avg_return": 8.4
+                    },
+                    {
+                        "month": 12,
+                        "name": "Dec",
+                        "win_rate": 70,
+                        "avg_return": 4.0
+                    }
+                ]
+            },
+            "options": {
+                "pcr_vol": 0.72,
+                "pcr_oi": 0.86,
+                "call_vol": 134404,
+                "put_vol": 97329,
+                "avg_iv": 51.9,
+                "implied_move_pct": 1.9,
+                "bullish_flow": true
+            }
+        }
+    ]
+}
