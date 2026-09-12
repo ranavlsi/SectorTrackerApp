@@ -534,7 +534,8 @@ def generate_weekly_playbook():
             if "Breakout" in plan['setup_type']:
                 reasoning = f"Composite Breakout Logic triggered. The pivot is primed with {personality['tier_label']} character (ADR: {adr['adr_10d']}%). Institutional anchor: {guardian['guardian_ma']}. Sizing: {personality['sizing_recommendation']}. Ensure entry does not exceed the 5% max chase rule."
             elif "Pullback" in plan['setup_type']:
-                reasoning = f"Controlled pullback into the {guardian['guardian_ma']} institutional support layer. {personality['tier_label']} personality allows an asymmetric risk/reward entry with risk capped at {risk_pct}%."
+                support_target = "50-SMA" if "50-SMA" in plan['setup_type'] else ("21-EMA" if "21-EMA" in plan['setup_type'] else guardian['guardian_ma'])
+                reasoning = f"Controlled pullback testing the {support_target} institutional support layer. {personality['tier_label']} personality allows an asymmetric risk/reward entry with risk capped at {risk_pct}%."
             else:
                 reasoning = f"Consolidating tightly near 52-week highs. Holding firmly above the {guardian['guardian_ma']} ({guardian['respect_score']}% bounce rate). Ideal low-cheat entry."
                 

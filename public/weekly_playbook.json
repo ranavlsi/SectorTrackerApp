@@ -1,13 +1,13 @@
 {
     "date": "September 12, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 23.0/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
+        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 20.0/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
         "bias": "Cautious",
         "spy_weekly_return": "-1.15%",
         "regime": "RISK_OFF"
     },
     "regime_briefing": {
-        "score_value": 23.0,
+        "score_value": 20.0,
         "score_label": "Bearish / Deteriorating",
         "regime_status": "RISK_OFF",
         "regime_color": "#ef4444",
@@ -267,13 +267,13 @@
         },
         {
             "ticker": "AMZN",
-            "entry_price": "$268.12",
-            "stop_loss": "$259.68",
-            "profit_target": "$293.45",
-            "risk_pct": "3.1%",
-            "reward_risk": "3.0:1",
-            "setup_type": "Composite Breakout (VCP)",
-            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 1.9%). Institutional anchor: 10-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "entry_price": "$257.87",
+            "stop_loss": "$248.45",
+            "profit_target": "$281.41",
+            "risk_pct": "3.7%",
+            "reward_risk": "2.5:1",
+            "setup_type": "Pullback to 50-SMA Support",
+            "reasoning": "Controlled pullback testing the 50-SMA institutional support layer. Tight & Orderly personality allows an asymmetric risk/reward entry with risk capped at 3.7%.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u267b\ufe0f Momentum Fading (Oversold Bounce)",
@@ -375,13 +375,13 @@
         },
         {
             "ticker": "BIIB",
-            "entry_price": "$226.37",
-            "stop_loss": "$217.81",
-            "profit_target": "$252.06",
-            "risk_pct": "3.8%",
+            "entry_price": "$220.05",
+            "stop_loss": "$211.48",
+            "profit_target": "$245.73",
+            "risk_pct": "3.9%",
             "reward_risk": "3.0:1",
-            "setup_type": "Composite Breakout (VCP)",
-            "reasoning": "Composite Breakout Logic triggered. The pivot is primed with Tight & Orderly character (ADR: 2.68%). Institutional anchor: 50-SMA. Sizing: Full Position (Core Book Leader). Ensure entry does not exceed the 5% max chase rule.",
+            "setup_type": "Trend Continuation Pivot",
+            "reasoning": "Consolidating tightly near 52-week highs. Holding firmly above the 50-SMA (73.9% bounce rate). Ideal low-cheat entry.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",

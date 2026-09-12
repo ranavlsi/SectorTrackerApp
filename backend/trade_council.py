@@ -90,6 +90,30 @@ class TradeCouncil:
         swing_high = hist['High'].max()
         fib_382 = swing_high - (0.382 * (swing_high - swing_low))
         fib_500 = swing_high - (0.500 * (swing_high - swing_low))
+
+        # Swing structure analysis over consolidation window (15-20 bars)
+        window_size = min(16, len(hist))
+        tail_window = hist.tail(window_size)
+        half = max(1, len(tail_window) // 2)
+        
+        first_half = tail_window.iloc[:half]
+        second_half = tail_window.iloc[half:]
+        
+        h1, l1 = first_half['High'].max(), first_half['Low'].min()
+        h2, l2 = second_half['High'].max(), second_half['Low'].min()
+        
+        x = np.arange(len(tail_window))
+        slope_h, _ = np.polyfit(x, tail_window['High'], 1) if len(tail_window) >= 3 else (0.0, 0.0)
+        slope_l, _ = np.polyfit(x, tail_window['Low'], 1) if len(tail_window) >= 3 else (0.0, 0.0)
+        
+        # Lower highs and lower lows indicate downward channel / orderly pullback, NOT a VCP
+        is_lower_highs = (h2 < h1 * 0.99) and (slope_h < 0)
+        is_lower_lows = (l2 < l1 * 0.99) and (slope_l < 0)
+        is_downward_channel = is_lower_highs and is_lower_lows
+        
+        # True Minervini VCP requires lows to form higher lows or hold a flat support shelf
+        is_higher_lows = (l2 >= l1 * 0.985) and not is_downward_channel
+        recent_pullback_low = tail_window['Low'].tail(min(5, len(tail_window))).min()
         
         return {
             'ema_3': ema_3,
@@ -105,7 +129,12 @@ class TradeCouncil:
             'bb_width_pct': bb_width_pct,
             'pivot_15d': pivot_15d,
             'fib_382': fib_382,
-            'fib_500': fib_500
+            'fib_500': fib_500,
+            'is_downward_channel': is_downward_channel,
+            'is_higher_lows': is_higher_lows,
+            'slope_h': slope_h,
+            'slope_l': slope_l,
+            'recent_pullback_low': recent_pullback_low
         }
 
     @staticmethod
@@ -150,6 +179,10 @@ class TradeCouncil:
         # Check Trend Template: 50 > 150 > 200
         trend_template_active = (trend_data['sma_50'] > trend_data['sma_150']) and (trend_data['sma_150'] > trend_data['sma_200'])
         
+        # Distance to key institutional moving averages
+        near_50_sma = abs(current_price - trend_data['sma_50']) / trend_data['sma_50'] < 0.035
+        near_21_ema = abs(current_price - trend_data['ema_21']) / trend_data['ema_21'] < 0.035
+        
         hoy = hist['High'].iloc[-1]
         lod = hist['Low'].iloc[-1]
         atr = vol_data['atr']
@@ -165,10 +198,28 @@ class TradeCouncil:
             setup_type = "Mean Reversion Pullback"
             
         elif is_consolidating and trend_template_active:
-            # Momentum Breakout Logic (VCP / CANSLIM)
-            pivot = trend_data['pivot_15d']
-            entry = pivot + (0.10 * atr)
-            setup_type = "Composite Breakout (VCP)"
+            if trend_data['is_downward_channel']:
+                # Lower highs & lower lows drifting into institutional MA support = Orderly Pullback (NOT a VCP!)
+                if near_50_sma:
+                    setup_type = "Pullback to 50-SMA Support"
+                elif near_21_ema:
+                    setup_type = "Pullback to 21-EMA Support"
+                else:
+                    setup_type = "Downward Channel Consolidation"
+                
+                # Pullback entry: tactical reversal trigger on reclaim of prior day high or 10-EMA
+                entry = max(hoy + (0.05 * atr), trend_data['ema_10'])
+                if current_price >= entry:
+                    entry = hoy + (0.05 * atr)
+            elif trend_data['is_higher_lows']:
+                # True Minervini VCP: Volatility contracts with HIGHER LOWS or horizontal base floor
+                pivot = trend_data['pivot_15d']
+                entry = pivot + (0.10 * atr)
+                setup_type = "Composite Breakout (VCP)"
+            else:
+                # Neutral consolidation / pivot
+                entry = hoy + (0.05 * atr)
+                setup_type = "Trend Continuation Pivot"
             
         else:
             # Fallback Pivot Logic
@@ -187,6 +238,11 @@ class TradeCouncil:
             tech_sl = lod - (0.1 * atr)
             vol_sl = entry - (1.5 * atr)
             final_sl = max(tech_sl, vol_sl)
+        elif "Pullback" in setup_type or "Downward Channel" in setup_type:
+            # Stop loss anchored below recent pullback swing low and institutional moving average support
+            support_ma = trend_data['sma_50'] if "50-SMA" in setup_type else trend_data['ema_21']
+            structural_floor = min(trend_data['recent_pullback_low'], support_ma)
+            final_sl = structural_floor - (0.20 * atr)
         elif setup_type == "Parabolic Momentum Tracker":
             # Chandelier Exit (Highest High - 3.0 ATR)
             chandelier_exit = highest_high_22 - (3.0 * atr)
@@ -199,16 +255,21 @@ class TradeCouncil:
         else:
             final_sl = entry - (1.5 * atr)
         
-        # Ensure stop is logically below entry
+        # Ensure stop is logically below entry and below current price
         if final_sl >= entry:
             final_sl = entry - (1.0 * atr)
+        if final_sl >= current_price:
+            final_sl = current_price - (0.5 * atr)
             
-        risk_dollars = entry - final_sl
+        risk_dollars = max(0.01, entry - final_sl)
         
         # 3. Evaluate Profit Target
         if setup_type == "Composite Breakout (VCP)":
             # 3.0R Asymmetric Target
             final_pt = entry + (3.0 * risk_dollars)
+        elif "Pullback" in setup_type or "Downward Channel" in setup_type:
+            # 2.5R Target or Retest of Upper Pivot High
+            final_pt = max(trend_data['pivot_15d'], entry + (2.5 * risk_dollars))
         elif setup_type == "Parabolic Momentum Tracker":
             # Target 2.5R to 3.0R multiple
             final_pt = entry + (2.5 * risk_dollars)
