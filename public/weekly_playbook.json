@@ -1,13 +1,13 @@
 {
     "date": "September 12, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 24.5/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
+        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 23.0/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
         "bias": "Cautious",
         "spy_weekly_return": "-1.15%",
         "regime": "RISK_OFF"
     },
     "regime_briefing": {
-        "score_value": 24.5,
+        "score_value": 23.0,
         "score_label": "Bearish / Deteriorating",
         "regime_status": "RISK_OFF",
         "regime_color": "#ef4444",
@@ -29,8 +29,9 @@
                 "rs_momentum": 112.8,
                 "top_stocks": [
                     "VLO",
+                    "XOM",
                     "MPC",
-                    "CVX"
+                    "PSX"
                 ],
                 "status": "Leading (Accumulation) (High-Tight Base)",
                 "color": "#10b981",
@@ -42,9 +43,7 @@
                 "rs_ratio": 112.5,
                 "rs_momentum": 110.5,
                 "top_stocks": [
-                    "WPM.TO",
-                    "FNV.TO",
-                    "AEM.TO"
+                    "GOLD"
                 ],
                 "status": "Leading (Accumulation) (High-Tight Base)",
                 "color": "#10b981",
@@ -56,9 +55,7 @@
                 "rs_ratio": 102.7,
                 "rs_momentum": 124.2,
                 "top_stocks": [
-                    "TMUS",
-                    "T",
-                    "NFLX"
+                    "META"
                 ],
                 "status": "Leading (Accumulation)",
                 "color": "#10b981",
@@ -72,13 +69,26 @@
                 "rs_ratio": 102.9,
                 "rs_momentum": 99.9,
                 "top_stocks": [
-                    "CSCO",
+                    "ADBE",
+                    "CRM",
+                    "NVDA",
+                    "MSFT"
+                ],
+                "drag_stocks": [
+                    "ADBE",
+                    "CRM",
+                    "NVDA",
+                    "MSFT"
+                ],
+                "rs_stocks": [
+                    "AMD",
                     "INTC",
-                    "AMD"
+                    "CSCO",
+                    "AAPL"
                 ],
                 "status": "Weakening (Distribution)",
                 "color": "#f59e0b",
-                "note": "Weekly momentum decayed to 99.9 \u2022 Intraday Lagging (96.0, 93.0)"
+                "note": "Distribution Drag: ADBE (-11.7%), CRM (-6.3%) \u2022 RS Islands: AMD (+13.1%), INTC (+12.3%)"
             },
             {
                 "ticker": "IBB",
@@ -86,13 +96,21 @@
                 "rs_ratio": 106.5,
                 "rs_momentum": 98.0,
                 "top_stocks": [
-                    "MRNA",
-                    "ILMN",
-                    "NTRA"
+                    "AMGN",
+                    "VRTX",
+                    "REGN",
+                    "ILMN"
                 ],
+                "drag_stocks": [
+                    "AMGN",
+                    "VRTX",
+                    "REGN",
+                    "ILMN"
+                ],
+                "rs_stocks": [],
                 "status": "Weakening (Distribution)",
                 "color": "#f59e0b",
-                "note": "Weekly momentum decayed to 98.0 \u2022 Intraday Lagging (84.5, 81.3)"
+                "note": "Distribution Drag: AMGN (-15.0%), VRTX (-7.6%), REGN (-7.3%)"
             },
             {
                 "ticker": "URNM",
@@ -100,13 +118,21 @@
                 "rs_ratio": 92.5,
                 "rs_momentum": 102.2,
                 "top_stocks": [
-                    "KAP",
-                    "CCO.TO",
-                    "U-U.TO"
+                    "DNN",
+                    "UUUU",
+                    "UEC",
+                    "NXE"
                 ],
+                "drag_stocks": [
+                    "DNN",
+                    "UUUU",
+                    "UEC",
+                    "NXE"
+                ],
+                "rs_stocks": [],
                 "status": "Weakening (Distribution)",
                 "color": "#f59e0b",
-                "note": "Weekly momentum decayed to 102.2 \u2022 Intraday Lagging (82.8, 90.3)"
+                "note": "Distribution Drag: DNN (-11.4%), UUUU (-9.8%), UEC (-9.2%)"
             }
         ],
         "lagging_sectors": [
@@ -116,9 +142,10 @@
                 "rs_ratio": 83.7,
                 "rs_momentum": 88.2,
                 "top_stocks": [
-                    "AMT",
-                    "DLR",
-                    "EQIX"
+                    "O",
+                    "SPG",
+                    "PSA",
+                    "CCI"
                 ],
                 "status": "Lagging (Outflow)",
                 "color": "#ef4444",
@@ -130,9 +157,10 @@
                 "rs_ratio": 79.6,
                 "rs_momentum": 81.4,
                 "top_stocks": [
-                    "ETN",
-                    "GEV",
-                    "BA"
+                    "GE",
+                    "DE",
+                    "HON",
+                    "RTX"
                 ],
                 "status": "Lagging (Outflow)",
                 "color": "#ef4444",
@@ -145,8 +173,9 @@
                 "rs_momentum": 77.1,
                 "top_stocks": [
                     "LEN",
-                    "SHW",
-                    "TOL"
+                    "PHM",
+                    "TOL",
+                    "DHI"
                 ],
                 "status": "Lagging (Outflow)",
                 "color": "#ef4444",

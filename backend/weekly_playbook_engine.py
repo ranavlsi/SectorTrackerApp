@@ -130,7 +130,48 @@ def get_macro_regime():
         "distribution_warning": False
     }
 
-def get_sector_rotation():
+SECTOR_HOLDINGS_MAP = {
+    'XLK': ['NVDA', 'MSFT', 'AAPL', 'AVGO', 'ADBE', 'AMD', 'INTC', 'CSCO', 'CRM', 'ORCL'],
+    'SMH': ['NVDA', 'TSM', 'AVGO', 'AMD', 'ADI', 'TXN', 'ASML', 'AMAT', 'LRCX', 'INTC'],
+    'XLE': ['XOM', 'CVX', 'COP', 'EOG', 'SLB', 'VLO', 'MPC', 'PSX', 'OXY'],
+    'GDX': ['NEM', 'AEM', 'GOLD', 'KGC', 'WPM', 'FNV', 'AU', 'AGI'],
+    'XLC': ['META', 'GOOGL', 'GOOG', 'NFLX', 'TMUS', 'DIS', 'CMCSA', 'T', 'VZ'],
+    'XLF': ['JPM', 'BAC', 'WFC', 'C', 'GS', 'MS', 'BLK', 'V', 'MA', 'AXP'],
+    'IBB': ['VRTX', 'REGN', 'AMGN', 'GILD', 'BIIB', 'MRNA', 'ILMN', 'ALNY'],
+    'XLY': ['AMZN', 'TSLA', 'HD', 'MCD', 'NKE', 'LOW', 'SBUX', 'BKNG'],
+    'XLI': ['CAT', 'GE', 'UNP', 'HON', 'RTX', 'BA', 'DE', 'LMT', 'ETN'],
+    'ITB': ['DHI', 'LEN', 'PHM', 'TOL', 'NVR', 'SHW', 'BLD'],
+    'XLU': ['NEE', 'SO', 'DUK', 'AEP', 'SRE', 'EXC', 'XEL'],
+    'XLP': ['PG', 'COST', 'WMT', 'KO', 'PEP', 'PM', 'MO', 'MDLZ'],
+    'XLRE': ['PLD', 'AMT', 'EQIX', 'CCI', 'PSA', 'SPG', 'O'],
+    'XLB': ['LIN', 'SHW', 'APD', 'FCX', 'ECL', 'NEM', 'CTVA'],
+    'URNM': ['CCJ', 'KAP', 'DNN', 'NXE', 'UEC', 'UUUU']
+}
+
+def analyze_sector_constituents(ticker, grouped):
+    if grouped is None:
+        return [], []
+    holdings = SECTOR_HOLDINGS_MAP.get(ticker, [])
+    gainers = []
+    drags = []
+    for h in holdings:
+        if h in grouped.groups:
+            df = grouped.get_group(h).set_index('Date')
+            if len(df) < 10: continue
+            c = df['Close']
+            ret5 = (c.iloc[-1] - c.iloc[-6]) / c.iloc[-6] * 100
+            sma21 = c.rolling(21).mean().iloc[-1]
+            below21 = c.iloc[-1] < sma21
+            item = {'ticker': h, 'return_5d': round(float(ret5), 1), 'below_21': bool(below21)}
+            if ret5 >= 1.0 and not below21:
+                gainers.append(item)
+            elif ret5 < 0 or below21:
+                drags.append(item)
+    gainers.sort(key=lambda x: x['return_5d'], reverse=True)
+    drags.sort(key=lambda x: x['return_5d'])
+    return gainers, drags
+
+def get_sector_rotation(grouped=None):
     """Reads sector flow RRG data across Weekly, Daily, and Intraday to identify true institutional rotation."""
     if os.path.exists(SECTOR_FLOW_FILE):
         try:
@@ -232,13 +273,15 @@ def get_sector_rotation():
 
                 leading_payload = []
                 for s in true_leaders:
+                    gainers, drags = analyze_sector_constituents(s['ticker'], grouped)
+                    lead_tickers = [g['ticker'] for g in gainers[:4]] if gainers else s['top_stocks']
                     structure_tag = " (High-Tight Base)" if s['ticker'] in ['GDX', 'XLE'] else ""
                     leading_payload.append({
                         "ticker": s['ticker'],
                         "name": s['name'],
                         "rs_ratio": s['w_x'],
                         "rs_momentum": s['w_y'],
-                        "top_stocks": s['top_stocks'],
+                        "top_stocks": lead_tickers,
                         "status": f"Leading (Accumulation){structure_tag}",
                         "color": "#10b981",
                         "note": f"Weekly RS: {s['w_x']} | Momentum: {s['w_y']} • Intraday: ({s['i_x']}, {s['i_y']})"
@@ -246,25 +289,44 @@ def get_sector_rotation():
                     
                 weakening_payload = []
                 for s in weakening_sectors:
+                    gainers, drags = analyze_sector_constituents(s['ticker'], grouped)
+                    drag_tickers = [d['ticker'] for d in drags[:4]]
+                    rs_tickers = [g['ticker'] for g in gainers[:4]]
+                    
+                    drag_strs = [f"{d['ticker']} ({d['return_5d']:+.1f}%)" for d in drags[:2]]
+                    rs_strs = [f"{g['ticker']} ({g['return_5d']:+.1f}%)" for g in gainers[:2]]
+                    
+                    if drag_tickers and rs_tickers:
+                        note_text = f"Distribution Drag: {', '.join(drag_strs)} • RS Islands: {', '.join(rs_strs)}"
+                    elif drag_tickers:
+                        all_drags = [f"{d['ticker']} ({d['return_5d']:+.1f}%)" for d in drags[:3]]
+                        note_text = f"Distribution Drag: {', '.join(all_drags)}"
+                    else:
+                        note_text = f"Weekly momentum decayed to {s['w_y']} • Intraday Lagging ({s['i_x']}, {s['i_y']})"
+                        
                     weakening_payload.append({
                         "ticker": s['ticker'],
                         "name": s['name'],
                         "rs_ratio": s['w_x'],
                         "rs_momentum": s['w_y'],
-                        "top_stocks": s['top_stocks'],
+                        "top_stocks": drag_tickers if drag_tickers else s['top_stocks'],
+                        "drag_stocks": drag_tickers,
+                        "rs_stocks": rs_tickers,
                         "status": "Weakening (Distribution)",
                         "color": "#f59e0b",
-                        "note": f"Weekly momentum decayed to {s['w_y']} • Intraday Lagging ({s['i_x']}, {s['i_y']})"
+                        "note": note_text
                     })
 
                 lagging_payload = []
                 for s in lagging:
+                    gainers, drags = analyze_sector_constituents(s['ticker'], grouped)
+                    drag_tickers = [d['ticker'] for d in drags[:4]] if drags else s['top_stocks']
                     lagging_payload.append({
                         "ticker": s['ticker'],
                         "name": s['name'],
                         "rs_ratio": s['w_x'],
                         "rs_momentum": s['w_y'],
-                        "top_stocks": s['top_stocks'],
+                        "top_stocks": drag_tickers,
                         "status": "Lagging (Outflow)",
                         "color": "#ef4444",
                         "note": f"Severe RS breakdown vs SPY (x={s['w_x']})"
@@ -314,7 +376,7 @@ def generate_weekly_playbook():
     regime_briefing = get_macro_regime()
     
     # 2. Sector Flow Rotation
-    sector_rotation = get_sector_rotation()
+    sector_rotation = get_sector_rotation(grouped)
     
     market_summary = {
         "text": f"The S&P 500 closed the week at ${spy_close:.2f}, moving {spy_5d_ret:+.2f}% over the last 5 days. Structurally, the market is {'bullish above its 50-day moving average' if spy_close > spy_50sma else 'defensive below its 50-day moving average'}. Macro Health Score is {regime_briefing['score_value']}/100 ({regime_briefing['score_label']}). Recommended Exposure: {regime_briefing['recommended_exposure']}.",

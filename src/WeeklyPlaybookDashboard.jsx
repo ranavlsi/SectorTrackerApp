@@ -392,30 +392,86 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
                         {sec.note}
                       </div>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Holdings:</span>
-                      {sec.top_stocks?.map(st => (
-                        <span 
-                          key={st}
-                          onClick={() => onTickerClick && onTickerClick(st)}
-                          style={{ 
-                            cursor: 'pointer', 
-                            background: 'rgba(245, 158, 11, 0.15)', 
-                            color: '#fcd34d', 
-                            border: '1px solid rgba(245, 158, 11, 0.3)', 
-                            padding: '1px 7px', 
-                            borderRadius: '4px', 
-                            fontSize: '0.78rem', 
-                            fontWeight: '600',
-                            transition: 'all 0.15s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.3)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)'}
-                        >
-                          {st}
-                        </span>
-                      ))}
-                    </div>
+                    {sec.drag_stocks && sec.drag_stocks.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: sec.rs_stocks && sec.rs_stocks.length > 0 ? '6px' : '0' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#f87171' }}>Distribution Drag:</span>
+                        {sec.drag_stocks.map(st => (
+                          <span 
+                            key={st}
+                            onClick={() => onTickerClick && onTickerClick(st)}
+                            style={{ 
+                              cursor: 'pointer', 
+                              background: 'rgba(239, 68, 68, 0.15)', 
+                              color: '#fca5a5', 
+                              border: '1px solid rgba(239, 68, 68, 0.3)', 
+                              padding: '1px 7px', 
+                              borderRadius: '4px', 
+                              fontSize: '0.78rem', 
+                              fontWeight: '600',
+                              transition: 'all 0.15s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
+                          >
+                            {st}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {sec.rs_stocks && sec.rs_stocks.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#34d399' }}>RS Islands (Bucking Trend):</span>
+                        {sec.rs_stocks.map(st => (
+                          <span 
+                            key={st}
+                            onClick={() => onTickerClick && onTickerClick(st)}
+                            style={{ 
+                              cursor: 'pointer', 
+                              background: 'rgba(16, 185, 129, 0.15)', 
+                              color: '#6ee7b7', 
+                              border: '1px solid rgba(16, 185, 129, 0.3)', 
+                              padding: '1px 7px', 
+                              borderRadius: '4px', 
+                              fontSize: '0.78rem', 
+                              fontWeight: '600',
+                              transition: 'all 0.15s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.3)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)'}
+                          >
+                            {st}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {(!sec.drag_stocks || sec.drag_stocks.length === 0) && (!sec.rs_stocks || sec.rs_stocks.length === 0) && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Holdings:</span>
+                        {sec.top_stocks?.map(st => (
+                          <span 
+                            key={st}
+                            onClick={() => onTickerClick && onTickerClick(st)}
+                            style={{ 
+                              cursor: 'pointer', 
+                              background: 'rgba(245, 158, 11, 0.15)', 
+                              color: '#fcd34d', 
+                              border: '1px solid rgba(245, 158, 11, 0.3)', 
+                              padding: '1px 7px', 
+                              borderRadius: '4px', 
+                              fontSize: '0.78rem', 
+                              fontWeight: '600',
+                              transition: 'all 0.15s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.3)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)'}
+                          >
+                            {st}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
