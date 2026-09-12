@@ -1,14 +1,14 @@
 {
     "date": "September 12, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 39.2/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
+        "text": "The S&P 500 closed the week at $764.29, moving -1.15% over the last 5 days. Structurally, the market is bullish above its 50-day moving average. Macro Health Score is 13.3/100 (Extreme Fear / Washout). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
         "bias": "Cautious",
         "spy_weekly_return": "-1.15%",
         "regime": "RISK_OFF"
     },
     "regime_briefing": {
-        "score_value": 39.2,
-        "score_label": "Bearish / Deteriorating",
+        "score_value": 13.3,
+        "score_label": "Extreme Fear / Washout",
         "regime_status": "RISK_OFF",
         "regime_color": "#ef4444",
         "recommended_exposure": "Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash)",
@@ -295,12 +295,12 @@
         {
             "ticker": "COP",
             "entry_price": "$139.04",
-            "stop_loss": "$131.65",
-            "profit_target": "$161.19",
-            "risk_pct": "5.3%",
+            "stop_loss": "$131.51",
+            "profit_target": "$161.62",
+            "risk_pct": "5.4%",
             "reward_risk": "3.0:1",
-            "setup_type": "High-Tight Flag Breakout",
-            "reasoning": "High-Tight Flag structure following powerful momentum impulse. Coiling within top range above the 50-SMA (66.7% respect). Sizing: Full Position (Core Book Leader).",
+            "setup_type": "52-Week High Breakout",
+            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 50-SMA (66.7% respect). Sizing: Full Position (Core Book Leader).",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
@@ -322,12 +322,12 @@
         {
             "ticker": "CVX",
             "entry_price": "$217.61",
-            "stop_loss": "$205.23",
-            "profit_target": "$254.74",
-            "risk_pct": "5.7%",
+            "stop_loss": "$205.02",
+            "profit_target": "$255.36",
+            "risk_pct": "5.8%",
             "reward_risk": "3.0:1",
-            "setup_type": "High-Tight Flag Breakout",
-            "reasoning": "High-Tight Flag structure following powerful momentum impulse. Coiling within top range above the 10-SMA (50.9% respect). Sizing: Full Position (Core Book Leader).",
+            "setup_type": "52-Week High Breakout",
+            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 10-SMA (50.9% respect). Sizing: Full Position (Core Book Leader).",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
@@ -376,12 +376,12 @@
         {
             "ticker": "BIIB",
             "entry_price": "$226.09",
-            "stop_loss": "$213.86",
-            "profit_target": "$262.77",
-            "risk_pct": "5.4%",
+            "stop_loss": "$207.79",
+            "profit_target": "$280.98",
+            "risk_pct": "8.1%",
             "reward_risk": "3.0:1",
-            "setup_type": "High-Tight Flag Breakout",
-            "reasoning": "High-Tight Flag structure following powerful momentum impulse. Coiling within top range above the 50-SMA (73.9% respect). Sizing: Full Position (Core Book Leader).",
+            "setup_type": "Flat Base Consolidation",
+            "reasoning": "Constructing an orderly Flat Base consolidation shelf near 52-week highs. Holding support along the 50-SMA (73.9% respect). Sizing: Full Position (Core Book Leader).",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",

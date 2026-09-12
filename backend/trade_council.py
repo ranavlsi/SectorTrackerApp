@@ -222,12 +222,17 @@ class TradeCouncil:
         is_higher_lows = (l2 >= l1 * 0.985) and not is_downward_channel
         recent_pullback_low = tail_window['Low'].tail(min(5, len(tail_window))).min()
         
-        # High-Tight Flag check: +20% pole in last 30-45 sessions, consolidating near highs above 21-EMA
+        # True High-Tight Flag check: +80% to +100%+ explosive pole in last 30-45 sessions, consolidating near highs above 21-EMA
         pole_low = hist['Low'].tail(45).head(25).min() if len(hist) >= 45 else hist['Low'].min()
         pole_high = hist['High'].tail(25).max()
         pole_gain = (pole_high - pole_low) / pole_low if pole_low > 0 else 0
         near_pole_high = (pole_high - hist['Close'].iloc[-1]) / pole_high < 0.08
-        is_high_tight_flag = (pole_gain >= 0.20) and near_pole_high and (hist['Close'].iloc[-1] >= ema_21)
+        is_high_tight_flag = (pole_gain >= 0.80) and near_pole_high and (hist['Close'].iloc[-1] >= ema_21)
+        
+        # 52-Week High Breakout: Trading within 2.5% of 52-week highs in Stage 2
+        high_52w = hist['High'].tail(min(252, len(hist))).max()
+        dist_to_52w = (high_52w - hist['Close'].iloc[-1]) / high_52w
+        is_52w_high_breakout = (dist_to_52w <= 0.025) and (hist['Close'].iloc[-1] >= ema_21)
         
         is_higher_highs = (h2 > h1 * 1.01) and (slope_h > 0)
         is_higher_lows = (l2 > l1 * 1.01) and (slope_l > 0)
@@ -251,6 +256,7 @@ class TradeCouncil:
             'is_downward_channel': is_downward_channel,
             'is_higher_lows': is_higher_lows,
             'is_high_tight_flag': is_high_tight_flag,
+            'is_52w_high_breakout': is_52w_high_breakout,
             'is_ascending_channel': is_ascending_channel,
             'slope_h': slope_h,
             'slope_l': slope_l,
@@ -338,14 +344,19 @@ class TradeCouncil:
                 entry = hoy + (0.05 * atr)
                 
         elif trend_data['is_high_tight_flag'] and trend_template_active:
-            # High-Tight Flag Breakout
+            # Genuine High-Tight Flag (+80%+ explosive advance)
             entry = pivot_15d + (0.05 * atr)
             setup_type = "High-Tight Flag Breakout"
+            
+        elif trend_data['is_52w_high_breakout'] and trend_template_active:
+            # Leading Sector 52-Week High Breakout (e.g. COP, CVX)
+            entry = pivot_15d + (0.05 * atr)
+            setup_type = "52-Week High Breakout"
             
         elif trend_data['is_ascending_channel'] and trend_template_active:
             # Ascending Momentum Channel Breakout
             entry = pivot_15d + (0.05 * atr)
-            setup_type = "Ascending Momentum Breakout"
+            setup_type = "Ascending Base Breakout"
             
         elif trend_template_active and (near_50_sma or near_21_ema or trend_data['bb_width_pct'] < 0.12):
             # Horizontal Flat Base / Range Consolidation (e.g. JPM, BAC, AAPL)
@@ -373,7 +384,7 @@ class TradeCouncil:
             # Anchored to the higher-low trough (T2)
             t2_low = vcp_info.get('t2_low', lod)
             final_sl = t2_low - (0.15 * atr)
-        elif setup_type in ["Flat Base Consolidation", "Ascending Momentum Breakout"]:
+        elif setup_type in ["Flat Base Consolidation", "Ascending Momentum Breakout", "Ascending Base Breakout", "52-Week High Breakout"]:
             support_ma = trend_data['sma_50'] if near_50_sma else trend_data['ema_21']
             structural_floor = min(trend_data['recent_pullback_low'], support_ma)
             final_sl = structural_floor - (0.20 * atr)
@@ -406,7 +417,7 @@ class TradeCouncil:
         if setup_type == "Composite Breakout (VCP)":
             # 3.0R Asymmetric Target
             final_pt = entry + (3.0 * risk_dollars)
-        elif setup_type in ["Flat Base Consolidation", "High-Tight Flag Breakout", "Ascending Momentum Breakout"]:
+        elif setup_type in ["Flat Base Consolidation", "High-Tight Flag Breakout", "Ascending Momentum Breakout", "Ascending Base Breakout", "52-Week High Breakout"]:
             final_pt = entry + (3.0 * risk_dollars)
         elif "Pullback" in setup_type or "Downward Channel" in setup_type:
             # 2.5R Target or Retest of Upper Pivot High
