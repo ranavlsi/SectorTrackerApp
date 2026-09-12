@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
@@ -1274,9 +1274,9 @@ function App() {
             <div style={{ background: 'rgba(15,23,42,0.5)', padding: '1.5rem', borderRadius: '12px', textAlign: 'left', borderLeft: '4px solid #3b82f6' }}>
               <h4 style={{ margin: '0 0 1rem 0', color: '#60a5fa', fontSize: '1.1rem' }}>Council Summary Briefing</h4>
               {marketHealth.current_health.summary_text ? (
-                 marketHealth.current_health.summary_text.split('\\n').map((line, i) => (
+                 marketHealth.current_health.summary_text.split(/\r?\n|\\n/).map((line, i) => (
                     <p key={i} style={{ margin: '0.5rem 0', color: '#e2e8f0', lineHeight: '1.5' }}>
-                      {line.replace(/\\*\\*/g, '')}
+                      {line.replace(/\*\*/g, '').replace(/\\*\\*/g, '')}
                     </p>
                  ))
               ) : null}
@@ -1299,7 +1299,7 @@ function App() {
           </div>
 
           {/* Regime Rules of Engagement Playbook */}
-          <RegimePlaybookCard currentRegime={marketHealth.current_health.health_regime} />
+          <RegimePlaybookCard currentRegime={marketHealth.current_health.health_regime || (marketHealth.current_health.score_value >= 60 ? 'RISK_ON' : marketHealth.current_health.score_value <= 40 ? 'RISK_OFF' : 'CAUTIOUS')} />
 
           {/* 9-Factor Executive Health Matrix */}
           <MarketHealthRadarMatrix healthData={marketHealth} />
