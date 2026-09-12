@@ -531,11 +531,17 @@ def generate_weekly_playbook():
                 rr_ratio = "3.0:1"
                 
             # Dynamic reasoning tailored to Ross Haber personality and setup
-            if "Breakout" in plan['setup_type']:
-                reasoning = f"Composite Breakout Logic triggered. The pivot is primed with {personality['tier_label']} character (ADR: {adr['adr_10d']}%). Institutional anchor: {guardian['guardian_ma']}. Sizing: {personality['sizing_recommendation']}. Ensure entry does not exceed the 5% max chase rule."
+            if "VCP" in plan['setup_type']:
+                reasoning = f"True Minervini Volatility Contraction Pattern (VCP) confirmed. Contracting wave depths with higher lows and dried-up volume. Pivot primed with {personality['tier_label']} personality (ADR: {adr['adr_10d']}%). Institutional anchor: {guardian['guardian_ma']}. Sizing: {personality['sizing_recommendation']}."
+            elif "Flag" in plan['setup_type']:
+                reasoning = f"High-Tight Flag structure following powerful momentum impulse. Coiling within top range above the {guardian['guardian_ma']} ({guardian['respect_score']}% respect). Sizing: {personality['sizing_recommendation']}."
+            elif "Flat Base" in plan['setup_type']:
+                reasoning = f"Constructing an orderly Flat Base consolidation shelf near 52-week highs. Holding support along the {guardian['guardian_ma']} ({guardian['respect_score']}% respect). Sizing: {personality['sizing_recommendation']}."
             elif "Pullback" in plan['setup_type']:
                 support_target = "50-SMA" if "50-SMA" in plan['setup_type'] else ("21-EMA" if "21-EMA" in plan['setup_type'] else guardian['guardian_ma'])
                 reasoning = f"Controlled pullback testing the {support_target} institutional support layer. {personality['tier_label']} personality allows an asymmetric risk/reward entry with risk capped at {risk_pct}%."
+            elif "Breakout" in plan['setup_type']:
+                reasoning = f"Momentum breakout pushing towards multi-month highs. Primed with {personality['tier_label']} character (ADR: {adr['adr_10d']}%). Institutional anchor: {guardian['guardian_ma']}."
             else:
                 reasoning = f"Consolidating tightly near 52-week highs. Holding firmly above the {guardian['guardian_ma']} ({guardian['respect_score']}% bounce rate). Ideal low-cheat entry."
                 

@@ -54,7 +54,9 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
   // Filter Focus List
   const filteredFocus = focusList.filter(item => {
     if (filterSetup === 'ALL') return true;
-    if (filterSetup === 'VCP') return item.setup_type?.includes('VCP') || item.setup_type?.includes('Breakout');
+    if (filterSetup === 'VCP') return item.setup_type?.includes('VCP');
+    if (filterSetup === 'FLAG') return item.setup_type?.includes('Flag') || item.setup_type?.includes('Breakout');
+    if (filterSetup === 'BASE') return item.setup_type?.includes('Base');
     if (filterSetup === 'PULLBACK') return item.setup_type?.includes('Pullback') || item.setup_type?.includes('Support');
     if (filterSetup === 'TIGHT') return item.personality?.personality_tier === 'TIGHT_AND_ORDERLY';
     return true;
@@ -553,9 +555,11 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
           <div style={{ display: 'flex', gap: '8px', background: 'rgba(15,23,42,0.6)', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
             {[
               { id: 'ALL', label: 'All Setups' },
-              { id: 'VCP', label: 'Breakouts / VCP' },
-              { id: 'PULLBACK', label: 'Pullbacks / Squeeze' },
-              { id: 'TIGHT', label: 'Tight & Orderly Only' }
+              { id: 'BASE', label: 'Flat Base' },
+              { id: 'FLAG', label: 'Flags & Breakouts' },
+              { id: 'PULLBACK', label: 'Pullbacks' },
+              { id: 'VCP', label: 'True VCP' },
+              { id: 'TIGHT', label: 'Tight & Orderly' }
             ].map(tab => (
               <button
                 key={tab.id}

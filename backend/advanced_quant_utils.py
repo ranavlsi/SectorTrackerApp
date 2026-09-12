@@ -161,6 +161,8 @@ def is_vcp_adaptive(df):
         return False
         
     drawdowns = []
+    trough_prices = []
+    peak_prices = []
     for peak in peaks:
         subsequent_troughs = troughs[troughs > peak]
         if len(subsequent_troughs) > 0:
@@ -169,18 +171,32 @@ def is_vcp_adaptive(df):
             trough_price = base_data[nearest_trough]
             drop = (peak_price - trough_price) / peak_price
             drawdowns.append(drop)
+            trough_prices.append(trough_price)
+            peak_prices.append(peak_price)
             
     if len(drawdowns) < 2:
         return False
 
     d1 = drawdowns[-2]
     d2 = drawdowns[-1]
+    p1 = peak_prices[-2]
+    p2 = peak_prices[-1]
+    t1 = trough_prices[-2]
+    t2 = trough_prices[-1]
+    
+    # Disqualify downward channel: Lower High AND Lower Low
+    if p2 < p1 and t2 < t1:
+        return False
+        
+    # Disqualify Lower Low: Troughs must form higher lows
+    if t2 < t1:
+        return False
     
     atr20 = calculate_atr(df, 20).iloc[-1]
     atr_pct = atr20 / current['Close']
     
     # Successive contraction and depth tied to ATR
-    if (d2 < d1) and (d2 <= (3.0 * atr_pct)):
+    if (d2 < d1 * 0.85) and (d2 <= (3.0 * atr_pct)):
         return True
 
     return False
