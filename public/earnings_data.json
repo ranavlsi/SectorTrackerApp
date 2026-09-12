@@ -1,287 +1,235 @@
 [
     {
         "ticker": "NVDA",
-        "current_price": 211.14,
-        "next_earnings_date": "2026-08-26",
+        "company_name": "NVIDIA Corporation",
+        "current_price": 218.29,
+        "next_earnings_date": "2026-11-17",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 77,
+            "setup_tier": "A",
+            "setup_name": "POST-EARNINGS DRIFT EXPANSION",
+            "badge_color": "#3b82f6",
+            "action_verdict": "ORDERLY EXPANSION: Positive estimate revisions support sustained multi-week drift.",
+            "catalysts": [
+                "Wall Street Consensus: Heavy upward revisions (35 Upgrades vs 1 Downgrades in last 30d).",
+                "Last Reported Quarter (2026-08-26): +6.16% EPS Surprise with a 2.6x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +91.0% YoY; EPS growth expected at +90.0% YoY.",
+                "Options market underpricing move (\u00b11.58% implied vs \u00b14.02% historical). Potential explosive gamma opportunity."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-01",
-            "pcr_oi": 0.37,
-            "max_pain_strike": 210.0,
-            "atm_strike": 210.0,
-            "implied_move_usd": 5.36,
-            "implied_move_pct": 2.54
+            "expiration": "2026-09-14",
+            "pcr_oi": 0.59,
+            "max_pain_strike": 220.0,
+            "atm_strike": 220.0,
+            "implied_move_usd": 3.46,
+            "implied_move_pct": 1.58
         },
-        "eps_trend": {
-            "current_est": 2.08,
-            "d30_est": 1.95,
-            "bar_lowered": false
+        "consensus_revisions": {
+            "up_7d": 34,
+            "down_7d": 3,
+            "up_30d": 35,
+            "down_30d": 1,
+            "total_analysts": 42,
+            "current_q_eps_est": 2.47,
+            "prev_30d_eps_est": 2.35,
+            "eps_revision_pct_30d": 5.31,
+            "bar_lowered": false,
+            "next_q_growth_est": 90.0,
+            "revenue_growth_est": 91.0,
+            "net_revision_ratio": 0.94
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 100.0,
+            "gap_and_go_pct": 40.0,
+            "gap_and_fade_pct": 60.0,
+            "avg_abs_move_pct": 4.02,
+            "avg_5d_drift_pct": -3.36,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
+            {
+                "date": "2026-08-26",
+                "timing": "AMC",
+                "eps_est": 2.09,
+                "eps_act": 2.22,
+                "surprise_pct": 6.16,
+                "gap_pct": 6.3,
+                "day_gain_pct": 8.74,
+                "intraday_pct": 2.3,
+                "drift_5d_pct": 0.21,
+                "drift_20d_pct": -4.14,
+                "vol_surge": 2.6,
+                "reaction_type": "GAP_AND_GO"
+            },
             {
                 "date": "2026-05-20",
                 "timing": "AMC",
+                "eps_est": 1.77,
+                "eps_act": 1.87,
+                "surprise_pct": 5.54,
                 "gap_pct": -0.53,
-                "t0_close_pct": -1.77,
-                "t1_close_pct": -3.64,
-                "t5_close_pct": -5.52,
-                "eps_surprise_pct": 5.54
+                "day_gain_pct": -1.77,
+                "intraday_pct": -1.25,
+                "drift_5d_pct": -3.81,
+                "drift_20d_pct": -4.84,
+                "vol_surge": 1.3,
+                "reaction_type": "MUTED_REACTION"
             },
             {
-                "date": "2026-02-20",
+                "date": "2026-02-25",
                 "timing": "AMC",
-                "gap_pct": 0.83,
-                "t0_close_pct": 0.91,
-                "t1_close_pct": 1.6,
-                "t5_close_pct": -3.87,
-                "eps_surprise_pct": 5.32
+                "eps_est": 1.54,
+                "eps_act": 1.62,
+                "surprise_pct": 5.32,
+                "gap_pct": -0.66,
+                "day_gain_pct": -5.46,
+                "intraday_pct": -4.83,
+                "drift_5d_pct": -0.84,
+                "drift_20d_pct": -7.38,
+                "vol_surge": 2.1,
+                "reaction_type": "MUTED_REACTION"
             },
             {
-                "date": "2025-11-10",
+                "date": "2025-11-19",
                 "timing": "AMC",
-                "gap_pct": -1.95,
-                "t0_close_pct": -2.96,
-                "t1_close_pct": -2.64,
-                "t5_close_pct": -8.89,
-                "eps_surprise_pct": 3.46
+                "eps_est": 1.26,
+                "eps_act": 1.3,
+                "surprise_pct": 3.46,
+                "gap_pct": 5.06,
+                "day_gain_pct": -3.15,
+                "intraday_pct": -7.81,
+                "drift_5d_pct": -2.02,
+                "drift_20d_pct": 0.2,
+                "vol_surge": 1.8,
+                "reaction_type": "GAP_AND_FADE"
             },
             {
-                "date": "2025-08-25",
+                "date": "2025-08-27",
                 "timing": "AMC",
-                "gap_pct": 0.14,
-                "t0_close_pct": 1.09,
-                "t1_close_pct": 1.0,
-                "t5_close_pct": -5.11,
-                "eps_surprise_pct": 4.1
+                "eps_est": 1.01,
+                "eps_act": 1.05,
+                "surprise_pct": 4.1,
+                "gap_pct": -0.43,
+                "day_gain_pct": -0.79,
+                "intraday_pct": -0.36,
+                "drift_5d_pct": -7.3,
+                "drift_20d_pct": -1.09,
+                "vol_surge": 1.7,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2025-05-28",
+                "timing": "AMC",
+                "eps_est": 0.75,
+                "eps_act": 0.81,
+                "surprise_pct": 8.02,
+                "gap_pct": 5.52,
+                "day_gain_pct": 3.25,
+                "intraday_pct": -2.15,
+                "drift_5d_pct": 0.57,
+                "drift_20d_pct": 13.34,
+                "vol_surge": 1.8,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-02-26",
+                "timing": "AMC",
+                "eps_est": 0.85,
+                "eps_act": 0.89,
+                "surprise_pct": 5.25,
+                "gap_pct": 2.83,
+                "day_gain_pct": -8.48,
+                "intraday_pct": -11.0,
+                "drift_5d_pct": -7.97,
+                "drift_20d_pct": -7.25,
+                "vol_surge": 1.6,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2024-11-20",
+                "timing": "AMC",
+                "eps_est": 0.75,
+                "eps_act": 0.81,
+                "surprise_pct": 8.52,
+                "gap_pct": 2.37,
+                "day_gain_pct": 0.53,
+                "intraday_pct": -1.79,
+                "drift_5d_pct": -5.74,
+                "drift_20d_pct": -8.15,
+                "vol_surge": 2.0,
+                "reaction_type": "GAP_AND_FADE"
             }
         ],
         "institutional": {
-            "short_percent": 1.28,
-            "short_ratio": 1.92,
-            "forward_pe": 16.68,
-            "peg_ratio": 0.66,
+            "short_percent": 1.29,
+            "short_ratio": 2.3,
+            "forward_pe": 14.0,
+            "peg_ratio": 0.59,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-27",
-                    "firm": "Tigress Financial",
-                    "to_grade": "Strong Buy",
-                    "from_grade": "Strong Buy",
-                    "price_target": 425.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "UBS",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 280.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "Evercore ISI Group",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 413.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "DA Davidson",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
+                    "date": "2026-09-10",
+                    "firm": "Piper Sandler",
+                    "to_grade": "Overweight",
+                    "from_grade": "",
                     "price_target": 300.0,
-                    "action": "main"
+                    "action": "init"
                 },
                 {
-                    "date": "2026-05-21",
-                    "firm": "Truist Securities",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 307.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "RBC Capital",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 270.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "Cantor Fitzgerald",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 350.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "Wedbush",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 330.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "Stifel",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 282.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "JP Morgan",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 280.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "Jefferies",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 300.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "Morgan Stanley",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 288.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
+                    "date": "2026-09-04",
                     "firm": "Rosenblatt",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 325.0,
+                    "price_target": 390.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-21",
-                    "firm": "Keybanc",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 310.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "Benchmark",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 335.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "B of A Securities",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 350.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
-                    "firm": "Baird",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 500.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
+                    "date": "2026-09-04",
                     "firm": "Needham",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 270.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-19",
-                    "firm": "HSBC",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 325.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-18",
-                    "firm": "DA Davidson",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 300.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-18",
-                    "firm": "Morgan Stanley",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 285.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-18",
-                    "firm": "Wedbush",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
                     "price_target": 300.0,
                     "action": "reit"
                 },
                 {
-                    "date": "2026-05-18",
-                    "firm": "Keybanc",
+                    "date": "2026-08-27",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 315.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-27",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 315.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-27",
+                    "firm": "JP Morgan",
                     "to_grade": "Overweight",
                     "from_grade": "Overweight",
-                    "price_target": 300.0,
+                    "price_target": 320.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-15",
-                    "firm": "TD Cowen",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 275.0,
+                    "date": "2026-08-27",
+                    "firm": "Bernstein",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 400.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-14",
-                    "firm": "UBS",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 275.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-14",
+                    "date": "2026-08-27",
                     "firm": "RBC Capital",
                     "to_grade": "Outperform",
                     "from_grade": "Outperform",
-                    "price_target": 250.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-14",
-                    "firm": "Cantor Fitzgerald",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 350.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-12",
-                    "firm": "Wells Fargo",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 315.0,
+                    "price_target": 330.0,
                     "action": "main"
                 }
             ]
@@ -289,139 +237,223 @@
     },
     {
         "ticker": "AAPL",
-        "current_price": 312.06,
-        "next_earnings_date": "2026-07-30",
+        "company_name": "Apple Inc.",
+        "current_price": 332.27,
+        "next_earnings_date": "2026-10-29",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 51,
+            "setup_tier": "B",
+            "setup_name": "EARNINGS CONSOLIDATION / NEUTRAL",
+            "badge_color": "#eab308",
+            "action_verdict": "IN-LINE CONSOLIDATION: Market digests numbers; wait for high-volume breakout above reaction high.",
+            "catalysts": [
+                "Estimate Erosion: Analysts lowering Q1.98 bar (14 down revisions).",
+                "Last Reported Quarter (2026-07-30): +6.74% EPS Surprise with a 2.7x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +10.9% YoY; EPS growth expected at +6.9% YoY.",
+                "Options Implied Move (\u00b11.38%) aligned with historical reaction amplitude (\u00b12.46%)."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-01",
-            "pcr_oi": 0.4,
-            "max_pain_strike": 310.0,
-            "atm_strike": 310.0,
-            "implied_move_usd": 3.59,
-            "implied_move_pct": 1.15
+            "expiration": "2026-09-14",
+            "pcr_oi": 0.56,
+            "max_pain_strike": 315.0,
+            "atm_strike": 330.0,
+            "implied_move_usd": 4.58,
+            "implied_move_pct": 1.38
         },
-        "eps_trend": {
-            "current_est": 1.9,
-            "d30_est": 1.74,
-            "bar_lowered": false
+        "consensus_revisions": {
+            "up_7d": 1,
+            "down_7d": 0,
+            "up_30d": 7,
+            "down_30d": 14,
+            "total_analysts": 27,
+            "current_q_eps_est": 1.98,
+            "prev_30d_eps_est": 1.98,
+            "eps_revision_pct_30d": 0.05,
+            "bar_lowered": false,
+            "next_q_growth_est": 6.9,
+            "revenue_growth_est": 10.9,
+            "net_revision_ratio": -0.33
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 100.0,
+            "gap_and_go_pct": 50.0,
+            "gap_and_fade_pct": 50.0,
+            "avg_abs_move_pct": 2.46,
+            "avg_5d_drift_pct": 2.62,
+            "volatility_verdict": "IN-LINE"
+        },
+        "historical_reactions": [
             {
-                "date": "2026-04-22",
+                "date": "2026-07-30",
                 "timing": "AMC",
-                "gap_pct": 0.69,
-                "t0_close_pct": 0.1,
-                "t1_close_pct": -0.77,
-                "t5_close_pct": -0.67,
-                "eps_surprise_pct": 6.34
+                "eps_est": 1.89,
+                "eps_act": 2.02,
+                "surprise_pct": 6.74,
+                "gap_pct": -8.58,
+                "day_gain_pct": -7.35,
+                "intraday_pct": 1.35,
+                "drift_5d_pct": 1.43,
+                "drift_20d_pct": 3.58,
+                "vol_surge": 2.7,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
-                "date": "2026-04-22",
+                "date": "2026-04-30",
                 "timing": "AMC",
-                "gap_pct": 0.69,
-                "t0_close_pct": 0.1,
-                "t1_close_pct": -0.77,
-                "t5_close_pct": -0.67,
-                "eps_surprise_pct": 3.46
+                "eps_est": 1.94,
+                "eps_act": 2.01,
+                "surprise_pct": 3.46,
+                "gap_pct": 2.77,
+                "day_gain_pct": 3.24,
+                "intraday_pct": 0.46,
+                "drift_5d_pct": 4.7,
+                "drift_20d_pct": 9.44,
+                "vol_surge": 2.0,
+                "reaction_type": "GAP_AND_GO"
+            },
+            {
+                "date": "2026-01-29",
+                "timing": "AMC",
+                "eps_est": 2.67,
+                "eps_act": 2.84,
+                "surprise_pct": 6.25,
+                "gap_pct": -1.2,
+                "day_gain_pct": 0.46,
+                "intraday_pct": 1.69,
+                "drift_5d_pct": 7.18,
+                "drift_20d_pct": 2.11,
+                "vol_surge": 2.0,
+                "reaction_type": "MUTED_REACTION"
             },
             {
                 "date": "2025-10-30",
                 "timing": "AMC",
+                "eps_est": 1.77,
+                "eps_act": 1.85,
+                "surprise_pct": 4.52,
                 "gap_pct": 2.06,
-                "t0_close_pct": -0.38,
-                "t1_close_pct": -0.87,
-                "t5_close_pct": -1.08,
-                "eps_surprise_pct": 4.52
+                "day_gain_pct": -0.38,
+                "intraday_pct": -2.39,
+                "drift_5d_pct": -0.7,
+                "drift_20d_pct": 4.81,
+                "vol_surge": 1.9,
+                "reaction_type": "GAP_AND_FADE"
             },
             {
                 "date": "2025-07-31",
                 "timing": "AMC",
+                "eps_est": 1.43,
+                "eps_act": 1.57,
+                "surprise_pct": 9.48,
                 "gap_pct": 1.59,
-                "t0_close_pct": -2.5,
-                "t1_close_pct": -2.03,
-                "t5_close_pct": 10.49,
-                "eps_surprise_pct": 10.12
+                "day_gain_pct": -2.5,
+                "intraday_pct": -4.03,
+                "drift_5d_pct": 13.33,
+                "drift_20d_pct": 14.84,
+                "vol_surge": 2.3,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-05-01",
+                "timing": "AMC",
+                "eps_est": 1.62,
+                "eps_act": 1.65,
+                "surprise_pct": 1.69,
+                "gap_pct": -3.39,
+                "day_gain_pct": -3.74,
+                "intraday_pct": -0.36,
+                "drift_5d_pct": -3.32,
+                "drift_20d_pct": -1.65,
+                "vol_surge": 1.3,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-01-30",
+                "timing": "AMC",
+                "eps_est": 2.35,
+                "eps_act": 2.4,
+                "surprise_pct": 2.26,
+                "gap_pct": 4.04,
+                "day_gain_pct": -0.67,
+                "intraday_pct": -4.53,
+                "drift_5d_pct": -3.55,
+                "drift_20d_pct": 0.97,
+                "vol_surge": 1.8,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2024-10-31",
+                "timing": "AMC",
+                "eps_est": 0.95,
+                "eps_act": 0.97,
+                "surprise_pct": 2.48,
+                "gap_pct": -2.19,
+                "day_gain_pct": -1.33,
+                "intraday_pct": 0.88,
+                "drift_5d_pct": 1.93,
+                "drift_20d_pct": 7.6,
+                "vol_surge": 1.7,
+                "reaction_type": "GAP_AND_DUMP"
             }
         ],
         "institutional": {
-            "short_percent": 0.95,
-            "short_ratio": 2.84,
-            "forward_pe": 32.48,
-            "peg_ratio": 2.72,
+            "short_percent": 0.96,
+            "short_ratio": 3.0,
+            "forward_pe": 34.7,
+            "peg_ratio": 2.48,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-26",
-                    "firm": "B of A Securities",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 380.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-14",
-                    "firm": "Tigress Financial",
-                    "to_grade": "Strong Buy",
-                    "from_grade": "Strong Buy",
-                    "price_target": 375.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-14",
-                    "firm": "Evercore ISI Group",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 365.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-08",
-                    "firm": "Wedbush",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 400.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "UBS",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
-                    "price_target": 296.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
+                    "date": "2026-09-10",
                     "firm": "TD Cowen",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 335.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "Wedbush",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 350.0,
+                    "price_target": 400.0,
                     "action": "reit"
                 },
                 {
-                    "date": "2026-05-01",
-                    "firm": "Barclays",
-                    "to_grade": "Underweight",
-                    "from_grade": "Underweight",
-                    "price_target": 253.0,
+                    "date": "2026-09-10",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 303.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-01",
-                    "firm": "Wells Fargo",
+                    "date": "2026-09-10",
+                    "firm": "B of A Securities",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 370.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-08",
+                    "firm": "HSBC",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 366.0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-09-08",
+                    "firm": "Needham",
+                    "to_grade": "Hold",
+                    "from_grade": "Hold",
+                    "price_target": 0.0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-09-02",
+                    "firm": "Morgan Stanley",
                     "to_grade": "Overweight",
                     "from_grade": "Overweight",
-                    "price_target": 310.0,
-                    "action": "main"
+                    "price_target": 360.0,
+                    "action": "reit"
                 },
                 {
-                    "date": "2026-05-01",
+                    "date": "2026-09-02",
                     "firm": "DA Davidson",
                     "to_grade": "Neutral",
                     "from_grade": "Neutral",
@@ -429,139 +461,247 @@
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-01",
+                    "date": "2026-09-01",
                     "firm": "Rosenblatt",
                     "to_grade": "Neutral",
                     "from_grade": "Neutral",
-                    "price_target": 276.0,
+                    "price_target": 303.0,
                     "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "Morgan Stanley",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 330.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "Needham",
-                    "to_grade": "Hold",
-                    "from_grade": "Hold",
-                    "price_target": 0.0,
-                    "action": "reit"
                 }
             ]
         }
     },
     {
         "ticker": "MSFT",
-        "current_price": 450.24,
-        "next_earnings_date": "2026-07-29",
+        "company_name": "Microsoft Corporation",
+        "current_price": 495.63,
+        "next_earnings_date": "2026-10-28",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 81,
+            "setup_tier": "A+",
+            "setup_name": "INSTITUTIONAL POWER EARNINGS GAP (PEG)",
+            "badge_color": "#10b981",
+            "action_verdict": "HIGH ACCUMULATION: Institutional re-rating underway. Buy opening pullbacks or flag consolidations.",
+            "catalysts": [
+                "Wall Street Consensus: Heavy upward revisions (17 Upgrades vs 5 Downgrades in last 30d).",
+                "Last Reported Quarter (2026-07-29): +11.81% EPS Surprise with a 3.4x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +16.7% YoY; EPS growth expected at +14.4% YoY.",
+                "Options market underpricing move (\u00b11.11% implied vs \u00b17.02% historical). Potential explosive gamma opportunity."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-01",
-            "pcr_oi": 0.35,
-            "max_pain_strike": 415.0,
-            "atm_strike": 450.0,
-            "implied_move_usd": 7.85,
-            "implied_move_pct": 1.74
+            "expiration": "2026-09-14",
+            "pcr_oi": 0.48,
+            "max_pain_strike": 495.0,
+            "atm_strike": 495.0,
+            "implied_move_usd": 5.5,
+            "implied_move_pct": 1.11
         },
-        "eps_trend": {
-            "current_est": 4.24,
-            "d30_est": 4.24,
-            "bar_lowered": true
+        "consensus_revisions": {
+            "up_7d": 1,
+            "down_7d": 0,
+            "up_30d": 17,
+            "down_30d": 5,
+            "total_analysts": 25,
+            "current_q_eps_est": 4.72,
+            "prev_30d_eps_est": 4.72,
+            "eps_revision_pct_30d": 0.09,
+            "bar_lowered": false,
+            "next_q_growth_est": 14.4,
+            "revenue_growth_est": 16.7,
+            "net_revision_ratio": 0.55
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 100.0,
+            "gap_and_go_pct": 66.7,
+            "gap_and_fade_pct": 33.3,
+            "avg_abs_move_pct": 7.02,
+            "avg_5d_drift_pct": 0.61,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
             {
-                "date": "2026-04-03",
+                "date": "2026-07-29",
                 "timing": "AMC",
-                "gap_pct": 0.01,
-                "t0_close_pct": -0.16,
-                "t1_close_pct": -0.31,
-                "t5_close_pct": 2.92,
-                "eps_surprise_pct": 5.22
+                "eps_est": 4.24,
+                "eps_act": 4.74,
+                "surprise_pct": 11.81,
+                "gap_pct": 12.13,
+                "day_gain_pct": 15.51,
+                "intraday_pct": 3.01,
+                "drift_5d_pct": 10.81,
+                "drift_20d_pct": 12.17,
+                "vol_surge": 3.4,
+                "reaction_type": "GAP_AND_GO"
             },
             {
-                "date": "2026-03-03",
+                "date": "2026-04-29",
                 "timing": "AMC",
-                "gap_pct": -0.66,
-                "t0_close_pct": 0.31,
-                "t1_close_pct": 1.67,
-                "t5_close_pct": 0.24,
-                "eps_surprise_pct": 5.69
+                "eps_est": 4.07,
+                "eps_act": 4.27,
+                "surprise_pct": 4.9,
+                "gap_pct": -3.22,
+                "day_gain_pct": -3.93,
+                "intraday_pct": -0.74,
+                "drift_5d_pct": 3.19,
+                "drift_20d_pct": 10.65,
+                "vol_surge": 2.2,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
-                "date": "2025-11-26",
+                "date": "2026-01-28",
                 "timing": "AMC",
-                "gap_pct": 0.43,
-                "t0_close_pct": 1.34,
-                "t1_close_pct": 0.26,
-                "t5_close_pct": -0.48,
-                "eps_surprise_pct": 12.73
+                "eps_est": 3.92,
+                "eps_act": 4.14,
+                "surprise_pct": 5.69,
+                "gap_pct": -8.65,
+                "day_gain_pct": -9.99,
+                "intraday_pct": -1.48,
+                "drift_5d_pct": -9.19,
+                "drift_20d_pct": -9.2,
+                "vol_surge": 5.2,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-10-29",
+                "timing": "AMC",
+                "eps_est": 3.66,
+                "eps_act": 4.13,
+                "surprise_pct": 12.73,
+                "gap_pct": -2.04,
+                "day_gain_pct": -2.92,
+                "intraday_pct": -0.89,
+                "drift_5d_pct": -5.45,
+                "drift_20d_pct": -6.24,
+                "vol_surge": 2.3,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
                 "date": "2025-07-30",
                 "timing": "AMC",
+                "eps_est": 3.38,
+                "eps_act": 3.65,
+                "surprise_pct": 8.09,
                 "gap_pct": 8.18,
-                "t0_close_pct": 3.95,
-                "t1_close_pct": 2.12,
-                "t5_close_pct": 1.48,
-                "eps_surprise_pct": 8.09
+                "day_gain_pct": 3.95,
+                "intraday_pct": -3.91,
+                "drift_5d_pct": -2.37,
+                "drift_20d_pct": -4.32,
+                "vol_surge": 3.2,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-04-30",
+                "timing": "AMC",
+                "eps_est": 3.22,
+                "eps_act": 3.46,
+                "surprise_pct": 7.4,
+                "gap_pct": 9.07,
+                "day_gain_pct": 7.63,
+                "intraday_pct": -1.32,
+                "drift_5d_pct": 3.0,
+                "drift_20d_pct": 8.42,
+                "vol_surge": 2.2,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2025-01-29",
+                "timing": "AMC",
+                "eps_est": 3.12,
+                "eps_act": 3.23,
+                "surprise_pct": 3.47,
+                "gap_pct": -5.33,
+                "day_gain_pct": -6.18,
+                "intraday_pct": -0.9,
+                "drift_5d_pct": 0.2,
+                "drift_20d_pct": -4.15,
+                "vol_surge": 2.8,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2024-10-30",
+                "timing": "AMC",
+                "eps_est": 3.11,
+                "eps_act": 3.3,
+                "surprise_pct": 6.13,
+                "gap_pct": -3.97,
+                "day_gain_pct": -6.05,
+                "intraday_pct": -2.17,
+                "drift_5d_pct": 4.7,
+                "drift_20d_pct": 4.42,
+                "vol_surge": 3.2,
+                "reaction_type": "GAP_AND_DUMP"
             }
         ],
         "institutional": {
-            "short_percent": 1.04,
-            "short_ratio": 2.15,
-            "forward_pe": 23.28,
-            "peg_ratio": 1.32,
+            "short_percent": 1.0,
+            "short_ratio": 2.5,
+            "forward_pe": 21.0,
+            "peg_ratio": 1.6,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-13",
-                    "firm": "Wedbush",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 575.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Tigress Financial",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 680.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
+                    "date": "2026-09-04",
                     "firm": "Stifel",
                     "to_grade": "Hold",
                     "from_grade": "Hold",
-                    "price_target": 415.0,
+                    "price_target": 530.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
+                    "date": "2026-09-01",
+                    "firm": "B of A Securities",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 600.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-12",
+                    "firm": "Wells Fargo",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 700.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-05",
+                    "firm": "Tigress Financial",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 690.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-07-30",
                     "firm": "Bernstein",
                     "to_grade": "Outperform",
                     "from_grade": "Outperform",
-                    "price_target": 646.0,
+                    "price_target": 647.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
+                    "date": "2026-07-30",
                     "firm": "Citigroup",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 620.0,
+                    "price_target": 600.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
-                    "firm": "Evercore ISI Group",
+                    "date": "2026-07-30",
+                    "firm": "RBC Capital",
                     "to_grade": "Outperform",
                     "from_grade": "Outperform",
-                    "price_target": 510.0,
+                    "price_target": 640.0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-07-30",
+                    "firm": "Stifel",
+                    "to_grade": "Hold",
+                    "from_grade": "Hold",
+                    "price_target": 450.0,
                     "action": "main"
                 }
             ]
@@ -569,215 +709,179 @@
     },
     {
         "ticker": "GOOGL",
-        "current_price": 380.34,
-        "next_earnings_date": "2026-07-23",
+        "company_name": "Alphabet Inc.",
+        "current_price": 338.5,
+        "next_earnings_date": "2026-10-28",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 72,
+            "setup_tier": "A",
+            "setup_name": "POST-EARNINGS DRIFT EXPANSION",
+            "badge_color": "#3b82f6",
+            "action_verdict": "ORDERLY EXPANSION: Positive estimate revisions support sustained multi-week drift.",
+            "catalysts": [
+                "Stable Consensus: Balanced estimate trajectory across 42 covering analysts.",
+                "Last Reported Quarter (2026-07-22): +214.23% EPS Surprise with a 2.1x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +24.3% YoY; EPS growth expected at +4.8% YoY.",
+                "Options market underpricing move (\u00b11.34% implied vs \u00b14.12% historical). Potential explosive gamma opportunity."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-01",
-            "pcr_oi": 0.56,
-            "max_pain_strike": 385.0,
-            "atm_strike": 380.0,
-            "implied_move_usd": 5.36,
-            "implied_move_pct": 1.41
+            "expiration": "2026-09-14",
+            "pcr_oi": 0.4,
+            "max_pain_strike": 330.0,
+            "atm_strike": 340.0,
+            "implied_move_usd": 4.55,
+            "implied_move_pct": 1.34
         },
-        "eps_trend": {
-            "current_est": 2.88,
-            "d30_est": 2.77,
-            "bar_lowered": false
+        "consensus_revisions": {
+            "up_7d": 1,
+            "down_7d": 1,
+            "up_30d": 18,
+            "down_30d": 18,
+            "total_analysts": 42,
+            "current_q_eps_est": 3.01,
+            "prev_30d_eps_est": 3.0,
+            "eps_revision_pct_30d": 0.23,
+            "bar_lowered": false,
+            "next_q_growth_est": 4.8,
+            "revenue_growth_est": 24.3,
+            "net_revision_ratio": 0.0
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 100.0,
+            "gap_and_go_pct": 80.0,
+            "gap_and_fade_pct": 20.0,
+            "avg_abs_move_pct": 4.12,
+            "avg_5d_drift_pct": 0.15,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
             {
-                "date": "2026-04-22",
+                "date": "2026-07-22",
                 "timing": "AMC",
-                "gap_pct": 0.55,
-                "t0_close_pct": -0.13,
-                "t1_close_pct": 1.5,
-                "t5_close_pct": 13.4,
-                "eps_surprise_pct": 91.59
+                "eps_est": 2.9,
+                "eps_act": 9.11,
+                "surprise_pct": 214.23,
+                "gap_pct": -6.13,
+                "day_gain_pct": -7.13,
+                "intraday_pct": -1.07,
+                "drift_5d_pct": 5.03,
+                "drift_20d_pct": 7.23,
+                "vol_surge": 2.1,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2026-04-29",
+                "timing": "AMC",
+                "eps_est": 2.63,
+                "eps_act": 5.11,
+                "surprise_pct": 94.3,
+                "gap_pct": 6.9,
+                "day_gain_pct": 9.96,
+                "intraday_pct": 2.87,
+                "drift_5d_pct": 3.43,
+                "drift_20d_pct": -1.16,
+                "vol_surge": 2.9,
+                "reaction_type": "GAP_AND_GO"
             },
             {
                 "date": "2026-02-04",
                 "timing": "AMC",
+                "eps_est": 2.64,
+                "eps_act": 2.82,
+                "surprise_pct": 7.01,
                 "gap_pct": -6.25,
-                "t0_close_pct": -0.54,
-                "t1_close_pct": -3.06,
-                "t5_close_pct": -7.22,
-                "eps_surprise_pct": 7.01
+                "day_gain_pct": -0.54,
+                "intraday_pct": 6.1,
+                "drift_5d_pct": -6.72,
+                "drift_20d_pct": -9.88,
+                "vol_surge": 2.8,
+                "reaction_type": "GAP_DOWN_REVERSAL"
             },
             {
                 "date": "2025-10-29",
                 "timing": "AMC",
+                "eps_est": 2.26,
+                "eps_act": 2.87,
+                "surprise_pct": 26.88,
                 "gap_pct": 6.2,
-                "t0_close_pct": 2.52,
-                "t1_close_pct": 2.41,
-                "t5_close_pct": 3.71,
-                "eps_surprise_pct": 26.88
+                "day_gain_pct": 2.52,
+                "intraday_pct": -3.47,
+                "drift_5d_pct": 1.16,
+                "drift_20d_pct": 13.75,
+                "vol_surge": 2.6,
+                "reaction_type": "GAP_AND_FADE"
             },
             {
                 "date": "2025-07-23",
                 "timing": "AMC",
+                "eps_est": 2.19,
+                "eps_act": 2.31,
+                "surprise_pct": 5.67,
                 "gap_pct": 3.57,
-                "t0_close_pct": 1.02,
-                "t1_close_pct": 1.55,
-                "t5_close_pct": 0.88,
-                "eps_surprise_pct": 5.67
+                "day_gain_pct": 1.02,
+                "intraday_pct": -2.47,
+                "drift_5d_pct": -0.14,
+                "drift_20d_pct": 3.94,
+                "vol_surge": 1.9,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-04-24",
+                "timing": "AMC",
+                "eps_est": 2.01,
+                "eps_act": 2.81,
+                "surprise_pct": 39.84,
+                "gap_pct": 3.64,
+                "day_gain_pct": 1.68,
+                "intraday_pct": -1.88,
+                "drift_5d_pct": 1.28,
+                "drift_20d_pct": 4.02,
+                "vol_surge": 1.4,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-02-04",
+                "timing": "AMC",
+                "eps_est": 2.13,
+                "eps_act": 2.15,
+                "surprise_pct": 1.18,
+                "gap_pct": -7.42,
+                "day_gain_pct": -7.29,
+                "intraday_pct": 0.14,
+                "drift_5d_pct": -4.03,
+                "drift_20d_pct": -9.92,
+                "vol_surge": 2.8,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2024-10-29",
+                "timing": "AMC",
+                "eps_est": 1.85,
+                "eps_act": 2.12,
+                "surprise_pct": 14.83,
+                "gap_pct": 6.48,
+                "day_gain_pct": 2.82,
+                "intraday_pct": -3.44,
+                "drift_5d_pct": 1.18,
+                "drift_20d_pct": -3.0,
+                "vol_surge": 3.3,
+                "reaction_type": "GAP_AND_FADE"
             }
         ],
         "institutional": {
-            "short_percent": 1.41,
-            "short_ratio": 3.02,
-            "forward_pe": 26.25,
-            "peg_ratio": 1.53,
+            "short_percent": 1.32,
+            "short_ratio": 3.0,
+            "forward_pe": 22.8,
+            "peg_ratio": 1.22,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-29",
-                    "firm": "Truist Securities",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 430.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-21",
+                    "date": "2026-09-03",
                     "firm": "Rosenblatt",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
-                    "price_target": 393.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-20",
-                    "firm": "Keybanc",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 425.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-20",
-                    "firm": "Citizens",
-                    "to_grade": "Market Outperform",
-                    "from_grade": "Market Outperform",
-                    "price_target": 515.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-20",
-                    "firm": "Wells Fargo",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 435.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-20",
-                    "firm": "Needham",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 450.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Mizuho",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 460.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-04",
-                    "firm": "Citizens",
-                    "to_grade": "Market Outperform",
-                    "from_grade": "Market Outperform",
-                    "price_target": 515.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-04",
-                    "firm": "Freedom Broker",
-                    "to_grade": "Hold",
-                    "from_grade": "Buy",
-                    "price_target": 400.0,
-                    "action": "down"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "Stifel",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 420.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "Wells Fargo",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 427.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Canaccord Genuity",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 450.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "UBS",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
                     "price_target": 410.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Bernstein",
-                    "to_grade": "Market Perform",
-                    "from_grade": "Market Perform",
-                    "price_target": 390.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Citigroup",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 447.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Morgan Stanley",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 375.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Susquehanna",
-                    "to_grade": "Positive",
-                    "from_grade": "Positive",
-                    "price_target": 460.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Piper Sandler",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 425.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "RBC Capital",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 425.0,
                     "action": "main"
                 }
             ]
@@ -785,582 +889,837 @@
     },
     {
         "ticker": "AMZN",
-        "current_price": 270.64,
-        "next_earnings_date": "2026-07-30",
+        "company_name": "Amazon.com, Inc.",
+        "current_price": 256.78,
+        "next_earnings_date": "2026-10-29",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 92,
+            "setup_tier": "A+",
+            "setup_name": "INSTITUTIONAL POWER EARNINGS GAP (PEG)",
+            "badge_color": "#10b981",
+            "action_verdict": "HIGH ACCUMULATION: Institutional re-rating underway. Buy opening pullbacks or flag consolidations.",
+            "catalysts": [
+                "Wall Street Consensus: Heavy upward revisions (26 Upgrades vs 9 Downgrades in last 30d).",
+                "Last Reported Quarter (2026-07-30): +215.02% EPS Surprise with a 3.3x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +12.2% YoY; EPS growth expected at +0.2% YoY.",
+                "Options market underpricing move (\u00b11.43% implied vs \u00b16.23% historical). Potential explosive gamma opportunity."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-01",
-            "pcr_oi": 0.5,
-            "max_pain_strike": 265.0,
-            "atm_strike": 270.0,
-            "implied_move_usd": 3.83,
-            "implied_move_pct": 1.42
+            "expiration": "2026-09-14",
+            "pcr_oi": 0.54,
+            "max_pain_strike": 255.0,
+            "atm_strike": 255.0,
+            "implied_move_usd": 3.66,
+            "implied_move_pct": 1.43
         },
-        "eps_trend": {
-            "current_est": 1.82,
-            "d30_est": 1.77,
-            "bar_lowered": false
+        "consensus_revisions": {
+            "up_7d": 0,
+            "down_7d": 1,
+            "up_30d": 26,
+            "down_30d": 9,
+            "total_analysts": 44,
+            "current_q_eps_est": 1.95,
+            "prev_30d_eps_est": 1.95,
+            "eps_revision_pct_30d": 0.17,
+            "bar_lowered": false,
+            "next_q_growth_est": 0.2,
+            "revenue_growth_est": 12.2,
+            "net_revision_ratio": 0.49
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 100.0,
+            "gap_and_go_pct": 100.0,
+            "gap_and_fade_pct": 0.0,
+            "avg_abs_move_pct": 6.23,
+            "avg_5d_drift_pct": 1.03,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
             {
-                "date": "2026-04-09",
+                "date": "2026-07-30",
                 "timing": "AMC",
-                "gap_pct": 0.71,
-                "t0_close_pct": 2.02,
-                "t1_close_pct": 2.67,
-                "t5_close_pct": 7.24,
-                "eps_surprise_pct": 68.18
+                "eps_est": 1.83,
+                "eps_act": 5.75,
+                "surprise_pct": 215.02,
+                "gap_pct": 12.53,
+                "day_gain_pct": 15.32,
+                "intraday_pct": 2.48,
+                "drift_5d_pct": 1.07,
+                "drift_20d_pct": -1.9,
+                "vol_surge": 3.3,
+                "reaction_type": "GAP_AND_GO"
+            },
+            {
+                "date": "2026-04-29",
+                "timing": "AMC",
+                "eps_est": 1.64,
+                "eps_act": 2.78,
+                "surprise_pct": 69.02,
+                "gap_pct": 3.85,
+                "day_gain_pct": 0.77,
+                "intraday_pct": -2.97,
+                "drift_5d_pct": 2.31,
+                "drift_20d_pct": 2.11,
+                "vol_surge": 2.2,
+                "reaction_type": "GAP_AND_FADE"
             },
             {
                 "date": "2026-02-05",
                 "timing": "AMC",
+                "eps_est": 1.95,
+                "eps_act": 1.95,
+                "surprise_pct": 0.22,
                 "gap_pct": -8.98,
-                "t0_close_pct": -5.55,
-                "t1_close_pct": -6.27,
-                "t5_close_pct": -10.73,
-                "eps_surprise_pct": -0.49
+                "day_gain_pct": -5.55,
+                "intraday_pct": 3.76,
+                "drift_5d_pct": -5.48,
+                "drift_20d_pct": 1.51,
+                "vol_surge": 4.3,
+                "reaction_type": "GAP_DOWN_REVERSAL"
             },
             {
                 "date": "2025-10-30",
                 "timing": "AMC",
+                "eps_est": 1.56,
+                "eps_act": 1.95,
+                "surprise_pct": 25.2,
                 "gap_pct": 12.22,
-                "t0_close_pct": 9.58,
-                "t1_close_pct": 13.97,
-                "t5_close_pct": 9.67,
-                "eps_surprise_pct": 25.2
+                "day_gain_pct": 9.58,
+                "intraday_pct": -2.35,
+                "drift_5d_pct": 0.08,
+                "drift_20d_pct": -4.23,
+                "vol_surge": 3.8,
+                "reaction_type": "GAP_AND_FADE"
             },
             {
-                "date": "2025-07-15",
+                "date": "2025-07-31",
                 "timing": "AMC",
-                "gap_pct": -0.21,
-                "t0_close_pct": -1.4,
-                "t1_close_pct": -1.09,
-                "t5_close_pct": 0.86,
-                "eps_surprise_pct": 26.13
+                "eps_est": 1.32,
+                "eps_act": 1.68,
+                "surprise_pct": 27.19,
+                "gap_pct": -7.22,
+                "day_gain_pct": -8.27,
+                "intraday_pct": -1.13,
+                "drift_5d_pct": 3.7,
+                "drift_20d_pct": 6.64,
+                "vol_surge": 3.4,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-05-01",
+                "timing": "AMC",
+                "eps_est": 1.36,
+                "eps_act": 1.59,
+                "surprise_pct": 16.77,
+                "gap_pct": 0.65,
+                "day_gain_pct": -0.12,
+                "intraday_pct": -0.76,
+                "drift_5d_pct": 1.62,
+                "drift_20d_pct": 8.77,
+                "vol_surge": 1.2,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2025-02-06",
+                "timing": "AMC",
+                "eps_est": 1.48,
+                "eps_act": 1.86,
+                "surprise_pct": 25.29,
+                "gap_pct": -2.65,
+                "day_gain_pct": -4.05,
+                "intraday_pct": -1.44,
+                "drift_5d_pct": -0.21,
+                "drift_20d_pct": -15.1,
+                "vol_surge": 2.3,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2024-10-31",
+                "timing": "AMC",
+                "eps_est": 1.14,
+                "eps_act": 1.43,
+                "surprise_pct": 25.22,
+                "gap_pct": 6.76,
+                "day_gain_pct": 6.19,
+                "intraday_pct": -0.54,
+                "drift_5d_pct": 5.18,
+                "drift_20d_pct": 6.46,
+                "vol_surge": 3.3,
+                "reaction_type": "MUTED_REACTION"
             }
         ],
         "institutional": {
-            "short_percent": 1.06,
-            "short_ratio": 2.28,
-            "forward_pe": 27.44,
-            "peg_ratio": 1.83,
+            "short_percent": 0.94,
+            "short_ratio": 2.2,
+            "forward_pe": 24.7,
+            "peg_ratio": 1.48,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-29",
-                    "firm": "Truist Securities",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 320.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-20",
+                    "date": "2026-09-03",
                     "firm": "Wells Fargo",
                     "to_grade": "Overweight",
                     "from_grade": "Overweight",
-                    "price_target": 312.0,
+                    "price_target": 338.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-12",
-                    "firm": "TD Cowen",
+                    "date": "2026-07-31",
+                    "firm": "UBS",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 350.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "Stifel",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 319.0,
+                    "price_target": 318.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
+                    "date": "2026-07-31",
                     "firm": "Telsey Advisory Group",
                     "to_grade": "Outperform",
                     "from_grade": "Outperform",
-                    "price_target": 315.0,
+                    "price_target": 335.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
-                    "firm": "Canaccord Genuity",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 330.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "JP Morgan",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 330.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "TD Cowen",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 350.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
+                    "date": "2026-07-31",
                     "firm": "Bernstein",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 315.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Citigroup",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 325.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Morgan Stanley",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 330.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Susquehanna",
-                    "to_grade": "Positive",
-                    "from_grade": "Positive",
-                    "price_target": 325.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "RBC Capital",
                     "to_grade": "Outperform",
                     "from_grade": "Outperform",
                     "price_target": 320.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
-                    "firm": "Piper Sandler",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 315.0,
-                    "action": "reit"
+                    "date": "2026-07-31",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 350.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-07-31",
+                    "firm": "RBC Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 330.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-07-31",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 330.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-07-31",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 350.0,
+                    "action": "main"
                 }
             ]
         }
     },
     {
         "ticker": "META",
-        "current_price": 632.51,
-        "next_earnings_date": "2026-07-29",
-        "options_data": null,
-        "eps_trend": {
-            "current_est": 7.2,
-            "d30_est": 7.15,
-            "bar_lowered": false
+        "company_name": "Meta Platforms, Inc.",
+        "current_price": 648.03,
+        "next_earnings_date": "2026-10-28",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 36,
+            "setup_tier": "C-",
+            "setup_name": "EARNINGS SQUAT / HIGH EVASION RISK",
+            "badge_color": "#ef4444",
+            "action_verdict": "SUPPLY OVERHANG: Weak revision momentum or post-earnings selling pressure. Avoid or trim into strength.",
+            "catalysts": [
+                "Estimate Erosion: Analysts lowering Q6.53 bar (33 down revisions).",
+                "Last Reported Quarter (2026-07-29): -14.42% EPS Surprise with a 2.2x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +23.6% YoY; EPS growth expected at +521.9% YoY.",
+                "Options market underpricing move (\u00b11.93% implied vs \u00b17.42% historical). Potential explosive gamma opportunity."
+            ]
         },
-        "historical_action": [
+        "options_data": {
+            "expiration": "2026-09-14",
+            "pcr_oi": 1.05,
+            "max_pain_strike": 620.0,
+            "atm_strike": 650.0,
+            "implied_move_usd": 12.53,
+            "implied_move_pct": 1.93
+        },
+        "consensus_revisions": {
+            "up_7d": 0,
+            "down_7d": 4,
+            "up_30d": 7,
+            "down_30d": 33,
+            "total_analysts": 42,
+            "current_q_eps_est": 6.53,
+            "prev_30d_eps_est": 6.76,
+            "eps_revision_pct_30d": -3.43,
+            "bar_lowered": true,
+            "next_q_growth_est": 521.9,
+            "revenue_growth_est": 23.6,
+            "net_revision_ratio": -0.65
+        },
+        "personality": {
+            "beat_rate_pct": 87.5,
+            "gap_and_go_pct": 100.0,
+            "gap_and_fade_pct": 0.0,
+            "avg_abs_move_pct": 7.42,
+            "avg_5d_drift_pct": 0.6,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
             {
-                "date": "2026-04-22",
+                "date": "2026-07-29",
                 "timing": "AMC",
-                "gap_pct": -1.63,
-                "t0_close_pct": -2.31,
-                "t1_close_pct": 0.05,
-                "t5_close_pct": -9.31,
-                "eps_surprise_pct": 56.79
+                "eps_est": 7.22,
+                "eps_act": 6.18,
+                "surprise_pct": -14.42,
+                "gap_pct": -10.18,
+                "day_gain_pct": -7.95,
+                "intraday_pct": 2.48,
+                "drift_5d_pct": 9.44,
+                "drift_20d_pct": 5.95,
+                "vol_surge": 2.2,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
+            {
+                "date": "2026-04-29",
+                "timing": "AMC",
+                "eps_est": 6.82,
+                "eps_act": 7.31,
+                "surprise_pct": 7.2,
+                "gap_pct": -7.44,
+                "day_gain_pct": -8.55,
+                "intraday_pct": -1.2,
+                "drift_5d_pct": 0.8,
+                "drift_20d_pct": 3.37,
+                "vol_surge": 3.5,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
                 "date": "2026-01-28",
                 "timing": "AMC",
+                "eps_est": 8.22,
+                "eps_act": 8.88,
+                "surprise_pct": 8.0,
                 "gap_pct": 10.27,
-                "t0_close_pct": 10.4,
-                "t1_close_pct": 7.14,
-                "t5_close_pct": 0.22,
-                "eps_surprise_pct": 8.0
+                "day_gain_pct": 10.4,
+                "intraday_pct": 0.12,
+                "drift_5d_pct": -9.22,
+                "drift_20d_pct": -12.21,
+                "vol_surge": 4.3,
+                "reaction_type": "GAP_AND_GO"
             },
             {
                 "date": "2025-10-29",
                 "timing": "AMC",
+                "eps_est": 6.67,
+                "eps_act": 7.25,
+                "surprise_pct": 8.66,
                 "gap_pct": -10.98,
-                "t0_close_pct": -11.33,
-                "t1_close_pct": -13.75,
-                "t5_close_pct": -17.66,
-                "eps_surprise_pct": 20.96
+                "day_gain_pct": -11.33,
+                "intraday_pct": -0.4,
+                "drift_5d_pct": -7.13,
+                "drift_20d_pct": -2.78,
+                "vol_surge": 7.4,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
-                "date": "2025-10-29",
+                "date": "2025-07-30",
                 "timing": "AMC",
-                "gap_pct": -10.98,
-                "t0_close_pct": -11.33,
-                "t1_close_pct": -13.75,
-                "t5_close_pct": -17.66,
-                "eps_surprise_pct": -84.34
+                "eps_est": 5.86,
+                "eps_act": 7.14,
+                "surprise_pct": 21.82,
+                "gap_pct": 11.51,
+                "day_gain_pct": 11.25,
+                "intraday_pct": -0.23,
+                "drift_5d_pct": -1.5,
+                "drift_20d_pct": -2.89,
+                "vol_surge": 3.7,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2025-04-30",
+                "timing": "AMC",
+                "eps_est": 5.21,
+                "eps_act": 6.43,
+                "surprise_pct": 23.53,
+                "gap_pct": 7.85,
+                "day_gain_pct": 4.23,
+                "intraday_pct": -3.36,
+                "drift_5d_pct": 4.51,
+                "drift_20d_pct": 13.16,
+                "vol_surge": 1.5,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-01-29",
+                "timing": "AMC",
+                "eps_est": 6.74,
+                "eps_act": 8.02,
+                "surprise_pct": 19.0,
+                "gap_pct": 3.01,
+                "day_gain_pct": 1.55,
+                "intraday_pct": -1.41,
+                "drift_5d_pct": 3.64,
+                "drift_20d_pct": -2.74,
+                "vol_surge": 2.2,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2024-10-30",
+                "timing": "AMC",
+                "eps_est": 5.3,
+                "eps_act": 6.03,
+                "surprise_pct": 13.86,
+                "gap_pct": -1.15,
+                "day_gain_pct": -4.09,
+                "intraday_pct": -2.98,
+                "drift_5d_pct": 4.25,
+                "drift_20d_pct": 1.19,
+                "vol_surge": 2.7,
+                "reaction_type": "MUTED_REACTION"
             }
         ],
         "institutional": {
-            "short_percent": 1.46,
-            "short_ratio": 2.07,
-            "forward_pe": 17.49,
-            "peg_ratio": 0.92,
+            "short_percent": 1.31,
+            "short_ratio": 1.8,
+            "forward_pe": 18.5,
+            "peg_ratio": 0.86,
             "analyst_revisions": []
         }
     },
     {
         "ticker": "TSLA",
-        "current_price": 435.79,
-        "next_earnings_date": "2026-07-22",
+        "company_name": "Tesla, Inc.",
+        "current_price": 365.44,
+        "next_earnings_date": "2026-10-21",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 27,
+            "setup_tier": "C-",
+            "setup_name": "EARNINGS SQUAT / HIGH EVASION RISK",
+            "badge_color": "#ef4444",
+            "action_verdict": "SUPPLY OVERHANG: Weak revision momentum or post-earnings selling pressure. Avoid or trim into strength.",
+            "catalysts": [
+                "Estimate Erosion: Analysts lowering Q0.45 bar (15 down revisions).",
+                "Last Reported Quarter (2026-07-22): -39.15% EPS Surprise with a 2.9x volume expansion.",
+                "Options market underpricing move (\u00b11.89% implied vs \u00b17.77% historical). Potential explosive gamma opportunity."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-01",
-            "pcr_oi": 1.18,
-            "max_pain_strike": 435.0,
-            "atm_strike": 435.0,
-            "implied_move_usd": 8.82,
-            "implied_move_pct": 2.03
+            "expiration": "2026-09-14",
+            "pcr_oi": 0.86,
+            "max_pain_strike": 365.0,
+            "atm_strike": 365.0,
+            "implied_move_usd": 6.9,
+            "implied_move_pct": 1.89
         },
-        "eps_trend": {
-            "current_est": 0.45,
-            "d30_est": 0.45,
-            "bar_lowered": false
+        "consensus_revisions": {
+            "up_7d": 2,
+            "down_7d": 17,
+            "up_30d": 4,
+            "down_30d": 15,
+            "total_analysts": 26,
+            "current_q_eps_est": 0.45,
+            "prev_30d_eps_est": 0.45,
+            "eps_revision_pct_30d": -0.51,
+            "bar_lowered": true,
+            "next_q_growth_est": -9.7,
+            "revenue_growth_est": -2.0,
+            "net_revision_ratio": -0.58
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 37.5,
+            "gap_and_go_pct": 50.0,
+            "gap_and_fade_pct": 50.0,
+            "avg_abs_move_pct": 7.77,
+            "avg_5d_drift_pct": -0.62,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
+            {
+                "date": "2026-07-22",
+                "timing": "AMC",
+                "eps_est": 0.54,
+                "eps_act": 0.33,
+                "surprise_pct": -39.15,
+                "gap_pct": -8.83,
+                "day_gain_pct": -14.52,
+                "intraday_pct": -6.25,
+                "drift_5d_pct": -3.39,
+                "drift_20d_pct": 7.96,
+                "vol_surge": 2.9,
+                "reaction_type": "GAP_AND_DUMP"
+            },
             {
                 "date": "2026-04-22",
                 "timing": "AMC",
+                "eps_est": 0.35,
+                "eps_act": 0.41,
+                "surprise_pct": 17.15,
                 "gap_pct": -3.16,
-                "t0_close_pct": -3.56,
-                "t1_close_pct": -2.89,
-                "t5_close_pct": -1.52,
-                "eps_surprise_pct": 17.15
+                "day_gain_pct": -3.56,
+                "intraday_pct": -0.42,
+                "drift_5d_pct": 2.12,
+                "drift_20d_pct": 11.81,
+                "vol_surge": 1.4,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
                 "date": "2026-01-28",
                 "timing": "AMC",
+                "eps_est": 0.45,
+                "eps_act": 0.5,
+                "surprise_pct": 10.96,
                 "gap_pct": 1.47,
-                "t0_close_pct": -3.45,
-                "t1_close_pct": -0.24,
-                "t5_close_pct": -7.94,
-                "eps_surprise_pct": 10.96
+                "day_gain_pct": -3.45,
+                "intraday_pct": -4.85,
+                "drift_5d_pct": -4.65,
+                "drift_20d_pct": -3.37,
+                "vol_surge": 1.3,
+                "reaction_type": "MUTED_REACTION"
             },
             {
-                "date": "2025-10-02",
+                "date": "2025-10-22",
                 "timing": "AMC",
-                "gap_pct": 1.67,
-                "t0_close_pct": -1.42,
-                "t1_close_pct": 3.96,
-                "t5_close_pct": -5.16,
-                "eps_surprise_pct": -10.53
+                "eps_est": 0.56,
+                "eps_act": 0.5,
+                "surprise_pct": -10.53,
+                "gap_pct": -4.32,
+                "day_gain_pct": 2.28,
+                "intraday_pct": 6.9,
+                "drift_5d_pct": -1.98,
+                "drift_20d_pct": -11.97,
+                "vol_surge": 1.4,
+                "reaction_type": "GAP_DOWN_REVERSAL"
             },
             {
-                "date": "2025-07-01",
+                "date": "2025-07-23",
                 "timing": "AMC",
-                "gap_pct": 3.96,
-                "t0_close_pct": 4.97,
-                "t1_close_pct": 4.87,
-                "t5_close_pct": 3.05,
-                "eps_surprise_pct": -0.97
+                "eps_est": 0.4,
+                "eps_act": 0.4,
+                "surprise_pct": -1.11,
+                "gap_pct": -6.78,
+                "day_gain_pct": -8.2,
+                "intraday_pct": -1.52,
+                "drift_5d_pct": 0.97,
+                "drift_20d_pct": 4.85,
+                "vol_surge": 1.7,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-04-22",
+                "timing": "AMC",
+                "eps_est": 0.41,
+                "eps_act": 0.27,
+                "surprise_pct": -34.89,
+                "gap_pct": 7.1,
+                "day_gain_pct": 5.37,
+                "intraday_pct": -1.62,
+                "drift_5d_pct": 12.53,
+                "drift_20d_pct": 33.45,
+                "vol_surge": 1.0,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-01-29",
+                "timing": "AMC",
+                "eps_est": 0.77,
+                "eps_act": 0.73,
+                "surprise_pct": -5.11,
+                "gap_pct": 5.57,
+                "day_gain_pct": 2.87,
+                "intraday_pct": -2.56,
+                "drift_5d_pct": -6.49,
+                "drift_20d_pct": -26.81,
+                "vol_surge": 1.3,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2024-10-23",
+                "timing": "AMC",
+                "eps_est": 0.6,
+                "eps_act": 0.72,
+                "surprise_pct": 20.49,
+                "gap_pct": 14.52,
+                "day_gain_pct": 21.92,
+                "intraday_pct": 6.46,
+                "drift_5d_pct": -4.08,
+                "drift_20d_pct": 30.39,
+                "vol_surge": 2.8,
+                "reaction_type": "GAP_AND_GO"
             }
         ],
         "institutional": {
-            "short_percent": 2.25,
-            "short_ratio": 1.18,
-            "forward_pe": 173.64,
-            "peg_ratio": 6.09,
-            "analyst_revisions": []
+            "short_percent": 2.1,
+            "short_ratio": 2.1,
+            "forward_pe": 169.3,
+            "peg_ratio": 4.4,
+            "analyst_revisions": [
+                {
+                    "date": "2026-09-04",
+                    "firm": "GLJ Research",
+                    "to_grade": "Sell",
+                    "from_grade": "Sell",
+                    "price_target": 24.86,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-09-03",
+                    "firm": "StoneX",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 475.0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-08-18",
+                    "firm": "GLJ Research",
+                    "to_grade": "Sell",
+                    "from_grade": "Sell",
+                    "price_target": 24.86,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-08-03",
+                    "firm": "Stifel",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 491.0,
+                    "action": "main"
+                }
+            ]
         }
     },
     {
         "ticker": "AMD",
-        "current_price": 516.1,
-        "next_earnings_date": "2026-08-04",
-        "options_data": {
-            "expiration": "2026-06-05",
-            "pcr_oi": 1.15,
-            "max_pain_strike": 460.0,
-            "atm_strike": 515.0,
-            "implied_move_usd": 41.42,
-            "implied_move_pct": 8.03
+        "company_name": "Advanced Micro Devices, Inc.",
+        "current_price": 516.13,
+        "next_earnings_date": "2026-11-03",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 77,
+            "setup_tier": "A",
+            "setup_name": "POST-EARNINGS DRIFT EXPANSION",
+            "badge_color": "#3b82f6",
+            "action_verdict": "ORDERLY EXPANSION: Positive estimate revisions support sustained multi-week drift.",
+            "catalysts": [
+                "Wall Street Consensus: Heavy upward revisions (25 Upgrades vs 3 Downgrades in last 30d).",
+                "Last Reported Quarter (2026-08-04): +3.21% EPS Surprise with a 1.8x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +40.5% YoY; EPS growth expected at +60.4% YoY."
+            ]
         },
-        "eps_trend": {
-            "current_est": 1.61,
-            "d30_est": 1.42,
-            "bar_lowered": false
+        "options_data": null,
+        "consensus_revisions": {
+            "up_7d": 22,
+            "down_7d": 4,
+            "up_30d": 25,
+            "down_30d": 3,
+            "total_analysts": 39,
+            "current_q_eps_est": 1.93,
+            "prev_30d_eps_est": 1.85,
+            "eps_revision_pct_30d": 3.94,
+            "bar_lowered": false,
+            "next_q_growth_est": 60.4,
+            "revenue_growth_est": 40.5,
+            "net_revision_ratio": 0.79
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 87.5,
+            "gap_and_go_pct": 100.0,
+            "gap_and_fade_pct": 0.0,
+            "avg_abs_move_pct": 8.82,
+            "avg_5d_drift_pct": 5.17,
+            "volatility_verdict": "IN-LINE"
+        },
+        "historical_reactions": [
+            {
+                "date": "2026-08-04",
+                "timing": "AMC",
+                "eps_est": 1.61,
+                "eps_act": 1.66,
+                "surprise_pct": 3.21,
+                "gap_pct": -6.57,
+                "day_gain_pct": -7.04,
+                "intraday_pct": -0.51,
+                "drift_5d_pct": 0.18,
+                "drift_20d_pct": -5.18,
+                "vol_surge": 1.8,
+                "reaction_type": "GAP_AND_DUMP"
+            },
             {
                 "date": "2026-05-05",
                 "timing": "AMC",
+                "eps_est": 1.29,
+                "eps_act": 1.37,
+                "surprise_pct": 5.82,
                 "gap_pct": 15.26,
-                "t0_close_pct": 18.61,
-                "t1_close_pct": 14.97,
-                "t5_close_pct": 25.4,
-                "eps_surprise_pct": 5.82
+                "day_gain_pct": 18.61,
+                "intraday_pct": 2.91,
+                "drift_5d_pct": 5.72,
+                "drift_20d_pct": 24.16,
+                "vol_surge": 2.2,
+                "reaction_type": "GAP_AND_GO"
             },
             {
                 "date": "2026-02-03",
                 "timing": "AMC",
+                "eps_est": 1.32,
+                "eps_act": 1.53,
+                "surprise_pct": 15.98,
                 "gap_pct": -11.2,
-                "t0_close_pct": -17.31,
-                "t1_close_pct": -20.49,
-                "t5_close_pct": -11.78,
-                "eps_surprise_pct": 15.98
+                "day_gain_pct": -17.31,
+                "intraday_pct": -6.89,
+                "drift_5d_pct": 6.69,
+                "drift_20d_pct": -0.37,
+                "vol_surge": 2.8,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
                 "date": "2025-11-04",
                 "timing": "AMC",
+                "eps_est": 1.17,
+                "eps_act": 1.2,
+                "surprise_pct": 2.48,
                 "gap_pct": -2.72,
-                "t0_close_pct": 2.51,
-                "t1_close_pct": -4.94,
-                "t5_close_pct": 3.54,
-                "eps_surprise_pct": 2.48
+                "day_gain_pct": 2.51,
+                "intraday_pct": 5.38,
+                "drift_5d_pct": 1.0,
+                "drift_20d_pct": -15.74,
+                "vol_surge": 1.0,
+                "reaction_type": "GAP_DOWN_REVERSAL"
             },
             {
                 "date": "2025-08-05",
                 "timing": "AMC",
+                "eps_est": 0.48,
+                "eps_act": 0.48,
+                "surprise_pct": -0.55,
                 "gap_pct": -5.31,
-                "t0_close_pct": -6.42,
-                "t1_close_pct": -1.1,
-                "t5_close_pct": 5.8,
-                "eps_surprise_pct": -0.55
+                "day_gain_pct": -6.42,
+                "intraday_pct": -1.17,
+                "drift_5d_pct": 13.06,
+                "drift_20d_pct": -0.82,
+                "vol_surge": 2.3,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-05-06",
+                "timing": "AMC",
+                "eps_est": 0.93,
+                "eps_act": 0.96,
+                "surprise_pct": 2.83,
+                "gap_pct": 2.16,
+                "day_gain_pct": 1.76,
+                "intraday_pct": -0.39,
+                "drift_5d_pct": 17.3,
+                "drift_20d_pct": 15.28,
+                "vol_surge": 2.0,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2025-02-04",
+                "timing": "AMC",
+                "eps_est": 1.09,
+                "eps_act": 1.09,
+                "surprise_pct": 0.36,
+                "gap_pct": -9.95,
+                "day_gain_pct": -6.27,
+                "intraday_pct": 4.09,
+                "drift_5d_pct": -0.26,
+                "drift_20d_pct": -11.75,
+                "vol_surge": 2.8,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
+            {
+                "date": "2024-10-29",
+                "timing": "AMC",
+                "eps_est": 0.92,
+                "eps_act": 0.92,
+                "surprise_pct": 0.46,
+                "gap_pct": -7.96,
+                "day_gain_pct": -10.62,
+                "intraday_pct": -2.88,
+                "drift_5d_pct": -2.36,
+                "drift_20d_pct": -8.32,
+                "vol_surge": 2.5,
+                "reaction_type": "GAP_AND_DUMP"
             }
         ],
         "institutional": {
-            "short_percent": 2.75,
-            "short_ratio": 0.97,
-            "forward_pe": 39.82,
-            "peg_ratio": 1.25,
+            "short_percent": 2.57,
+            "short_ratio": 1.9,
+            "forward_pe": 33.3,
+            "peg_ratio": 0.49,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-19",
-                    "firm": "Evercore ISI Group",
-                    "to_grade": "Outperform",
+                    "date": "2026-09-10",
+                    "firm": "Piper Sandler",
+                    "to_grade": "Overweight",
+                    "from_grade": "",
+                    "price_target": 600.0,
+                    "action": "init"
+                },
+                {
+                    "date": "2026-08-25",
+                    "firm": "Raymond James",
+                    "to_grade": "Strong Buy",
                     "from_grade": "Outperform",
-                    "price_target": 579.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-18",
-                    "firm": "Citigroup",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
-                    "price_target": 460.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-13",
-                    "firm": "Daiwa Capital",
-                    "to_grade": "Outperform",
-                    "from_grade": "Buy",
-                    "price_target": 500.0,
-                    "action": "down"
-                },
-                {
-                    "date": "2026-05-13",
-                    "firm": "B of A Securities",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 500.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-12",
-                    "firm": "Mizuho",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 515.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-07",
-                    "firm": "Citigroup",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
-                    "price_target": 358.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "JP Morgan",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
-                    "price_target": 385.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "TD Cowen",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 500.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Bernstein",
-                    "to_grade": "Outperform",
-                    "from_grade": "Market Perform",
-                    "price_target": 525.0,
+                    "price_target": 641.0,
                     "action": "up"
                 },
                 {
-                    "date": "2026-05-06",
-                    "firm": "Cantor Fitzgerald",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 500.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "RBC Capital",
-                    "to_grade": "Sector Perform",
-                    "from_grade": "Sector Perform",
-                    "price_target": 400.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Barclays",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 500.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Wells Fargo",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 505.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Susquehanna",
-                    "to_grade": "Positive",
-                    "from_grade": "Positive",
-                    "price_target": 450.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Benchmark",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 485.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Keybanc",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 530.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Mizuho",
+                    "date": "2026-08-21",
+                    "firm": "BMO Capital",
                     "to_grade": "Outperform",
                     "from_grade": "Outperform",
-                    "price_target": 415.0,
+                    "price_target": 550.0,
+                    "action": "init"
+                },
+                {
+                    "date": "2026-08-06",
+                    "firm": "Argus Research",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 625.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-06",
+                    "date": "2026-08-06",
                     "firm": "Rosenblatt",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 490.0,
+                    "price_target": 700.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-06",
-                    "firm": "Wedbush",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 450.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
+                    "date": "2026-08-05",
                     "firm": "DA Davidson",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 425.0,
+                    "price_target": 550.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-06",
-                    "firm": "Seaport Global",
-                    "to_grade": "Buy",
-                    "from_grade": "Neutral",
-                    "price_target": 430.0,
-                    "action": "up"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Stifel",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 450.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
+                    "date": "2026-08-05",
                     "firm": "Morgan Stanley",
                     "to_grade": "Equal-Weight",
                     "from_grade": "Equal-Weight",
-                    "price_target": 410.0,
+                    "price_target": 465.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-06",
-                    "firm": "B of A Securities",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 450.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Goldman Sachs",
-                    "to_grade": "Buy",
+                    "date": "2026-08-05",
+                    "firm": "JP Morgan",
+                    "to_grade": "Neutral",
                     "from_grade": "Neutral",
-                    "price_target": 450.0,
-                    "action": "up"
-                },
-                {
-                    "date": "2026-05-04",
-                    "firm": "HSBC",
-                    "to_grade": "Hold",
-                    "from_grade": "Buy",
-                    "price_target": 340.0,
-                    "action": "down"
-                },
-                {
-                    "date": "2026-05-04",
-                    "firm": "Wedbush",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 400.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "RBC Capital",
-                    "to_grade": "Sector Perform",
-                    "from_grade": "Sector Perform",
-                    "price_target": 325.0,
+                    "price_target": 550.0,
                     "action": "main"
                 }
             ]
@@ -1368,103 +1727,221 @@
     },
     {
         "ticker": "AVGO",
-        "current_price": 446.77,
-        "next_earnings_date": "2026-06-03",
+        "company_name": "Broadcom Inc.",
+        "current_price": 361.99,
+        "next_earnings_date": "2026-12-09",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 45,
+            "setup_tier": "C-",
+            "setup_name": "EARNINGS SQUAT / HIGH EVASION RISK",
+            "badge_color": "#ef4444",
+            "action_verdict": "SUPPLY OVERHANG: Weak revision momentum or post-earnings selling pressure. Avoid or trim into strength.",
+            "catalysts": [
+                "Estimate Erosion: Analysts lowering Q3.24 bar (1 down revisions).",
+                "Last Reported Quarter (2026-06-03): +1.74% EPS Surprise with a 3.7x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +93.6% YoY; EPS growth expected at +96.2% YoY.",
+                "Options market underpricing move (\u00b11.74% implied vs \u00b110.9% historical). Potential explosive gamma opportunity."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-01",
-            "pcr_oi": 0.56,
-            "max_pain_strike": 410.0,
-            "atm_strike": 450.0,
-            "implied_move_usd": 13.7,
-            "implied_move_pct": 3.07
+            "expiration": "2026-09-14",
+            "pcr_oi": 0.57,
+            "max_pain_strike": 365.0,
+            "atm_strike": 360.0,
+            "implied_move_usd": 6.32,
+            "implied_move_pct": 1.74
         },
-        "eps_trend": {
-            "current_est": 2.4,
-            "d30_est": 0.0,
-            "bar_lowered": false
+        "consensus_revisions": {
+            "up_7d": 0,
+            "down_7d": 1,
+            "up_30d": 0,
+            "down_30d": 1,
+            "total_analysts": 38,
+            "current_q_eps_est": 3.24,
+            "prev_30d_eps_est": 3.23,
+            "eps_revision_pct_30d": 0.36,
+            "bar_lowered": false,
+            "next_q_growth_est": 96.2,
+            "revenue_growth_est": 93.6,
+            "net_revision_ratio": -1.0
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 100.0,
+            "gap_and_go_pct": 100.0,
+            "gap_and_fade_pct": 0.0,
+            "avg_abs_move_pct": 10.9,
+            "avg_5d_drift_pct": -0.82,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
+            {
+                "date": "2026-06-03",
+                "timing": "AMC",
+                "eps_est": 2.4,
+                "eps_act": 2.44,
+                "surprise_pct": 1.74,
+                "gap_pct": -14.66,
+                "day_gain_pct": -12.59,
+                "intraday_pct": 2.43,
+                "drift_5d_pct": -7.96,
+                "drift_20d_pct": -10.6,
+                "vol_surge": 3.7,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
             {
                 "date": "2026-03-04",
                 "timing": "AMC",
+                "eps_est": 2.02,
+                "eps_act": 2.05,
+                "surprise_pct": 1.32,
                 "gap_pct": 3.98,
-                "t0_close_pct": 4.8,
-                "t1_close_pct": 4.08,
-                "t5_close_pct": 5.81,
-                "eps_surprise_pct": 1.32
+                "day_gain_pct": 4.8,
+                "intraday_pct": 0.78,
+                "drift_5d_pct": 0.96,
+                "drift_20d_pct": -5.28,
+                "vol_surge": 2.3,
+                "reaction_type": "GAP_AND_GO"
             },
             {
                 "date": "2025-12-11",
                 "timing": "AMC",
+                "eps_est": 1.87,
+                "eps_act": 1.95,
+                "surprise_pct": 4.38,
                 "gap_pct": -6.5,
-                "t0_close_pct": -11.43,
-                "t1_close_pct": -16.38,
-                "t5_close_pct": -16.24,
-                "eps_surprise_pct": 4.38
+                "day_gain_pct": -11.43,
+                "intraday_pct": -5.27,
+                "drift_5d_pct": -5.44,
+                "drift_20d_pct": -1.29,
+                "vol_surge": 3.9,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
                 "date": "2025-09-04",
                 "timing": "AMC",
+                "eps_est": 1.66,
+                "eps_act": 1.69,
+                "surprise_pct": 1.6,
                 "gap_pct": 16.23,
-                "t0_close_pct": 9.41,
-                "t1_close_pct": 12.92,
-                "t5_close_pct": 17.57,
-                "eps_surprise_pct": 1.6
+                "day_gain_pct": 9.41,
+                "intraday_pct": -5.87,
+                "drift_5d_pct": 7.46,
+                "drift_20d_pct": 1.21,
+                "vol_surge": 4.4,
+                "reaction_type": "GAP_AND_FADE"
             },
             {
                 "date": "2025-06-05",
                 "timing": "AMC",
+                "eps_est": 1.57,
+                "eps_act": 1.58,
+                "surprise_pct": 0.59,
                 "gap_pct": -3.38,
-                "t0_close_pct": -5.0,
-                "t1_close_pct": -6.02,
-                "t5_close_pct": -4.32,
-                "eps_surprise_pct": 0.59
+                "day_gain_pct": -5.0,
+                "intraday_pct": -1.68,
+                "drift_5d_pct": 0.72,
+                "drift_20d_pct": 10.33,
+                "vol_surge": 2.0,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-03-06",
+                "timing": "AMC",
+                "eps_est": 1.51,
+                "eps_act": 1.6,
+                "surprise_pct": 6.11,
+                "gap_pct": 4.61,
+                "day_gain_pct": 8.64,
+                "intraday_pct": 3.85,
+                "drift_5d_pct": 0.3,
+                "drift_20d_pct": -24.74,
+                "vol_surge": 2.9,
+                "reaction_type": "GAP_AND_GO"
+            },
+            {
+                "date": "2024-12-12",
+                "timing": "AMC",
+                "eps_est": 1.39,
+                "eps_act": 1.42,
+                "surprise_pct": 2.04,
+                "gap_pct": 18.4,
+                "day_gain_pct": 24.43,
+                "intraday_pct": 5.1,
+                "drift_5d_pct": -1.78,
+                "drift_20d_pct": 1.7,
+                "vol_surge": 5.6,
+                "reaction_type": "GAP_AND_GO"
             }
         ],
         "institutional": {
-            "short_percent": 1.15,
-            "short_ratio": 2.7,
-            "forward_pe": 24.23,
-            "peg_ratio": 0.93,
+            "short_percent": 1.08,
+            "short_ratio": 2.6,
+            "forward_pe": 18.7,
+            "peg_ratio": 0.36,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-28",
-                    "firm": "Susquehanna",
-                    "to_grade": "Positive",
-                    "from_grade": "Positive",
-                    "price_target": 490.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-18",
-                    "firm": "UBS",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 490.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-15",
-                    "firm": "TD Cowen",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 500.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-14",
-                    "firm": "Wells Fargo",
+                    "date": "2026-09-10",
+                    "firm": "Piper Sandler",
                     "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 545.0,
-                    "action": "main"
+                    "from_grade": "",
+                    "price_target": 460.0,
+                    "action": "init"
                 },
                 {
-                    "date": "2026-05-12",
+                    "date": "2026-09-04",
                     "firm": "Citigroup",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 500.0,
+                    "price_target": 515.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-04",
+                    "firm": "DA Davidson",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 350.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-03",
+                    "firm": "Macquarie",
+                    "to_grade": "Outperform",
+                    "from_grade": "Neutral",
+                    "price_target": 490.0,
+                    "action": "up"
+                },
+                {
+                    "date": "2026-09-03",
+                    "firm": "Raymond James",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 475.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-03",
+                    "firm": "Evercore ISI Group",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 578.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-03",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 475.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-03",
+                    "firm": "Truist Securities",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 520.0,
                     "action": "main"
                 }
             ]
@@ -1472,568 +1949,866 @@
     },
     {
         "ticker": "TSM",
-        "current_price": 418.45,
-        "next_earnings_date": "2026-07-16",
+        "company_name": "Taiwan Semiconductor Manufactur",
+        "current_price": 433.24,
+        "next_earnings_date": "2026-10-15",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 76,
+            "setup_tier": "A",
+            "setup_name": "POST-EARNINGS DRIFT EXPANSION",
+            "badge_color": "#3b82f6",
+            "action_verdict": "ORDERLY EXPANSION: Positive estimate revisions support sustained multi-week drift.",
+            "catalysts": [
+                "Wall Street Consensus: Heavy upward revisions (4 Upgrades vs 1 Downgrades in last 30d).",
+                "Last Reported Quarter (2026-07-16): +10.89% EPS Surprise with a 1.7x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +46.9% YoY; EPS growth expected at +52.8% YoY.",
+                "Options Implied Move (\u00b13.32%) aligned with historical reaction amplitude (\u00b13.28%)."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-05",
-            "pcr_oi": 1.39,
-            "max_pain_strike": 415.0,
-            "atm_strike": 417.5,
-            "implied_move_usd": 20.25,
-            "implied_move_pct": 4.84
+            "expiration": "2026-09-18",
+            "pcr_oi": 1.75,
+            "max_pain_strike": 410.0,
+            "atm_strike": 432.5,
+            "implied_move_usd": 14.4,
+            "implied_move_pct": 3.32
         },
-        "eps_trend": {
-            "current_est": 3.74,
-            "d30_est": 3.56,
-            "bar_lowered": false
+        "consensus_revisions": {
+            "up_7d": 1,
+            "down_7d": 0,
+            "up_30d": 4,
+            "down_30d": 1,
+            "total_analysts": 9,
+            "current_q_eps_est": 4.46,
+            "prev_30d_eps_est": 4.45,
+            "eps_revision_pct_30d": 0.27,
+            "bar_lowered": false,
+            "next_q_growth_est": 52.8,
+            "revenue_growth_est": 46.9,
+            "net_revision_ratio": 0.6
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 100.0,
+            "gap_and_go_pct": 80.0,
+            "gap_and_fade_pct": 20.0,
+            "avg_abs_move_pct": 3.28,
+            "avg_5d_drift_pct": -0.5,
+            "volatility_verdict": "IN-LINE"
+        },
+        "historical_reactions": [
             {
-                "date": "2026-04-16",
-                "timing": "AMC",
-                "gap_pct": 2.71,
-                "t0_close_pct": 1.97,
-                "t1_close_pct": 0.8,
-                "t5_close_pct": 10.76,
-                "eps_surprise_pct": 4.68
+                "date": "2026-07-16",
+                "timing": "BMO",
+                "eps_est": 3.89,
+                "eps_act": 4.31,
+                "surprise_pct": 10.89,
+                "gap_pct": -3.38,
+                "day_gain_pct": -2.32,
+                "intraday_pct": 1.1,
+                "drift_5d_pct": 1.43,
+                "drift_20d_pct": 5.06,
+                "vol_surge": 1.7,
+                "reaction_type": "GAP_AND_DUMP"
             },
-            {
-                "date": "2026-01-15",
-                "timing": "AMC",
-                "gap_pct": 1.43,
-                "t0_close_pct": 0.22,
-                "t1_close_pct": -4.24,
-                "t5_close_pct": -2.61,
-                "eps_surprise_pct": 5.53
-            },
-            {
-                "date": "2025-10-16",
-                "timing": "AMC",
-                "gap_pct": -0.48,
-                "t0_close_pct": -1.59,
-                "t1_close_pct": -0.71,
-                "t5_close_pct": -1.63,
-                "eps_surprise_pct": 11.23
-            },
-            {
-                "date": "2025-07-17",
-                "timing": "AMC",
-                "gap_pct": -0.12,
-                "t0_close_pct": -2.12,
-                "t1_close_pct": -2.75,
-                "t5_close_pct": 0.0,
-                "eps_surprise_pct": 6.79
-            }
-        ],
-        "institutional": {
-            "short_percent": 0.59,
-            "short_ratio": 1.91,
-            "forward_pe": 21.44,
-            "peg_ratio": 1.32,
-            "analyst_revisions": []
-        }
-    },
-    {
-        "ticker": "ASML",
-        "current_price": 1612.76,
-        "next_earnings_date": "2026-07-15",
-        "options_data": {
-            "expiration": "2026-06-05",
-            "pcr_oi": 1.3,
-            "max_pain_strike": 1540.0,
-            "atm_strike": 1615.0,
-            "implied_move_usd": 84.3,
-            "implied_move_pct": 5.23
-        },
-        "eps_trend": {
-            "current_est": 6.86,
-            "d30_est": 6.8,
-            "bar_lowered": false
-        },
-        "historical_action": [
             {
                 "date": "2026-04-15",
                 "timing": "AMC",
-                "gap_pct": -1.94,
-                "t0_close_pct": -4.79,
-                "t1_close_pct": -1.48,
-                "t5_close_pct": -4.32,
-                "eps_surprise_pct": 7.99
+                "eps_est": 3.33,
+                "eps_act": 3.49,
+                "surprise_pct": 4.68,
+                "gap_pct": -1.66,
+                "day_gain_pct": -3.13,
+                "intraday_pct": -1.49,
+                "drift_5d_pct": 5.31,
+                "drift_20d_pct": 14.96,
+                "vol_surge": 2.1,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
-                "date": "2026-01-28",
-                "timing": "AMC",
-                "gap_pct": 2.56,
-                "t0_close_pct": 2.27,
-                "t1_close_pct": 0.01,
-                "t5_close_pct": -5.11,
-                "eps_surprise_pct": -2.72
+                "date": "2026-01-15",
+                "timing": "BMO",
+                "eps_est": 2.98,
+                "eps_act": 3.14,
+                "surprise_pct": 5.53,
+                "gap_pct": 4.8,
+                "day_gain_pct": 4.44,
+                "intraday_pct": -0.34,
+                "drift_5d_pct": -1.98,
+                "drift_20d_pct": 7.24,
+                "vol_surge": 3.9,
+                "reaction_type": "MUTED_REACTION"
             },
             {
                 "date": "2025-10-15",
                 "timing": "AMC",
-                "gap_pct": 2.71,
-                "t0_close_pct": 0.97,
-                "t1_close_pct": 1.93,
-                "t5_close_pct": 2.63,
-                "eps_surprise_pct": 2.14
+                "eps_est": 2.63,
+                "eps_act": 2.92,
+                "surprise_pct": 11.23,
+                "gap_pct": 2.04,
+                "day_gain_pct": -1.6,
+                "intraday_pct": -3.57,
+                "drift_5d_pct": -3.04,
+                "drift_20d_pct": -5.88,
+                "vol_surge": 1.9,
+                "reaction_type": "GAP_AND_FADE"
             },
             {
-                "date": "2025-07-16",
+                "date": "2025-07-17",
+                "timing": "BMO",
+                "eps_est": 2.31,
+                "eps_act": 2.47,
+                "surprise_pct": 6.79,
+                "gap_pct": 3.46,
+                "day_gain_pct": 3.38,
+                "intraday_pct": -0.08,
+                "drift_5d_pct": -1.63,
+                "drift_20d_pct": -1.87,
+                "vol_surge": 2.6,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2025-04-17",
+                "timing": "BMO",
+                "eps_est": 2.05,
+                "eps_act": 2.12,
+                "surprise_pct": 3.21,
+                "gap_pct": 2.89,
+                "day_gain_pct": 0.05,
+                "intraday_pct": -2.76,
+                "drift_5d_pct": 8.8,
+                "drift_20d_pct": 28.0,
+                "vol_surge": 1.4,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-01-16",
                 "timing": "AMC",
-                "gap_pct": -1.01,
-                "t0_close_pct": -1.26,
-                "t1_close_pct": -2.63,
-                "t5_close_pct": -3.89,
-                "eps_surprise_pct": 12.36
+                "eps_est": 2.22,
+                "eps_act": 2.24,
+                "surprise_pct": 0.68,
+                "gap_pct": 0.18,
+                "day_gain_pct": -1.53,
+                "intraday_pct": -1.71,
+                "drift_5d_pct": -9.07,
+                "drift_20d_pct": -4.14,
+                "vol_surge": 1.6,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2024-10-17",
+                "timing": "BMO",
+                "eps_est": 1.79,
+                "eps_act": 1.94,
+                "surprise_pct": 8.44,
+                "gap_pct": 8.46,
+                "day_gain_pct": 9.79,
+                "intraday_pct": 1.22,
+                "drift_5d_pct": -3.84,
+                "drift_20d_pct": -8.42,
+                "vol_surge": 5.0,
+                "reaction_type": "GAP_AND_GO"
             }
         ],
         "institutional": {
-            "short_percent": 0.26,
-            "short_ratio": 0.53,
-            "forward_pe": 33.82,
-            "peg_ratio": 2.41,
-            "analyst_revisions": []
-        }
-    },
-    {
-        "ticker": "PLTR",
-        "current_price": 156.54,
-        "next_earnings_date": "2026-08-03",
-        "options_data": {
-            "expiration": "2026-06-05",
-            "pcr_oi": 0.45,
-            "max_pain_strike": 136.0,
-            "atm_strike": 157.5,
-            "implied_move_usd": 9.38,
-            "implied_move_pct": 5.99
-        },
-        "eps_trend": {
-            "current_est": 0.34,
-            "d30_est": 0.3,
-            "bar_lowered": false
-        },
-        "historical_action": [
-            {
-                "date": "2026-05-04",
-                "timing": "AMC",
-                "gap_pct": -3.93,
-                "t0_close_pct": -6.93,
-                "t1_close_pct": -8.38,
-                "t5_close_pct": -6.87,
-                "eps_surprise_pct": 18.08
-            },
-            {
-                "date": "2026-02-02",
-                "timing": "AMC",
-                "gap_pct": 11.7,
-                "t0_close_pct": 6.85,
-                "t1_close_pct": -5.56,
-                "t5_close_pct": -5.58,
-                "eps_surprise_pct": 8.6
-            },
-            {
-                "date": "2025-11-03",
-                "timing": "AMC",
-                "gap_pct": -7.29,
-                "t0_close_pct": -7.94,
-                "t1_close_pct": -9.31,
-                "t5_close_pct": -7.83,
-                "eps_surprise_pct": 25.46
-            },
-            {
-                "date": "2025-08-04",
-                "timing": "AMC",
-                "gap_pct": 6.94,
-                "t0_close_pct": 7.85,
-                "t1_close_pct": 11.75,
-                "t5_close_pct": 16.38,
-                "eps_surprise_pct": 15.57
-            }
-        ],
-        "institutional": {
-            "short_percent": 3.31,
-            "short_ratio": 1.58,
-            "forward_pe": 75.47,
-            "peg_ratio": 1.9,
+            "short_percent": 0.62,
+            "short_ratio": 3.0,
+            "forward_pe": 19.8,
+            "peg_ratio": 0.82,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-21",
-                    "firm": "Rosenblatt",
+                    "date": "2026-09-02",
+                    "firm": "Stifel",
                     "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 225.0,
-                    "action": "main"
+                    "from_grade": "",
+                    "price_target": 515.0,
+                    "action": "init"
                 },
                 {
-                    "date": "2026-05-06",
-                    "firm": "Citigroup",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 225.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Argus Research",
-                    "to_grade": "Buy",
-                    "from_grade": "Hold",
-                    "price_target": 190.0,
-                    "action": "up"
-                },
-                {
-                    "date": "2026-05-05",
-                    "firm": "RBC Capital",
-                    "to_grade": "Underperform",
-                    "from_grade": "Underperform",
-                    "price_target": 90.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-05",
-                    "firm": "Wedbush",
+                    "date": "2026-08-11",
+                    "firm": "Bernstein",
                     "to_grade": "Outperform",
                     "from_grade": "Outperform",
-                    "price_target": 230.0,
-                    "action": "reit"
-                },
-                {
-                    "date": "2026-05-05",
-                    "firm": "DA Davidson",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
-                    "price_target": 165.0,
+                    "price_target": 554.0,
                     "action": "main"
-                },
-                {
-                    "date": "2026-05-05",
-                    "firm": "Rosenblatt",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 225.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-01",
-                    "firm": "HSBC",
-                    "to_grade": "Hold",
-                    "from_grade": "Buy",
-                    "price_target": 151.0,
-                    "action": "down"
                 }
             ]
         }
     },
     {
-        "ticker": "SMCI",
-        "current_price": 46.09,
-        "next_earnings_date": "2026-08-04",
-        "options_data": null,
-        "eps_trend": {
-            "current_est": 0.71,
-            "d30_est": 0.56,
-            "bar_lowered": false
+        "ticker": "PLTR",
+        "company_name": "Palantir Technologies Inc.",
+        "current_price": 167.23,
+        "next_earnings_date": "2026-11-02",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 96,
+            "setup_tier": "A+",
+            "setup_name": "INSTITUTIONAL POWER EARNINGS GAP (PEG)",
+            "badge_color": "#10b981",
+            "action_verdict": "HIGH ACCUMULATION: Institutional re-rating underway. Buy opening pullbacks or flag consolidations.",
+            "catalysts": [
+                "Wall Street Consensus: Heavy upward revisions (22 Upgrades vs 0 Downgrades in last 30d).",
+                "Last Reported Quarter (2026-08-03): +18.51% EPS Surprise with a 5.1x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +84.3% YoY; EPS growth expected at +97.4% YoY.",
+                "Options market underpricing move (\u00b14.75% implied vs \u00b114.82% historical). Potential explosive gamma opportunity."
+            ]
         },
-        "historical_action": [
-            {
-                "date": "2026-05-05",
-                "timing": "AMC",
-                "gap_pct": 12.97,
-                "t0_close_pct": 24.54,
-                "t1_close_pct": 20.8,
-                "t5_close_pct": 14.98,
-                "eps_surprise_pct": 34.51
-            },
-            {
-                "date": "2026-02-03",
-                "timing": "AMC",
-                "gap_pct": 11.05,
-                "t0_close_pct": 13.78,
-                "t1_close_pct": 3.98,
-                "t5_close_pct": 7.99,
-                "eps_surprise_pct": 41.43
-            },
-            {
-                "date": "2025-11-04",
-                "timing": "AMC",
-                "gap_pct": -5.11,
-                "t0_close_pct": -11.33,
-                "t1_close_pct": -14.89,
-                "t5_close_pct": -20.02,
-                "eps_surprise_pct": -10.08
-            },
-            {
-                "date": "2025-08-05",
-                "timing": "AMC",
-                "gap_pct": -17.34,
-                "t0_close_pct": -18.29,
-                "t1_close_pct": -18.49,
-                "t5_close_pct": -19.54,
-                "eps_surprise_pct": -6.58
-            }
-        ],
-        "institutional": {
-            "short_percent": 18.05,
-            "short_ratio": 2.2,
-            "forward_pe": 14.31,
-            "peg_ratio": 0.91,
-            "analyst_revisions": []
-        }
-    },
-    {
-        "ticker": "ARM",
-        "current_price": 353.29,
-        "next_earnings_date": "2026-07-29",
         "options_data": {
-            "expiration": "2026-06-05",
-            "pcr_oi": 0.84,
-            "max_pain_strike": 280.0,
-            "atm_strike": 355.0,
-            "implied_move_usd": 39.82,
-            "implied_move_pct": 11.27
+            "expiration": "2026-09-18",
+            "pcr_oi": 0.86,
+            "max_pain_strike": 155.0,
+            "atm_strike": 167.5,
+            "implied_move_usd": 7.95,
+            "implied_move_pct": 4.75
         },
-        "eps_trend": {
-            "current_est": 0.4,
-            "d30_est": 0.37,
-            "bar_lowered": false
+        "consensus_revisions": {
+            "up_7d": 2,
+            "down_7d": 0,
+            "up_30d": 22,
+            "down_30d": 0,
+            "total_analysts": 23,
+            "current_q_eps_est": 0.41,
+            "prev_30d_eps_est": 0.37,
+            "eps_revision_pct_30d": 11.43,
+            "bar_lowered": false,
+            "next_q_growth_est": 97.4,
+            "revenue_growth_est": 84.3,
+            "net_revision_ratio": 1.0
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 100.0,
+            "gap_and_go_pct": 80.0,
+            "gap_and_fade_pct": 20.0,
+            "avg_abs_move_pct": 14.82,
+            "avg_5d_drift_pct": 5.9,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
             {
-                "date": "2026-02-04",
+                "date": "2026-08-03",
                 "timing": "AMC",
-                "gap_pct": -0.4,
-                "t0_close_pct": 5.7,
-                "t1_close_pct": 17.92,
-                "t5_close_pct": 16.48,
-                "eps_surprise_pct": 17.7
+                "eps_est": 0.35,
+                "eps_act": 0.41,
+                "surprise_pct": 18.51,
+                "gap_pct": 15.52,
+                "day_gain_pct": 29.45,
+                "intraday_pct": 12.07,
+                "drift_5d_pct": 7.55,
+                "drift_20d_pct": 10.61,
+                "vol_surge": 5.1,
+                "reaction_type": "GAP_AND_GO"
             },
             {
-                "date": "2026-02-04",
+                "date": "2026-05-04",
                 "timing": "AMC",
-                "gap_pct": -0.4,
-                "t0_close_pct": 5.7,
-                "t1_close_pct": 17.92,
-                "t5_close_pct": 16.48,
-                "eps_surprise_pct": 5.09
+                "eps_est": 0.28,
+                "eps_act": 0.33,
+                "surprise_pct": 18.08,
+                "gap_pct": -3.93,
+                "day_gain_pct": -6.93,
+                "intraday_pct": -3.13,
+                "drift_5d_pct": 0.07,
+                "drift_20d_pct": 4.63,
+                "vol_surge": 1.9,
+                "reaction_type": "GAP_AND_DUMP"
             },
             {
-                "date": "2025-07-30",
+                "date": "2026-02-02",
                 "timing": "AMC",
-                "gap_pct": -9.17,
-                "t0_close_pct": -13.44,
-                "t1_close_pct": -15.76,
-                "t5_close_pct": -16.99,
-                "eps_surprise_pct": -0.31
+                "eps_est": 0.23,
+                "eps_act": 0.25,
+                "surprise_pct": 8.6,
+                "gap_pct": 11.7,
+                "day_gain_pct": 6.85,
+                "intraday_pct": -4.34,
+                "drift_5d_pct": -11.64,
+                "drift_20d_pct": -2.97,
+                "vol_surge": 2.9,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-11-03",
+                "timing": "AMC",
+                "eps_est": 0.17,
+                "eps_act": 0.21,
+                "surprise_pct": 25.46,
+                "gap_pct": -7.29,
+                "day_gain_pct": -7.94,
+                "intraday_pct": -0.69,
+                "drift_5d_pct": 0.12,
+                "drift_20d_pct": -7.69,
+                "vol_surge": 2.7,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-08-04",
+                "timing": "AMC",
+                "eps_est": 0.14,
+                "eps_act": 0.16,
+                "surprise_pct": 15.57,
+                "gap_pct": 6.94,
+                "day_gain_pct": 7.85,
+                "intraday_pct": 0.85,
+                "drift_5d_pct": 7.91,
+                "drift_20d_pct": -10.6,
+                "vol_surge": 2.3,
+                "reaction_type": "GAP_AND_GO"
+            },
+            {
+                "date": "2025-05-05",
+                "timing": "AMC",
+                "eps_est": 0.13,
+                "eps_act": 0.13,
+                "surprise_pct": 1.11,
+                "gap_pct": -8.94,
+                "day_gain_pct": -12.05,
+                "intraday_pct": -3.42,
+                "drift_5d_pct": 17.67,
+                "drift_20d_pct": 19.43,
+                "vol_surge": 1.8,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-02-03",
+                "timing": "AMC",
+                "eps_est": 0.11,
+                "eps_act": 0.14,
+                "surprise_pct": 23.72,
+                "gap_pct": 22.76,
+                "day_gain_pct": 23.99,
+                "intraday_pct": 1.0,
+                "drift_5d_pct": 8.47,
+                "drift_20d_pct": -13.19,
+                "vol_surge": 3.4,
+                "reaction_type": "GAP_AND_GO"
+            },
+            {
+                "date": "2024-11-04",
+                "timing": "AMC",
+                "eps_est": 0.09,
+                "eps_act": 0.1,
+                "surprise_pct": 10.06,
+                "gap_pct": 15.58,
+                "day_gain_pct": 23.47,
+                "intraday_pct": 6.83,
+                "drift_5d_pct": 17.05,
+                "drift_20d_pct": 36.61,
+                "vol_surge": 4.7,
+                "reaction_type": "GAP_AND_GO"
             }
         ],
         "institutional": {
-            "short_percent": 13.29,
-            "short_ratio": 1.74,
-            "forward_pe": 115.64,
-            "peg_ratio": 2.63,
+            "short_percent": 3.03,
+            "short_ratio": 1.4,
+            "forward_pe": 71.9,
+            "peg_ratio": 1.63,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-28",
-                    "firm": "Mizuho",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 360.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-18",
-                    "firm": "Bernstein",
-                    "to_grade": "Outperform",
-                    "from_grade": "",
-                    "price_target": 300.0,
-                    "action": "init"
-                },
-                {
-                    "date": "2026-05-08",
-                    "firm": "Barclays",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
+                    "date": "2026-09-11",
+                    "firm": "DA Davidson",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
                     "price_target": 250.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-07",
-                    "firm": "TD Cowen",
+                    "date": "2026-09-11",
+                    "firm": "Rosenblatt",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 265.0,
+                    "price_target": 225.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-07",
+                    "date": "2026-08-04",
+                    "firm": "UBS",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 220.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-04",
+                    "firm": "Mizuho",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 215.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-04",
+                    "firm": "Citigroup",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 245.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-04",
+                    "firm": "DA Davidson",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 200.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-04",
+                    "firm": "Cantor Fitzgerald",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 156.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-08-04",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 225.0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "ARM",
+        "company_name": "Arm Holdings plc",
+        "current_price": 264.79,
+        "next_earnings_date": "2026-11-04",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 82,
+            "setup_tier": "A+",
+            "setup_name": "INSTITUTIONAL POWER EARNINGS GAP (PEG)",
+            "badge_color": "#10b981",
+            "action_verdict": "HIGH ACCUMULATION: Institutional re-rating underway. Buy opening pullbacks or flag consolidations.",
+            "catalysts": [
+                "Wall Street Consensus: Heavy upward revisions (24 Upgrades vs 1 Downgrades in last 30d).",
+                "Last Reported Quarter (2026-07-29): +11.44% EPS Surprise with a 2.2x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +21.2% YoY; EPS growth expected at +21.2% YoY.",
+                "Options Implied Move (\u00b17.2%) aligned with historical reaction amplitude (\u00b16.62%)."
+            ]
+        },
+        "options_data": {
+            "expiration": "2026-09-18",
+            "pcr_oi": 1.06,
+            "max_pain_strike": 230.0,
+            "atm_strike": 265.0,
+            "implied_move_usd": 19.08,
+            "implied_move_pct": 7.2
+        },
+        "consensus_revisions": {
+            "up_7d": 1,
+            "down_7d": 0,
+            "up_30d": 24,
+            "down_30d": 1,
+            "total_analysts": 29,
+            "current_q_eps_est": 0.47,
+            "prev_30d_eps_est": 0.47,
+            "eps_revision_pct_30d": 0.51,
+            "bar_lowered": false,
+            "next_q_growth_est": 21.2,
+            "revenue_growth_est": 21.2,
+            "net_revision_ratio": 0.92
+        },
+        "personality": {
+            "beat_rate_pct": 87.5,
+            "gap_and_go_pct": 66.7,
+            "gap_and_fade_pct": 33.3,
+            "avg_abs_move_pct": 6.62,
+            "avg_5d_drift_pct": 0.82,
+            "volatility_verdict": "IN-LINE"
+        },
+        "historical_reactions": [
+            {
+                "date": "2026-07-29",
+                "timing": "AMC",
+                "eps_est": 0.4,
+                "eps_act": 0.45,
+                "surprise_pct": 11.44,
+                "gap_pct": 14.72,
+                "day_gain_pct": 7.4,
+                "intraday_pct": -6.38,
+                "drift_5d_pct": 18.69,
+                "drift_20d_pct": 5.66,
+                "vol_surge": 2.2,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2026-05-05",
+                "timing": "AMC",
+                "eps_est": 0.58,
+                "eps_act": 0.6,
+                "surprise_pct": 3.57,
+                "gap_pct": 11.09,
+                "day_gain_pct": 13.63,
+                "intraday_pct": 2.28,
+                "drift_5d_pct": -6.78,
+                "drift_20d_pct": 65.8,
+                "vol_surge": 3.1,
+                "reaction_type": "GAP_AND_GO"
+            },
+            {
+                "date": "2026-02-04",
+                "timing": "AMC",
+                "eps_est": 0.41,
+                "eps_act": 0.43,
+                "surprise_pct": 5.09,
+                "gap_pct": -0.4,
+                "day_gain_pct": 5.7,
+                "intraday_pct": 6.13,
+                "drift_5d_pct": 10.2,
+                "drift_20d_pct": 3.16,
+                "vol_surge": 3.8,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2025-11-05",
+                "timing": "AMC",
+                "eps_est": 0.33,
+                "eps_act": 0.39,
+                "surprise_pct": 17.7,
+                "gap_pct": 4.25,
+                "day_gain_pct": -1.21,
+                "intraday_pct": -5.24,
+                "drift_5d_pct": -11.34,
+                "drift_20d_pct": -10.7,
+                "vol_surge": 1.3,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-07-30",
+                "timing": "AMC",
+                "eps_est": 0.35,
+                "eps_act": 0.35,
+                "surprise_pct": -0.31,
+                "gap_pct": -9.17,
+                "day_gain_pct": -13.44,
+                "intraday_pct": -4.7,
+                "drift_5d_pct": -4.11,
+                "drift_20d_pct": 0.83,
+                "vol_surge": 5.0,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-05-07",
+                "timing": "AMC",
+                "eps_est": 0.52,
+                "eps_act": 0.55,
+                "surprise_pct": 5.04,
+                "gap_pct": -4.02,
+                "day_gain_pct": -6.18,
+                "intraday_pct": -2.24,
+                "drift_5d_pct": 14.2,
+                "drift_20d_pct": 14.24,
+                "vol_surge": 3.0,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-02-05",
+                "timing": "AMC",
+                "eps_est": 0.34,
+                "eps_act": 0.39,
+                "surprise_pct": 14.0,
+                "gap_pct": -6.5,
+                "day_gain_pct": -3.34,
+                "intraday_pct": 3.38,
+                "drift_5d_pct": -1.58,
+                "drift_20d_pct": -25.03,
+                "vol_surge": 1.7,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
+            {
+                "date": "2024-11-07",
+                "timing": "AMC",
+                "eps_est": 0.26,
+                "eps_act": 0.3,
+                "surprise_pct": 17.12,
+                "gap_pct": -1.29,
+                "day_gain_pct": -2.1,
+                "intraday_pct": -0.82,
+                "drift_5d_pct": -12.71,
+                "drift_20d_pct": -5.32,
+                "vol_surge": 1.1,
+                "reaction_type": "MUTED_REACTION"
+            }
+        ],
+        "institutional": {
+            "short_percent": 11.52,
+            "short_ratio": 3.9,
+            "forward_pe": 86.7,
+            "peg_ratio": 2.17,
+            "analyst_revisions": [
+                {
+                    "date": "2026-07-31",
+                    "firm": "Rosenblatt",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 250.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-07-30",
+                    "firm": "UBS",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 320.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-07-30",
+                    "firm": "Morgan Stanley",
+                    "to_grade": "Equal-Weight",
+                    "from_grade": "Equal-Weight",
+                    "price_target": 212.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-07-30",
                     "firm": "RBC Capital",
                     "to_grade": "Outperform",
                     "from_grade": "Outperform",
-                    "price_target": 260.0,
+                    "price_target": 340.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-07",
-                    "firm": "Goldman Sachs",
-                    "to_grade": "Sell",
-                    "from_grade": "Sell",
-                    "price_target": 150.0,
+                    "date": "2026-07-30",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 350.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-07",
+                    "date": "2026-07-30",
                     "firm": "Wells Fargo",
                     "to_grade": "Overweight",
                     "from_grade": "Overweight",
-                    "price_target": 255.0,
+                    "price_target": 280.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-07",
+                    "date": "2026-07-30",
                     "firm": "Guggenheim",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
                     "price_target": 255.0,
-                    "action": "main"
+                    "action": "reit"
                 },
                 {
-                    "date": "2026-05-07",
-                    "firm": "Evercore ISI Group",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 326.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-07",
-                    "firm": "Keybanc",
-                    "to_grade": "Overweight",
-                    "from_grade": "Overweight",
-                    "price_target": 300.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-07",
-                    "firm": "Rosenblatt",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 270.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-07",
-                    "firm": "Mizuho",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 290.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-07",
+                    "date": "2026-07-30",
                     "firm": "Needham",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
                     "price_target": 255.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-05-06",
-                    "firm": "Mizuho",
-                    "to_grade": "Outperform",
-                    "from_grade": "Outperform",
-                    "price_target": 255.0,
-                    "action": "main"
+                    "action": "reit"
                 }
             ]
         }
     },
     {
         "ticker": "QCOM",
-        "current_price": 251.02,
-        "next_earnings_date": "2026-07-29",
+        "company_name": "QUALCOMM Incorporated",
+        "current_price": 181.97,
+        "next_earnings_date": "2026-10-29",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 27,
+            "setup_tier": "C-",
+            "setup_name": "EARNINGS SQUAT / HIGH EVASION RISK",
+            "badge_color": "#ef4444",
+            "action_verdict": "SUPPLY OVERHANG: Weak revision momentum or post-earnings selling pressure. Avoid or trim into strength.",
+            "catalysts": [
+                "Estimate Erosion: Analysts lowering Q2.15 bar (24 down revisions).",
+                "Last Reported Quarter (2026-07-29): -0.49% EPS Surprise with a 1.8x volume expansion.",
+                "Options Implied Move (\u00b14.92%) aligned with historical reaction amplitude (\u00b16.28%)."
+            ]
+        },
         "options_data": {
-            "expiration": "2026-06-05",
-            "pcr_oi": 0.56,
-            "max_pain_strike": 202.5,
-            "atm_strike": 250.0,
-            "implied_move_usd": 24.6,
-            "implied_move_pct": 9.8
+            "expiration": "2026-09-18",
+            "pcr_oi": 0.7,
+            "max_pain_strike": 170.0,
+            "atm_strike": 182.5,
+            "implied_move_usd": 8.95,
+            "implied_move_pct": 4.92
         },
-        "eps_trend": {
-            "current_est": 2.23,
-            "d30_est": 2.44,
-            "bar_lowered": true
+        "consensus_revisions": {
+            "up_7d": 0,
+            "down_7d": 1,
+            "up_30d": 1,
+            "down_30d": 24,
+            "total_analysts": 26,
+            "current_q_eps_est": 2.15,
+            "prev_30d_eps_est": 2.17,
+            "eps_revision_pct_30d": -0.54,
+            "bar_lowered": true,
+            "next_q_growth_est": -28.2,
+            "revenue_growth_est": -10.0,
+            "net_revision_ratio": -0.92
         },
-        "historical_action": [
+        "personality": {
+            "beat_rate_pct": 87.5,
+            "gap_and_go_pct": 50.0,
+            "gap_and_fade_pct": 50.0,
+            "avg_abs_move_pct": 6.28,
+            "avg_5d_drift_pct": 3.02,
+            "volatility_verdict": "IN-LINE"
+        },
+        "historical_reactions": [
+            {
+                "date": "2026-07-29",
+                "timing": "AMC",
+                "eps_est": 2.22,
+                "eps_act": 2.21,
+                "surprise_pct": -0.49,
+                "gap_pct": -5.86,
+                "day_gain_pct": -2.62,
+                "intraday_pct": 3.45,
+                "drift_5d_pct": 5.8,
+                "drift_20d_pct": 8.69,
+                "vol_surge": 1.8,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
             {
                 "date": "2026-04-29",
                 "timing": "AMC",
+                "eps_est": 2.56,
+                "eps_act": 2.65,
+                "surprise_pct": 3.34,
                 "gap_pct": 10.29,
-                "t0_close_pct": 15.12,
-                "t1_close_pct": 13.47,
-                "t5_close_pct": 29.84,
-                "eps_surprise_pct": 3.58
+                "day_gain_pct": 15.12,
+                "intraday_pct": 4.38,
+                "drift_5d_pct": 12.79,
+                "drift_20d_pct": 39.78,
+                "vol_surge": 4.8,
+                "reaction_type": "GAP_AND_GO"
             },
             {
-                "date": "2026-01-08",
+                "date": "2026-02-04",
                 "timing": "AMC",
-                "gap_pct": -2.06,
-                "t0_close_pct": -2.25,
-                "t1_close_pct": -6.93,
-                "t5_close_pct": -12.34,
-                "eps_surprise_pct": 2.87
+                "eps_est": 3.4,
+                "eps_act": 3.5,
+                "surprise_pct": 2.87,
+                "gap_pct": -10.73,
+                "day_gain_pct": -8.46,
+                "intraday_pct": 2.54,
+                "drift_5d_pct": 1.59,
+                "drift_20d_pct": 0.19,
+                "vol_surge": 3.1,
+                "reaction_type": "GAP_DOWN_REVERSAL"
             },
             {
                 "date": "2025-11-05",
                 "timing": "AMC",
+                "eps_est": 2.88,
+                "eps_act": 3.0,
+                "surprise_pct": 4.32,
                 "gap_pct": -1.07,
-                "t0_close_pct": -3.63,
-                "t1_close_pct": -4.91,
-                "t5_close_pct": -2.9,
-                "eps_surprise_pct": 4.32
+                "day_gain_pct": -3.63,
+                "intraday_pct": -2.59,
+                "drift_5d_pct": 0.75,
+                "drift_20d_pct": 1.45,
+                "vol_surge": 1.3,
+                "reaction_type": "MUTED_REACTION"
             },
             {
                 "date": "2025-07-30",
                 "timing": "AMC",
+                "eps_est": 2.71,
+                "eps_act": 2.77,
+                "surprise_pct": 2.05,
                 "gap_pct": -3.74,
-                "t0_close_pct": -7.73,
-                "t1_close_pct": -6.83,
-                "t5_close_pct": -8.27,
-                "eps_surprise_pct": 2.05
+                "day_gain_pct": -7.73,
+                "intraday_pct": -4.15,
+                "drift_5d_pct": -0.59,
+                "drift_20d_pct": 9.57,
+                "vol_surge": 3.5,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-04-30",
+                "timing": "AMC",
+                "eps_est": 2.82,
+                "eps_act": 2.85,
+                "surprise_pct": 1.19,
+                "gap_pct": -6.51,
+                "day_gain_pct": -8.92,
+                "intraday_pct": -2.58,
+                "drift_5d_pct": 7.31,
+                "drift_20d_pct": 7.39,
+                "vol_surge": 2.2,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-02-05",
+                "timing": "AMC",
+                "eps_est": 2.99,
+                "eps_act": 3.41,
+                "surprise_pct": 14.2,
+                "gap_pct": -4.56,
+                "day_gain_pct": -3.72,
+                "intraday_pct": 0.88,
+                "drift_5d_pct": 1.67,
+                "drift_20d_pct": -4.27,
+                "vol_surge": 2.1,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2024-11-06",
+                "timing": "AMC",
+                "eps_est": 2.57,
+                "eps_act": 2.69,
+                "surprise_pct": 4.74,
+                "gap_pct": 4.21,
+                "day_gain_pct": -0.05,
+                "intraday_pct": -4.08,
+                "drift_5d_pct": -5.17,
+                "drift_20d_pct": -7.27,
+                "vol_surge": 3.4,
+                "reaction_type": "GAP_AND_FADE"
             }
         ],
         "institutional": {
-            "short_percent": 5.36,
-            "short_ratio": 1.88,
-            "forward_pe": 23.6,
-            "peg_ratio": 1.04,
+            "short_percent": 3.53,
+            "short_ratio": 3.4,
+            "forward_pe": 17.8,
+            "peg_ratio": 0.75,
             "analyst_revisions": [
                 {
-                    "date": "2026-05-08",
-                    "firm": "Tigress Financial",
+                    "date": "2026-09-10",
+                    "firm": "Piper Sandler",
+                    "to_grade": "Neutral",
+                    "from_grade": "",
+                    "price_target": 190.0,
+                    "action": "init"
+                },
+                {
+                    "date": "2026-09-09",
+                    "firm": "RBC Capital",
+                    "to_grade": "Sector Perform",
+                    "from_grade": "Sector Perform",
+                    "price_target": 180.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-09",
+                    "firm": "Rosenblatt",
                     "to_grade": "Buy",
                     "from_grade": "Buy",
-                    "price_target": 280.0,
+                    "price_target": 235.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-05-08",
-                    "firm": "Daiwa Capital",
-                    "to_grade": "Outperform",
-                    "from_grade": "Neutral",
-                    "price_target": 225.0,
-                    "action": "up"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "JP Morgan",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
-                    "price_target": 160.0,
+                    "date": "2026-07-30",
+                    "firm": "Benchmark",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 270.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
+                    "date": "2026-07-30",
                     "firm": "UBS",
                     "to_grade": "Neutral",
                     "from_grade": "Neutral",
@@ -2041,23 +2816,7 @@
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
-                    "firm": "TD Cowen",
-                    "to_grade": "Buy",
-                    "from_grade": "Buy",
-                    "price_target": 200.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
-                    "firm": "Citigroup",
-                    "to_grade": "Neutral",
-                    "from_grade": "Neutral",
-                    "price_target": 160.0,
-                    "action": "main"
-                },
-                {
-                    "date": "2026-04-30",
+                    "date": "2026-07-30",
                     "firm": "Susquehanna",
                     "to_grade": "Neutral",
                     "from_grade": "Neutral",
@@ -2065,19 +2824,435 @@
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
+                    "date": "2026-07-30",
                     "firm": "RBC Capital",
                     "to_grade": "Sector Perform",
                     "from_grade": "Sector Perform",
-                    "price_target": 175.0,
+                    "price_target": 160.0,
                     "action": "main"
                 },
                 {
-                    "date": "2026-04-30",
-                    "firm": "Evercore ISI Group",
-                    "to_grade": "In-Line",
-                    "from_grade": "In-Line",
-                    "price_target": 179.0,
+                    "date": "2026-07-30",
+                    "firm": "Citigroup",
+                    "to_grade": "Neutral",
+                    "from_grade": "Neutral",
+                    "price_target": 175.0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "NFLX",
+        "company_name": "Netflix, Inc.",
+        "current_price": 77.4,
+        "next_earnings_date": "2026-10-20",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 63,
+            "setup_tier": "B",
+            "setup_name": "EARNINGS CONSOLIDATION / NEUTRAL",
+            "badge_color": "#eab308",
+            "action_verdict": "IN-LINE CONSOLIDATION: Market digests numbers; wait for high-volume breakout above reaction high.",
+            "catalysts": [
+                "Stable Consensus: Balanced estimate trajectory across 34 covering analysts.",
+                "Last Reported Quarter (2026-07-16): +1.45% EPS Surprise with a 2.9x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +11.9% YoY; EPS growth expected at +40.1% YoY.",
+                "Options market underpricing move (\u00b13.36% implied vs \u00b17.08% historical). Potential explosive gamma opportunity."
+            ]
+        },
+        "options_data": {
+            "expiration": "2026-09-18",
+            "pcr_oi": 0.54,
+            "max_pain_strike": 78.0,
+            "atm_strike": 77.0,
+            "implied_move_usd": 2.6,
+            "implied_move_pct": 3.36
+        },
+        "consensus_revisions": {
+            "up_7d": 1,
+            "down_7d": 0,
+            "up_30d": 3,
+            "down_30d": 2,
+            "total_analysts": 34,
+            "current_q_eps_est": 0.82,
+            "prev_30d_eps_est": 0.82,
+            "eps_revision_pct_30d": 0.18,
+            "bar_lowered": false,
+            "next_q_growth_est": 40.1,
+            "revenue_growth_est": 11.9,
+            "net_revision_ratio": 0.2
+        },
+        "personality": {
+            "beat_rate_pct": 75.0,
+            "gap_and_go_pct": 100.0,
+            "gap_and_fade_pct": 0.0,
+            "avg_abs_move_pct": 7.08,
+            "avg_5d_drift_pct": 0.71,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
+            {
+                "date": "2026-07-16",
+                "timing": "AMC",
+                "eps_est": 0.79,
+                "eps_act": 0.8,
+                "surprise_pct": 1.45,
+                "gap_pct": -11.93,
+                "day_gain_pct": -7.26,
+                "intraday_pct": 5.3,
+                "drift_5d_pct": 1.65,
+                "drift_20d_pct": 13.36,
+                "vol_surge": 2.9,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
+            {
+                "date": "2026-04-16",
+                "timing": "AMC",
+                "eps_est": 1.32,
+                "eps_act": 1.23,
+                "surprise_pct": -6.93,
+                "gap_pct": -10.59,
+                "day_gain_pct": -9.72,
+                "intraday_pct": 0.98,
+                "drift_5d_pct": -5.0,
+                "drift_20d_pct": -10.57,
+                "vol_surge": 3.4,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2026-01-20",
+                "timing": "AMC",
+                "eps_est": 0.55,
+                "eps_act": 0.56,
+                "surprise_pct": 1.43,
+                "gap_pct": -5.43,
+                "day_gain_pct": -2.18,
+                "intraday_pct": 3.44,
+                "drift_5d_pct": -0.84,
+                "drift_20d_pct": -9.79,
+                "vol_surge": 3.4,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
+            {
+                "date": "2025-10-21",
+                "timing": "AMC",
+                "eps_est": 0.7,
+                "eps_act": 0.59,
+                "surprise_pct": -15.79,
+                "gap_pct": -7.93,
+                "day_gain_pct": -10.07,
+                "intraday_pct": -2.32,
+                "drift_5d_pct": -1.43,
+                "drift_20d_pct": -1.47,
+                "vol_surge": 4.9,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-07-17",
+                "timing": "AMC",
+                "eps_est": 0.71,
+                "eps_act": 0.72,
+                "surprise_pct": 1.95,
+                "gap_pct": -2.53,
+                "day_gain_pct": -5.1,
+                "intraday_pct": -2.63,
+                "drift_5d_pct": -2.38,
+                "drift_20d_pct": 2.46,
+                "vol_surge": 3.5,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2025-04-17",
+                "timing": "AMC",
+                "eps_est": 0.57,
+                "eps_act": 0.66,
+                "surprise_pct": 16.37,
+                "gap_pct": 1.17,
+                "day_gain_pct": 1.53,
+                "intraday_pct": 0.36,
+                "drift_5d_pct": 12.4,
+                "drift_20d_pct": 20.62,
+                "vol_surge": 1.9,
+                "reaction_type": "MUTED_REACTION"
+            },
+            {
+                "date": "2025-01-21",
+                "timing": "AMC",
+                "eps_est": 0.42,
+                "eps_act": 0.43,
+                "surprise_pct": 1.78,
+                "gap_pct": 14.76,
+                "day_gain_pct": 9.69,
+                "intraday_pct": -4.41,
+                "drift_5d_pct": 2.53,
+                "drift_20d_pct": 7.4,
+                "vol_surge": 4.8,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2024-10-17",
+                "timing": "AMC",
+                "eps_est": 0.51,
+                "eps_act": 0.54,
+                "surprise_pct": 5.32,
+                "gap_pct": 7.27,
+                "day_gain_pct": 11.09,
+                "intraday_pct": 3.56,
+                "drift_5d_pct": -1.21,
+                "drift_20d_pct": 7.86,
+                "vol_surge": 5.8,
+                "reaction_type": "GAP_AND_GO"
+            }
+        ],
+        "institutional": {
+            "short_percent": 2.21,
+            "short_ratio": 3.1,
+            "forward_pe": 20.3,
+            "peg_ratio": 1.41,
+            "analyst_revisions": [
+                {
+                    "date": "2026-08-25",
+                    "firm": "Wolfe Research",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 95.0,
+                    "action": "main"
+                }
+            ]
+        }
+    },
+    {
+        "ticker": "ORCL",
+        "company_name": "Oracle Corporation",
+        "current_price": 150.28,
+        "next_earnings_date": "2026-12-10",
+        "earnings_timing": "AMC",
+        "ai_intelligence": {
+            "pedp_score": 76,
+            "setup_tier": "A",
+            "setup_name": "POST-EARNINGS DRIFT EXPANSION",
+            "badge_color": "#3b82f6",
+            "action_verdict": "ORDERLY EXPANSION: Positive estimate revisions support sustained multi-week drift.",
+            "catalysts": [
+                "Wall Street Consensus: Heavy upward revisions (2 Upgrades vs 0 Downgrades in last 30d).",
+                "Last Reported Quarter (2026-09-10): +10.45% EPS Surprise with a 3.4x volume expansion.",
+                "Forward Estimates: Forward quarterly revenue projected at +32.3% YoY; EPS growth expected at +-17.1% YoY.",
+                "Options market underpricing move (\u00b15.91% implied vs \u00b111.16% historical). Potential explosive gamma opportunity."
+            ]
+        },
+        "options_data": {
+            "expiration": "2026-09-18",
+            "pcr_oi": 0.57,
+            "max_pain_strike": 155.0,
+            "atm_strike": 150.0,
+            "implied_move_usd": 8.88,
+            "implied_move_pct": 5.91
+        },
+        "consensus_revisions": {
+            "up_7d": 1,
+            "down_7d": 0,
+            "up_30d": 2,
+            "down_30d": 0,
+            "total_analysts": 27,
+            "current_q_eps_est": 1.87,
+            "prev_30d_eps_est": 1.89,
+            "eps_revision_pct_30d": -0.72,
+            "bar_lowered": true,
+            "next_q_growth_est": -17.1,
+            "revenue_growth_est": 32.3,
+            "net_revision_ratio": 1.0
+        },
+        "personality": {
+            "beat_rate_pct": 62.5,
+            "gap_and_go_pct": 50.0,
+            "gap_and_fade_pct": 50.0,
+            "avg_abs_move_pct": 11.16,
+            "avg_5d_drift_pct": -2.75,
+            "volatility_verdict": "UNDERPRICED_IV"
+        },
+        "historical_reactions": [
+            {
+                "date": "2026-09-10",
+                "timing": "AMC",
+                "eps_est": 1.74,
+                "eps_act": 1.92,
+                "surprise_pct": 10.45,
+                "gap_pct": 7.51,
+                "day_gain_pct": -1.74,
+                "intraday_pct": -8.61,
+                "drift_5d_pct": 0.0,
+                "drift_20d_pct": 0.0,
+                "vol_surge": 3.4,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2026-06-10",
+                "timing": "AMC",
+                "eps_est": 1.96,
+                "eps_act": 2.11,
+                "surprise_pct": 7.52,
+                "gap_pct": -10.73,
+                "day_gain_pct": -8.53,
+                "intraday_pct": 2.47,
+                "drift_5d_pct": 0.1,
+                "drift_20d_pct": -28.3,
+                "vol_surge": 2.9,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
+            {
+                "date": "2026-03-10",
+                "timing": "AMC",
+                "eps_est": 1.69,
+                "eps_act": 1.79,
+                "surprise_pct": 5.69,
+                "gap_pct": 11.37,
+                "day_gain_pct": 9.18,
+                "intraday_pct": -1.96,
+                "drift_5d_pct": -6.27,
+                "drift_20d_pct": -15.19,
+                "vol_surge": 3.2,
+                "reaction_type": "GAP_AND_FADE"
+            },
+            {
+                "date": "2025-12-10",
+                "timing": "AMC",
+                "eps_est": 1.64,
+                "eps_act": 2.26,
+                "surprise_pct": 38.04,
+                "gap_pct": -14.52,
+                "day_gain_pct": -10.83,
+                "intraday_pct": 4.32,
+                "drift_5d_pct": -9.46,
+                "drift_20d_pct": 3.2,
+                "vol_surge": 4.1,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            },
+            {
+                "date": "2025-09-09",
+                "timing": "AMC",
+                "eps_est": 1.48,
+                "eps_act": 1.47,
+                "surprise_pct": -0.62,
+                "gap_pct": 32.16,
+                "day_gain_pct": 35.95,
+                "intraday_pct": 2.86,
+                "drift_5d_pct": -8.2,
+                "drift_20d_pct": -12.09,
+                "vol_surge": 12.0,
+                "reaction_type": "GAP_AND_GO"
+            },
+            {
+                "date": "2025-06-11",
+                "timing": "AMC",
+                "eps_est": 1.64,
+                "eps_act": 1.7,
+                "surprise_pct": 3.37,
+                "gap_pct": 7.7,
+                "day_gain_pct": 13.31,
+                "intraday_pct": 5.21,
+                "drift_5d_pct": 2.66,
+                "drift_20d_pct": 14.96,
+                "vol_surge": 6.4,
+                "reaction_type": "GAP_AND_GO"
+            },
+            {
+                "date": "2025-03-10",
+                "timing": "AMC",
+                "eps_est": 1.49,
+                "eps_act": 1.47,
+                "surprise_pct": -1.35,
+                "gap_pct": -3.61,
+                "day_gain_pct": -3.1,
+                "intraday_pct": 0.53,
+                "drift_5d_pct": 3.66,
+                "drift_20d_pct": -13.65,
+                "vol_surge": 3.0,
+                "reaction_type": "GAP_AND_DUMP"
+            },
+            {
+                "date": "2024-12-09",
+                "timing": "AMC",
+                "eps_est": 1.48,
+                "eps_act": 1.47,
+                "surprise_pct": -0.77,
+                "gap_pct": -8.92,
+                "day_gain_pct": -6.67,
+                "intraday_pct": 2.47,
+                "drift_5d_pct": -4.52,
+                "drift_20d_pct": -12.86,
+                "vol_surge": 3.3,
+                "reaction_type": "GAP_DOWN_REVERSAL"
+            }
+        ],
+        "institutional": {
+            "short_percent": 2.6,
+            "short_ratio": 1.8,
+            "forward_pe": 13.7,
+            "peg_ratio": 0.91,
+            "analyst_revisions": [
+                {
+                    "date": "2026-09-11",
+                    "firm": "Stifel",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 200.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-11",
+                    "firm": "TD Cowen",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 240.0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-09-11",
+                    "firm": "UBS",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 250.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-11",
+                    "firm": "DA Davidson",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 225.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-11",
+                    "firm": "RBC Capital",
+                    "to_grade": "Sector Perform",
+                    "from_grade": "Sector Perform",
+                    "price_target": 165.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-11",
+                    "firm": "Barclays",
+                    "to_grade": "Overweight",
+                    "from_grade": "Overweight",
+                    "price_target": 252.0,
+                    "action": "main"
+                },
+                {
+                    "date": "2026-09-11",
+                    "firm": "Guggenheim",
+                    "to_grade": "Buy",
+                    "from_grade": "Buy",
+                    "price_target": 400.0,
+                    "action": "reit"
+                },
+                {
+                    "date": "2026-09-11",
+                    "firm": "BMO Capital",
+                    "to_grade": "Outperform",
+                    "from_grade": "Outperform",
+                    "price_target": 195.0,
                     "action": "main"
                 }
             ]

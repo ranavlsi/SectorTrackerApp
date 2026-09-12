@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Calendar, Percent, ArrowRight, Target, Crosshair, BarChart2, Search, Briefcase, Activity } from 'lucide-react';
+import { 
+  Loader2, Calendar, Target, Crosshair, BarChart2, Search, Briefcase, 
+  Activity, TrendingUp, TrendingDown, Zap, ShieldAlert, Sparkles, CheckCircle, 
+  AlertTriangle, ArrowUpRight, ArrowDownRight, Info, Award
+} from 'lucide-react';
 
 const EarningsDashboard = ({ ticker }) => {
   const [data, setData] = useState([]);
@@ -8,14 +12,16 @@ const EarningsDashboard = ({ ticker }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // Initial load of the 15 default stocks
+  // Initial load of default stocks
   useEffect(() => {
     fetch('/earnings_data.json?t=' + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        setData(d);
-        if (d.length > 0 && !ticker) {
-          setSelectedTicker(d[0].ticker);
+        if (Array.isArray(d) && d.length > 0) {
+          setData(d);
+          if (!ticker) {
+            setSelectedTicker(d[0].ticker);
+          }
         }
         setLoading(false);
       })
@@ -28,10 +34,11 @@ const EarningsDashboard = ({ ticker }) => {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery) return;
-    const symbol = searchQuery.toUpperCase();
+    const symbol = searchQuery.toUpperCase().trim();
     
     // If we already have it in the list, just select it
-    if (data.find(d => d.ticker === symbol)) {
+    const existing = data.find(d => d.ticker === symbol);
+    if (existing) {
       setSelectedTicker(symbol);
       setSearchQuery('');
       return;
@@ -45,52 +52,87 @@ const EarningsDashboard = ({ ticker }) => {
       if (newStockData.error) {
         alert("Error analyzing stock: " + newStockData.error);
       } else {
-        setData(prev => [newStockData, ...prev]);
+        setData(prev => [newStockData, ...prev.filter(x => x.ticker !== symbol)]);
         setSelectedTicker(symbol);
       }
     } catch (err) {
-      alert("Failed to reach the API server. Ensure backend/server.py is running.");
+      alert("Failed to reach API server. Ensure backend is active.");
     }
     setSearchLoading(false);
     setSearchQuery('');
   };
 
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><Loader2 className="spin" size={32} /></div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1rem' }}>
+        <Loader2 className="spin" size={36} color="#3b82f6" />
+        <span style={{ color: '#94a3b8', fontSize: '0.95rem' }}>Loading Institutional AI Earnings Intelligence...</span>
+      </div>
+    );
   }
 
   const selectedStock = data.find(d => d.ticker === selectedTicker) || data[0];
   
   if (!selectedStock) {
-    return <div style={{ color: 'white', padding: '2rem' }}>No data found.</div>;
+    return <div style={{ color: 'white', padding: '2rem' }}>No earnings intelligence data found.</div>;
   }
 
+  const ai = selectedStock.ai_intelligence || {
+    pedp_score: 50,
+    setup_tier: 'B',
+    setup_name: 'EARNINGS CONSOLIDATION',
+    badge_color: '#eab308',
+    action_verdict: 'Consolidating post earnings. Wait for high-volume follow through.',
+    catalysts: []
+  };
+
+  const personality = selectedStock.personality || {
+    beat_rate_pct: 0,
+    gap_and_go_pct: 50,
+    gap_and_fade_pct: 50,
+    avg_abs_move_pct: 0,
+    avg_5d_drift_pct: 0,
+    volatility_verdict: 'IN-LINE'
+  };
+
+  const revisions = selectedStock.consensus_revisions || {
+    up_7d: 0, down_7d: 0, up_30d: 0, down_30d: 0,
+    current_q_eps_est: 0, prev_30d_eps_est: 0,
+    revenue_growth_est: 0, next_q_growth_est: 0
+  };
+
+  const options = selectedStock.options_data;
+  const reactions = selectedStock.historical_reactions || [];
+  const inst = selectedStock.institutional || {};
+
   return (
-    <div style={{ display: 'flex', gap: '2rem', height: '100%', minHeight: '80vh' }}>
-      {/* LEFT RAIL: Calendar & Search */}
-      <div className="glass-card" style={{ width: '300px', display: 'flex', flexDirection: 'column', padding: '1.5rem', maxHeight: '80vh' }}>
+    <div style={{ display: 'flex', gap: '1.5rem', minHeight: '85vh', color: '#e2e8f0' }}>
+      
+      {/* LEFT SIDEBAR: Calendar & Quick Watchlist */}
+      <div className="glass-card" style={{ width: '320px', minWidth: '300px', display: 'flex', flexDirection: 'column', padding: '1.25rem', maxHeight: '88vh', background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255,255,255,0.08)' }}>
         
         {/* Search Bar */}
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
           <input 
             type="text" 
-            placeholder="Search any ticker..." 
+            placeholder="Analyze any ticker (e.g. NVDA, PLTR)..." 
             value={searchQuery} 
             onChange={(e) => setSearchQuery(e.target.value)} 
             style={{ 
               flex: 1, 
-              padding: '0.5rem 0.75rem', 
+              padding: '0.6rem 0.8rem', 
               borderRadius: '8px', 
               border: '1px solid #334155', 
-              background: 'rgba(0,0,0,0.2)', 
-              color: 'white' 
+              background: 'rgba(0,0,0,0.4)', 
+              color: 'white',
+              fontSize: '0.85rem'
             }} 
           />
           <button 
             type="submit" 
             disabled={searchLoading}
             style={{ 
-              padding: '0.5rem', 
+              padding: '0.6rem 0.8rem', 
               background: '#3b82f6', 
               borderRadius: '8px', 
               border: 'none', 
@@ -98,227 +140,489 @@ const EarningsDashboard = ({ ticker }) => {
               cursor: searchLoading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              fontWeight: '600'
             }}
           >
             {searchLoading ? <Loader2 size={16} className="spin" /> : <Search size={16} />}
           </button>
         </form>
 
-        <h3 style={{ margin: '0 0 1rem 0', color: '#4facfe', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Calendar size={18} /> Earnings Calendar
-        </h3>
-        <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <h4 style={{ margin: 0, color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem' }}>
+            <Calendar size={16} /> Market Leaders Radar
+          </h4>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{data.length} Tracked</span>
+        </div>
+
+        {/* Watchlist Items */}
+        <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingRight: '0.3rem' }}>
           {[...data].sort((a,b) => {
-            if (a.next_earnings_date === 'Unknown') return 1;
-            if (b.next_earnings_date === 'Unknown') return -1;
-            return a.next_earnings_date > b.next_earnings_date ? 1 : -1;
-          }).map(stock => (
-            <div 
-              key={stock.ticker}
-              onClick={() => setSelectedTicker(stock.ticker)}
-              style={{ 
-                padding: '0.75rem', 
-                background: selectedTicker === stock.ticker ? 'rgba(79, 172, 254, 0.2)' : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${selectedTicker === stock.ticker ? '#4facfe' : 'transparent'}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                transition: 'all 0.2s'
-              }}
-            >
-              <div>
-                <strong style={{ display: 'block', color: 'white' }}>{stock.ticker}</strong>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{stock.next_earnings_date !== 'Unknown' ? stock.next_earnings_date : 'TBD'}</span>
+            const scoreA = a.ai_intelligence?.pedp_score || 50;
+            const scoreB = b.ai_intelligence?.pedp_score || 50;
+            return scoreB - scoreA;
+          }).map(stock => {
+            const isSelected = selectedTicker === stock.ticker;
+            const stockScore = stock.ai_intelligence?.pedp_score ?? 50;
+            const scoreColor = stockScore >= 75 ? '#10b981' : stockScore >= 60 ? '#3b82f6' : stockScore >= 45 ? '#eab308' : '#ef4444';
+
+            return (
+              <div 
+                key={stock.ticker}
+                onClick={() => setSelectedTicker(stock.ticker)}
+                style={{ 
+                  padding: '0.65rem 0.8rem', 
+                  background: isSelected ? 'rgba(59, 130, 246, 0.18)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${isSelected ? '#3b82f6' : 'rgba(255,255,255,0.05)'}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <strong style={{ color: 'white', fontSize: '0.9rem' }}>{stock.ticker}</strong>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>${stock.current_price}</span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    Next: {stock.next_earnings_date !== 'Unknown' ? stock.next_earnings_date : 'TBD'}
+                  </span>
+                </div>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    fontWeight: '700', 
+                    color: scoreColor, 
+                    background: `${scoreColor}22`, 
+                    padding: '0.15rem 0.4rem', 
+                    borderRadius: '4px' 
+                  }}>
+                    PEDP {stockScore}
+                  </span>
+                  <span style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
+                    {stock.ai_intelligence?.setup_tier || 'B'} Tier
+                  </span>
+                </div>
               </div>
-              <ArrowRight size={14} color={selectedTicker === stock.ticker ? '#4facfe' : '#475569'} />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* RIGHT AREA: Dashboard */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      {/* MAIN INTELLIGENCE TERMINAL */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
         
-        {/* TOP ROW: Options & Fundamentals */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
-          
-          {/* Options: Max Pain & Implied Move */}
-          <div className="glass-card" style={{ padding: '1.5rem', borderTop: '3px solid #f59e0b' }}>
-            <h3 style={{ margin: '0 0 1.5rem 0', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Crosshair size={18} /> Options Market Positioning
-            </h3>
-            {selectedStock?.options_data ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ color: '#94a3b8', fontSize: '0.8rem', display: 'block', marginBottom: '0.5rem' }}>ATM Implied Move</span>
-                    <strong style={{ color: 'white', fontSize: '1.5rem' }}>±{selectedStock.options_data.implied_move_pct}%</strong>
-                    <span style={{ color: '#64748b', fontSize: '0.9rem', marginLeft: '0.5rem' }}>(${selectedStock.options_data.implied_move_usd})</span>
-                  </div>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ color: '#94a3b8', fontSize: '0.8rem', display: 'block', marginBottom: '0.5rem' }}>Put/Call Ratio (OI)</span>
-                    <strong style={{ color: selectedStock.options_data.pcr_oi > 1 ? '#ef4444' : '#10b981', fontSize: '1.5rem' }}>
-                      {selectedStock.options_data.pcr_oi}
-                    </strong>
-                  </div>
-                </div>
-
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Max Pain Strike (Exp: {selectedStock.options_data.expiration.substring(0,10)})</span>
-                      <strong style={{ color: '#4facfe', fontSize: '1.2rem' }}>${selectedStock.options_data.max_pain_strike}</strong>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', background: '#334155', borderRadius: '4px', position: 'relative', marginTop: '1.5rem', marginBottom: '1rem' }}>
-                      {/* Plot Current Price vs Max Pain */}
-                      <div style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)', color: '#94a3b8', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Current: ${selectedStock.current_price}</div>
-                      <div style={{ position: 'absolute', left: '50%', top: '-4px', width: '2px', height: '16px', background: 'white' }}></div>
-                      
-                      {/* Max Pain indicator */}
-                      {(() => {
-                         const current = selectedStock.current_price;
-                         const pain = selectedStock.options_data.max_pain_strike;
-                         if (current === 0) return null;
-                         const diffPct = ((pain - current) / current) * 100;
-                         // map +-20% to +-50% width
-                         let leftPos = 50 + (diffPct * 2.5);
-                         leftPos = Math.max(0, Math.min(100, leftPos));
-                         return (
-                           <div style={{ position: 'absolute', left: `${leftPos}%`, top: '-4px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                             <div style={{ width: '4px', height: '16px', background: '#4facfe', borderRadius: '2px' }}></div>
-                             <span style={{ color: '#4facfe', fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'nowrap', transform: 'translateX(-50%)' }}>Max Pain</span>
-                           </div>
-                         )
-                      })()}
-                    </div>
-                </div>
+        {/* HEADER BAR: Ticker, Price, PEDP Score & Verdict Banner */}
+        <div className="glass-card" style={{ 
+          padding: '1.25rem 1.5rem', 
+          background: 'linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(30,41,59,0.7) 100%)', 
+          borderLeft: `5px solid ${ai.badge_color || '#3b82f6'}` 
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+            
+            {/* Title & Stats */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+                <h2 style={{ margin: 0, fontSize: '1.8rem', color: 'white', fontWeight: '800' }}>{selectedStock.ticker}</h2>
+                <span style={{ color: '#94a3b8', fontSize: '1.1rem' }}>${selectedStock.current_price}</span>
+                <span style={{ 
+                  background: `${ai.badge_color}25`, 
+                  color: ai.badge_color, 
+                  border: `1px solid ${ai.badge_color}55`, 
+                  padding: '0.2rem 0.6rem', 
+                  borderRadius: '6px', 
+                  fontSize: '0.75rem', 
+                  fontWeight: '700',
+                  letterSpacing: '0.5px'
+                }}>
+                  {ai.setup_name}
+                </span>
               </div>
-            ) : (
-              <p style={{ color: '#64748b' }}>Options chain unavailable or too illiquid.</p>
-            )}
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>
+                Next Reporting Date: <strong style={{ color: '#cbd5e1' }}>{selectedStock.next_earnings_date}</strong> ({selectedStock.earnings_timing || 'AMC'}) • Company: <span style={{ color: '#cbd5e1' }}>{selectedStock.company_name || selectedStock.ticker}</span>
+              </p>
+            </div>
+
+            {/* PEDP Score Badge */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '1rem', 
+              background: 'rgba(0,0,0,0.3)', 
+              padding: '0.75rem 1.25rem', 
+              borderRadius: '10px', 
+              border: '1px solid rgba(255,255,255,0.06)' 
+            }}>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>
+                  Post-Earnings Drift Potential
+                </span>
+                <strong style={{ fontSize: '1.6rem', color: ai.badge_color, lineHeight: 1.1 }}>
+                  {ai.pedp_score} <span style={{ fontSize: '0.9rem', color: '#64748b' }}>/ 100</span>
+                </strong>
+              </div>
+              <div style={{ 
+                width: '42px', 
+                height: '42px', 
+                borderRadius: '50%', 
+                background: `${ai.badge_color}22`, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                border: `2px solid ${ai.badge_color}` 
+              }}>
+                <Sparkles size={20} color={ai.badge_color} />
+              </div>
+            </div>
+
           </div>
 
-          {/* Fundamentals: Revisions & Post-Earnings Matrix */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <div className="glass-card" style={{ padding: '1.5rem', borderTop: '3px solid #10b981' }}>
-              <h3 style={{ margin: '0 0 1rem 0', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Target size={18} /> EPS Revision Trend (Last 30 Days)
-              </h3>
-              {selectedStock?.eps_trend ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: selectedStock.eps_trend.bar_lowered ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)', padding: '1rem', borderRadius: '8px', border: `1px solid ${selectedStock.eps_trend.bar_lowered ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)'}` }}>
-                  <div>
-                    <span style={{ color: '#94a3b8', fontSize: '0.8rem', display: 'block' }}>Analyst Consensus</span>
-                    <strong style={{ color: 'white' }}>${selectedStock.eps_trend.current_est}</strong> <span style={{ color: '#64748b', fontSize: '0.8rem' }}>(was ${selectedStock.eps_trend.d30_est})</span>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <strong style={{ color: selectedStock.eps_trend.bar_lowered ? '#f59e0b' : '#10b981', display: 'block' }}>
-                      {selectedStock.eps_trend.bar_lowered ? "Bar Lowered" : "Bar Raised"}
-                    </strong>
-                    <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>{selectedStock.eps_trend.bar_lowered ? "Higher beat probability" : "Expectations increasing"}</span>
-                  </div>
-                </div>
-              ) : (
-                <p style={{ color: '#64748b', margin: 0 }}>No 30-day revision data available.</p>
-              )}
-            </div>
-            
-            {/* Historical Price Action Matrix */}
-            <div className="glass-card" style={{ padding: '1.5rem', borderTop: '3px solid #6366f1', flex: 1, overflowY: 'auto' }}>
-              <h3 style={{ margin: '0 0 1rem 0', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <BarChart2 size={18} /> Post-Earnings Price Action
-              </h3>
-              {selectedStock?.historical_action && selectedStock.historical_action.length > 0 ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                  <thead>
-                    <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155' }}>
-                      <th style={{ padding: '0.5rem', textAlign: 'left' }}>Date</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>Surprise</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>Gap %</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>T+0 Close</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>T+5 Close</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedStock.historical_action.map((h, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '0.5rem', color: 'white' }}>{h.date}</td>
-                        <td style={{ padding: '0.5rem', textAlign: 'right', color: h.eps_surprise_pct > 0 ? '#10b981' : '#ef4444' }}>{h.eps_surprise_pct}%</td>
-                        <td style={{ padding: '0.5rem', textAlign: 'right', color: h.gap_pct > 0 ? '#10b981' : '#ef4444' }}>{h.gap_pct > 0 ? '+' : ''}{h.gap_pct}%</td>
-                        <td style={{ padding: '0.5rem', textAlign: 'right', color: h.t0_close_pct > 0 ? '#10b981' : '#ef4444' }}>{h.t0_close_pct > 0 ? '+' : ''}{h.t0_close_pct}%</td>
-                        <td style={{ padding: '0.5rem', textAlign: 'right', color: h.t5_close_pct > 0 ? '#10b981' : '#ef4444' }}>{h.t5_close_pct > 0 ? '+' : ''}{h.t5_close_pct}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p style={{ color: '#64748b' }}>No historical price action found.</p>
-              )}
-            </div>
+          {/* Action Verdict Banner */}
+          <div style={{ 
+            marginTop: '1rem', 
+            padding: '0.75rem 1rem', 
+            background: 'rgba(0,0,0,0.25)', 
+            borderRadius: '6px', 
+            border: '1px solid rgba(255,255,255,0.04)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem'
+          }}>
+            <Zap size={16} color={ai.badge_color} />
+            <span style={{ fontSize: '0.85rem', color: '#f1f5f9' }}>
+              <strong>AI Action Protocol:</strong> {ai.action_verdict}
+            </span>
           </div>
         </div>
 
-        {/* BOTTOM WIDGET: Institutional Positioning (Replaces Lie Detector) */}
-        <div className="glass-card" style={{ padding: '1.5rem', borderTop: '4px solid #ec4899', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ margin: '0 0 1.5rem 0', color: '#ec4899', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Briefcase size={18} /> Institutional Positioning & Short Interest
-          </h3>
+        {/* ROW 1: AI Guidance & Catalysts (Left) + Analyst Consensus Revisions (Right) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '1.25rem' }}>
           
-          {selectedStock?.institutional ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', height: '100%' }}>
-              
-              {/* Short Interest & Fundamentals (Left side of bottom widget) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '0.5rem' }}><Activity size={12} /> Short % of Float</span>
-                  <strong style={{ color: selectedStock.institutional.short_percent > 10 ? '#ef4444' : 'white', fontSize: '1.5rem' }}>{selectedStock.institutional.short_percent}%</strong>
-                </div>
-                
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.8rem', display: 'block', marginBottom: '0.5rem' }}>Days to Cover (Short Ratio)</span>
-                  <strong style={{ color: selectedStock.institutional.short_ratio > 4 ? '#f59e0b' : 'white', fontSize: '1.5rem' }}>{selectedStock.institutional.short_ratio}</strong>
-                </div>
+          {/* AI Guidance & Catalyst Synthesis */}
+          <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #3b82f6' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+              <Sparkles size={18} /> AI Catalyst & Forward Guidance Intelligence
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {ai.catalysts && ai.catalysts.length > 0 ? (
+                ai.catalysts.map((cat, idx) => (
+                  <div key={idx} style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '0.6rem', 
+                    background: 'rgba(255,255,255,0.02)', 
+                    padding: '0.6rem 0.8rem', 
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255,255,255,0.03)' 
+                  }}>
+                    <div style={{ marginTop: '2px' }}><CheckCircle size={14} color="#3b82f6" /></div>
+                    <span style={{ fontSize: '0.83rem', color: '#cbd5e1', lineHeight: '1.4' }}>{cat}</span>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Gathering live catalyst data...</p>
+              )}
+            </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: 'auto' }}>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
-                     <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Forward P/E</span>
-                     <strong style={{ color: '#cbd5e1' }}>{selectedStock.institutional.forward_pe}</strong>
-                  </div>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
-                     <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>PEG Ratio</span>
-                     <strong style={{ color: '#cbd5e1' }}>{selectedStock.institutional.peg_ratio}</strong>
-                  </div>
+            {/* Quick Fundamental Growth Strips */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '1rem' }}>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', textAlign: 'center' }}>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Qtr EPS Growth Est</span>
+                <strong style={{ color: revisions.next_q_growth_est >= 0 ? '#10b981' : '#ef4444', fontSize: '1rem' }}>
+                  {revisions.next_q_growth_est > 0 ? '+' : ''}{revisions.next_q_growth_est}%
+                </strong>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', textAlign: 'center' }}>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Qtr Rev Growth Est</span>
+                <strong style={{ color: revisions.revenue_growth_est >= 0 ? '#10b981' : '#ef4444', fontSize: '1rem' }}>
+                  {revisions.revenue_growth_est > 0 ? '+' : ''}{revisions.revenue_growth_est}%
+                </strong>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', textAlign: 'center' }}>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Covering Analysts</span>
+                <strong style={{ color: '#60a5fa', fontSize: '1rem' }}>
+                  {revisions.total_analysts || 0}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Wall Street Consensus Revisions Meter */}
+          <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #10b981' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+              <Target size={18} /> Consensus Estimate Revision Momentum
+            </h3>
+
+            {/* Revision Counters */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '0.75rem', borderRadius: '8px' }}>
+                <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block' }}>Up Revisions (30D)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '2px' }}>
+                  <ArrowUpRight size={18} color="#10b981" />
+                  <strong style={{ color: '#10b981', fontSize: '1.3rem' }}>{revisions.up_30d}</strong>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>({revisions.up_7d} in 7d)</span>
                 </div>
               </div>
 
-              {/* Analyst Revisions (Right side of bottom widget) */}
-              <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ padding: '1rem', borderBottom: '1px solid #334155' }}>
-                  <strong style={{ color: '#e2e8f0', fontSize: '0.9rem' }}>Recent Analyst Targets (Last 30 Days)</strong>
-                </div>
-                <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '200px' }}>
-                  {selectedStock.institutional.analyst_revisions && selectedStock.institutional.analyst_revisions.length > 0 ? (
-                    selectedStock.institutional.analyst_revisions.map((rev, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-                        <div>
-                          <strong style={{ display: 'block', color: 'white', fontSize: '0.85rem' }}>{rev.firm}</strong>
-                          <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>{rev.date} • {rev.action} ({rev.from_grade || '-'} → {rev.to_grade || '-'})</span>
-                        </div>
-                        <div style={{ background: '#334155', padding: '0.25rem 0.75rem', borderRadius: '12px' }}>
-                          <strong style={{ color: '#4facfe', fontSize: '0.9rem' }}>${rev.price_target}</strong>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p style={{ color: '#64748b', fontSize: '0.85rem', fontStyle: 'italic', margin: 'auto' }}>No analyst revisions in the last 30 days.</p>
-                  )}
+              <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '0.75rem', borderRadius: '8px' }}>
+                <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block' }}>Down Revisions (30D)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '2px' }}>
+                  <ArrowDownRight size={18} color="#ef4444" />
+                  <strong style={{ color: '#ef4444', fontSize: '1.3rem' }}>{revisions.down_30d}</strong>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>({revisions.down_7d} in 7d)</span>
                 </div>
               </div>
+            </div>
 
+            {/* 30-Day Consensus Estimate Comparison */}
+            <div style={{ background: 'rgba(0,0,0,0.25)', padding: '0.8rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Current Qtr EPS Consensus</span>
+                <strong style={{ color: 'white', fontSize: '0.95rem' }}>${revisions.current_q_eps_est ?? '-'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>30 Days Ago Consensus</span>
+                <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>${revisions.prev_30d_eps_est ?? '-'}</span>
+              </div>
+              <div style={{ marginTop: '0.6rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Revision Trend</span>
+                <span style={{ 
+                  fontSize: '0.75rem', 
+                  fontWeight: '700',
+                  color: revisions.eps_revision_pct_30d > 0 ? '#10b981' : revisions.eps_revision_pct_30d < 0 ? '#ef4444' : '#94a3b8' 
+                }}>
+                  {revisions.eps_revision_pct_30d > 0 ? `+${revisions.eps_revision_pct_30d}% (Bar Raised)` : revisions.eps_revision_pct_30d < 0 ? `${revisions.eps_revision_pct_30d}% (Bar Lowered)` : 'Flat Consensus'}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ROW 2: Options Volatility & Mispricing Radar + Personality & Institutional Positioning */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+          
+          {/* Options Market Positioning & Implied Move */}
+          <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #f59e0b' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+                <Crosshair size={18} /> Options Implied Volatility & Mispricing Radar
+              </h3>
+              {personality.volatility_verdict && (
+                <span style={{ 
+                  fontSize: '0.7rem', 
+                  padding: '0.15rem 0.5rem', 
+                  borderRadius: '4px', 
+                  fontWeight: '700',
+                  background: personality.volatility_verdict === 'OVERPRICED_IV' ? 'rgba(239, 68, 68, 0.15)' : personality.volatility_verdict === 'UNDERPRICED_IV' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
+                  color: personality.volatility_verdict === 'OVERPRICED_IV' ? '#ef4444' : personality.volatility_verdict === 'UNDERPRICED_IV' ? '#10b981' : '#94a3b8'
+                }}>
+                  {personality.volatility_verdict.replace('_', ' ')}
+                </span>
+              )}
+            </div>
+
+            {options ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '0.75rem', borderRadius: '8px' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.72rem', display: 'block' }}>ATM Implied Move</span>
+                    <strong style={{ color: 'white', fontSize: '1.25rem' }}>±{options.implied_move_pct}%</strong>
+                    <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>(${options.implied_move_usd})</span>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '0.75rem', borderRadius: '8px' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.72rem', display: 'block' }}>Historical Avg Move</span>
+                    <strong style={{ color: '#60a5fa', fontSize: '1.25rem' }}>±{personality.avg_abs_move_pct}%</strong>
+                    <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Realized absolute</span>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '0.75rem', borderRadius: '8px' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.72rem', display: 'block' }}>Put/Call OI Ratio</span>
+                    <strong style={{ color: options.pcr_oi > 1 ? '#ef4444' : '#10b981', fontSize: '1.25rem' }}>
+                      {options.pcr_oi}
+                    </strong>
+                    <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>
+                      {options.pcr_oi > 1 ? 'Bearish Hedging' : 'Bullish Call Skew'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Max Pain Visual Bar */}
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.85rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                      Options Max Pain Strike (Exp: {options.expiration})
+                    </span>
+                    <strong style={{ color: '#fbbf24', fontSize: '1rem' }}>${options.max_pain_strike}</strong>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', background: '#334155', borderRadius: '4px', position: 'relative', marginTop: '1.25rem', marginBottom: '0.75rem' }}>
+                    <div style={{ position: 'absolute', top: '-22px', left: '50%', transform: 'translateX(-50%)', color: '#cbd5e1', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                      Spot: ${selectedStock.current_price}
+                    </div>
+                    <div style={{ position: 'absolute', left: '50%', top: '-4px', width: '2px', height: '16px', background: 'white' }}></div>
+
+                    {/* Max Pain Pin */}
+                    {(() => {
+                      const cur = selectedStock.current_price;
+                      const pain = options.max_pain_strike;
+                      if (!cur) return null;
+                      const diffPct = ((pain - cur) / cur) * 100;
+                      let leftPos = 50 + (diffPct * 2.5);
+                      leftPos = Math.max(0, Math.min(100, leftPos));
+                      return (
+                        <div style={{ position: 'absolute', left: `${leftPos}%`, top: '-4px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div style={{ width: '4px', height: '16px', background: '#fbbf24', borderRadius: '2px' }}></div>
+                          <span style={{ color: '#fbbf24', fontSize: '0.7rem', marginTop: '4px', whiteSpace: 'nowrap', transform: 'translateX(-50%)' }}>
+                            Max Pain (${pain})
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p style={{ color: '#64748b' }}>Options chain not active for this ticker.</p>
+            )}
+          </div>
+
+          {/* Historical Personality & Institutional Float */}
+          <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #8b5cf6' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+              <Activity size={18} /> Historical Reaction Personality & Short Float
+            </h3>
+
+            {/* Personality Win-rates */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ background: 'rgba(0,0,0,0.25)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
+                <span style={{ color: '#94a3b8', fontSize: '0.72rem', display: 'block' }}>Beat Rate</span>
+                <strong style={{ color: '#10b981', fontSize: '1.25rem' }}>{personality.beat_rate_pct}%</strong>
+                <span style={{ color: '#64748b', fontSize: '0.72rem', display: 'block' }}>Past 8 quarters</span>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.25)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
+                <span style={{ color: '#94a3b8', fontSize: '0.72rem', display: 'block' }}>Gap & Go Rate</span>
+                <strong style={{ color: personality.gap_and_go_pct >= 50 ? '#10b981' : '#f59e0b', fontSize: '1.25rem' }}>
+                  {personality.gap_and_go_pct}%
+                </strong>
+                <span style={{ color: '#64748b', fontSize: '0.72rem', display: 'block' }}>Follows through</span>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.25)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
+                <span style={{ color: '#94a3b8', fontSize: '0.72rem', display: 'block' }}>Gap & Fade Rate</span>
+                <strong style={{ color: personality.gap_and_fade_pct > 50 ? '#ef4444' : '#94a3b8', fontSize: '1.25rem' }}>
+                  {personality.gap_and_fade_pct}%
+                </strong>
+                <span style={{ color: '#64748b', fontSize: '0.72rem', display: 'block' }}>Fades into close</span>
+              </div>
+            </div>
+
+            {/* Short Interest & Multiples */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', display: 'block' }}>Short % Float</span>
+                <strong style={{ color: inst.short_percent > 8 ? '#ef4444' : 'white', fontSize: '0.95rem' }}>
+                  {inst.short_percent ?? 0}%
+                </strong>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', display: 'block' }}>Days to Cover</span>
+                <strong style={{ color: inst.short_ratio > 3 ? '#f59e0b' : 'white', fontSize: '0.95rem' }}>
+                  {inst.short_ratio ?? 0}
+                </strong>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', display: 'block' }}>Forward P/E</span>
+                <strong style={{ color: '#cbd5e1', fontSize: '0.95rem' }}>
+                  {inst.forward_pe ?? '-'}
+                </strong>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', display: 'block' }}>PEG Ratio</span>
+                <strong style={{ color: '#cbd5e1', fontSize: '0.95rem' }}>
+                  {inst.peg_ratio ?? '-'}
+                </strong>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ROW 3: Historical Post-Earnings Price Action Matrix (Last 8 Quarters) */}
+        <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #ec4899' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ margin: 0, color: '#f472b6', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+              <BarChart2 size={18} /> Post-Earnings Price Action & Drift Matrix (Last 8 Quarters)
+            </h3>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Real Day-0 to Day-20 Institutional Drift</span>
+          </div>
+
+          {reactions && reactions.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ color: '#94a3b8', borderBottom: '1px solid #334155', textAlign: 'right' }}>
+                    <th style={{ padding: '0.6rem 0.5rem', textAlign: 'left' }}>Quarter Date</th>
+                    <th style={{ padding: '0.6rem 0.5rem' }}>EPS (Act / Est)</th>
+                    <th style={{ padding: '0.6rem 0.5rem' }}>Surprise</th>
+                    <th style={{ padding: '0.6rem 0.5rem' }}>Gap %</th>
+                    <th style={{ padding: '0.6rem 0.5rem' }}>Day Gain (T+0)</th>
+                    <th style={{ padding: '0.6rem 0.5rem' }}>5D Drift</th>
+                    <th style={{ padding: '0.6rem 0.5rem' }}>20D Drift</th>
+                    <th style={{ padding: '0.6rem 0.5rem' }}>Vol Surge</th>
+                    <th style={{ padding: '0.6rem 0.5rem', textAlign: 'center' }}>Pattern Personality</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reactions.map((h, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'left', color: 'white', fontWeight: '500' }}>
+                        {h.date} <span style={{ fontSize: '0.7rem', color: '#64748b' }}>({h.timing})</span>
+                      </td>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', color: '#cbd5e1' }}>
+                        ${h.eps_act ?? '-'} / <span style={{ color: '#64748b' }}>${h.eps_est ?? '-'}</span>
+                      </td>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontWeight: '700', color: h.surprise_pct > 0 ? '#10b981' : h.surprise_pct < 0 ? '#ef4444' : '#94a3b8' }}>
+                        {h.surprise_pct > 0 ? `+${h.surprise_pct}%` : `${h.surprise_pct}%`}
+                      </td>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', color: h.gap_pct > 0 ? '#10b981' : h.gap_pct < 0 ? '#ef4444' : '#94a3b8' }}>
+                        {h.gap_pct > 0 ? `+${h.gap_pct}%` : `${h.gap_pct}%`}
+                      </td>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontWeight: '600', color: h.day_gain_pct > 0 ? '#10b981' : h.day_gain_pct < 0 ? '#ef4444' : '#94a3b8' }}>
+                        {h.day_gain_pct > 0 ? `+${h.day_gain_pct}%` : `${h.day_gain_pct}%`}
+                      </td>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', color: h.drift_5d_pct > 0 ? '#10b981' : h.drift_5d_pct < 0 ? '#ef4444' : '#94a3b8' }}>
+                        {h.drift_5d_pct > 0 ? `+${h.drift_5d_pct}%` : `${h.drift_5d_pct}%`}
+                      </td>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', color: h.drift_20d_pct > 0 ? '#10b981' : h.drift_20d_pct < 0 ? '#ef4444' : '#94a3b8' }}>
+                        {h.drift_20d_pct > 0 ? `+${h.drift_20d_pct}%` : `${h.drift_20d_pct}%`}
+                      </td>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', color: h.vol_surge >= 2.0 ? '#fbbf24' : '#cbd5e1' }}>
+                        {h.vol_surge}x
+                      </td>
+                      <td style={{ padding: '0.6rem 0.5rem', textAlign: 'center' }}>
+                        <span style={{ 
+                          fontSize: '0.7rem', 
+                          fontWeight: '600',
+                          padding: '0.15rem 0.45rem', 
+                          borderRadius: '4px',
+                          background: h.reaction_type === 'GAP_AND_GO' ? 'rgba(16, 185, 129, 0.15)' : h.reaction_type === 'GAP_AND_FADE' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.05)',
+                          color: h.reaction_type === 'GAP_AND_GO' ? '#10b981' : h.reaction_type === 'GAP_AND_FADE' ? '#ef4444' : '#94a3b8'
+                        }}>
+                          {h.reaction_type.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
-            <p style={{ color: '#64748b' }}>Institutional data currently unavailable.</p>
+            <p style={{ color: '#64748b' }}>No historical earnings reactions tracked.</p>
           )}
         </div>
 
@@ -328,3 +632,4 @@ const EarningsDashboard = ({ ticker }) => {
 };
 
 export default EarningsDashboard;
+

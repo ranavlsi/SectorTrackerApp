@@ -133,34 +133,14 @@ def analyze_earnings():
         
     ticker = ticker.upper()
     try:
-        import yfinance as yf
-        import pandas as pd
-        from backend.earnings_engine import get_max_pain, get_eps_trend, get_historical_earnings_action, get_institutional_data
-        
-        yf_ticker = yf.Ticker(ticker)
-        current_price = yf_ticker.fast_info.last_price
-        calendar = yf_ticker.calendar
-        
-        earnings_date_str = "Unknown"
-        if calendar and 'Earnings Date' in calendar and len(calendar['Earnings Date']) > 0:
-            earnings_date_str = calendar['Earnings Date'][0].strftime('%Y-%m-%d')
-            
-        options_data = get_max_pain(ticker, current_price)
-        eps_trend = get_eps_trend(ticker)
-        historical_action = get_historical_earnings_action(ticker)
-        inst_data = get_institutional_data(ticker)
-        
-        return jsonify({
-            "ticker": ticker,
-            "current_price": round(float(current_price), 2) if pd.notna(current_price) else 0,
-            "next_earnings_date": earnings_date_str,
-            "options_data": options_data,
-            "eps_trend": eps_trend,
-            "historical_action": historical_action,
-            "institutional": inst_data
-        })
+        from backend.earnings_engine import analyze_single_ticker
+        data = analyze_single_ticker(ticker)
+        if data.get("error"):
+            return jsonify(data), 500
+        return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/chart_data')
 def chart_data():
