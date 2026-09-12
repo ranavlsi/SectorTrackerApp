@@ -131,68 +131,153 @@ def get_macro_regime():
     }
 
 def get_sector_rotation():
-    """Reads sector flow RRG data and identifies top leading & lagging sectors."""
+    """Reads sector flow RRG data across Weekly, Daily, and Intraday to identify true institutional rotation."""
     if os.path.exists(SECTOR_FLOW_FILE):
         try:
             with open(SECTOR_FLOW_FILE, 'r') as f:
                 data = json.load(f)
-                rrg_items = data.get('rrg', {}).get('daily', []) or data.get('rrg', {}).get('intraday', [])
+                w_items = data.get('rrg', {}).get('weekly', []) or []
+                d_items = {s['ticker']: s for s in data.get('rrg', {}).get('daily', [])}
+                i_items = {s['ticker']: s for s in data.get('rrg', {}).get('intraday', [])}
                 
-                sector_ranks = []
-                for sec in rrg_items:
+                # If weekly is missing, fallback to daily
+                if not w_items:
+                    w_items = data.get('rrg', {}).get('daily', []) or []
+
+                sector_results = []
+                for sec in w_items:
                     t = sec.get('ticker')
                     name = sec.get('name', t)
-                    trail = sec.get('trail', [])
-                    last_pt = trail[-1] if trail else {'x': 100, 'y': 100}
-                    x = last_pt.get('x', 100)
-                    y = last_pt.get('y', 100)
-                    score = (x - 100) + (y - 100) * 0.5
+                    
+                    # Weekly RRG point
+                    w_trail = sec.get('trail', [])
+                    w_last = w_trail[-1] if w_trail else {'x': 100, 'y': 100}
+                    w_x = float(w_last.get('x', 100))
+                    w_y = float(w_last.get('y', 100))
+                    
+                    # Daily RRG point
+                    d_sec = d_items.get(t, {})
+                    d_trail = d_sec.get('trail', [])
+                    d_last = d_trail[-1] if d_trail else {'x': 100, 'y': 100}
+                    d_x = float(d_last.get('x', 100))
+                    d_y = float(d_last.get('y', 100))
+                    
+                    # Intraday RRG point
+                    i_sec = i_items.get(t, {})
+                    i_trail = i_sec.get('trail', [])
+                    i_last = i_trail[-1] if i_trail else {'x': 100, 'y': 100}
+                    i_x = float(i_last.get('x', 100))
+                    i_y = float(i_last.get('y', 100))
+                    
+                    # Decay / Distribution filter:
+                    # If intraday or daily is breaking down heavily (i_x < 100 and i_y < 97)
+                    intraday_breakdown = (i_x < 100 and i_y < 97) or (d_x < 100 and d_y < 95)
+                    
+                    # Score: 70% weekly swing + 30% daily pace, penalized for active intraday distribution
+                    score = ((w_x - 100) + (w_y - 100) * 0.5) * 0.7 + ((d_x - 100) + (d_y - 100) * 0.5) * 0.3
+                    if intraday_breakdown:
+                        score -= 10.0
+                        
+                    # Quadrant determination based on Weekly RRG:
+                    if w_x >= 100 and w_y >= 100 and not intraday_breakdown:
+                        quadrant = "Leading"
+                        quadrant_color = "#10b981"
+                    elif (w_x >= 100 and w_y < 100) or intraday_breakdown:
+                        quadrant = "Weakening / Distributing"
+                        quadrant_color = "#f59e0b"
+                    elif w_x < 100 and w_y >= 100:
+                        quadrant = "Improving"
+                        quadrant_color = "#38bdf8"
+                    else:
+                        quadrant = "Lagging"
+                        quadrant_color = "#ef4444"
+
                     top_stocks = [s.get('ticker') for s in sec.get('top_stocks', [])[:3]]
                     
-                    sector_ranks.append({
+                    sector_results.append({
                         'ticker': t,
                         'name': name,
-                        'x': round(x, 1),
-                        'y': round(y, 1),
+                        'w_x': round(w_x, 1),
+                        'w_y': round(w_y, 1),
+                        'd_x': round(d_x, 1),
+                        'd_y': round(d_y, 1),
+                        'i_x': round(i_x, 1),
+                        'i_y': round(i_y, 1),
                         'score': score,
+                        'quadrant': quadrant,
+                        'quadrant_color': quadrant_color,
+                        'intraday_breakdown': intraday_breakdown,
                         'top_stocks': top_stocks
                     })
 
-                sector_ranks.sort(key=lambda s: s['score'], reverse=True)
+                sector_results.sort(key=lambda s: s['score'], reverse=True)
                 
-                leading = []
-                for s in sector_ranks[:3]:
-                    leading.append({
+                # Filter true leaders (must have Weekly X >= 100 and Y >= 100 and no intraday breakdown)
+                true_leaders = [s for s in sector_results if s['quadrant'] == 'Leading'][:3]
+                if len(true_leaders) < 3:
+                    # fallback to top scores without breakdown
+                    fallback = [s for s in sector_results if not s['intraday_breakdown'] and s not in true_leaders]
+                    true_leaders.extend(fallback[:3 - len(true_leaders)])
+                    
+                # Sectors weakening / rotating out (e.g. Tech XLK, Semis SMH)
+                weakening_sectors = [
+                    s for s in sector_results 
+                    if s['quadrant'] == 'Weakening / Distributing' or (s['w_x'] >= 100 and s['intraday_breakdown'])
+                ][:3]
+                
+                # Bottom lagging sectors
+                lagging = sector_results[-3:]
+
+                leading_payload = []
+                for s in true_leaders:
+                    leading_payload.append({
                         "ticker": s['ticker'],
                         "name": s['name'],
-                        "rs_ratio": s['x'],
-                        "rs_momentum": s['y'],
+                        "rs_ratio": s['w_x'],
+                        "rs_momentum": s['w_y'],
                         "top_stocks": s['top_stocks'],
-                        "status": "Leading",
-                        "color": "#10b981"
+                        "status": "Leading (Accumulation)",
+                        "color": "#10b981",
+                        "note": f"Weekly RS: {s['w_x']} | Momentum: {s['w_y']}"
                     })
                     
-                lagging = []
-                for s in sector_ranks[-3:]:
-                    lagging.append({
+                weakening_payload = []
+                for s in weakening_sectors:
+                    weakening_payload.append({
                         "ticker": s['ticker'],
                         "name": s['name'],
-                        "rs_ratio": s['x'],
-                        "rs_momentum": s['y'],
+                        "rs_ratio": s['w_x'],
+                        "rs_momentum": s['w_y'],
                         "top_stocks": s['top_stocks'],
-                        "status": "Lagging",
-                        "color": "#ef4444"
+                        "status": "Weakening (Distribution)",
+                        "color": "#f59e0b",
+                        "note": f"Intraday Lagging (x={s['i_x']}, y={s['i_y']}) • Rotating Out"
+                    })
+
+                lagging_payload = []
+                for s in lagging:
+                    lagging_payload.append({
+                        "ticker": s['ticker'],
+                        "name": s['name'],
+                        "rs_ratio": s['w_x'],
+                        "rs_momentum": s['w_y'],
+                        "top_stocks": s['top_stocks'],
+                        "status": "Lagging (Outflow)",
+                        "color": "#ef4444",
+                        "note": f"Severe RS breakdown vs SPY (x={s['w_x']})"
                     })
 
                 return {
-                    "leading_sectors": leading,
-                    "lagging_sectors": lagging
+                    "leading_sectors": leading_payload,
+                    "weakening_sectors": weakening_payload,
+                    "lagging_sectors": lagging_payload
                 }
         except Exception as e:
             print(f"Error reading sector flow: {e}")
 
     return {
         "leading_sectors": [],
+        "weakening_sectors": [],
         "lagging_sectors": []
     }
 

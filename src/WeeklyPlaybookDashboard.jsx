@@ -313,14 +313,14 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
                 <TrendingUp size={20} /> Leading Sectors (Accumulation)
               </h3>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
-                Relative Strength
+                Weekly Inflows
               </span>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {sectorRotation.leading_sectors?.map(sec => (
                 <div key={sec.ticker} style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div>
                       <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{sec.ticker}</strong>
                       <span style={{ color: '#94a3b8', fontSize: '0.85rem', marginLeft: '6px' }}>({sec.name})</span>
@@ -329,6 +329,11 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
                       RS: {sec.rs_ratio}
                     </span>
                   </div>
+                  {sec.note && (
+                    <div style={{ fontSize: '0.74rem', color: '#6ee7b7', marginBottom: '6px' }}>
+                      {sec.note}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Top Leaders:</span>
                     {sec.top_stocks?.map(st => (
@@ -358,11 +363,70 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
             </div>
           </div>
 
+          {/* Rotating Out / Weakening Sectors */}
+          {sectorRotation.weakening_sectors && sectorRotation.weakening_sectors.length > 0 && (
+            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #f59e0b', background: 'rgba(15,23,42,0.7)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
+                  <AlertTriangle size={20} /> Rotating Out (Weakening)
+                </h3>
+                <span style={{ fontSize: '0.75rem', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                  Momentum Decay
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {sectorRotation.weakening_sectors.map(sec => (
+                  <div key={sec.ticker} style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <div>
+                        <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{sec.ticker}</strong>
+                        <span style={{ color: '#94a3b8', fontSize: '0.85rem', marginLeft: '6px' }}>({sec.name})</span>
+                      </div>
+                      <span style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                        RS: {sec.rs_ratio}
+                      </span>
+                    </div>
+                    {sec.note && (
+                      <div style={{ fontSize: '0.74rem', color: '#fcd34d', marginBottom: '6px' }}>
+                        {sec.note}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Holdings:</span>
+                      {sec.top_stocks?.map(st => (
+                        <span 
+                          key={st}
+                          onClick={() => onTickerClick && onTickerClick(st)}
+                          style={{ 
+                            cursor: 'pointer', 
+                            background: 'rgba(245, 158, 11, 0.15)', 
+                            color: '#fcd34d', 
+                            border: '1px solid rgba(245, 158, 11, 0.3)', 
+                            padding: '1px 7px', 
+                            borderRadius: '4px', 
+                            fontSize: '0.78rem', 
+                            fontWeight: '600',
+                            transition: 'all 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.3)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)'}
+                        >
+                          {st}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Lagging Sectors */}
           <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #ef4444', background: 'rgba(15,23,42,0.7)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
-                <TrendingDown size={20} /> Lagging Sectors (Distribution)
+                <TrendingDown size={20} /> Lagging Sectors (Outflow)
               </h3>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'rgba(239, 68, 68, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
                 Underperforming SPY
@@ -372,7 +436,7 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {sectorRotation.lagging_sectors?.map(sec => (
                 <div key={sec.ticker} style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div>
                       <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{sec.ticker}</strong>
                       <span style={{ color: '#94a3b8', fontSize: '0.85rem', marginLeft: '6px' }}>({sec.name})</span>
@@ -381,6 +445,11 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
                       RS: {sec.rs_ratio}
                     </span>
                   </div>
+                  {sec.note && (
+                    <div style={{ fontSize: '0.74rem', color: '#fca5a5', marginBottom: '6px' }}>
+                      {sec.note}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Lagging Stocks:</span>
                     {sec.top_stocks?.map(st => (
