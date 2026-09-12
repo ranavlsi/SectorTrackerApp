@@ -332,11 +332,88 @@ def compute_earnings_personality(reactions, options_data):
         "volatility_verdict": vol_verdict
     }
 
-def synthesize_ai_earnings_intelligence(ticker, current_price, revisions, reactions, personality, options_data, info):
+def calculate_seasonality(yf_ticker):
+    """
+    Computes 10-year monthly and quarterly cyclical seasonality:
+    - 12-Month Win Rates & Average / Median Returns
+    - Quarterly Seasonality (Q1 - Q4)
+    - Current vs Next Month Tailwinds / Headwinds
+    - Best Month & Worst Month
+    """
+    try:
+        hist = yf_ticker.history(period='10y')
+        if hist is None or hist.empty or len(hist) < 200:
+            return None
+
+        hist.index = pd.to_datetime(hist.index).tz_localize(None)
+
+        # Monthly returns
+        monthly = hist['Close'].resample('ME').last().pct_change().dropna()
+        if monthly.empty:
+            return None
+
+        df_m = pd.DataFrame({'return': monthly, 'month': monthly.index.month, 'year': monthly.index.year})
+        month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        monthly_stats = []
+
+        for m in range(1, 13):
+            sub = df_m[df_m['month'] == m]
+            if len(sub) > 0:
+                win_rate = (sub['return'] > 0).mean() * 100
+                avg_ret = sub['return'].mean() * 100
+                med_ret = sub['return'].median() * 100
+                monthly_stats.append({
+                    'month': m,
+                    'name': month_names[m-1],
+                    'win_rate': round(float(win_rate), 1),
+                    'avg_return': round(float(avg_ret), 2),
+                    'median_return': round(float(med_ret), 2),
+                    'samples': len(sub)
+                })
+
+        # Quarterly returns
+        quarterly = hist['Close'].resample('QE').last().pct_change().dropna()
+        df_q = pd.DataFrame({'return': quarterly, 'quarter': quarterly.index.quarter})
+        quarterly_stats = []
+        for q in range(1, 5):
+            sub_q = df_q[df_q['quarter'] == q]
+            if len(sub_q) > 0:
+                quarterly_stats.append({
+                    'quarter': f'Q{q}',
+                    'win_rate': round(float((sub_q['return'] > 0).mean() * 100), 1),
+                    'avg_return': round(float(sub_q['return'].mean() * 100), 2),
+                    'samples': len(sub_q)
+                })
+
+        # Best and worst months
+        sorted_by_avg = sorted(monthly_stats, key=lambda x: x['avg_return'], reverse=True)
+        best_month = sorted_by_avg[0] if sorted_by_avg else None
+        worst_month = sorted_by_avg[-1] if sorted_by_avg else None
+
+        # Current & Next month seasonality
+        cur_m = pd.Timestamp.now().month
+        cur_stat = next((x for x in monthly_stats if x['month'] == cur_m), None)
+        next_m = (cur_m % 12) + 1
+        next_stat = next((x for x in monthly_stats if x['month'] == next_m), None)
+
+        return {
+            'monthly_stats': monthly_stats,
+            'quarterly_stats': quarterly_stats,
+            'current_month': cur_stat,
+            'next_month': next_stat,
+            'best_month': best_month,
+            'worst_month': worst_month,
+            'years_analyzed': round(len(hist) / 252, 1)
+        }
+    except Exception as e:
+        print(f"Seasonality calculation error: {e}")
+        return None
+
+def synthesize_ai_earnings_intelligence(ticker, current_price, revisions, reactions, personality, options_data, info, seasonality=None):
     """
     AI Multi-Factor Synthesizer:
     Calculates Post-Earnings Drift Potential (PEDP Score 0-100)
-    Generates actionable institutional guidance, setup classification, and trade triggers.
+    Generates actionable institutional guidance, setup classification, seasonality tailwinds, and trade triggers.
     """
     latest_reaction = reactions[0] if reactions else None
     
@@ -440,6 +517,16 @@ def synthesize_ai_earnings_intelligence(ticker, current_price, revisions, reacti
         else:
             catalysts.append(f"Options Implied Move (±{imp}%) aligned with historical reaction amplitude (±{hist_mov}%).")
 
+    # Seasonality Catalyst
+    if seasonality:
+        cur_m = seasonality.get('current_month')
+        next_m = seasonality.get('next_month')
+        if cur_m:
+            pos_label = "bullish" if cur_m['avg_return'] > 0 else "bearish/choppy"
+            catalysts.append(f"Historical Seasonality ({cur_m['name']}): Typically {pos_label} with a {cur_m['win_rate']}% win-rate and {cur_m['avg_return']:+.1f}% average return ({seasonality.get('years_analyzed', 10)}y history).")
+        if next_m and next_m['win_rate'] >= 70:
+            catalysts.append(f"Upcoming Seasonal Tailwind ({next_m['name']}): Strong historical track record ({next_m['win_rate']}% win-rate, {next_m['avg_return']:+.1f}% avg gain).")
+
     return {
         "pedp_score": pedp_score,
         "setup_tier": setup_tier,
@@ -492,6 +579,16 @@ def analyze_single_ticker(symbol):
         except Exception:
             pass
 
+        # 6. Seasonality Analytics (10-Year Monthly & Quarterly Cycles)
+        seasonality = calculate_seasonality(yf_ticker)
+
+        # 7. Institutional Fundamentals & Short Float
+        info = {}
+        try:
+            info = yf_ticker.info or {}
+        except Exception:
+            pass
+
         short_pct = round(clean_val(info.get('shortPercentOfFloat', 0)) * 100, 2)
         short_ratio = round(clean_val(info.get('shortRatio', 0)), 1)
         forward_pe = round(clean_val(info.get('forwardPE', 0)), 1)
@@ -518,9 +615,9 @@ def analyze_single_ticker(symbol):
         except Exception as e:
             print(f"Error reading upgrades/downgrades: {e}")
 
-        # 7. AI Earnings Intelligence Synthesis
+        # 8. AI Earnings Intelligence Synthesis
         ai_intel = synthesize_ai_earnings_intelligence(
-            ticker_symbol, current_price, revisions, reactions, personality, options_data, info
+            ticker_symbol, current_price, revisions, reactions, personality, options_data, info, seasonality=seasonality
         )
 
         return {
@@ -533,6 +630,7 @@ def analyze_single_ticker(symbol):
             "options_data": options_data,
             "consensus_revisions": revisions,
             "personality": personality,
+            "seasonality": seasonality,
             "historical_reactions": reactions,
             "institutional": {
                 "short_percent": short_pct,

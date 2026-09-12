@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Loader2, Calendar, Target, Crosshair, BarChart2, Search, Briefcase, 
   Activity, TrendingUp, TrendingDown, Zap, ShieldAlert, Sparkles, CheckCircle, 
-  AlertTriangle, ArrowUpRight, ArrowDownRight, Info, Award
+  AlertTriangle, ArrowUpRight, ArrowDownRight, Info, Award, Compass, Sun, Snowflake
 } from 'lucide-react';
 
 const EarningsDashboard = ({ ticker }) => {
@@ -104,6 +104,7 @@ const EarningsDashboard = ({ ticker }) => {
   const options = selectedStock.options_data;
   const reactions = selectedStock.historical_reactions || [];
   const inst = selectedStock.institutional || {};
+  const seasonality = selectedStock.seasonality;
 
   return (
     <div style={{ display: 'flex', gap: '1.5rem', minHeight: '85vh', color: '#e2e8f0' }}>
@@ -625,6 +626,186 @@ const EarningsDashboard = ({ ticker }) => {
             <p style={{ color: '#64748b' }}>No historical earnings reactions tracked.</p>
           )}
         </div>
+
+        {/* ROW 4: 10-Year Cyclical Seasonality Terminal */}
+        {seasonality && (
+          <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #06b6d4' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+                  <Compass size={18} /> 10-Year Cyclical Seasonality Intelligence
+                </h3>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                  Based on {seasonality.years_analyzed} years of monthly & quarterly price action cycles
+                </span>
+              </div>
+
+              {/* Quick Seasonality Callouts */}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                {seasonality.current_month && (
+                  <div style={{ 
+                    padding: '0.35rem 0.75rem', 
+                    background: seasonality.current_month.avg_return >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)', 
+                    border: `1px solid ${seasonality.current_month.avg_return >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    borderRadius: '6px',
+                    fontSize: '0.78rem'
+                  }}>
+                    <span style={{ color: '#94a3b8' }}>Current ({seasonality.current_month.name}): </span>
+                    <strong style={{ color: seasonality.current_month.avg_return >= 0 ? '#10b981' : '#ef4444' }}>
+                      {seasonality.current_month.avg_return > 0 ? '+' : ''}{seasonality.current_month.avg_return}% avg ({seasonality.current_month.win_rate}% win)
+                    </strong>
+                  </div>
+                )}
+
+                {seasonality.next_month && (
+                  <div style={{ 
+                    padding: '0.35rem 0.75rem', 
+                    background: seasonality.next_month.avg_return >= 0 ? 'rgba(59, 130, 246, 0.12)' : 'rgba(245, 158, 11, 0.12)', 
+                    border: `1px solid ${seasonality.next_month.avg_return >= 0 ? 'rgba(59, 130, 246, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                    borderRadius: '6px',
+                    fontSize: '0.78rem'
+                  }}>
+                    <span style={{ color: '#94a3b8' }}>Next ({seasonality.next_month.name}): </span>
+                    <strong style={{ color: seasonality.next_month.avg_return >= 0 ? '#60a5fa' : '#fbbf24' }}>
+                      {seasonality.next_month.avg_return > 0 ? '+' : ''}{seasonality.next_month.avg_return}% avg ({seasonality.next_month.win_rate}% win)
+                    </strong>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 12-Month Heatmap Bar Grid */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(12, 1fr)', 
+              gap: '0.5rem', 
+              marginBottom: '1.25rem' 
+            }}>
+              {seasonality.monthly_stats?.map((m) => {
+                const isCurrent = seasonality.current_month?.month === m.month;
+                const isPositive = m.avg_return >= 0;
+                const winRateColor = m.win_rate >= 70 ? '#10b981' : m.win_rate <= 45 ? '#ef4444' : '#94a3b8';
+                
+                return (
+                  <div 
+                    key={m.month}
+                    style={{ 
+                      background: isCurrent ? 'rgba(6, 182, 212, 0.15)' : 'rgba(0,0,0,0.25)', 
+                      border: `1px solid ${isCurrent ? '#06b6d4' : 'rgba(255,255,255,0.04)'}`,
+                      borderRadius: '8px',
+                      padding: '0.6rem 0.3rem',
+                      textAlign: 'center',
+                      position: 'relative',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: '85px'
+                    }}
+                  >
+                    {isCurrent && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: '-8px', 
+                        left: '50%', 
+                        transform: 'translateX(-50%)', 
+                        background: '#06b6d4', 
+                        color: 'black', 
+                        fontSize: '0.6rem', 
+                        fontWeight: '800', 
+                        padding: '1px 5px', 
+                        borderRadius: '3px' 
+                      }}>
+                        NOW
+                      </div>
+                    )}
+                    <div>
+                      <strong style={{ fontSize: '0.85rem', color: isCurrent ? '#22d3ee' : 'white', display: 'block' }}>
+                        {m.name}
+                      </strong>
+                      <span style={{ fontSize: '0.7rem', color: winRateColor, fontWeight: '700', display: 'block', marginTop: '2px' }}>
+                        {m.win_rate}% win
+                      </span>
+                    </div>
+
+                    <div style={{ 
+                      marginTop: '6px', 
+                      padding: '0.2rem 0',
+                      background: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      borderRadius: '4px' 
+                    }}>
+                      <strong style={{ 
+                        fontSize: '0.78rem', 
+                        color: isPositive ? '#10b981' : '#ef4444' 
+                      }}>
+                        {isPositive ? `+${m.avg_return}%` : `${m.avg_return}%`}
+                      </strong>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Quarterly Breakdown & Extremes */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem' }}>
+              
+              {/* Quarterly Seasonality Bars */}
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.85rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '0.6rem' }}>
+                  Quarterly Drift Performance (10-Yr Cumulative Cycles)
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
+                  {seasonality.quarterly_stats?.map(q => (
+                    <div key={q.quarter} style={{ background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '6px', textAlign: 'center' }}>
+                      <strong style={{ color: '#cbd5e1', fontSize: '0.8rem', display: 'block' }}>{q.quarter}</strong>
+                      <span style={{ color: q.win_rate >= 70 ? '#10b981' : '#94a3b8', fontSize: '0.72rem', display: 'block' }}>
+                        {q.win_rate}% win
+                      </span>
+                      <span style={{ color: q.avg_return >= 0 ? '#10b981' : '#ef4444', fontSize: '0.8rem', fontWeight: '700', display: 'block', marginTop: '2px' }}>
+                        {q.avg_return > 0 ? `+${q.avg_return}%` : `${q.avg_return}%`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Best Historical Month */}
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '0.85rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', marginBottom: '0.3rem' }}>
+                  <Sun size={15} />
+                  <span style={{ fontSize: '0.72rem', fontWeight: '600', textTransform: 'uppercase' }}>Best Month (Historical)</span>
+                </div>
+                {seasonality.best_month ? (
+                  <div>
+                    <strong style={{ fontSize: '1.2rem', color: 'white' }}>{seasonality.best_month.name}</strong>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '0.75rem' }}>
+                      <span style={{ color: '#94a3b8' }}>Win Rate: <strong style={{ color: '#10b981' }}>{seasonality.best_month.win_rate}%</strong></span>
+                      <span style={{ color: '#10b981', fontWeight: '700' }}>+{seasonality.best_month.avg_return}% avg</span>
+                    </div>
+                  </div>
+                ) : '-'}
+              </div>
+
+              {/* Worst Historical Month */}
+              <div style={{ background: 'rgba(239, 68, 68, 0.08)', padding: '0.85rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#ef4444', marginBottom: '0.3rem' }}>
+                  <Snowflake size={15} />
+                  <span style={{ fontSize: '0.72rem', fontWeight: '600', textTransform: 'uppercase' }}>Toughest Month</span>
+                </div>
+                {seasonality.worst_month ? (
+                  <div>
+                    <strong style={{ fontSize: '1.2rem', color: 'white' }}>{seasonality.worst_month.name}</strong>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '0.75rem' }}>
+                      <span style={{ color: '#94a3b8' }}>Win Rate: <strong style={{ color: '#ef4444' }}>{seasonality.worst_month.win_rate}%</strong></span>
+                      <span style={{ color: '#ef4444', fontWeight: '700' }}>{seasonality.worst_month.avg_return}% avg</span>
+                    </div>
+                  </div>
+                ) : '-'}
+              </div>
+
+            </div>
+
+          </div>
+        )}
 
       </div>
     </div>
