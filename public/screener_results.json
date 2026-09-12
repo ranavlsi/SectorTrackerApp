@@ -4820,254 +4820,254 @@
   ],
   "chop_incubation_leaders": [
     {
-      "ticker": "TXG",
-      "metric": "RS: +134.8% | VDU: 0.81x | 50-SMA (90.0%)",
-      "score": 110.71
-    },
-    {
-      "ticker": "OMER",
-      "metric": "RS: +106.2% | VDU: 0.63x | 21-SMA (69.0%)",
-      "score": 105.7
-    },
-    {
-      "ticker": "NSIT",
-      "metric": "RS: +45.9% | VDU: 0.64x | 21-SMA (72.8%)",
-      "score": 97.09
-    },
-    {
-      "ticker": "PBF",
-      "metric": "RS: +83.9% | VDU: 0.87x | 21-SMA (82.5%)",
-      "score": 95.79
-    },
-    {
-      "ticker": "PARR",
-      "metric": "RS: +48.6% | VDU: 0.70x | 23-EMA (72.4%)",
-      "score": 93.62
-    },
-    {
-      "ticker": "HALO",
-      "metric": "RS: +51.2% | VDU: 0.69x | 21-SMA (73.2%)",
-      "score": 93.39
-    },
-    {
-      "ticker": "NTRA",
-      "metric": "RS: +52.1% | VDU: 0.74x | 50-SMA (71.8%)",
-      "score": 92.3
-    },
-    {
-      "ticker": "RNG",
-      "metric": "RS: +75.3% | VDU: 0.61x | 50-SMA (77.3%)",
-      "score": 89.6
-    },
-    {
-      "ticker": "CDNA",
-      "metric": "RS: +115.8% | VDU: 0.98x | 10-SMA (79.5%)",
-      "score": 89.43
-    },
-    {
-      "ticker": "RDVT",
-      "metric": "RS: +33.4% | VDU: 0.68x | 21-SMA (79.4%)",
-      "score": 88.75
-    },
-    {
-      "ticker": "AVAH",
-      "metric": "RS: +95.6% | VDU: 1.16x | 21-SMA (72.3%)",
-      "score": 86.59
-    },
-    {
-      "ticker": "ZETA",
-      "metric": "RS: +46.3% | VDU: 0.57x | 21-SMA (78.7%)",
-      "score": 84.76
-    },
-    {
-      "ticker": "TBBB",
-      "metric": "RS: +16.8% | VDU: 0.73x | 50-SMA (88.9%)",
-      "score": 83.86
-    },
-    {
       "ticker": "PSNL",
-      "metric": "RS: +66.0% | VDU: 0.56x | 10-SMA (81.7%)",
-      "score": 82.28
+      "metric": "Base: 14d (-14.2% to ATH) | VDU: 0.56x | 10-SMA",
+      "score": 71.82
     },
     {
       "ticker": "LB",
-      "metric": "RS: +22.3% | VDU: 0.61x | 21-SMA (86.7%)",
-      "score": 82.1
+      "metric": "Base: 14d (-5.3% to ATH) | VDU: 0.61x | 21-SMA",
+      "score": 70.04
     },
     {
-      "ticker": "TX",
-      "metric": "RS: +13.8% | VDU: 0.59x | 21-SMA (71.0%)",
-      "score": 81.73
+      "ticker": "CDNA",
+      "metric": "Base: 10d (-6.4% to ATH) | VDU: 0.98x | 10-SMA",
+      "score": 69.16
     },
     {
-      "ticker": "DINO",
-      "metric": "RS: +48.3% | VDU: 0.83x | 23-EMA (72.9%)",
-      "score": 81.6
-    },
-    {
-      "ticker": "KB",
-      "metric": "RS: +19.4% | VDU: 0.71x | 50-SMA (56.3%)",
-      "score": 81.4
-    },
-    {
-      "ticker": "EXPD",
-      "metric": "RS: +12.6% | VDU: 0.74x | 50-SMA (59.1%)",
-      "score": 80.28
-    },
-    {
-      "ticker": "CHYM",
-      "metric": "RS: +94.6% | VDU: 1.14x | 10-SMA (75.3%)",
-      "score": 79.74
-    },
-    {
-      "ticker": "CON",
-      "metric": "RS: +21.2% | VDU: 0.70x | 21-SMA (56.6%)",
-      "score": 78.87
+      "ticker": "NTRA",
+      "metric": "Base: 10d (-4.2% to ATH) | VDU: 0.74x | 50-SMA",
+      "score": 67.08
     },
     {
       "ticker": "GCT",
-      "metric": "RS: +49.1% | VDU: 0.84x | 50-SMA (85.7%)",
-      "score": 77.98
-    },
-    {
-      "ticker": "NEO",
-      "metric": "RS: +52.3% | VDU: 0.51x | 21-SMA (69.2%)",
-      "score": 76.99
-    },
-    {
-      "ticker": "AVTR",
-      "metric": "RS: +54.7% | VDU: 0.89x | 21-SMA (65.0%)",
-      "score": 76.47
-    },
-    {
-      "ticker": "SM",
-      "metric": "RS: +19.3% | VDU: 0.90x | 50-SMA (86.5%)",
-      "score": 76.45
-    },
-    {
-      "ticker": "NHC",
-      "metric": "RS: +10.5% | VDU: 0.68x | 50-SMA (83.3%)",
-      "score": 74.87
-    },
-    {
-      "ticker": "ANET",
-      "metric": "RS: +19.2% | VDU: 0.58x | 21-SMA (75.6%)",
-      "score": 74.78
-    },
-    {
-      "ticker": "BIIB",
-      "metric": "RS: +5.5% | VDU: 0.72x | 50-SMA (73.9%)",
-      "score": 74.78
-    },
-    {
-      "ticker": "PR",
-      "metric": "RS: +18.8% | VDU: 0.87x | 50-SMA (76.3%)",
-      "score": 74.49
-    },
-    {
-      "ticker": "MATX",
-      "metric": "RS: +10.9% | VDU: 0.84x | 21-SMA (80.6%)",
-      "score": 73.79
-    },
-    {
-      "ticker": "KMX",
-      "metric": "RS: +16.6% | VDU: 0.70x | 23-EMA (67.5%)",
-      "score": 73.59
-    },
-    {
-      "ticker": "PSX",
-      "metric": "RS: +41.6% | VDU: 0.94x | 21-SMA (79.7%)",
-      "score": 73.5
-    },
-    {
-      "ticker": "NUTX",
-      "metric": "RS: +35.6% | VDU: 1.02x | 50-SMA (84.6%)",
-      "score": 73.08
-    },
-    {
-      "ticker": "BOX",
-      "metric": "RS: +29.9% | VDU: 0.68x | 50-SMA (51.0%)",
-      "score": 72.88
-    },
-    {
-      "ticker": "SVIX",
-      "metric": "RS: +24.4% | VDU: 0.87x | 50-SMA (75.0%)",
-      "score": 72.75
-    },
-    {
-      "ticker": "ADUS",
-      "metric": "RS: +22.5% | VDU: 0.71x | 50-SMA (53.4%)",
-      "score": 72.72
-    },
-    {
-      "ticker": "CRM",
-      "metric": "RS: +46.3% | VDU: 0.86x | 21-SMA (68.9%)",
-      "score": 72.43
+      "metric": "Base: 25d (-7.8% to ATH) | VDU: 0.84x | 50-SMA",
+      "score": 65.42
     },
     {
       "ticker": "VEEV",
-      "metric": "RS: +61.4% | VDU: 0.62x | 21-SMA (57.4%)",
-      "score": 72.04
+      "metric": "Base: 233d (-15.5% to ATH) | VDU: 0.62x | 21-SMA",
+      "score": 63.92
     },
     {
-      "ticker": "CLH",
-      "metric": "RS: +9.1% | VDU: 0.72x | 50-SMA (57.5%)",
-      "score": 72.0
+      "ticker": "NEO",
+      "metric": "Base: 10d (-12.3% to ATH) | VDU: 0.51x | 21-SMA",
+      "score": 63.52
+    },
+    {
+      "ticker": "NHC",
+      "metric": "Base: 15d (-6.2% to ATH) | VDU: 0.68x | 50-SMA",
+      "score": 62.63
+    },
+    {
+      "ticker": "ANET",
+      "metric": "Base: 26d (-7.1% to ATH) | VDU: 0.58x | 21-SMA",
+      "score": 62.35
+    },
+    {
+      "ticker": "FET",
+      "metric": "Base: 17d (-5.0% to ATH) | VDU: 1.11x | 50-SMA",
+      "score": 61.42
+    },
+    {
+      "ticker": "KMX",
+      "metric": "Base: 11d (-6.1% to ATH) | VDU: 0.70x | 23-EMA",
+      "score": 61.38
+    },
+    {
+      "ticker": "BOX",
+      "metric": "Base: 8d (-7.1% to ATH) | VDU: 0.68x | 50-SMA",
+      "score": 60.45
+    },
+    {
+      "ticker": "EGO",
+      "metric": "Base: 155d (-14.5% to ATH) | VDU: 0.63x | 23-EMA",
+      "score": 60.01
+    },
+    {
+      "ticker": "CON",
+      "metric": "Base: 17d (-2.6% to ATH) | VDU: 0.70x | 21-SMA",
+      "score": 57.92
     },
     {
       "ticker": "HUM",
-      "metric": "RS: +5.0% | VDU: 0.67x | 50-SMA (67.4%)",
-      "score": 71.85
+      "metric": "Base: 40d (-4.4% to ATH) | VDU: 0.67x | 50-SMA",
+      "score": 57.76
     },
     {
-      "ticker": "TVTX",
-      "metric": "RS: +24.1% | VDU: 0.88x | 10-SMA (71.4%)",
-      "score": 71.79
+      "ticker": "FRHC",
+      "metric": "Base: 238d (-6.6% to ATH) | VDU: 0.43x | 50-SMA",
+      "score": 57.03
     },
     {
-      "ticker": "MPC",
-      "metric": "RS: +47.2% | VDU: 0.93x | 21-SMA (69.8%)",
-      "score": 71.52
+      "ticker": "WPM",
+      "metric": "Base: 134d (-7.0% to ATH) | VDU: 0.78x | 10-SMA",
+      "score": 55.59
     },
     {
-      "ticker": "COP",
-      "metric": "RS: +14.4% | VDU: 0.84x | 50-SMA (66.7%)",
-      "score": 71.43
-    },
-    {
-      "ticker": "DAR",
-      "metric": "RS: +11.2% | VDU: 0.73x | 50-SMA (73.5%)",
-      "score": 71.34
-    },
-    {
-      "ticker": "CRBG",
-      "metric": "RS: +17.6% | VDU: 0.82x | 23-EMA (59.4%)",
-      "score": 71.19
-    },
-    {
-      "ticker": "EWTX",
-      "metric": "RS: +24.4% | VDU: 0.86x | 50-SMA (100.0%)",
-      "score": 70.9
-    },
-    {
-      "ticker": "CHRD",
-      "metric": "RS: +9.3% | VDU: 0.85x | 23-EMA (73.4%)",
-      "score": 70.74
-    },
-    {
-      "ticker": "NET",
-      "metric": "RS: +31.1% | VDU: 0.87x | 50-SMA (84.2%)",
-      "score": 70.58
+      "ticker": "FSM",
+      "metric": "Base: 134d (-13.4% to ATH) | VDU: 0.63x | 10-SMA",
+      "score": 55.29
     },
     {
       "ticker": "TALO",
-      "metric": "RS: +15.1% | VDU: 0.79x | 50-SMA (83.3%)",
-      "score": 70.46
+      "metric": "Base: 15d (-4.1% to ATH) | VDU: 0.79x | 50-SMA",
+      "score": 55.13
     },
     {
-      "ticker": "WT",
-      "metric": "RS: +30.1% | VDU: 0.90x | 50-SMA (84.4%)",
-      "score": 70.4
+      "ticker": "DLO",
+      "metric": "Base: 226d (-11.4% to ATH) | VDU: 0.68x | 23-EMA",
+      "score": 54.6
+    },
+    {
+      "ticker": "FA",
+      "metric": "Base: 24d (-15.6% to ATH) | VDU: 0.70x | 21-SMA",
+      "score": 54.53
+    },
+    {
+      "ticker": "AVTR",
+      "metric": "Base: 223d (-7.0% to ATH) | VDU: 0.89x | 21-SMA",
+      "score": 54.06
+    },
+    {
+      "ticker": "LPLA",
+      "metric": "Base: 151d (-11.6% to ATH) | VDU: 0.69x | 50-SMA",
+      "score": 51.87
+    },
+    {
+      "ticker": "TPC",
+      "metric": "Base: 25d (-12.9% to ATH) | VDU: 0.48x | 10-SMA",
+      "score": 51.72
+    },
+    {
+      "ticker": "ADUS",
+      "metric": "Base: 213d (-5.9% to ATH) | VDU: 0.71x | 50-SMA",
+      "score": 50.54
+    },
+    {
+      "ticker": "JAN",
+      "metric": "Base: 32d (-5.8% to ATH) | VDU: 0.80x | 10-SMA",
+      "score": 50.54
+    },
+    {
+      "ticker": "HOG",
+      "metric": "Base: 247d (-10.8% to ATH) | VDU: 0.65x | 50-SMA",
+      "score": 50.16
+    },
+    {
+      "ticker": "TTEK",
+      "metric": "Base: 146d (-15.4% to ATH) | VDU: 0.68x | 50-SMA",
+      "score": 49.32
+    },
+    {
+      "ticker": "DAR",
+      "metric": "Base: 15d (-7.0% to ATH) | VDU: 0.73x | 50-SMA",
+      "score": 48.95
+    },
+    {
+      "ticker": "MSFT",
+      "metric": "Base: 218d (-10.5% to ATH) | VDU: 0.54x | 10-SMA",
+      "score": 48.77
+    },
+    {
+      "ticker": "EWTX",
+      "metric": "Base: 45d (-8.3% to ATH) | VDU: 0.86x | 50-SMA",
+      "score": 48.25
+    },
+    {
+      "ticker": "NET",
+      "metric": "Base: 20d (-7.7% to ATH) | VDU: 0.87x | 50-SMA",
+      "score": 48.03
+    },
+    {
+      "ticker": "PLUS",
+      "metric": "Base: 27d (-6.4% to ATH) | VDU: 0.75x | 50-SMA",
+      "score": 47.98
+    },
+    {
+      "ticker": "TGTX",
+      "metric": "Base: 45d (-9.1% to ATH) | VDU: 0.60x | 21-SMA",
+      "score": 47.52
+    },
+    {
+      "ticker": "EMBJ",
+      "metric": "Base: 157d (-6.5% to ATH) | VDU: 0.86x | 50-SMA",
+      "score": 47.02
+    },
+    {
+      "ticker": "P",
+      "metric": "Base: 17d (-17.6% to ATH) | VDU: 0.84x | 10-SMA",
+      "score": 46.85
+    },
+    {
+      "ticker": "TRV",
+      "metric": "Base: 32d (-5.9% to ATH) | VDU: 0.76x | 50-SMA",
+      "score": 46.77
+    },
+    {
+      "ticker": "WTTR",
+      "metric": "Base: 26d (-8.5% to ATH) | VDU: 0.84x | 23-EMA",
+      "score": 46.08
+    },
+    {
+      "ticker": "CLH",
+      "metric": "Base: 31d (-3.9% to ATH) | VDU: 0.72x | 50-SMA",
+      "score": 45.84
+    },
+    {
+      "ticker": "ZD",
+      "metric": "Base: 24d (-3.2% to ATH) | VDU: 0.93x | 50-SMA",
+      "score": 45.51
+    },
+    {
+      "ticker": "THG",
+      "metric": "Base: 28d (-4.3% to ATH) | VDU: 0.82x | 21-SMA",
+      "score": 44.9
+    },
+    {
+      "ticker": "MET",
+      "metric": "Base: 25d (-3.8% to ATH) | VDU: 0.78x | 21-SMA",
+      "score": 44.46
+    },
+    {
+      "ticker": "CMG",
+      "metric": "Base: 227d (-15.5% to ATH) | VDU: 0.57x | 50-SMA",
+      "score": 43.79
+    },
+    {
+      "ticker": "NEM",
+      "metric": "Base: 12d (-6.3% to ATH) | VDU: 0.89x | 10-SMA",
+      "score": 43.63
+    },
+    {
+      "ticker": "DNTH",
+      "metric": "Base: 16d (-9.9% to ATH) | VDU: 0.93x | 50-SMA",
+      "score": 43.46
+    },
+    {
+      "ticker": "RDNT",
+      "metric": "Base: 198d (-12.1% to ATH) | VDU: 0.82x | 21-SMA",
+      "score": 43.04
+    },
+    {
+      "ticker": "NTAP",
+      "metric": "Base: 20d (-4.7% to ATH) | VDU: 0.87x | 10-SMA",
+      "score": 43.01
+    },
+    {
+      "ticker": "SAIC",
+      "metric": "Base: 8d (-8.9% to ATH) | VDU: 0.75x | 21-SMA",
+      "score": 42.62
+    },
+    {
+      "ticker": "FNV",
+      "metric": "Base: 134d (-6.9% to ATH) | VDU: 1.08x | 50-SMA",
+      "score": 42.29
+    },
+    {
+      "ticker": "ASND",
+      "metric": "Base: 45d (-6.6% to ATH) | VDU: 1.06x | 50-SMA",
+      "score": 41.91
     }
   ]
 }

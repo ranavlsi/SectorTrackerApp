@@ -7,7 +7,7 @@ export const ScreenerDescriptions = {
       <ul style={{ margin: 0, paddingLeft: '20px' }}>
         <li><strong>Rule 1 (Stage 2 Trend Shield):</strong> Price &gt; 50-day SMA and 50-SMA &gt; 200-SMA, proving the stock holds its moving average floor while the broad market struggles.</li>
         <li><strong>Rule 2 (RS Outperformance):</strong> Relative Strength vs SPY over 3 months is accelerating (&gt; +5% excess alpha), confirming institutional accumulation during index chop.</li>
-        <li><strong>Rule 3 (Sound Basing Depth):</strong> Consolidation depth is capped within 25% of 52-week highs (tight, orderly shelf).</li>
+        <li><strong>Rule 3 (Unbroken Base Shelf / Pre-Breakout):</strong> The 52-week high is strictly <em>unbroken</em>. Price is coiling 2.5% to 16% <em>underneath</em> its ceiling inside an active base (&ge;8 trading days duration), ensuring the stock has not already triggered/broken out.</li>
         <li><strong>Rule 4 (Volume Dry-Up / VDU):</strong> 5-day average volume contracts below 85% of 50-day average volume, confirming exhaustion of overhead supply.</li>
         <li><strong>Rule 5 (Guardian MA Defense):</strong> Holds above the stock's backtested institutional Guardian MA (10-SMA, 21-SMA, or 50-SMA) with zero 2-day breakdown character change alerts.</li>
       </ul>

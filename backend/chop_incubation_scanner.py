@@ -98,33 +98,42 @@ def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=20.0, 
         if close < sma50 or sma50 < (sma200 * 0.98):
             continue
 
-        # Rule 2: Anti-Extension / Anti-Chasing Filter (William O'Neil & Mark Minervini)
-        # Reject stocks that already made a massive vertical run and are extended from moving averages.
+        # Rule 2: Pre-Breakout Base Incubation (The Unbroken 52-Week High Rule)
+        # CRITICAL: Stocks that have ALREADY broken their 52-week high are disqualified!
+        # The stock must be COILING INSIDE THE BASE UNDER THE CEILING:
+        # - The peak was set at least 8 trading days ago (base duration >= 8 sessions)
+        # - Current price is resting 2.5% to 18.0% BELOW the 52-week high (unbroken pivot)
+        highs_252 = df['High'].tail(min(252, len(df)))
+        high_52w = float(highs_252.max())
+        days_since_high = int(len(highs_252) - 1 - highs_252.values.argmax())
+        dist_under_high = float(((high_52w - close) / high_52w) * 100.0)
+
+        if days_since_high < 8:
+            continue  # Disqualify: Printed a new 52-week high within the last 7 sessions (not a completed resting base)
+
+        if dist_under_high < 2.5 or dist_under_high > 18.0:
+            continue  # Disqualify: If < 2.5%, the 52w high is already broken or breaking out today; if > 18%, base is too deep
+
+        # Rule 3: Anti-Extension to 20-SMA (Tight consolidation along moving averages)
         ext_20sma = ((close - sma20) / sma20) * 100.0
         ext_50sma = ((close - sma50) / sma50) * 100.0
-        if ext_20sma > 10.0 or ext_50sma > 30.0:
-            continue
-
-        # Rule 3: High & Tight Base Shelf (within max_dist_high% of 52-week high)
-        high_52w = float(df['High'].max())
-        dist_high = float(((high_52w - close) / high_52w) * 100.0)
-        if dist_high > max_dist_high:
+        if ext_20sma > 6.0 or ext_20sma < -5.0 or ext_50sma > 28.0:
             continue
 
         # Rule 4: RS Outperformance vs SPY (3-month excess return)
         ret_3m = float((close - df['Close'].iloc[-63]) / df['Close'].iloc[-63]) if len(df) >= 63 else 0.0
         rs_excess = float((ret_3m - spy_ret_3m) * 100.0)
-        if rs_excess < min_rs_excess:
+        if rs_excess < 5.0:
             continue
 
-        # Rule 4: Volume Dry-Up (VDU)
+        # Rule 5: Volume Dry-Up (VDU) inside the base
         vol5 = float(df['Volume'].tail(5).mean())
         vol50 = float(df['Volume'].tail(50).mean())
         vdu = float(vol5 / vol50) if vol50 > 0 else 1.0
-        if vdu > 1.20:
-            continue  # Reject chasing / erratic volume explosions
+        if vdu > 1.15:
+            continue  # Reject erratic volume blowouts
 
-        # Rule 5: Ross Haber Personality & Guardian MA Integrity
+        # Rule 6: Ross Haber Personality & Guardian MA Integrity
         adr = calculate_adr_metrics(df) if calculate_adr_metrics else {"adr_10d": 2.5, "adr_20d": 2.5, "adr_50d": 2.5}
         char = detect_character_change(df, adr['adr_10d'], adr['adr_50d']) if detect_character_change else {}
         
@@ -135,18 +144,23 @@ def scan_chop_incubation_leaders(min_dollar_vol=15_000_000, max_dist_high=20.0, 
         guardian = detect_guardian_ma(df) if detect_guardian_ma else {"guardian_ma": "21-SMA", "respect_score": 70.0}
         plan = TradeCouncil.evaluate(ticker, df)
 
-        # Composite O'Neil Incubation Score (Prioritizing tight non-extended bases with dry volume)
-        vdu_bonus = 25.0 if vdu <= 0.75 else (15.0 if vdu <= 0.90 else (5.0 if vdu <= 1.05 else 0.0))
-        score = (min(rs_excess, 100.0) * 0.40) + ((20.0 - dist_high) * 1.8) + vdu_bonus + (guardian['respect_score'] * 0.25)
+        # Disqualify if TradeCouncil has already marked it as an active 52-Week High Breakout
+        if plan['setup_type'] == "52-Week High Breakout":
+            continue
 
-        metric_str = f"RS: +{rs_excess:.1f}% | VDU: {vdu:.2f}x | {guardian['guardian_ma']} ({guardian['respect_score']}%)"
+        # Composite O'Neil Incubation Score (Rewarding sweet-spot 3-8% distance under pivot and dry volume)
+        ideal_dist_bonus = max(0.0, 15.0 - abs(dist_under_high - 5.0) * 2.0)
+        vdu_bonus = 25.0 if vdu <= 0.70 else (15.0 if vdu <= 0.85 else 5.0)
+        score = (min(rs_excess, 80.0) * 0.40) + ideal_dist_bonus + vdu_bonus + (guardian['respect_score'] * 0.25)
+
+        metric_str = f"Base: {days_since_high}d (-{dist_under_high:.1f}% to ATH) | VDU: {vdu:.2f}x | {guardian['guardian_ma']}"
 
         candidates.append({
             "ticker": ticker,
             "metric": metric_str,
             "score": round(score, 2),
             "close": round(close, 2),
-            "dist_52w": round(dist_high, 1),
+            "dist_52w": round(dist_under_high, 1),
             "rs_excess_3m": round(rs_excess, 1),
             "vdu_ratio": round(vdu, 2),
             "guardian_ma": guardian['guardian_ma'],
