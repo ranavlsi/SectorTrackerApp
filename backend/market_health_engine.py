@@ -385,31 +385,75 @@ def generate_market_health_json():
         overall_regime_label = "Risk-Off (Capital Preservation)"
         overall_regime_color = "#ef4444"
 
+    # 5-Day deltas
+    score_5d_delta = round(float(health_oscillator.iloc[-1] - health_oscillator.iloc[-6]), 1) if len(health_oscillator) >= 6 else 0.0
+    mco_5d_delta = round(float(mco.iloc[curr_idx] - mco.iloc[curr_idx-5]), 1) if len(mco) >= 6 else 0.0
+
+    # Latest MCO Signal
+    sorted_signal_dates = sorted(mco_signals.keys())
+    latest_sig_data = None
+    if sorted_signal_dates:
+        latest_sig_date = sorted_signal_dates[-1]
+        latest_sig_data = {
+            "date": latest_sig_date.strftime('%Y-%m-%d'),
+            "signal": mco_signals[latest_sig_date]["signal"],
+            "type": mco_signals[latest_sig_date]["type"],
+            "note": mco_signals[latest_sig_date]["note"]
+        }
+
+    vix_curr = float(macro_df['^VIX'].iloc[curr_idx])
+    vix3m_curr = float(macro_df['^VIX3M'].iloc[curr_idx])
+    vix_is_contango = vix_curr < vix3m_curr
+
     json_payload = {
         "current_health": {
             "score_value": normalized_score,
             "score_label": caution_level,
+            "score_5d_delta": score_5d_delta,
             "health_regime": overall_regime,
             "health_regime_label": overall_regime_label,
             "health_regime_color": overall_regime_color,
-            "mco_status": "Overbought" if mco.iloc[curr_idx] > 300 else "Oversold" if mco.iloc[curr_idx] < -300 else "Neutral",
-            "breadth_status": "Strong" if pct_above_50.iloc[curr_idx] > 75 else "Weak" if pct_above_50.iloc[curr_idx] < 25 else "Neutral",
+            "mco_status": "Extreme Oversold" if mco.iloc[curr_idx] < -500 else "Oversold" if mco.iloc[curr_idx] < -300 else "Extreme Overbought" if mco.iloc[curr_idx] > 500 else "Overbought" if mco.iloc[curr_idx] > 300 else "Neutral",
+            "breadth_status": "Strong Bullish (>75%)" if pct_above_50.iloc[curr_idx] > 75 else "Bearish Washout (<25%)" if pct_above_50.iloc[curr_idx] < 25 else "Below 50% Waterline" if pct_above_50.iloc[curr_idx] < 50 else "Constructive (>50%)",
             "summary_text": full_summary,
             "ad_momentum": "Bullish (Rising)" if mco.iloc[curr_idx] > mco.iloc[curr_idx-1] else "Bearish (Falling)",
             "mco_value": round(float(mco.iloc[curr_idx]), 2),
+            "mco_5d_delta": mco_5d_delta,
+            "latest_signal": latest_sig_data,
+            "pct_above_20_value": round(float(pct_above_20.iloc[curr_idx]), 1),
             "pct_above_50_value": round(float(pct_above_50.iloc[curr_idx]), 1),
             "pct_above_200_value": round(float(pct_above_200.iloc[curr_idx]), 1),
+            "vix_value": round(vix_curr, 2),
+            "vix3m_value": round(vix3m_curr, 2),
+            "vix_ratio": round(vix_curr / vix3m_curr, 2) if vix3m_curr > 0 else 1.0,
+            "vix_structure": "Contango (Normal)" if vix_is_contango else "Backwardation (Inverted / Panic)",
+            "new_highs_count": int(new_highs.iloc[curr_idx]),
+            "new_lows_count": int(new_lows.iloc[curr_idx]),
+            "nhnl_diff": int(nhnl_diff.iloc[curr_idx]),
+            "nhnl_10d_ma": round(float(nhnl_10.iloc[curr_idx]), 1),
+            "hyg_ratio_val": round(float(hyg_ratio.iloc[curr_idx]), 3),
+            "hyg_zscore_val": round(float(hyg_zscore.iloc[curr_idx]), 2),
+            "spy_rsp_ratio_val": round(float(spy_rsp_ratio.iloc[curr_idx]), 2),
+            "qqq_spy_ratio_val": round(float(qqq_spy_ratio.iloc[curr_idx]), 2),
+            "xlk_xlu_ratio_val": round(float(xlk_xlu_ratio.iloc[curr_idx]), 2),
+            "irx_val": round(float(macro_df['^IRX'].iloc[curr_idx]), 2),
+            "cot_net_val": int(cot_aligned.iloc[curr_idx]),
+            "macd_p50_val": round(float(hist_p50.iloc[curr_idx]), 2),
+            "trin_10_val": round(float(trin_10.iloc[curr_idx]), 2),
             "chart_observations": {
-                "irx_liquidity": f"13-Week T-Bill Yield is {macro_df['^IRX'].iloc[-1]:.2f}%.",
-                "cot": f"Net Commercial Positioning on S&P 500 is {int(cot_aligned.iloc[-1])}.",
-                "oscillator": f"Composite Health Oscillator is at {health_oscillator.iloc[-1]:.1f}/100 ({overall_regime_label}).",
-                "mco": f"McClellan Oscillator is at {mco.iloc[curr_idx]:.1f} ({'Extreme Oversold (< -500)' if mco.iloc[curr_idx] < -500 else 'Oversold (< -300)' if mco.iloc[curr_idx] < -300 else 'Overbought (> +300)' if mco.iloc[curr_idx] > 300 else 'Neutral Zone'}).",
+                "oscillator": f"Composite Health Oscillator is at {health_oscillator.iloc[-1]:.1f}/100 ({overall_regime_label}). 5-Day change is {score_5d_delta:+.1f} pts.",
+                "mco": f"McClellan Oscillator is at {mco.iloc[curr_idx]:.1f} ({'Extreme Oversold (< -500)' if mco.iloc[curr_idx] < -500 else 'Oversold (< -300)' if mco.iloc[curr_idx] < -300 else 'Overbought (> +300)' if mco.iloc[curr_idx] > 300 else 'Neutral Zone'}). Momentum is {'rebounding upwards (+)' if mco.iloc[curr_idx] > mco.iloc[curr_idx-1] else 'falling downwards (-)'}.",
+                "p50": f"{pct_above_50.iloc[curr_idx]:.1f}% of stocks are trading above their 50-day SMA ({'Bullish Expansion (>60%)' if pct_above_50.iloc[curr_idx] > 60 else 'Distribution / Deteriorating (<50%)' if pct_above_50.iloc[curr_idx] < 50 else 'Neutral Range'}). Breadth MACD Histogram is {hist_p50.iloc[curr_idx]:.2f} ({'Accelerating' if hist_p50.iloc[curr_idx] > 0 else 'Decelerating'}).",
+                "nhnl": f"New Highs: {int(new_highs.iloc[curr_idx]):,} vs New Lows: {int(new_lows.iloc[curr_idx]):,}. 10-Day Differential MA is {nhnl_10.iloc[curr_idx]:.1f} ({'Net Institutional Accumulation' if nhnl_10.iloc[curr_idx] > 0 else 'Net Institutional Distribution'}).",
+                "vix_curve": f"VIX Spot is {vix_curr:.2f} vs VIX 3-Month at {vix3m_curr:.2f} (Ratio {vix_curr/vix3m_curr:.2f}). Term structure is in {'healthy Contango (Complacent / Normal)' if vix_is_contango else 'Backwardation (Acute Panic / Hedging)'}.",
+                "credit": f"HYG/IEF Risk-Appetite Ratio is {hyg_ratio.iloc[curr_idx]:.2f} with 6-Month Z-Score at {hyg_zscore.iloc[curr_idx]:.2f} ({'Healthy Credit Appetite (Z > 0)' if hyg_zscore.iloc[curr_idx] > 0 else 'Credit Risk-Off / Tightening (Z < 0)'}).",
+                "divergence": f"Cap-weighted SPY/RSP ratio is {spy_rsp_ratio.iloc[curr_idx]:.2f} ({'Mega-cap leadership dominating breadth' if spy_rsp_ratio.iloc[curr_idx] > spy_rsp_ratio.iloc[curr_idx-20] else 'Broad market outperforming mega-caps'}). Tech/Defensive (XLK/XLU) ratio is {xlk_xlu_ratio.iloc[curr_idx]:.2f}.",
+                "irx_liquidity": f"13-Week T-Bill Yield is {macro_df['^IRX'].iloc[curr_idx]:.2f}%. {'Elevated cash return sets high hurdle rate for equity valuation.' if macro_df['^IRX'].iloc[curr_idx] > 3.5 else 'Accommodative yield environment supports equity multiples.'}",
+                "cot": f"Net Commercial Positioning on E-mini S&P 500: {int(cot_aligned.iloc[curr_idx]):,} contracts. {'Commercials heavily hedging physical inventory.' if cot_aligned.iloc[curr_idx] < -50000 else 'Commercials net neutral / accumulating.'}",
                 "ad_line": "A/D Line is rising with price." if ad_line.iloc[curr_idx] > ad_line.rolling(10).mean().iloc[curr_idx] else "A/D Line is lagging.",
-                "trin": f"TRIN 10-day MA is {trin_10.iloc[curr_idx]:.2f}. {'Panic capitulation' if trin_10.iloc[curr_idx] > 1.5 else 'Normal'}",
-                "nhnl": f"10-Day NH-NL Differential MA is {nhnl_10.iloc[curr_idx]:.1f}.",
+                "trin": f"TRIN 10-day MA is {trin_10.iloc[curr_idx]:.2f}. {'Panic capitulation (>1.5)' if trin_10.iloc[curr_idx] > 1.5 else 'Buying exhaustion (<0.8)' if trin_10.iloc[curr_idx] < 0.8 else 'Normal Equilibrium'}",
                 "macd": f"Breadth MACD Histogram is {hist_p50.iloc[curr_idx]:.2f}. {'Accelerating!' if hist_p50.iloc[curr_idx] > 0 else 'Decelerating!'}",
-                "credit": f"HYG/IEF Z-Score is {hyg_zscore.iloc[curr_idx]:.2f}.",
-                "vix_bands": "VIX broke back inside upper Bollinger Band (Buy Signal)." if (vix.iloc[curr_idx-1] > vix_upper.iloc[curr_idx-1] and vix.iloc[curr_idx] < vix_upper.iloc[curr_idx]) else "Normal VIX Behavior."
+                "vix_bands": "VIX broke back inside upper Bollinger Band (Buy Signal)." if (vix.iloc[curr_idx-1] > vix_upper.iloc[curr_idx-1] and vix.iloc[curr_idx] < vix_upper.iloc[curr_idx]) else "Normal VIX Envelope."
             }
         },
         "historical_data": historical_data
