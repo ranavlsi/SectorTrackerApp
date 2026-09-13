@@ -41,8 +41,10 @@ export default function PlainEnglishExplainer({
   return (
     <div 
       style={{
-        background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.4) 0%, rgba(15, 23, 42, 0.8) 100%)',
+        background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.45) 0%, rgba(15, 23, 42, 0.85) 100%)',
         border: '1px solid rgba(168, 85, 247, 0.35)',
+        borderRadius: '16px',
+        padding: '22px',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
       }}
       className="rounded-2xl p-5 md:p-6 relative overflow-hidden transition-all duration-300"
@@ -51,27 +53,52 @@ export default function PlainEnglishExplainer({
       <div className="absolute top-0 right-0 w-80 h-32 bg-purple-500/15 blur-3xl pointer-events-none" />
 
       {/* HEADER RIBBON */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.08] relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.3)]">
-            <GraduationCap size={24} />
+      <div 
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          paddingBottom: '16px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+        }}
+        className="relative z-10"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ padding: '10px', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)', color: '#c084fc', display: 'flex' }}>
+            <GraduationCap size={22} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#c084fc', fontFamily: 'monospace', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 12th Grader Explainer Mode
               </span>
-              <span className="text-xs font-mono text-slate-400">Zero Wall-Street Jargon</span>
+              <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#94a3b8' }}>Zero Wall-Street Jargon</span>
             </div>
-            <h3 className="text-lg font-black text-white tracking-tight mt-0.5">
+            <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 800, color: '#ffffff' }}>
               What Does {symbol} ({companyName}) Actually Look Like Under the Hood?
             </h3>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 border border-purple-500/30 self-start sm:self-auto transition-all"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            fontWeight: 700,
+            background: 'rgba(88, 28, 135, 0.4)',
+            color: '#e9d5ff',
+            border: '1px solid rgba(168, 85, 247, 0.35)',
+            cursor: 'pointer'
+          }}
         >
           {isExpanded ? (
             <>Hide Explanations <ChevronUp size={14} /></>
@@ -82,89 +109,95 @@ export default function PlainEnglishExplainer({
       </div>
 
       {isExpanded && (
-        <div className="mt-5 space-y-5 relative z-10">
+        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }} className="relative z-10">
           
           {/* 1. THE 4 QUESTIONS EVERY 12TH GRADER SHOULD ASK */}
           <div>
-            <div className="text-xs font-mono font-bold uppercase tracking-wider text-purple-300 mb-3 flex items-center gap-1.5">
-              <Sparkles size={14} className="text-purple-400" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#c084fc', marginBottom: '12px' }}>
+              <Sparkles size={14} style={{ color: '#c084fc' }} />
               The 4 Fundamental Questions of Any Business (The Lemonade Stand Test)
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div 
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '14px'
+              }}
+            >
               
               {/* Q1: REAL CASH */}
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-emerald-500/25 shadow-sm flex flex-col justify-between">
+              <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(16, 185, 129, 0.25)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">Q1 · Cash Generation</span>
-                    <span className="p-1 rounded bg-emerald-500/20 text-emerald-400">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Q1 · Cash Generation</span>
+                    <span style={{ padding: '3px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.2)', color: '#00E676', display: 'flex' }}>
                       <CheckCircle2 size={14} />
                     </span>
                   </div>
-                  <h4 className="text-sm font-bold text-white mb-1">Is it making real money?</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    <strong className="text-emerald-400 font-mono">${fcfB} Billion</strong> in pure Free Cash Flow this year.
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>Is it making real money?</h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    <strong style={{ color: '#00E676', fontFamily: 'monospace' }}>${fcfB} Billion</strong> in pure Free Cash Flow this year.
                   </p>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-white/[0.06] text-[11px] text-slate-400 font-sans">
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '11px', color: '#94a3b8' }}>
                   💡 <strong>Analogy:</strong> Not paper IOUs or accounting tricks. This is real cash sitting in their bank account after paying all bills and factory costs.
                 </div>
               </div>
 
               {/* Q2: PRICING POWER & MARGINS */}
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/25 shadow-sm flex flex-col justify-between">
+              <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(6, 182, 212, 0.25)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">Q2 · Pricing Power</span>
-                    <span className="p-1 rounded bg-cyan-500/20 text-cyan-400">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Q2 · Pricing Power</span>
+                    <span style={{ padding: '3px', borderRadius: '4px', background: 'rgba(6, 182, 212, 0.2)', color: '#00F0FF', display: 'flex' }}>
                       <Store size={14} />
                     </span>
                   </div>
-                  <h4 className="text-sm font-bold text-white mb-1">Do they keep high profits?</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    <strong className="text-cyan-400 font-mono">{grossMargin}%</strong> Gross Profit Margin.
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>Do they keep high profits?</h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    <strong style={{ color: '#00F0FF', fontFamily: 'monospace' }}>{grossMargin}%</strong> Gross Profit Margin.
                   </p>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-white/[0.06] text-[11px] text-slate-400 font-sans">
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '11px', color: '#94a3b8' }}>
                   💡 <strong>Analogy:</strong> If a cup of lemonade sells for $1.00, it only costs them ${((100 - parseFloat(grossMargin))/100).toFixed(2)} in lemons. They pocket the rest.
                 </div>
               </div>
 
               {/* Q3: BANKRUPTCY & SAFETY */}
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-blue-500/25 shadow-sm flex flex-col justify-between">
+              <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(59, 130, 246, 0.25)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">Q3 · Safety & Debt</span>
-                    <span className="p-1 rounded bg-blue-500/20 text-blue-400">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Q3 · Safety & Debt</span>
+                    <span style={{ padding: '3px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', display: 'flex' }}>
                       <ShieldCheck size={14} />
                     </span>
                   </div>
-                  <h4 className="text-sm font-bold text-white mb-1">Can they go broke?</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Altman Z-Score <strong className="text-blue-400 font-mono">{altmanScore.toFixed(1)}</strong> (Fortress Safe Zone).
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>Can they go broke?</h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    Altman Z-Score <strong style={{ color: '#60a5fa', fontFamily: 'monospace' }}>{altmanScore.toFixed(1)}</strong> (Fortress Safe Zone).
                   </p>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-white/[0.06] text-[11px] text-slate-400 font-sans">
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '11px', color: '#94a3b8' }}>
                   💡 <strong>Analogy:</strong> Like having $50,000 in savings with only a $500 monthly car payment. Bankruptcy risk is virtually zero (&lt;0.5%).
                 </div>
               </div>
 
               {/* Q4: PRICE & VALUATION */}
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-purple-500/25 shadow-sm flex flex-col justify-between">
+              <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(168, 85, 247, 0.25)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">Q4 · Price Tag</span>
-                    <span className="p-1 rounded bg-purple-500/20 text-purple-400">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Q4 · Price Tag</span>
+                    <span style={{ padding: '3px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', display: 'flex' }}>
                       <DollarSign size={14} />
                     </span>
                   </div>
-                  <h4 className="text-sm font-bold text-white mb-1">Is it cheap or a rip-off?</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    P/E Ratio <strong className="text-purple-400 font-mono">{pe}x</strong> (Fair Value: ${fairValue.toFixed(0)}).
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>Is it cheap or a rip-off?</h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    P/E Ratio <strong style={{ color: '#c084fc', fontFamily: 'monospace' }}>{pe}x</strong> (Fair Value: ${fairValue.toFixed(0)}).
                   </p>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-white/[0.06] text-[11px] text-slate-400 font-sans">
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '11px', color: '#94a3b8' }}>
                   💡 <strong>Analogy:</strong> You are paying ${pe} today for every $1 this business earns every year. A quality brand markup, but fair.
                 </div>
               </div>
@@ -173,56 +206,62 @@ export default function PlainEnglishExplainer({
           </div>
 
           {/* 2. PLAIN-ENGLISH CHEAT SHEET / REAL WORLD DICTIONARY */}
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-white/[0.08]">
-            <div className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-3 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <BookOpen size={14} className="text-cyan-400" />
+          <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(5, 8, 16, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, textTransform: 'uppercase', color: '#cbd5e1' }}>
+                <BookOpen size={14} style={{ color: '#00F0FF' }} />
                 Plain-English Cheat Sheet for Complex Jargon
               </span>
-              <span className="text-[10px] text-slate-400">Click a concept to learn</span>
+              <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' }}>Institutional Glossary</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div 
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '12px'
+              }}
+            >
               
               {/* P/E RATIO */}
-              <div className="p-3 bg-slate-900/80 rounded-lg border border-white/[0.05]">
-                <div className="flex items-center justify-between text-xs font-bold text-cyan-300 font-mono">
-                  <span>P/E Ratio (Price-to-Earnings)</span>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', fontWeight: 700, color: '#00F0FF', fontFamily: 'monospace' }}>
+                  <span>P/E Ratio</span>
                   <span>{pe}x</span>
                 </div>
-                <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed font-sans">
+                <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#cbd5e1', lineHeight: 1.5 }}>
                   <strong>What it means:</strong> The price tag on profits. If a lemonade stand earns $100 profit a year, and the owner asks $3,200 to buy the whole stand, the P/E is 32x.
                 </p>
-                <div className="text-[10px] text-slate-400 mt-1 font-mono">
-                  Rule of Thumb: &lt;15x is cheap, 20-30x is normal for great companies, &gt;45x is very expensive.
+                <div style={{ marginTop: '6px', fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                  Rule: &lt;15x is cheap, 20-30x is normal for great companies, &gt;45x is high growth.
                 </div>
               </div>
 
               {/* PIOTROSKI F-SCORE */}
-              <div className="p-3 bg-slate-900/80 rounded-lg border border-white/[0.05]">
-                <div className="flex items-center justify-between text-xs font-bold text-emerald-300 font-mono">
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', fontWeight: 700, color: '#00E676', fontFamily: 'monospace' }}>
                   <span>Piotroski F-Score</span>
                   <span>{piotroskiScore} / 9</span>
                 </div>
-                <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed font-sans">
+                <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#cbd5e1', lineHeight: 1.5 }}>
                   <strong>What it means:</strong> The high school report card! A Stanford professor created 9 tests (cash flow, debt, sales, margins). 
                 </p>
-                <div className="text-[10px] text-emerald-400 mt-1 font-mono">
-                  Score: {piotroskiScore}/9 is like an "A" grade in financial health.
+                <div style={{ marginTop: '6px', fontSize: '10px', color: '#00E676', fontFamily: 'monospace' }}>
+                  Score: {piotroskiScore}/9 is like an "A" grade in corporate financial health.
                 </div>
               </div>
 
               {/* ECONOMIC MOAT */}
-              <div className="p-3 bg-slate-900/80 rounded-lg border border-white/[0.05]">
-                <div className="flex items-center justify-between text-xs font-bold text-amber-300 font-mono">
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', fontWeight: 700, color: '#fbbf24', fontFamily: 'monospace' }}>
                   <span>Economic Moat</span>
                   <span>{moatType}</span>
                 </div>
-                <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed font-sans">
+                <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#cbd5e1', lineHeight: 1.5 }}>
                   <strong>What it means:</strong> Think of a medieval castle surrounded by water. A moat is what stops competitors from stealing your customers.
                 </p>
-                <div className="text-[10px] text-amber-400 mt-1 font-mono">
-                  {symbol}'s Moat: Switching to another brand is annoying + massive brand loyalty.
+                <div style={{ marginTop: '6px', fontSize: '10px', color: '#fbbf24', fontFamily: 'monospace' }}>
+                  {symbol}'s Moat: Switching to another brand is annoying + massive network effects.
                 </div>
               </div>
 
