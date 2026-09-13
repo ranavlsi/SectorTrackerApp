@@ -192,30 +192,42 @@ def run_correlation_engine():
     dxy_val = macro_quotes.get("DX-Y.NYB", {}).get("current_price", 100.0)
 
     # Regime Logic
-    if vix_val < 18.0 and oil_chg <= 3.0 and spy_ret_20d > 0:
+    # 4-Quadrant Economic Engine: Growth (SPY/QQQ) vs Inflation (10Y Yields, Oil, Commodities)
+    is_growth_rising = spy_ret_20d > 0.0
+    is_inflation_yields_rising = (tnx_chg > 2.0 or oil_chg > 4.0 or macro_quotes.get("^TNX", {}).get("current_price", 0) >= 4.5)
+
+    if is_growth_rising and is_inflation_yields_rising:
+        regime_id = "REFLATION"
+        regime_name = "Reflationary Expansion"
+        regime_desc = "Both Growth and Inflation/Yields are rising. Expanding economic activity fuels corporate revenue and capex, while elevated yields and commodity inputs lift cost curves. Capital aggressively rotates from long-duration bond proxies and unprofitable tech into cyclicals, energy, materials, and asset-sensitive banks."
+        favored = ["XLE (Energy)", "XLF (Financials)", "XLI (Industrials)", "XLB (Materials)"]
+        unfavored = ["XLU (Utilities)", "XLRE (Real Estate)", "TLT (Long Treasuries)"]
+        prob = 78
+        driver_summary = f"Growth Accelerating (SPY 20D: {spy_ret_20d:+}%); Yields/Inflation Elevated (10Y Yield: {macro_quotes.get('^TNX', {}).get('current_price', '4.97')}%, 20D: {tnx_chg:+}%, Oil 20D: {oil_chg:+}%). Broad cyclical participation."
+    elif is_growth_rising and not is_inflation_yields_rising and vix_val < 18.0:
         regime_id = "GOLDILOCKS"
         regime_name = "Goldilocks / Disinflationary Expansion"
-        regime_desc = "Softening energy input costs, compliant volatility (VIX < 18), and resilient equity momentum provide the optimal runway for Technology, Growth, and Semiconductors."
+        regime_desc = "Growth is expanding while inflation and bond yields are softening with compliant volatility (VIX < 18). This provides the optimal runway for Technology, Growth, and Semiconductors via valuation multiple expansion."
         favored = ["XLK (Technology)", "SMH (Semiconductors)", "XLY (Consumer Discretionary)"]
         unfavored = ["XLU (Utilities)", "XLE (Energy)", "Cash / T-Bills"]
         prob = 74
-        driver_summary = f"VIX ({vix_val}) in low-volatility regime; Oil 20D ({oil_chg:+}%) contained; Equity Trend Strong."
-    elif tnx_chg > 5.0 and oil_chg > 4.0 and spy_ret_20d > 0:
-        regime_id = "REFLATION"
-        regime_name = "Reflationary Expansion"
-        regime_desc = "Rising bond yields and surging commodities reflect accelerating global GDP demand. Capital rotates aggressively from bond-proxies into cyclical value."
-        favored = ["XLE (Energy)", "XLF (Financials)", "XLI (Industrials)", "XLB (Materials)"]
-        unfavored = ["XLU (Utilities)", "XLRE (Real Estate)", "TLT (Long Treasuries)"]
-        prob = 68
-        driver_summary = f"Yields rising ({tnx_chg:+}%), Oil accelerating ({oil_chg:+}%). Broad cyclical participation."
-    elif oil_chg > 6.0 and spy_ret_20d < 0 and vix_val > 20.0:
+        driver_summary = f"VIX ({vix_val}) in low-volatility regime; Oil 20D ({oil_chg:+}%) contained; Yields softening; Equity Trend Strong."
+    elif not is_growth_rising and (oil_chg > 5.0 or tnx_chg > 5.0 or vix_val > 20.0):
         regime_id = "STAGFLATION"
         regime_name = "Stagflationary Pressure"
-        regime_desc = "Cost-push inflation from energy and supply chain bottlenecks collides with softening corporate earnings. Defensive preservation dominates."
+        regime_desc = "Growth is slowing while inflation and yields remain stubborn or rising. Cost-push inflation from energy and borrowing costs collides with softening corporate earnings. Defensive capital preservation dominates."
         favored = ["GC=F (Gold)", "XLE (Upstream Energy)", "Cash / Ultra-Short T-Bills"]
         unfavored = ["XLY (Consumer Discretionary)", "XLI (Industrials)", "High-P/E Tech"]
-        prob = 62
-        driver_summary = f"Oil spike compressing margins; VIX elevated ({vix_val}); S&P 500 under pressure."
+        prob = 65
+        driver_summary = f"Oil/Yields compressing corporate margins; VIX elevated ({vix_val}); S&P 500 decelerating ({spy_ret_20d:+}%)."
+    elif not is_growth_rising and not is_inflation_yields_rising:
+        regime_id = "DEFLATION"
+        regime_name = "Deflationary Contraction"
+        regime_desc = "Both Growth and Inflation are decelerating. Demand destruction pulls commodity prices down while central banks ease policy, sparking a flight to safety in sovereign bonds and recession-resilient sectors."
+        favored = ["TLT (Long Treasuries)", "XLU (Utilities)", "XLV (Healthcare)"]
+        unfavored = ["XLE (Energy)", "XLB (Materials)", "XLF (Banks)"]
+        prob = 70
+        driver_summary = f"Growth contracting ({spy_ret_20d:+}%); Inflation falling; Sovereign bonds and defensive yield in demand."
     else:
         regime_id = "NEUTRAL_TRANSITION"
         regime_name = "Consolidating / Mixed Transition"

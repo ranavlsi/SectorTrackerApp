@@ -148,7 +148,11 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
 
   // Preset Simulator Scenarios
   const applyPreset = (type) => {
-    if (type === 'rate_cut') {
+    if (type === 'reflation_boom') {
+      setSimYieldShift(35);
+      setSimOilShift(15);
+      setSimDollarShift(1);
+    } else if (type === 'rate_cut') {
       setSimYieldShift(-30);
       setSimOilShift(-5);
       setSimDollarShift(-2);
@@ -413,10 +417,24 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '1.5rem', alignItems: 'stretch' }}>
             
             {/* Visual 4-Quadrant Matrix */}
-            <div className="glass-card" style={{ padding: '1.5rem', borderTop: '4px solid #10b981' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="glass-card" style={{ 
+              padding: '1.5rem', 
+              borderTop: `4px solid ${
+                activeRegime.id === 'REFLATION' ? '#f59e0b' : 
+                activeRegime.id === 'STAGFLATION' ? '#ef4444' : 
+                activeRegime.id === 'DEFLATION' ? '#94a3b8' : '#10b981'
+              }` 
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
-                  <h3 style={{ margin: 0, color: '#34d399', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ 
+                    margin: 0, 
+                    color: activeRegime.id === 'REFLATION' ? '#fbbf24' : activeRegime.id === 'STAGFLATION' ? '#f87171' : '#34d399', 
+                    fontSize: '1.15rem', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem' 
+                  }}>
                     <Target size={18} /> 4-Quadrant Macro Economic Cycle
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
@@ -424,16 +442,30 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                   </span>
                 </div>
 
-                <span style={{ 
-                  fontSize: '0.72rem', 
-                  padding: '0.2rem 0.6rem', 
-                  borderRadius: '4px', 
-                  background: 'rgba(16, 185, 129, 0.2)', 
-                  color: '#10b981', 
-                  fontWeight: '700' 
-                }}>
-                  ACTIVE: {activeRegime.name?.toUpperCase() || 'GOLDILOCKS'}
-                </span>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  <span style={{ 
+                    fontSize: '0.68rem', 
+                    padding: '0.15rem 0.5rem', 
+                    borderRadius: '4px', 
+                    background: 'rgba(245, 158, 11, 0.15)', 
+                    color: '#fbbf24', 
+                    fontWeight: '700',
+                    border: '1px solid rgba(245, 158, 11, 0.3)'
+                  }}>
+                    GROWTH ↑ • INFLATION/YIELDS ↑
+                  </span>
+                  <span style={{ 
+                    fontSize: '0.72rem', 
+                    padding: '0.2rem 0.6rem', 
+                    borderRadius: '4px', 
+                    background: activeRegime.id === 'REFLATION' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(16, 185, 129, 0.2)', 
+                    color: activeRegime.id === 'REFLATION' ? '#fbbf24' : '#10b981', 
+                    fontWeight: '700',
+                    border: `1px solid ${activeRegime.id === 'REFLATION' ? '#f59e0b' : '#10b981'}`
+                  }}>
+                    ACTIVE: {activeRegime.name?.toUpperCase() || 'REFLATIONARY EXPANSION'}
+                  </span>
+                </div>
               </div>
 
               {/* 4 Quadrants Grid */}
@@ -471,13 +503,14 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
 
                 {/* Quadrant 1: REFLATION (Growth Up, Inflation Up) */}
                 <div style={{ 
-                  background: activeRegime.id === 'REFLATION' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(0,0,0,0.3)', 
+                  background: activeRegime.id === 'REFLATION' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(0,0,0,0.3)', 
                   border: `2px solid ${activeRegime.id === 'REFLATION' ? '#f59e0b' : 'rgba(255,255,255,0.05)'}`,
                   borderRadius: '8px', 
                   padding: '0.85rem',
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  boxShadow: activeRegime.id === 'REFLATION' ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none'
                 }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -490,7 +523,7 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                   </div>
                   <div style={{ fontSize: '0.74rem', marginTop: '0.5rem' }}>
                     <strong style={{ color: '#cbd5e1' }}>Favors: </strong>
-                    <span style={{ color: '#fde68a' }}>Energy (XLE), Financials (XLF), Industrials (XLI)</span>
+                    <span style={{ color: '#fde68a' }}>Energy (XLE), Financials (XLF), Industrials (XLI), Materials (XLB)</span>
                   </div>
                 </div>
 
@@ -521,8 +554,8 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
 
                 {/* Quadrant 4: GOLDILOCKS (Growth Up, Inflation Down) */}
                 <div style={{ 
-                  background: (activeRegime.id === 'GOLDILOCKS' || activeRegime.id === 'NEUTRAL_TRANSITION') ? 'rgba(16, 185, 129, 0.25)' : 'rgba(0,0,0,0.3)', 
-                  border: `2px solid ${(activeRegime.id === 'GOLDILOCKS' || activeRegime.id === 'NEUTRAL_TRANSITION') ? '#10b981' : 'rgba(255,255,255,0.05)'}`,
+                  background: activeRegime.id === 'GOLDILOCKS' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(0,0,0,0.3)', 
+                  border: `2px solid ${activeRegime.id === 'GOLDILOCKS' ? '#10b981' : 'rgba(255,255,255,0.05)'}`,
                   borderRadius: '8px', 
                   padding: '0.85rem',
                   display: 'flex',
@@ -532,7 +565,7 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <strong style={{ color: '#34d399', fontSize: '0.88rem' }}>QUADRANT IV: GOLDILOCKS</strong>
-                      {(activeRegime.id === 'GOLDILOCKS' || activeRegime.id === 'NEUTRAL_TRANSITION') && (
+                      {activeRegime.id === 'GOLDILOCKS' && (
                         <span style={{ fontSize: '0.65rem', background: '#10b981', color: 'black', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>YOU ARE HERE</span>
                       )}
                     </div>
@@ -549,7 +582,13 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
             </div>
 
             {/* Active Regime Executive Summary Card */}
-            <div className="glass-card" style={{ padding: '1.5rem', borderTop: '4px solid #3b82f6', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div className="glass-card" style={{ 
+              padding: '1.5rem', 
+              borderTop: `4px solid ${activeRegime.id === 'REFLATION' ? '#f59e0b' : '#3b82f6'}`, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'space-between' 
+            }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
                   <Compass size={16} color="#60a5fa" />
@@ -610,6 +649,22 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
 
               {/* 1-Click Preset Scenario Buttons */}
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => applyPreset('reflation_boom')}
+                  style={{
+                    padding: '0.35rem 0.75rem',
+                    borderRadius: '6px',
+                    background: 'rgba(245, 158, 11, 0.2)',
+                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                    color: '#fbbf24',
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔥 Reflationary Boom (Growth↑, Yields↑)
+                </button>
+
                 <button
                   onClick={() => applyPreset('rate_cut')}
                   style={{
@@ -823,29 +878,34 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
               
-              {/* Basket 1: Rate Relief / Growth Multiple Expansion */}
-              <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #10b981' }}>
+              {/* Basket 1: Reflationary Cyclical Expansion (Active Macro Regime) */}
+              <div className="glass-card" style={{ 
+                padding: '1.25rem', 
+                borderTop: '3px solid #f59e0b',
+                background: activeRegime.id === 'REFLATION' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                boxShadow: activeRegime.id === 'REFLATION' ? '0 0 15px rgba(245, 158, 11, 0.15)' : 'none'
+              }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <strong style={{ color: '#34d399', fontSize: '0.95rem' }}>
-                    1. Falling Yields & Multiple Expansion
+                  <strong style={{ color: '#fbbf24', fontSize: '0.95rem' }}>
+                    1. Reflationary Boom (Growth↑, Yields/Inflation↑)
                   </strong>
-                  <span style={{ fontSize: '0.68rem', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '1px 6px', borderRadius: '4px', fontWeight: '700' }}>
-                    GROWTH BETA
+                  <span style={{ fontSize: '0.68rem', background: 'rgba(245, 158, 11, 0.25)', color: '#fbbf24', padding: '1px 6px', borderRadius: '4px', fontWeight: '800', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
+                    ACTIVE REGIME
                   </span>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 0.85rem 0', lineHeight: '1.4' }}>
-                  Lower 10-year yields reduce borrowing costs and discount rates, directly expanding valuation multiples for Big Tech and housing remodelers.
+                <p style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: '0 0 0.85rem 0', lineHeight: '1.4' }}>
+                  When GDP growth and inflation/yields accelerate together, capital shifts into cyclicals, industrials, energy cash flows, and asset-sensitive banks.
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                  {['NVDA', 'AAPL', 'MSFT', 'AMZN', 'HD', 'SHW', 'NEE'].map(ticker => (
+                  {['XOM', 'CVX', 'COP', 'JPM', 'CAT', 'DE', 'PWR', 'ETN', 'FCX'].map(ticker => (
                     <span 
                       key={ticker}
                       onClick={() => onTickerClick && onTickerClick(ticker)}
                       style={{
                         fontSize: '0.78rem',
-                        background: 'rgba(16, 185, 129, 0.12)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        color: '#34d399',
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        border: '1px solid rgba(245, 158, 11, 0.35)',
+                        color: '#fde68a',
                         padding: '0.25rem 0.55rem',
                         borderRadius: '6px',
                         fontWeight: '700',
@@ -859,29 +919,29 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                 </div>
               </div>
 
-              {/* Basket 2: Commodity Supercycle & Inflation Hedge */}
-              <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #f59e0b' }}>
+              {/* Basket 2: Falling Yields / Growth Beta */}
+              <div className="glass-card" style={{ padding: '1.25rem', borderTop: '3px solid #10b981' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <strong style={{ color: '#fbbf24', fontSize: '0.95rem' }}>
-                    2. Sticky Inflation & Commodity Hedge
+                  <strong style={{ color: '#34d399', fontSize: '0.95rem' }}>
+                    2. Falling Yields & Multiple Expansion
                   </strong>
-                  <span style={{ fontSize: '0.68rem', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', padding: '1px 6px', borderRadius: '4px', fontWeight: '700' }}>
-                    CASH FLOWS
+                  <span style={{ fontSize: '0.68rem', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '1px 6px', borderRadius: '4px', fontWeight: '700' }}>
+                    GROWTH BETA
                   </span>
                 </div>
                 <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 0.85rem 0', lineHeight: '1.4' }}>
-                  If crude oil or commodities re-accelerate, these upstream producers boast high free cash flow yields, dividend coverage, and pricing power.
+                  When bond yields ease, long-duration discount rates drop, triggering sharp multiple expansion for hyper-growth technology and semiconductors.
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                  {['XOM', 'CVX', 'COP', 'EOG', 'SLB', 'FCX', 'MPC'].map(ticker => (
+                  {['NVDA', 'AAPL', 'MSFT', 'AMZN', 'HD', 'SHW', 'NEE'].map(ticker => (
                     <span 
                       key={ticker}
                       onClick={() => onTickerClick && onTickerClick(ticker)}
                       style={{
                         fontSize: '0.78rem',
-                        background: 'rgba(245, 158, 11, 0.12)',
-                        border: '1px solid rgba(245, 158, 11, 0.3)',
-                        color: '#fbbf24',
+                        background: 'rgba(16, 185, 129, 0.12)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        color: '#34d399',
                         padding: '0.25rem 0.55rem',
                         borderRadius: '6px',
                         fontWeight: '700',

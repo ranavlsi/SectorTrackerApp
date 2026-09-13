@@ -195,20 +195,22 @@
         }
     },
     "active_regime": {
-        "id": "NEUTRAL_TRANSITION",
-        "name": "Consolidating / Mixed Transition",
-        "description": "Cross-currents across rates, currencies, and corporate earnings. Focus strictly on top relative-strength industry groups and selective setups.",
+        "id": "REFLATION",
+        "name": "Reflationary Expansion",
+        "description": "Both Growth and Inflation/Yields are rising. Expanding economic activity fuels corporate revenue and capex, while elevated yields and commodity inputs lift cost curves. Capital aggressively rotates from long-duration bond proxies and unprofitable tech into cyclicals, energy, materials, and asset-sensitive banks.",
         "favored_sectors": [
-            "High Relative Strength Leaders",
+            "XLE (Energy)",
             "XLF (Financials)",
-            "SMH (Semiconductors)"
+            "XLI (Industrials)",
+            "XLB (Materials)"
         ],
         "unfavored_sectors": [
-            "Low Relative Strength Laggards",
-            "High-Debt Small Caps"
+            "XLU (Utilities)",
+            "XLRE (Real Estate)",
+            "TLT (Long Treasuries)"
         ],
-        "confidence": 58,
-        "driver_summary": "Mixed macro signals across yields (+7.2% 20D) and Dollar (99.12)."
+        "confidence": 78,
+        "driver_summary": "Growth Accelerating (SPY 20D: +1.50%); Yields/Inflation Elevated (10Y Yield: 4.97%, 20D: +7.20%, Oil 20D: +23.14%). Broad cyclical participation."
     },
     "scenarios": [
         {
