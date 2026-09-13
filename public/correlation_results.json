@@ -1,5 +1,5 @@
 {
-    "last_updated": "2026-09-13 00:03:12",
+    "last_updated": "2026-09-13 00:14:10",
     "macro_quotes": {
         "^TNX": {
             "symbol": "^TNX",
@@ -210,7 +210,7 @@
             "TLT (Long Treasuries)"
         ],
         "confidence": 78,
-        "driver_summary": "Growth Accelerating (SPY 20D: +1.50%); Yields/Inflation Elevated (10Y Yield: 4.97%, 20D: +7.20%, Oil 20D: +23.14%). Broad cyclical participation."
+        "driver_summary": "Growth Resilient & Expanding; Yields/Inflation Elevated (10Y Yield: 4.97%, 20D: +7.20%, Oil 20D: +23.14%). Broad cyclical participation."
     },
     "scenarios": [
         {

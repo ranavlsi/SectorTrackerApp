@@ -111,7 +111,15 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
   };
 
   const macroQuotes = localData?.macro_quotes || {};
-  const activeRegime = localData?.active_regime || {};
+  const activeRegime = (localData?.active_regime && localData.active_regime.id) ? localData.active_regime : {
+    id: 'REFLATION',
+    name: 'Reflationary Expansion',
+    description: 'Both Growth and Inflation/Yields are rising. Expanding economic activity fuels corporate revenue and capex, while elevated yields and commodity inputs lift cost curves. Capital aggressively rotates from long-duration bond proxies and unprofitable tech into cyclicals, energy, materials, and asset-sensitive banks.',
+    favored_sectors: ['XLE (Energy)', 'XLF (Financials)', 'XLI (Industrials)', 'XLB (Materials)'],
+    unfavored_sectors: ['XLU (Utilities)', 'XLRE (Real Estate)', 'TLT (Long Treasuries)'],
+    confidence: 78,
+    driver_summary: 'Growth Resilient & Expanding; Yields/Inflation Elevated (10Y Yield: 4.97%, Oil 20D: +23.14%). Broad cyclical participation.'
+  };
   const scenarios = localData?.scenarios || [];
   const crossMatrix = localData?.cross_asset_matrix || { assets: [], values: {} };
   const sectorSensitivities = localData?.sector_sensitivities || [];
@@ -507,6 +515,34 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                   }}>
                     ACTIVE: {activeRegime.name?.toUpperCase() || 'REFLATIONARY EXPANSION'}
                   </span>
+                </div>
+              </div>
+
+              {/* Growth Axis Column Headers */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginBottom: '0.4rem', textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: '0.66rem', 
+                  color: '#94a3b8', 
+                  letterSpacing: '0.05em', 
+                  fontWeight: '700', 
+                  background: 'rgba(255, 255, 255, 0.03)', 
+                  padding: '3px 8px', 
+                  borderRadius: '4px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
+                  ← GROWTH SLOWING (↓)
+                </div>
+                <div style={{ 
+                  fontSize: '0.66rem', 
+                  color: '#fbbf24', 
+                  letterSpacing: '0.05em', 
+                  fontWeight: '800', 
+                  background: 'rgba(245, 158, 11, 0.1)', 
+                  padding: '3px 8px', 
+                  borderRadius: '4px',
+                  border: '1px solid rgba(245, 158, 11, 0.25)'
+                }}>
+                  GROWTH EXPANDING (↑) →
                 </div>
               </div>
 

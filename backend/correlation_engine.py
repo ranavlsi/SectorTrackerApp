@@ -193,8 +193,11 @@ def run_correlation_engine():
 
     # Regime Logic
     # 4-Quadrant Economic Engine: Growth (SPY/QQQ) vs Inflation (10Y Yields, Oil, Commodities)
-    is_growth_rising = spy_ret_20d > 0.0
-    is_inflation_yields_rising = (tnx_chg > 2.0 or oil_chg > 4.0 or macro_quotes.get("^TNX", {}).get("current_price", 0) >= 4.5)
+    # Reflation vs Stagflation threshold calibration:
+    # SPY short-term pullbacks (-1% to -2%) during yield/commodity rallies reflect Reflationary Rotation, not economic stagflation.
+    # Stagflation requires genuine growth breakdown (SPY 20D < -3.5%) coupled with high volatility (VIX > 22).
+    is_growth_rising = spy_ret_20d > -2.5 and vix_val < 22.0
+    is_inflation_yields_rising = (tnx_chg > 1.5 or oil_chg > 3.0 or macro_quotes.get("^TNX", {}).get("current_price", 0) >= 4.3)
 
     if is_growth_rising and is_inflation_yields_rising:
         regime_id = "REFLATION"
@@ -203,7 +206,7 @@ def run_correlation_engine():
         favored = ["XLE (Energy)", "XLF (Financials)", "XLI (Industrials)", "XLB (Materials)"]
         unfavored = ["XLU (Utilities)", "XLRE (Real Estate)", "TLT (Long Treasuries)"]
         prob = 78
-        driver_summary = f"Growth Accelerating (SPY 20D: {spy_ret_20d:+}%); Yields/Inflation Elevated (10Y Yield: {macro_quotes.get('^TNX', {}).get('current_price', '4.97')}%, 20D: {tnx_chg:+}%, Oil 20D: {oil_chg:+}%). Broad cyclical participation."
+        driver_summary = f"Growth Resilient & Expanding (SPY 20D: {spy_ret_20d:+}%); Yields/Inflation Elevated (10Y Yield: {macro_quotes.get('^TNX', {}).get('current_price', '4.97')}%, 20D: {tnx_chg:+}%, Oil 20D: {oil_chg:+}%). Broad cyclical participation."
     elif is_growth_rising and not is_inflation_yields_rising and vix_val < 18.0:
         regime_id = "GOLDILOCKS"
         regime_name = "Goldilocks / Disinflationary Expansion"
@@ -212,10 +215,10 @@ def run_correlation_engine():
         unfavored = ["XLU (Utilities)", "XLE (Energy)", "Cash / T-Bills"]
         prob = 74
         driver_summary = f"VIX ({vix_val}) in low-volatility regime; Oil 20D ({oil_chg:+}%) contained; Yields softening; Equity Trend Strong."
-    elif not is_growth_rising and (oil_chg > 5.0 or tnx_chg > 5.0 or vix_val > 20.0):
+    elif not is_growth_rising and (oil_chg > 5.0 or tnx_chg > 5.0) and vix_val >= 22.0:
         regime_id = "STAGFLATION"
         regime_name = "Stagflationary Pressure"
-        regime_desc = "Growth is slowing while inflation and yields remain stubborn or rising. Cost-push inflation from energy and borrowing costs collides with softening corporate earnings. Defensive capital preservation dominates."
+        regime_desc = "Growth is contracting while inflation and yields remain stubborn or rising with elevated volatility. Cost-push inflation from energy and borrowing costs collides with softening corporate earnings. Defensive capital preservation dominates."
         favored = ["GC=F (Gold)", "XLE (Upstream Energy)", "Cash / Ultra-Short T-Bills"]
         unfavored = ["XLY (Consumer Discretionary)", "XLI (Industrials)", "High-P/E Tech"]
         prob = 65
