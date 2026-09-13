@@ -23,7 +23,8 @@ import {
   RotateCcw,
   Sparkles,
   Target,
-  Briefcase
+  Briefcase,
+  ArrowRight
 } from 'lucide-react';
 
 export default function MacroMatrixDashboard({ data, onTickerClick }) {
@@ -170,6 +171,24 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
       setSimDollarShift(0);
     }
   };
+
+  // Keyframe animations for real-time macro indicators and pulse effects
+  const pulseStyle = `
+    @keyframes macroRadarPulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+    @keyframes liveBeaconGlow {
+      0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px #f59e0b); }
+      50% { opacity: 0.4; filter: drop-shadow(0 0 1px #f59e0b); }
+    }
+    @keyframes flowArrowShift {
+      0% { transform: translateX(-4px); opacity: 0.3; }
+      50% { transform: translateX(4px); opacity: 1; }
+      100% { transform: translateX(-4px); opacity: 0.3; }
+    }
+  `;
 
   if (loading && !localData) {
     return (
@@ -425,6 +444,7 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                 activeRegime.id === 'DEFLATION' ? '#94a3b8' : '#10b981'
               }` 
             }}>
+              <style>{pulseStyle}</style>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
                   <h3 style={{ 
@@ -436,6 +456,28 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                     gap: '0.5rem' 
                   }}>
                     <Target size={18} /> 4-Quadrant Macro Economic Cycle
+                    <span style={{ 
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 7px',
+                      borderRadius: '12px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      color: '#fbbf24',
+                      fontSize: '0.65rem',
+                      fontWeight: '800'
+                    }}>
+                      <span style={{ 
+                        width: '7px', 
+                        height: '7px', 
+                        borderRadius: '50%', 
+                        background: '#f59e0b', 
+                        display: 'inline-block',
+                        animation: 'macroRadarPulse 1.8s infinite'
+                      }} />
+                      LIVE PULSE
+                    </span>
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                     Growth (GDP / Liquidity) vs Inflation (Yields / Commodities) Matrix
@@ -510,12 +552,38 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  boxShadow: activeRegime.id === 'REFLATION' ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none'
+                  boxShadow: activeRegime.id === 'REFLATION' ? '0 0 18px rgba(245, 158, 11, 0.25)' : 'none',
+                  position: 'relative'
                 }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong style={{ color: '#fbbf24', fontSize: '0.88rem' }}>QUADRANT I: REFLATION</strong>
-                      {activeRegime.id === 'REFLATION' && <span style={{ fontSize: '0.65rem', background: '#f59e0b', color: 'black', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>YOU ARE HERE</span>}
+                      <strong style={{ color: '#fbbf24', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        QUADRANT I: REFLATION
+                        <span style={{ animation: 'liveBeaconGlow 1.5s infinite', display: 'inline-block' }}>⚡</span>
+                      </strong>
+                      {activeRegime.id === 'REFLATION' && (
+                        <span style={{ 
+                          fontSize: '0.65rem', 
+                          background: '#f59e0b', 
+                          color: 'black', 
+                          padding: '2px 6px', 
+                          borderRadius: '3px', 
+                          fontWeight: '800',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)'
+                        }}>
+                          <span style={{ 
+                            width: '5px', 
+                            height: '5px', 
+                            borderRadius: '50%', 
+                            background: '#000', 
+                            animation: 'macroRadarPulse 1.2s infinite' 
+                          }} />
+                          YOU ARE HERE
+                        </span>
+                      )}
                     </div>
                     <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
                       Growth Accelerating ↑ • Inflation / Yields Rising ↑
@@ -579,6 +647,52 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
                   </div>
                 </div>
               </div>
+
+              {/* Real-Time Animated Capital Flow Vector Ribbon */}
+              <div style={{ 
+                marginTop: '1rem', 
+                background: 'rgba(0, 0, 0, 0.4)', 
+                borderRadius: '6px', 
+                padding: '0.65rem 0.9rem',
+                border: '1px solid rgba(245, 158, 11, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.5rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ 
+                    fontSize: '0.7rem', 
+                    fontWeight: '800', 
+                    color: '#fbbf24', 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px' 
+                  }}>
+                    Active Capital Migration:
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem' }}>
+                    <span style={{ color: '#ef4444', fontWeight: '700', textDecoration: 'line-through' }}>
+                      Bond Proxies (TLT, XLU, XLRE)
+                    </span>
+                    <span style={{ 
+                      color: '#fbbf24', 
+                      display: 'inline-flex', 
+                      alignItems: 'center',
+                      animation: 'flowArrowShift 1.2s infinite ease-in-out' 
+                    }}>
+                      ➔➔
+                    </span>
+                    <span style={{ color: '#34d399', fontWeight: '800' }}>
+                      Cyclical Value (XLE, XLF, XLI, XLB)
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                  Macro Driver: <strong style={{ color: '#f59e0b' }}>10Y Yield 4.97% (+7.2% 20D)</strong> • <strong style={{ color: '#f59e0b' }}>Oil $100.05 (+23.1% 20D)</strong>
+                </div>
+              </div>
             </div>
 
             {/* Active Regime Executive Summary Card */}
@@ -590,10 +704,27 @@ export default function MacroMatrixDashboard({ data, onTickerClick }) {
               justifyContent: 'space-between' 
             }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
-                  <Compass size={16} color="#60a5fa" />
-                  <span style={{ fontSize: '0.75rem', color: '#93c5fd', fontWeight: '700', textTransform: 'uppercase' }}>
-                    Macro Trader's Executive Briefing
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Compass size={16} color="#60a5fa" />
+                    <span style={{ fontSize: '0.75rem', color: '#93c5fd', fontWeight: '700', textTransform: 'uppercase' }}>
+                      Macro Trader's Executive Briefing
+                    </span>
+                  </div>
+                  <span style={{ 
+                    fontSize: '0.68rem', 
+                    color: '#34d399', 
+                    background: 'rgba(16, 185, 129, 0.15)', 
+                    padding: '2px 6px', 
+                    borderRadius: '4px',
+                    fontWeight: '700',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', animation: 'macroRadarPulse 1.5s infinite' }} />
+                    {activeRegime.confidence}% CONVICTION
                   </span>
                 </div>
 
