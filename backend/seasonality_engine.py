@@ -264,11 +264,12 @@ def run_seasonality_radar():
         'last_updated': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'current_month': month_names[cur_month-1],
         'next_month': month_names[next_month-1],
-        'top_picks': candidates[:12],
-        'seasonal_breakout_leaders': [c for c in candidates if c['score'] >= 75 and c['technicals']['above_50'] and c['technicals']['dist_52w_pct'] >= -15.0][:10],
-        'upcoming_monthly_tailwinds': [c for c in candidates if c['seasonality']['next_month_win'] >= 70.0 and c['seasonality']['next_month_avg'] >= 3.0][:10],
-        'options_backed_sweeps': [c for c in candidates if c['options'] and c['options']['bullish_flow'] and c['seasonality']['next_month_avg'] > 0][:10],
-        'seasonal_traps_warning': [c for c in candidates if c['seasonality']['next_month_win'] <= 40.0 or c['seasonality']['next_month_avg'] <= -2.0][:6]
+        'all_candidates': candidates,
+        'top_picks': candidates[:25],
+        'seasonal_breakout_leaders': [c for c in candidates if c['score'] >= 65 and c['technicals']['above_50'] and c['technicals']['dist_52w_pct'] >= -22.0][:20],
+        'upcoming_monthly_tailwinds': [c for c in candidates if c['seasonality']['next_month_win'] >= 65.0 and c['seasonality']['next_month_avg'] >= 2.0][:20],
+        'options_backed_sweeps': [c for c in candidates if c['options'] and c['options']['bullish_flow'] and c['seasonality']['next_month_avg'] > 0][:20],
+        'seasonal_traps_warning': [c for c in candidates if c['seasonality']['cur_month_win'] <= 45.0 or c['seasonality']['cur_month_avg'] <= -1.5 or c['seasonality']['next_month_win'] <= 40.0][:15]
     }
     
     output_path = os.path.join(os.path.dirname(__file__), '..', 'public', 'seasonality_results.json')

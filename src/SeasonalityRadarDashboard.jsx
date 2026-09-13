@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Compass, 
   Flame, 
@@ -16,23 +16,105 @@ import {
   Filter,
   ShieldAlert,
   Sun,
-  Snowflake
+  Snowflake,
+  RefreshCw
 } from 'lucide-react';
 
 export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
+  const [localData, setLocalData] = useState(data);
+  const [loading, setLoading] = useState(!data);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState('');
   const [activeCategory, setActiveCategory] = useState('all'); // 'all', 'breakouts', 'upcoming', 'options', 'traps'
   const [searchQuery, setSearchQuery] = useState('');
-  const [minScore, setMinScore] = useState(60);
+  const [minScore, setMinScore] = useState(0); // 0 = all
+  const [showAllCandidates, setShowAllCandidates] = useState(false);
 
-  const currentMonth = data?.current_month || 'Sep';
-  const nextMonth = data?.next_month || 'Oct';
+  // Auto-fetch data if parent didn't provide it yet
+  useEffect(() => {
+    if (data) {
+      setLocalData(data);
+      setLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    setLoading(true);
+
+    const loadData = async () => {
+      try {
+        const res = await fetch('/seasonality_results.json?t=' + Date.now());
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (isMounted) {
+          setLocalData(json);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.warn('Direct JSON fetch failed, attempting API endpoint:', err);
+        try {
+          const apiRes = await fetch('/api/seasonality_radar');
+          if (!apiRes.ok) throw new Error(`API HTTP ${apiRes.status}`);
+          const apiJson = await apiRes.json();
+          if (isMounted) {
+            setLocalData(apiJson);
+            setLoading(false);
+          }
+        } catch (apiErr) {
+          console.error('All seasonality fetches failed:', apiErr);
+          if (isMounted) setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+    return () => { isMounted = false; };
+  }, [data]);
+
+  // Handle manual on-demand re-scan
+  const handleRescan = async () => {
+    setIsScanning(true);
+    setScanMessage('Running 10-year monthly cyclical scan & options sweep on 76 tickers...');
+    try {
+      const res = await fetch('/api/seasonality_radar?refresh=1', { method: 'POST' });
+      if (!res.ok) throw new Error(`Scanner error HTTP ${res.status}`);
+      const freshData = await res.json();
+      setLocalData(freshData);
+      setScanMessage('Scan complete! Fresh seasonality intelligence loaded.');
+      setTimeout(() => setScanMessage(''), 4000);
+    } catch (err) {
+      console.error('Re-scan error:', err);
+      // Fallback reload
+      try {
+        const res = await fetch('/seasonality_results.json?t=' + Date.now());
+        const json = await res.json();
+        setLocalData(json);
+        setScanMessage('Loaded latest cached scan results.');
+        setTimeout(() => setScanMessage(''), 4000);
+      } catch (e) {
+        setScanMessage('Failed to run scan: ' + err.message);
+        setTimeout(() => setScanMessage(''), 5000);
+      }
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const currentMonth = localData?.current_month || 'Sep';
+  const nextMonth = localData?.next_month || 'Oct';
 
   // Extract category lists from data
-  const topPicks = useMemo(() => data?.top_picks || [], [data]);
-  const breakoutLeaders = useMemo(() => data?.seasonal_breakout_leaders || [], [data]);
-  const upcomingTailwinds = useMemo(() => data?.upcoming_monthly_tailwinds || [], [data]);
-  const optionsBacked = useMemo(() => data?.options_backed_sweeps || [], [data]);
-  const seasonalTraps = useMemo(() => data?.seasonal_traps_warning || [], [data]);
+  const topPicks = useMemo(() => {
+    if (!localData) return [];
+    if (showAllCandidates && localData.all_candidates) return localData.all_candidates;
+    return localData.top_picks || localData.all_candidates?.slice(0, 25) || [];
+  }, [localData, showAllCandidates]);
+
+  const allCandidatesCount = localData?.all_candidates?.length || localData?.top_picks?.length || 0;
+  const breakoutLeaders = useMemo(() => localData?.seasonal_breakout_leaders || [], [localData]);
+  const upcomingTailwinds = useMemo(() => localData?.upcoming_monthly_tailwinds || [], [localData]);
+  const optionsBacked = useMemo(() => localData?.options_backed_sweeps || [], [localData]);
+  const seasonalTraps = useMemo(() => localData?.seasonal_traps_warning || [], [localData]);
 
   // Determine current active list
   const currentList = useMemo(() => {
@@ -44,18 +126,22 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
     else if (activeCategory === 'traps') list = seasonalTraps;
 
     return list.filter(item => {
-      const matchSearch = !searchQuery || item.ticker.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = !searchQuery || item.ticker?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchScore = activeCategory === 'traps' ? true : (item.score >= minScore);
       return matchSearch && matchScore;
     });
   }, [activeCategory, topPicks, breakoutLeaders, upcomingTailwinds, optionsBacked, seasonalTraps, searchQuery, minScore]);
 
-  if (!data) {
+  if (loading && !localData) {
     return (
-      <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
-        <Compass size={40} className="animate-spin" style={{ color: '#06b6d4', marginBottom: '1rem' }} />
-        <h3 style={{ color: 'white' }}>Loading Seasonality Radar Intelligence...</h3>
-        <p>Analyzing 10-year monthly cyclical win-rates, technical moving averages, and institutional options flow.</p>
+      <div className="glass-card" style={{ padding: '4rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
+        <Compass size={44} className="animate-spin" style={{ color: '#06b6d4', margin: '0 auto 1.25rem auto' }} />
+        <h3 style={{ color: 'white', margin: '0 0 0.5rem 0', fontSize: '1.4rem' }}>
+          Loading Seasonality Radar Intelligence...
+        </h3>
+        <p style={{ maxWidth: '500px', margin: '0 auto', fontSize: '0.9rem', lineHeight: '1.5' }}>
+          Analyzing 10-year monthly win-rates, moving average trend alignments, and real-time options order flows across 76 momentum leaders.
+        </p>
       </div>
     );
   }
@@ -66,7 +152,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
       {/* HEADER BANNER */}
       <div className="glass-card" style={{ 
         padding: '1.5rem 2rem', 
-        background: 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(6,182,212,0.1) 100%)',
+        background: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(6,182,212,0.12) 100%)',
         borderLeft: '5px solid #06b6d4'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
@@ -74,7 +160,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
               <div style={{ 
                 background: 'rgba(6, 182, 212, 0.2)', 
-                padding: '0.5rem', 
+                padding: '0.55rem', 
                 borderRadius: '10px', 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -92,51 +178,92 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
                 </span>
               </div>
             </div>
+            {localData?.last_updated && (
+              <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                Last Synced: {localData.last_updated} • Universe: {allCandidatesCount} High-Liquidity Stocks
+              </span>
+            )}
           </div>
 
-          {/* Quick Macro Badges */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          {/* Action & Macro Metrics */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleRescan}
+              disabled={isScanning}
+              style={{
+                padding: '0.6rem 1.1rem',
+                borderRadius: '8px',
+                background: isScanning ? 'rgba(6, 182, 212, 0.15)' : 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)',
+                color: 'white',
+                border: '1px solid rgba(6, 182, 212, 0.4)',
+                fontWeight: '700',
+                fontSize: '0.82rem',
+                cursor: isScanning ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                boxShadow: '0 4px 12px rgba(6, 182, 212, 0.2)'
+              }}
+            >
+              <RefreshCw size={15} className={isScanning ? 'animate-spin' : ''} />
+              {isScanning ? 'Scanning Universe...' : 'Re-scan Radar'}
+            </button>
+
             <div style={{ 
-              background: 'rgba(0,0,0,0.3)', 
+              background: 'rgba(0,0,0,0.35)', 
               border: '1px solid rgba(255,255,255,0.08)', 
-              padding: '0.6rem 1rem', 
+              padding: '0.55rem 0.9rem', 
               borderRadius: '8px',
               textAlign: 'center'
             }}>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase' }}>Active Cycle</span>
-              <strong style={{ color: '#22d3ee', fontSize: '1.1rem' }}>{currentMonth} ➔ {nextMonth}</strong>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase' }}>Cycle</span>
+              <strong style={{ color: '#22d3ee', fontSize: '1rem' }}>{currentMonth} ➔ {nextMonth}</strong>
             </div>
 
             <div style={{ 
               background: 'rgba(16, 185, 129, 0.1)', 
               border: '1px solid rgba(16, 185, 129, 0.25)', 
-              padding: '0.6rem 1rem', 
+              padding: '0.55rem 0.9rem', 
               borderRadius: '8px',
               textAlign: 'center'
             }}>
-              <span style={{ fontSize: '0.7rem', color: '#6ee7b7', display: 'block', textTransform: 'uppercase' }}>Confluence Leaders</span>
-              <strong style={{ color: '#10b981', fontSize: '1.1rem' }}>{topPicks.length} Identified</strong>
+              <span style={{ fontSize: '0.68rem', color: '#6ee7b7', display: 'block', textTransform: 'uppercase' }}>Leaders</span>
+              <strong style={{ color: '#10b981', fontSize: '1rem' }}>{topPicks.length} Identified</strong>
             </div>
 
             <div style={{ 
               background: 'rgba(239, 68, 68, 0.1)', 
               border: '1px solid rgba(239, 68, 68, 0.25)', 
-              padding: '0.6rem 1rem', 
+              padding: '0.55rem 0.9rem', 
               borderRadius: '8px',
               textAlign: 'center'
             }}>
-              <span style={{ fontSize: '0.7rem', color: '#fca5a5', display: 'block', textTransform: 'uppercase' }}>Seasonal Traps</span>
-              <strong style={{ color: '#ef4444', fontSize: '1.1rem' }}>{seasonalTraps.length} Warning</strong>
+              <span style={{ fontSize: '0.68rem', color: '#fca5a5', display: 'block', textTransform: 'uppercase' }}>Traps Warning</span>
+              <strong style={{ color: '#ef4444', fontSize: '1rem' }}>{seasonalTraps.length} Avoid</strong>
             </div>
           </div>
         </div>
+
+        {scanMessage && (
+          <div style={{ 
+            marginTop: '0.85rem', 
+            padding: '0.5rem 0.8rem', 
+            background: 'rgba(6, 182, 212, 0.15)', 
+            border: '1px solid rgba(6, 182, 212, 0.3)', 
+            borderRadius: '6px',
+            fontSize: '0.78rem',
+            color: '#67e8f9'
+          }}>
+            {scanMessage}
+          </div>
+        )}
 
         {/* SUBNAV / CATEGORY TABS & CONTROLS */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          marginTop: '1.5rem', 
+          marginTop: '1.25rem', 
           paddingTop: '1rem', 
           borderTop: '1px solid rgba(255,255,255,0.06)',
           flexWrap: 'wrap',
@@ -147,7 +274,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
             <button
               onClick={() => setActiveCategory('all')}
               style={{
-                padding: '0.45rem 0.9rem',
+                padding: '0.45rem 0.85rem',
                 borderRadius: '6px',
                 border: `1px solid ${activeCategory === 'all' ? '#06b6d4' : 'rgba(255,255,255,0.08)'}`,
                 background: activeCategory === 'all' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(0,0,0,0.2)',
@@ -160,13 +287,13 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
                 gap: '0.4rem'
               }}
             >
-              <Flame size={15} /> All Triple-Confluence Leaders ({topPicks.length})
+              <Flame size={15} /> All Confluence Leaders ({topPicks.length})
             </button>
 
             <button
               onClick={() => setActiveCategory('breakouts')}
               style={{
-                padding: '0.45rem 0.9rem',
+                padding: '0.45rem 0.85rem',
                 borderRadius: '6px',
                 border: `1px solid ${activeCategory === 'breakouts' ? '#10b981' : 'rgba(255,255,255,0.08)'}`,
                 background: activeCategory === 'breakouts' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(0,0,0,0.2)',
@@ -179,13 +306,13 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
                 gap: '0.4rem'
               }}
             >
-              <TrendingUp size={15} /> Seasonal Breakout Leaders ({breakoutLeaders.length})
+              <TrendingUp size={15} /> Seasonal Breakouts ({breakoutLeaders.length})
             </button>
 
             <button
               onClick={() => setActiveCategory('upcoming')}
               style={{
-                padding: '0.45rem 0.9rem',
+                padding: '0.45rem 0.85rem',
                 borderRadius: '6px',
                 border: `1px solid ${activeCategory === 'upcoming' ? '#3b82f6' : 'rgba(255,255,255,0.08)'}`,
                 background: activeCategory === 'upcoming' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(0,0,0,0.2)',
@@ -204,7 +331,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
             <button
               onClick={() => setActiveCategory('options')}
               style={{
-                padding: '0.45rem 0.9rem',
+                padding: '0.45rem 0.85rem',
                 borderRadius: '6px',
                 border: `1px solid ${activeCategory === 'options' ? '#f59e0b' : 'rgba(255,255,255,0.08)'}`,
                 background: activeCategory === 'options' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(0,0,0,0.2)',
@@ -223,7 +350,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
             <button
               onClick={() => setActiveCategory('traps')}
               style={{
-                padding: '0.45rem 0.9rem',
+                padding: '0.45rem 0.85rem',
                 borderRadius: '6px',
                 border: `1px solid ${activeCategory === 'traps' ? '#ef4444' : 'rgba(255,255,255,0.08)'}`,
                 background: activeCategory === 'traps' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0,0,0,0.2)',
@@ -240,8 +367,26 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
             </button>
           </div>
 
-          {/* Search & Min Score Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Search, All toggle, & Min Score Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {activeCategory === 'all' && (
+              <button
+                onClick={() => setShowAllCandidates(!showAllCandidates)}
+                style={{
+                  background: showAllCandidates ? 'rgba(6, 182, 212, 0.2)' : 'rgba(0,0,0,0.3)',
+                  border: `1px solid ${showAllCandidates ? '#06b6d4' : 'rgba(255,255,255,0.1)'}`,
+                  color: showAllCandidates ? '#22d3ee' : '#94a3b8',
+                  padding: '0.35rem 0.65rem',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {showAllCandidates ? `All ${allCandidatesCount} Stocks` : 'Top 25'}
+              </button>
+            )}
+
             <div style={{ position: 'relative' }}>
               <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
               <input
@@ -253,10 +398,10 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
                   background: 'rgba(0,0,0,0.3)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   borderRadius: '6px',
-                  padding: '0.4rem 0.75rem 0.4rem 2rem',
+                  padding: '0.38rem 0.75rem 0.38rem 2rem',
                   color: 'white',
                   fontSize: '0.8rem',
-                  width: '130px',
+                  width: '120px',
                   outline: 'none'
                 }}
               />
@@ -278,6 +423,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
                     outline: 'none'
                   }}
                 >
+                  <option value="0">All Setups</option>
                   <option value="50">50+</option>
                   <option value="60">60+</option>
                   <option value="70">70+ (A+ Quality)</option>
@@ -291,8 +437,12 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
 
       {/* STOCKS GRID */}
       {currentList.length === 0 ? (
-        <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
-          <p style={{ margin: 0, fontSize: '1rem' }}>No tickers matched your active filter criteria.</p>
+        <div className="glass-card" style={{ padding: '3.5rem 2rem', textAlign: 'center', color: '#64748b' }}>
+          <Compass size={32} style={{ color: '#475569', margin: '0 auto 0.75rem auto' }} />
+          <p style={{ margin: 0, fontSize: '1rem', color: '#94a3b8' }}>No tickers matched your active filter criteria.</p>
+          <span style={{ fontSize: '0.8rem', marginTop: '0.5rem', display: 'block' }}>
+            Try setting Min Score to "All Setups" or clearing your search term.
+          </span>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: '1.25rem' }}>
@@ -301,7 +451,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
             const tech = item.technicals || {};
             const seas = item.seasonality || {};
             const opt = item.options || {};
-            const isTrap = activeCategory === 'traps' || (seas.cur_month_win < 35 && seas.cur_month_avg < 0);
+            const isTrap = activeCategory === 'traps' || (seas.cur_month_win < 40 && seas.cur_month_avg < 0);
 
             return (
               <div 
@@ -313,7 +463,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
                   borderTop: `3px solid ${isTrap ? '#ef4444' : item.badge_color || scoreColor}`,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '1rem',
+                  gap: '0.9rem',
                   transition: 'transform 0.15s ease, border-color 0.15s ease'
                 }}
               >
@@ -493,7 +643,7 @@ export default function SeasonalityRadarDashboard({ data, onTickerClick }) {
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center', 
-                  paddingTop: '0.5rem', 
+                  paddingTop: '0.45rem', 
                   borderTop: '1px solid rgba(255,255,255,0.04)',
                   fontSize: '0.74rem',
                   color: '#94a3b8'

@@ -141,18 +141,24 @@ def analyze_earnings():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/seasonality_radar')
+@app.route('/api/seasonality_radar', methods=['GET', 'POST'])
 def get_seasonality_radar():
     """Serve cached or dynamically generated Seasonality Radar data."""
+    refresh = request.args.get('refresh') == '1' or request.method == 'POST'
     public_path = os.path.join(os.path.dirname(__file__), 'public', 'seasonality_results.json')
-    if os.path.exists(public_path):
+    
+    if not refresh and os.path.exists(public_path):
         with open(public_path, 'r') as f:
             return jsonify(json.load(f))
+            
     try:
         from backend.seasonality_engine import run_seasonality_radar
         data = run_seasonality_radar()
         return jsonify(data)
     except Exception as e:
+        if os.path.exists(public_path):
+            with open(public_path, 'r') as f:
+                return jsonify(json.load(f))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/chart_data')
