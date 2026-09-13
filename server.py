@@ -161,6 +161,26 @@ def get_seasonality_radar():
                 return jsonify(json.load(f))
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/macro_matrix', methods=['GET', 'POST'])
+def get_macro_matrix():
+    """Serve cached or dynamically generated Macro Matrix & Correlation data."""
+    refresh = request.args.get('refresh') == '1' or request.method == 'POST'
+    public_path = os.path.join(os.path.dirname(__file__), 'public', 'correlation_results.json')
+    
+    if not refresh and os.path.exists(public_path):
+        with open(public_path, 'r') as f:
+            return jsonify(json.load(f))
+            
+    try:
+        from backend.correlation_engine import run_correlation_engine
+        data = run_correlation_engine()
+        return jsonify(data)
+    except Exception as e:
+        if os.path.exists(public_path):
+            with open(public_path, 'r') as f:
+                return jsonify(json.load(f))
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/chart_data')
 def chart_data():
     ticker = request.args.get('ticker')

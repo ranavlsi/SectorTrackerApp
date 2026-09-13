@@ -19,6 +19,7 @@ import { MarketHealthGuideCard, MarketHealthRadarMatrix, RegimePlaybookCard } fr
 import { StockPersonalityBadge, RossHaberPersonalityPanel } from './StockPersonalityBadge';
 import WeeklyPlaybookDashboard from './WeeklyPlaybookDashboard';
 import SeasonalityRadarDashboard from './SeasonalityRadarDashboard';
+import MacroMatrixDashboard from './MacroMatrixDashboard';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -845,68 +846,7 @@ function App() {
       )}
 
       {activeTab === 'macromatrix' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-          <div className="glass-card" style={{ padding: '2rem', borderTop: '5px solid #4facfe' }}>
-            <h2 style={{ marginTop: 0, color: '#4facfe', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ActivitySquare size={24} /> Actionable Macro Regimes
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: '1rem', marginBottom: '2rem' }}>
-              Stop looking at raw correlation decimals. This engine tells you exactly what to buy based on where you think Yields, Oil, Crypto, and the Dollar are going.
-            </p>
-            {correlationData && correlationData.scenarios ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                {correlationData.scenarios.map((scenario, idx) => {
-                  let driverColor = '#4facfe';
-                  if (scenario.driver.includes("Yield")) driverColor = '#ef4444';
-                  if (scenario.driver.includes("Oil")) driverColor = '#f59e0b';
-                  if (scenario.driver.includes("Bitcoin")) driverColor = '#f59e0b';
-                  if (scenario.driver.includes("Dollar")) driverColor = '#10b981';
-
-                  return (
-                    <div key={idx} className="neo-panel" style={{ padding: '1.5rem', background: 'rgba(15, 23, 42, 0.6)' }}>
-                      <h3 style={{ margin: '0 0 1.5rem 0', color: driverColor, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', fontSize: '1.3rem' }}>
-                        {scenario.driver} Scenario
-                      </h3>
-                      
-                      <div style={{ marginBottom: '1.5rem' }}>
-                        <h4 style={{ margin: '0 0 0.75rem 0', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          If {scenario.driver} goes UP ↗️
-                        </h4>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#94a3b8' }}>Buy these highly positively correlated names:</p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                          {scenario.if_up.length > 0 ? scenario.if_up.map(stock => (
-                            <span key={stock.ticker} onClick={() => fetchTickerData(stock.ticker)} className="stock-pill" style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.85rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              {stock.ticker} <span style={{opacity: 0.5}}>{stock.corr}</span>
-                            </span>
-                          )) : <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No strong positive correlations found.</span>}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 style={{ margin: '0 0 0.75rem 0', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          If {scenario.driver} goes DOWN ↘️
-                        </h4>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#94a3b8' }}>Buy these highly inversely correlated names:</p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                          {scenario.if_down.length > 0 ? scenario.if_down.map(stock => (
-                            <span key={stock.ticker} onClick={() => fetchTickerData(stock.ticker)} className="stock-pill" style={{ cursor: 'pointer', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.85rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              {stock.ticker} <span style={{opacity: 0.5}}>{stock.corr}</span>
-                            </span>
-                          )) : <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No strong inverse correlations found.</span>}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '3rem', color: '#4facfe' }}>
-                <Loader className="spin" size={32} style={{ marginBottom: '1rem' }} />
-                <p>Loading Actionable Scenarios...</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <MacroMatrixDashboard data={correlationData} onTickerClick={fetchTickerData} />
       )}
 
       {activeTab === 'gexprofiler' && (
