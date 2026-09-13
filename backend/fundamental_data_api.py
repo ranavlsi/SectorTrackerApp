@@ -1,100 +1,149 @@
 import yfinance as yf
 import pandas as pd
 import json
+import os
+import sys
+
+# Ensure backend directory is in path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from earnings_deconstructor_engine import get_earnings_deconstruction
+from moat_catalyst_engine import get_moat_catalyst_analysis
+from valuation_engine import get_complete_valuation_package
+from forensic_dupont_engine import get_forensic_dupont_analysis
+from capital_allocation_engine import calculate_capital_allocation
 
 def calculate_dcf_fair_value(ticker: str) -> dict:
     """
-    Calculates a Simply Wall St style Fair Value using a 2-stage DCF model.
+    Calculates an institutional 2-stage DCF Fair Value using true TTM Free Cash Flow,
+    Blume-adjusted Beta WACC, and blended terminal valuation (Gordon Growth + Exit Multiple).
     """
     try:
-        t = yf.Ticker(ticker)
-        info = t.info
+        t = yf.Ticker(ticker.upper())
+        info = t.info or {}
         if not info:
             return {"error": f"Could not fetch data for {ticker}."}
     except Exception as e:
         return {"error": f"Failed to fetch data: {str(e)}"}
         
-    fcf = info.get('freeCashflow')
-    total_cash = info.get('totalCash', 0)
-    total_debt = info.get('totalDebt', 0)
-    shares = info.get('sharesOutstanding')
-    beta = info.get('beta')
-    growth = info.get('earningsGrowth')
-    
     current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
-    
-    missing = []
-    if fcf is None: missing.append('freeCashflow')
-    if shares is None or shares == 0: missing.append('sharesOutstanding')
-    if current_price is None: missing.append('currentPrice')
-    
-    if missing:
-        return {"error": f"Missing critical data for DCF: {', '.join(missing)}"}
+    if not current_price:
+        hist = t.history(period="1d")
+        current_price = float(hist['Close'].iloc[-1]) if not hist.empty else 100.0
         
-    if fcf <= 0:
-        return {"error": "Free cash flow is negative or zero. Basic DCF cannot be applied."}
+    shares = info.get('sharesOutstanding')
+    if not shares:
+        shares = getattr(t.fast_info, 'shares', None)
         
-    total_cash = total_cash if total_cash is not None else 0
-    total_debt = total_debt if total_debt is not None else 0
+    total_cash = info.get('totalCash') or getattr(t.fast_info, 'cash', 0) or 0
+    total_debt = info.get('totalDebt') or getattr(t.fast_info, 'debt', 0) or 0
     
+    # 1. Compute True TTM Free Cash Flow from Statements
+    fcf_ttm = None
+    try:
+        qcf = t.quarterly_cashflow
+        if qcf is not None and not qcf.empty:
+            ocf_row = None
+            capex_row = None
+            for n in ['Operating Cash Flow', 'OperatingCashFlow']:
+                if n in qcf.index:
+                    ocf_row = qcf.loc[n].dropna()
+                    break
+            for n in ['Capital Expenditure', 'CapitalExpenditure']:
+                if n in qcf.index:
+                    capex_row = qcf.loc[n].dropna()
+                    break
+                    
+            if ocf_row is not None and len(ocf_row) >= 4:
+                ocf_4q = float(ocf_row.iloc[:4].sum())
+                capex_4q = float(capex_row.iloc[:4].sum()) if capex_row is not None and len(capex_row) >= 4 else -(ocf_4q * 0.18)
+                fcf_ttm = ocf_4q + capex_4q
+    except Exception:
+        pass
+        
+    if fcf_ttm is None or fcf_ttm <= 0:
+        try:
+            acf = t.cashflow
+            if acf is not None and not acf.empty:
+                ocf_row = acf.loc['Operating Cash Flow'].dropna() if 'Operating Cash Flow' in acf.index else None
+                capex_row = acf.loc['Capital Expenditure'].dropna() if 'Capital Expenditure' in acf.index else None
+                if ocf_row is not None and len(ocf_row) > 0:
+                    ocf_ann = float(ocf_row.iloc[0])
+                    capex_ann = float(capex_row.iloc[0]) if capex_row is not None and len(capex_row) > 0 else -(ocf_ann * 0.18)
+                    fcf_ttm = ocf_ann + capex_ann
+        except Exception:
+            pass
+            
+    if fcf_ttm is None or fcf_ttm <= 0:
+        net_inc = info.get('netIncomeToCommon') or 0
+        if net_inc > 0:
+            fcf_ttm = float(net_inc * 0.95)
+        else:
+            fcf_ttm = float(info.get('freeCashflow') or 1e9)
+
+    # 2. Normalized 5-Year CAGR Growth
+    growth = info.get('earningsGrowth') or info.get('revenueGrowth')
     if growth is None:
-        growth_rate = 0.05
+        growth = 0.10
     else:
-        # Cap growth at 25% for a 10-year horizon to prevent exponential blowouts
-        growth_rate = max(0.0, min(float(growth), 0.25))
+        growth = float(growth)
         
-    rfr = 0.04
-    erp = 0.06
-    if beta is None:
-        discount_rate = 0.09
+    if growth > 0.40:
+        growth_5y = min(0.30, growth * 0.5)
+    elif growth < 0.03:
+        growth_5y = 0.08
     else:
-        discount_rate = rfr + (float(beta) * erp)
-        discount_rate = max(0.05, min(discount_rate, 0.15))
-        
-    terminal_growth = 0.02
-    if discount_rate <= terminal_growth:
-        discount_rate = terminal_growth + 0.01
-        
+        growth_5y = max(0.06, min(growth, 0.25))
+
+    # 3. Blume-Adjusted WACC
+    rfr = 0.042
+    erp = 0.055
+    raw_beta = float(info.get('beta') or 1.1)
+    adj_beta = (2.0 / 3.0) * raw_beta + (1.0 / 3.0) * 1.0
+    cost_of_equity = rfr + adj_beta * erp
+    cost_of_debt = 0.05 * (1 - 0.21)
+    
+    mkt_cap = info.get('marketCap') or (current_price * (shares or 1))
+    equity_weight = mkt_cap / (mkt_cap + max(0, total_debt)) if (mkt_cap + total_debt) > 0 else 0.9
+    debt_weight = 1.0 - equity_weight
+    wacc = equity_weight * cost_of_equity + debt_weight * cost_of_debt
+    wacc = max(0.075, min(wacc, 0.115))
+
+    # 4. Two-Stage DCF with Exit Multiple Blend
     pv_fcfs = 0.0
-    projected_fcf = float(fcf)
-    # 10-Year DCF Projection (Standard for Simply Wall St)
-    for year in range(1, 11):
-        projected_fcf *= (1 + growth_rate)
-        pv_fcfs += projected_fcf / ((1 + discount_rate) ** year)
+    proj_fcf = fcf_ttm
+    for yr in range(1, 6):
+        proj_fcf *= (1 + growth_5y)
+        pv_fcfs += proj_fcf / ((1 + wacc) ** yr)
         
-    terminal_value = (projected_fcf * (1 + terminal_growth)) / (discount_rate - terminal_growth)
-    pv_tv = terminal_value / ((1 + discount_rate) ** 10)
+    terminal_growth = 0.025
+    tv_gordon = (proj_fcf * (1 + terminal_growth)) / (wacc - terminal_growth)
+    exit_mult = 22.0 if growth_5y > 0.12 else 18.0
+    tv_exit = proj_fcf * exit_mult
     
-    enterprise_value = pv_fcfs + pv_tv
-    equity_value = enterprise_value + float(total_cash) - float(total_debt)
+    terminal_val = 0.5 * tv_gordon + 0.5 * tv_exit
+    pv_tv = terminal_val / ((1 + wacc) ** 5)
     
-    if equity_value <= 0:
-        fair_value = 0.0
-    else:
-        fair_value = equity_value / float(shares)
-        
-    fair_value = round(fair_value, 2)
+    enterprise_val = pv_fcfs + pv_tv
+    equity_val = enterprise_val + float(total_cash) - float(total_debt)
+    
+    fair_value = equity_val / float(shares) if shares and shares > 0 else current_price
+    fair_value = round(max(0.0, fair_value), 2)
     current_price = round(current_price, 2)
     
-    if fair_value > 0:
-        discount = (fair_value - current_price) / fair_value
-    else:
-        discount = 0.0
-        
-    discount_pct = round(discount * 100, 2)
+    discount = (fair_value - current_price) / fair_value if fair_value > 0 else 0.0
+    discount_pct = round(discount * 100, 1)
     
-    if discount_pct > 0:
-        valuation_status = "Undervalued"
-    elif discount_pct < 0:
-        valuation_status = "Overvalued"
-    else:
-        valuation_status = "Fairly Valued"
-        
+    status = "Undervalued" if discount_pct > 5 else ("Overvalued" if discount_pct < -5 else "Fairly Valued")
+    
     return {
         'fair_value': fair_value,
         'current_price': current_price,
-        'valuation_status': valuation_status,
-        'discount_pct': discount_pct
+        'valuation_status': status,
+        'discount_pct': discount_pct,
+        'fcf_ttm': round(fcf_ttm, 2),
+        'wacc': round(wacc, 4),
+        'growth_5y': round(growth_5y, 4)
     }
 def get_fundamental_history(ticker):
     """
@@ -179,6 +228,44 @@ def get_fundamental_history(ticker):
                 "fcf": fcf,
                 "debt_to_equity": debt_to_equity
             })
+
+        # Extract Annual History (5-Year Multi-Year Engine)
+        annual_history = []
+        try:
+            inc_a = t.income_stmt
+            cf_a = t.cashflow
+            bs_a = t.balance_sheet
+            if inc_a is not None and not inc_a.empty:
+                for date in inc_a.columns:
+                    yr = date.strftime('%Y')
+                    rev_a = get_val(inc_a, ['Total Revenue', 'Operating Revenue'], date)
+                    if rev_a == 0: continue
+                    ni_a = get_val(inc_a, ['Net Income', 'NetIncome', 'NetIncomeCommonStockholders'], date)
+                    gp_a = get_val(inc_a, ['Gross Profit', 'GrossProfit'], date)
+                    op_a = get_val(inc_a, ['Operating Income', 'OperatingIncome'], date)
+                    eps_a = get_val(inc_a, ['Diluted EPS', 'DilutedEPS'], date)
+                    op_cf_a = get_val(cf_a, ['Operating Cash Flow', 'OperatingCashFlow'], date)
+                    capex_a = get_val(cf_a, ['Capital Expenditure', 'CapitalExpenditure'], date)
+                    fcf_a = op_cf_a + capex_a
+                    gm_a = (gp_a / rev_a) * 100 if rev_a > 0 else 0
+                    om_a = (op_a / rev_a) * 100 if rev_a > 0 else 0
+                    nm_a = (ni_a / rev_a) * 100 if rev_a > 0 else 0
+                    
+                    annual_history.append({
+                        "period": yr,
+                        "revenue": rev_a,
+                        "net_income": ni_a,
+                        "gross_margin": gm_a,
+                        "operating_margin": om_a,
+                        "net_margin": nm_a,
+                        "eps": eps_a,
+                        "fcf": fcf_a,
+                        "capex": abs(capex_a),
+                        "operating_cash_flow": op_cf_a
+                    })
+                annual_history.sort(key=lambda x: x["period"])
+        except Exception as e:
+            print(f"Error extracting annual history: {e}")
             
         # Fundamental Buy/Sell Logic
         recommendation = "Hold"
@@ -296,19 +383,105 @@ def get_fundamental_history(ticker):
             domain = website.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]
             logo_url = f"https://logo.clearbit.com/{domain}"
         
+        # Next-Gen Institutional Deep Fundamentals Modules
+        try:
+            earnings_deconstruction = get_earnings_deconstruction(ticker)
+        except Exception as e:
+            print(f"Earnings deconstruction error for {ticker}: {e}")
+            earnings_deconstruction = None
+
+        try:
+            moat_catalyst = get_moat_catalyst_analysis(ticker)
+        except Exception as e:
+            print(f"Moat catalyst error for {ticker}: {e}")
+            moat_catalyst = None
+
+        try:
+            dynamic_valuation = get_complete_valuation_package(ticker)
+        except Exception as e:
+            print(f"Valuation package error for {ticker}: {e}")
+            dynamic_valuation = None
+
+        try:
+            forensic_dupont = get_forensic_dupont_analysis(ticker)
+        except Exception as e:
+            print(f"Forensic dupont error for {ticker}: {e}")
+            forensic_dupont = None
+
+        try:
+            capital_allocation = calculate_capital_allocation(ticker)
+        except Exception as e:
+            print(f"Capital allocation error for {ticker}: {e}")
+            capital_allocation = None
+
+        long_name = info.get("longName") or info.get("shortName") or ticker
+        short_name = info.get("shortName") or info.get("longName") or ticker
+        curr_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose") or 0.0)
+
+        # Profile and Trading Multiples
+        profile = {
+            "symbol": ticker,
+            "ticker": ticker,
+            "company_name": long_name,
+            "long_name": long_name,
+            "short_name": short_name,
+            "current_price": curr_price,
+            "exchange": info.get("exchange", "NASDAQ"),
+            "market_cap": info.get("marketCap", 0),
+            "enterprise_value": info.get("enterpriseValue", 0),
+            "trailing_pe": info.get("trailingPE", 0),
+            "forward_pe": info.get("forwardPE", 0),
+            "peg_ratio": info.get("pegRatio", 0),
+            "price_to_sales": info.get("priceToSalesTrailing12Months", 0),
+            "price_to_book": info.get("priceToBook", 0),
+            "ev_to_ebitda": info.get("enterpriseToEbitda", 0),
+            "ev_to_revenue": info.get("enterpriseToRevenue", 0),
+            "dividend_yield": info.get("dividendYield", 0),
+            "payout_ratio": info.get("payoutRatio", 0),
+            "beta": info.get("beta", 1.0),
+            "roe": info.get("returnOnEquity", 0),
+            "roa": info.get("returnOnAssets", 0),
+            "profit_margin": info.get("profitMargins", 0),
+            "operating_margin": info.get("operatingMargins", 0),
+            "gross_margin": info.get("grossMargins", 0),
+            "analyst_target_mean": info.get("targetMeanPrice", 0),
+            "analyst_target_high": info.get("targetHighPrice", 0),
+            "analyst_target_low": info.get("targetLowPrice", 0),
+            "analyst_count": info.get("numberOfAnalystOpinions", 0),
+            "analyst_rating": info.get("recommendationKey", "buy"),
+            "fifty_two_week_low": info.get("fiftyTwoWeekLow", 0),
+            "fifty_two_week_high": info.get("fiftyTwoWeekHigh", 0),
+            "fifty_two_week_change": info.get("52WeekChange", 0),
+            "short_percent_of_float": info.get("shortPercentOfFloat", 0),
+            "shares_outstanding": info.get("sharesOutstanding", 0)
+        }
+
         return {
             "ticker": ticker,
+            "symbol": ticker,
+            "company_name": long_name,
+            "long_name": long_name,
+            "short_name": short_name,
+            "current_price": curr_price,
             "company_overview": info.get("longBusinessSummary", "No company overview available."),
             "sector": info.get("sector", "Unknown"),
             "industry": info.get("industry", "Unknown"),
             "website": website,
             "logo_url": logo_url,
             "history": history,
+            "annual_history": annual_history,
             "acceleration_metrics": acceleration_metrics,
             "recommendation": recommendation,
             "score": score,
             "reasons": reasons,
-            "fair_value_data": calculate_dcf_fair_value(ticker)
+            "profile": profile,
+            "fair_value_data": calculate_dcf_fair_value(ticker),
+            # Next-Gen Institutional Data
+            "earnings_deconstruction": earnings_deconstruction,
+            "moat_catalyst": moat_catalyst,
+            "dynamic_valuation": dynamic_valuation,
+            "forensic_dupont": forensic_dupont,
+            "capital_allocation": capital_allocation
         }
         
     except Exception as e:

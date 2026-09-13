@@ -1,1 +1,1 @@
-{"last_updated": "2026-09-09T11:11:34.210861", "alerts": []}
+{"last_updated": "2026-09-11T15:00:05.000718", "alerts": [{"ticker": "OXY", "time": "2026-09-11T19:58:00+00:00", "price": 61.485, "trigger_price": 61.3, "pct_above": 0.3017944535073447, "volume_1m": 19807, "type": "\ud83d\ude80 Handle Breakout"}]}

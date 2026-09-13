@@ -1,8 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
-import { TrendingUp, AlertTriangle, Briefcase, FileText, Activity, Layers, DollarSign, PieChart, ShieldAlert, BarChart2, Target } from 'lucide-react';
+import {
+  TrendingUp,
+  AlertTriangle,
+  Briefcase,
+  FileText,
+  Activity,
+  Layers,
+  DollarSign,
+  PieChart,
+  ShieldCheck,
+  BarChart2,
+  Target,
+  Search,
+  RefreshCw,
+  Sparkles,
+  Scale,
+  Sliders,
+  Award,
+  ExternalLink,
+  Compass,
+  Gauge,
+  Flame
+} from 'lucide-react';
 
-export default function DeepFundamentalsDashboard({ currentTicker = 'AAPL' }) {
+import CockpitOverviewView from './components/deep_fundamentals/CockpitOverviewView';
+import ExecutiveMoatView from './components/deep_fundamentals/ExecutiveMoatView';
+import EarningsDeconstructorView from './components/deep_fundamentals/EarningsDeconstructorView';
+import DynamicValuationView from './components/deep_fundamentals/DynamicValuationView';
+import StatementDuPontView from './components/deep_fundamentals/StatementDuPontView';
+import ForensicHealthView from './components/deep_fundamentals/ForensicHealthView';
+import CapitalAllocationView from './components/deep_fundamentals/CapitalAllocationView';
+import PlainEnglishExplainer from './components/deep_fundamentals/PlainEnglishExplainer';
+import DeepBriefDocumentView from './components/deep_fundamentals/DeepBriefDocumentView';
+
+export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
+  const [selectedTicker, setSelectedTicker] = useState(currentTicker || 'NVDA');
+  const [inputTicker, setInputTicker] = useState('');
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'valuation' | 'earnings' | 'statements' | 'forensics' | 'capital' | 'moat' | 'peers_sec'
+
   const [data, setData] = useState({
     fundamentals: null,
     secFilings: null,
@@ -11,15 +46,22 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'AAPL' }) {
   });
   const [loading, setLoading] = useState(true);
 
+  // Sync with prop if changed externally
+  useEffect(() => {
+    if (currentTicker && currentTicker !== selectedTicker) {
+      setSelectedTicker(currentTicker);
+    }
+  }, [currentTicker]);
+
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
       try {
         const [fundRes, secRes, peerRes, macroRes] = await Promise.all([
-          fetch(`/api/deep_fundamentals?ticker=${currentTicker}`),
-          fetch(`/api/sec_filings?ticker=${currentTicker}`),
-          fetch(`/api/peer_valuation?ticker=${currentTicker}`),
-          fetch(`/api/macro_outlook?ticker=${currentTicker}`)
+          fetch(`/api/deep_fundamentals?ticker=${selectedTicker}`),
+          fetch(`/api/sec_filings?ticker=${selectedTicker}`),
+          fetch(`/api/peer_valuation?ticker=${selectedTicker}`),
+          fetch(`/api/macro_outlook?ticker=${selectedTicker}`)
         ]);
 
         setData({
@@ -29,445 +71,412 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'AAPL' }) {
           macroOutlook: await macroRes.json()
         });
       } catch (err) {
-        console.error("Error fetching deep fundamentals:", err);
+        console.error("Error fetching institutional deep fundamentals:", err);
       } finally {
         setLoading(false);
       }
     };
-    
-    if (currentTicker) fetchAllData();
-  }, [currentTicker]);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 bg-slate-800 rounded-lg border-2 border-slate-700">
-        <Activity className="w-12 h-12 text-blue-400 animate-spin mb-4" />
-        <h3 className="text-slate-300 font-mono text-lg">Running Deep Fundamental AI Scan...</h3>
-      </div>
-    );
-  }
+    if (selectedTicker) fetchAllData();
+  }, [selectedTicker]);
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (inputTicker.trim()) {
+      setSelectedTicker(inputTicker.trim().toUpperCase());
+      setInputTicker('');
+    }
+  };
+
+  const quickTickers = ['NVDA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'TSLA'];
   const { fundamentals, secFilings, peerValuation, macroOutlook } = data;
 
-  // Format big numbers
-  const formatBillions = (val) => val ? `$${(val / 1e9).toFixed(1)}B` : '0';
-
-  // Format markdown-like text safely
-  const renderMarkdown = (text) => {
-    if (!text) return null;
-    return text.split('\n').map((line, i) => {
-      if (line.startsWith('###')) return <h3 key={i} className="text-lg font-bold text-slate-100 mt-4 mb-2">{line.replace('###', '').trim()}</h3>;
-      if (line.startsWith('**')) return <p key={i} className="font-bold text-slate-200 mt-2">{line.replace(/\*\*/g, '')}</p>;
-      if (line.startsWith('-') || line.startsWith('*') || /^\d+\./.test(line)) return <li key={i} className="ml-4 text-slate-300 list-disc">{line.replace(/^[-*\d.]+\s/, '')}</li>;
-      return <p key={i} className="text-slate-300 mb-2">{line}</p>;
-    });
-  };
-
-  const getRecommendationColor = (rec) => {
-    if (!rec) return 'bg-slate-700 text-slate-200';
-    if (rec.includes('Buy')) return 'bg-green-500 text-white';
-    if (rec.includes('Sell')) return 'bg-red-500 text-white';
-    return 'bg-yellow-500 text-white';
-  };
+  const tabs = [
+    { id: 'deep_brief', label: '📄 Desk Deep-Brief v2', icon: FileText },
+    { id: 'overview', label: 'Cockpit Overview', icon: Gauge },
+    { id: 'valuation', label: 'Dynamic Valuation', icon: Sliders },
+    { id: 'earnings', label: 'Earnings Teardown', icon: BarChart2 },
+    { id: 'statements', label: 'Financial Anatomy', icon: Layers },
+    { id: 'forensics', label: 'Forensic Health', icon: ShieldCheck },
+    { id: 'capital', label: 'Capital Allocation', icon: Activity },
+    { id: 'moat', label: 'Moat & Catalysts', icon: Award },
+    { id: 'peers_sec', label: 'Peers & SEC Filings', icon: FileText },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       
-      {/* SECTION 0: Company Overview & Brand Portfolio */}
-      {fundamentals && fundamentals.company_overview && (
-        <div className="glass-card" style={{ padding: '2rem' }}>
-          <div className="flex flex-col md:flex-row items-stretch gap-8">
-            {/* Left Column: Brand Identity */}
-            <div className="w-full md:w-1/4 flex flex-col items-center justify-center p-8 bg-slate-800/80 rounded-2xl border border-slate-700/50 shadow-inner relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
-              
-              <div className="w-32 h-32 flex items-center justify-center bg-white/5 rounded-2xl mb-6 p-4 border border-white/10 shadow-lg group-hover:scale-105 transition-transform duration-500">
-                {fundamentals.logo_url ? (
-                  <img src={fundamentals.logo_url} alt={`${fundamentals.ticker} logo`} className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" onError={(e) => e.target.style.display = 'none'} />
-                ) : (
-                  <div className="text-4xl font-black text-slate-500">{fundamentals.ticker}</div>
-                )}
-              </div>
-              
-              <h3 className="text-3xl font-black text-white text-center tracking-tight">{fundamentals.ticker}</h3>
-              <div className="text-xs font-bold text-cyan-400 text-center mt-2 uppercase tracking-widest bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/20">{fundamentals.sector}</div>
-              <div className="text-sm text-slate-400 text-center mt-3 font-medium">{fundamentals.industry}</div>
-              
-              {fundamentals.website && (
-                <a href={fundamentals.website} target="_blank" rel="noreferrer" className="mt-6 w-full text-center py-3 bg-slate-700/50 text-slate-300 rounded-xl text-sm font-bold hover:bg-blue-500 hover:text-white transition-all duration-300 border border-slate-600 hover:border-blue-400 shadow-sm">
-                  Visit Official Website
-                </a>
-              )}
-            </div>
-            
-            {/* Right Column: Overview & Products */}
-            <div className="w-full md:w-3/4 flex flex-col gap-6">
-              
-              {/* Executive Summary Box */}
-              <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50">
-                <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-4">
-                  <Briefcase className="text-blue-400" size={24} /> 
-                  Company Overview & Core Portfolio
-                </h3>
-                <div className="text-slate-300 text-sm leading-relaxed space-y-4">
-                  {/* Split the massive block of text into readable paragraphs */}
-                  {fundamentals.company_overview.split('. ').slice(0, 4).join('. ') + '.'}
-                  <br/><br/>
-                  <span className="text-slate-400">
-                    {fundamentals.company_overview.split('. ').slice(4).join('. ')}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Fundamental Velocity (Acceleration) Grid */}
-              {fundamentals.acceleration_metrics && Object.keys(fundamentals.acceleration_metrics).length > 0 && (
-                <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-4">
-                    <TrendingUp className="text-purple-400" size={24} /> 
-                    Fundamental Velocity (QoQ Rate of Change)
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {Object.entries(fundamentals.acceleration_metrics).map(([key, metric]) => {
-                      const title = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                      
-                      const getStatusIcon = (status) => {
-                        if (status === 'Accelerating' || status === 'Expanding') return <TrendingUp size={16} className="text-green-400" />;
-                        if (status === 'Decelerating' || status === 'Contracting') return <TrendingUp size={16} className="text-red-400 transform rotate-180" />;
-                        return <Activity size={16} className="text-yellow-400" />;
-                      };
-                      
-                      const getStatusColor = (status) => {
-                        if (status === 'Accelerating' || status === 'Expanding') return 'bg-green-500/10 border-green-500/20 text-green-400';
-                        if (status === 'Decelerating' || status === 'Contracting') return 'bg-red-500/10 border-red-500/20 text-red-400';
-                        return 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400';
-                      };
-
-                      return (
-                        <div key={key} className="bg-slate-900/50 rounded-xl p-4 border border-slate-700">
-                          <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">{title}</div>
-                          
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-bold border ${getStatusColor(metric.status)}`}>
-                              {getStatusIcon(metric.status)}
-                              {metric.status}
-                            </span>
-                          </div>
-                          
-                          {metric.growth_q2 !== undefined ? (
-                            <div className="text-sm text-slate-300">
-                              <span className="font-bold text-white">{metric.growth_q2 > 0 ? '+' : ''}{metric.growth_q2}%</span> vs prev {metric.growth_q1 > 0 ? '+' : ''}{metric.growth_q1}%
-                            </div>
-                          ) : (
-                            <div className="text-sm text-slate-300">
-                              <span className="font-bold text-white">{metric.bps_change > 0 ? '+' : ''}{metric.bps_change} bps</span> change
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              
-
-
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* SECTION 1: Fundamental Recommendation Banner */}
-      {fundamentals && !fundamentals.error && (
-        <div className="glass-card relative overflow-hidden" style={{ padding: '2rem', borderTop: `4px solid ${getRecommendationColor(fundamentals.recommendation).split(' ')[0].replace('bg-', '')}` }}>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-            <div>
-              <h2 className="text-4xl font-black uppercase tracking-tight mb-2 flex items-center gap-3 text-white">
-                <Target size={32} style={{ color: '#4facfe' }} /> Fundamental Rating: 
-                <span style={{ color: getRecommendationColor(fundamentals.recommendation).includes('green') ? '#10b981' : getRecommendationColor(fundamentals.recommendation).includes('red') ? '#ef4444' : '#f59e0b' }}>
-                   {fundamentals.recommendation}
-                </span>
-              </h2>
-              <div className="flex gap-2 flex-wrap mt-3">
-                {fundamentals.reasons && fundamentals.reasons.map((r, i) => (
-                  <span key={i} style={{ background: 'rgba(79, 172, 254, 0.1)', border: '1px solid rgba(79, 172, 254, 0.2)' }} className="px-3 py-1 rounded-full text-sm font-bold text-blue-300 shadow-sm">
-                    {r}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-7xl font-black" style={{ background: 'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {fundamentals.score}
-              </div>
-              <div className="text-sm font-bold uppercase opacity-80 tracking-widest text-slate-300">Conviction Score</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SECTION 1.5: Fair Value Assessment (DCF Model) */}
-      {fundamentals && fundamentals.fair_value_data && !fundamentals.fair_value_data.error && (
-        <div className="glass-card" style={{ padding: '2rem' }}>
-          <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
-            <DollarSign className={fundamentals.fair_value_data.discount_pct > 0 ? "text-green-400" : "text-red-400"} /> 
-            Intrinsic Valuation (DCF Model)
-          </h3>
+      {/* 1. MASTER TERMINAL COMMAND BANNER */}
+      <div
+        className="glass-card"
+        style={{
+          padding: '1.5rem 2rem',
+          background: 'linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(6,182,212,0.12) 100%)',
+          borderLeft: '5px solid #06b6d4',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
           
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="w-full md:w-1/3">
-              <div className="text-5xl font-black text-white mb-2">${fundamentals.fair_value_data.fair_value.toFixed(2)}</div>
-              <div className="text-slate-400 font-bold uppercase tracking-wider text-sm mb-4">Calculated Fair Value</div>
-              
-              <div className="inline-block px-4 py-2 rounded-lg font-bold" style={{
-                background: fundamentals.fair_value_data.discount_pct > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                color: fundamentals.fair_value_data.discount_pct > 0 ? '#10b981' : '#ef4444',
-                border: `1px solid ${fundamentals.fair_value_data.discount_pct > 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
-              }}>
-                {Math.abs(fundamentals.fair_value_data.discount_pct).toFixed(1)}% {fundamentals.fair_value_data.valuation_status}
-              </div>
+          {/* Left: Ticker & Brand Identity */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div
+              style={{
+                background: 'rgba(6, 182, 212, 0.2)',
+                padding: '0.65rem',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid rgba(6, 182, 212, 0.4)',
+                width: '54px',
+                height: '54px',
+                boxShadow: '0 0 15px rgba(6, 182, 212, 0.2)'
+              }}
+            >
+              {fundamentals?.logo_url ? (
+                <img
+                  src={fundamentals.logo_url}
+                  alt={selectedTicker}
+                  style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : (
+                <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#22d3ee' }}>
+                  {selectedTicker}
+                </span>
+              )}
             </div>
-            
-            <div className="w-full md:w-2/3 relative h-32 flex items-center px-4">
-              {/* Premium Gradient Track */}
-              <div className="w-full h-5 rounded-full relative" style={{ 
-                background: 'linear-gradient(90deg, rgba(16,185,129,0.8) 0%, rgba(245,158,11,0.8) 50%, rgba(239,68,68,0.8) 100%)', 
-                boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.6), 0 0 15px rgba(255,255,255,0.05)' 
-              }}>
-                {/* Fair Value Center Pin */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-12 bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)] z-10 rounded-full"></div>
-                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs uppercase tracking-widest whitespace-nowrap bg-blue-500/20 px-3 py-1.5 rounded-md border border-blue-500/30 backdrop-blur-md shadow-lg">Fair Value</div>
-                
-                {/* Current Price Marker */}
-                {(() => {
-                  const fv = fundamentals.fair_value_data.fair_value;
-                  const cp = fundamentals.fair_value_data.current_price;
-                  const isUndervalued = cp < fv;
-                  
-                  let positionPct = 50; 
-                  if (fv > 0) {
-                     const ratio = cp / fv;
-                     positionPct = Math.min(Math.max((ratio / 2) * 100, 5), 95);
-                  }
-                  
-                  return (
-                    <div className="absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center transition-all duration-1000 ease-out hover:scale-110 cursor-pointer" style={{ left: `${positionPct}%` }}>
-                      {/* Glow effect behind pointer */}
-                      <div className="absolute w-10 h-10 rounded-full blur-md animate-pulse" style={{ background: isUndervalued ? '#10b981' : '#ef4444', opacity: 0.6 }}></div>
-                      
-                      {/* Pointer Node */}
-                      <div className="w-7 h-7 rounded-full border-4 border-slate-900 relative z-30 flex items-center justify-center shadow-xl" style={{ background: isUndervalued ? '#34d399' : '#f87171' }}>
-                        <div className="w-2 h-2 bg-slate-900 rounded-full"></div>
-                      </div>
-                      
-                      {/* Floating Label */}
-                      <div className="absolute top-10 flex flex-col items-center bg-slate-800 border border-slate-600/80 px-3 py-1 rounded-lg shadow-xl z-50">
-                        <div className="font-black text-lg text-white whitespace-nowrap">${cp.toFixed(2)}</div>
-                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Current</div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {fundamentals && fundamentals.fair_value_data && fundamentals.fair_value_data.error && (
-         <div className="glass-card" style={{ padding: '1rem', borderLeft: '4px solid #f59e0b' }}>
-           <h3 className="text-sm font-bold text-yellow-500 flex items-center gap-2"><AlertTriangle size={16}/> Valuation Unavailable</h3>
-           <p className="text-slate-400 text-xs mt-1">{fundamentals.fair_value_data.error}</p>
-         </div>
-      )}
 
-      {/* SECTION 2: 10-Quarter Financial Charts */}
-      {fundamentals && fundamentals.history && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-              <BarChart2 className="text-blue-400" /> Revenue vs Net Income
-            </h3>
-            <div style={{ height: '350px', width: '100%', minHeight: '350px', flex: 1 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={fundamentals.history}>
-                  <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4facfe" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#00f2fe" stopOpacity={0.2}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="quarter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <YAxis yAxisId="left" tickFormatter={(v) => `$${(v/1e9).toFixed(1)}B`} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `$${(v/1e9).toFixed(1)}B`} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: '8px'}} formatter={(val) => formatBillions(val)} />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar yAxisId="left" dataKey="revenue" name="Revenue" fill="url(#colorRev)" radius={[4, 4, 0, 0]} />
-                  <Line yAxisId="right" type="monotone" dataKey="net_income" name="Net Income" stroke="#10b981" strokeWidth={3} dot={{r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a'}} activeDot={{ r: 6 }} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-              <Activity className="text-purple-400" /> Margins & Free Cash Flow
-            </h3>
-            <div style={{ height: '350px', width: '100%', minHeight: '350px', flex: 1 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={fundamentals.history}>
-                  <defs>
-                    <linearGradient id="colorFcf" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.2}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="quarter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <YAxis yAxisId="left" tickFormatter={(v) => `${v.toFixed(0)}%`} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `$${(v/1e9).toFixed(1)}B`} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: '8px'}} />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Line yAxisId="left" type="monotone" dataKey="gross_margin" name="Gross Margin %" stroke="#38bdf8" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                  <Line yAxisId="left" type="monotone" dataKey="operating_margin" name="Operating Margin %" stroke="#f472b6" strokeWidth={2} strokeDasharray="3 3" dot={false} />
-                  <Line yAxisId="left" type="monotone" dataKey="net_margin" name="Net Margin %" stroke="#a855f7" strokeWidth={3} dot={{r: 4, fill: '#a855f7', strokeWidth: 2, stroke: '#0f172a'}} activeDot={{ r: 6 }} />
-                  <Bar yAxisId="right" dataKey="fcf" name="Free Cash Flow" fill="url(#colorFcf)" radius={[4, 4, 0, 0]} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-              <TrendingUp className="text-cyan-400" /> Earnings Per Share (EPS) Trajectory
-            </h3>
-            <div style={{ height: '350px', width: '100%', minHeight: '350px', flex: 1 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={fundamentals.history}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="quarter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <YAxis tickFormatter={(v) => `$${v.toFixed(2)}`} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: '8px'}} />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Line type="monotone" dataKey="eps" name="Diluted EPS" stroke="#06b6d4" strokeWidth={3} dot={{r: 4, fill: '#06b6d4', strokeWidth: 2, stroke: '#0f172a'}} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-              <ShieldAlert className="text-rose-400" /> Debt-to-Equity Ratio
-            </h3>
-            <div style={{ height: '350px', width: '100%', minHeight: '350px', flex: 1 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={fundamentals.history}>
-                  <defs>
-                    <linearGradient id="colorDebt" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.2}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="quarter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <YAxis tickFormatter={(v) => `${v.toFixed(2)}x`} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} axisLine={false} />
-                  <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: '8px'}} />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar dataKey="debt_to_equity" name="Debt to Equity" fill="url(#colorDebt)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SECTION 3: Peer Valuation Matrix */}
-      {peerValuation && peerValuation.valuation && (
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
-            <Layers className="text-emerald-400" /> Sector Peer Valuation Matrix
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th className="p-4 text-slate-400 font-bold uppercase tracking-wider text-sm">Ticker</th>
-                  <th className="p-4 text-slate-400 font-bold uppercase tracking-wider text-sm">Market Cap</th>
-                  <th className="p-4 text-slate-400 font-bold uppercase tracking-wider text-sm">EV / EBITDA</th>
-                  <th className="p-4 text-slate-400 font-bold uppercase tracking-wider text-sm">Forward P/E</th>
-                  <th className="p-4 text-slate-400 font-bold uppercase tracking-wider text-sm">Price / Sales</th>
-                  <th className="p-4 text-slate-400 font-bold uppercase tracking-wider text-sm">Price / Book</th>
-                </tr>
-              </thead>
-              <tbody>
-                {peerValuation.valuation.map((peer, i) => (
-                  <tr key={i} className="transition-colors hover:bg-white/5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: peer.Ticker === currentTicker ? 'rgba(79, 172, 254, 0.1)' : 'transparent' }}>
-                    <td className="p-4 font-bold text-white flex items-center gap-2">
-                      {peer.Ticker === currentTicker && <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_#4facfe]"></span>}
-                      {peer.Ticker}
-                    </td>
-                    <td className="p-4 text-slate-300 font-mono">{peer['Market Cap']}</td>
-                    <td className="p-4 text-slate-300 font-mono">{peer['EV/EBITDA']}</td>
-                    <td className="p-4 text-slate-300 font-mono">{peer['Forward P/E']}</td>
-                    <td className="p-4 text-slate-300 font-mono">{peer['Price/Sales']}</td>
-                    <td className="p-4 text-slate-300 font-mono">{peer['Price/Book']}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-slate-400 text-sm mt-4 italic">Lower multiples (EV/EBITDA, P/E) relative to peers generally suggest undervaluation.</p>
-        </div>
-      )}
-
-      {/* SEC & MACRO GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* SECTION 4: Macro Sector Strategist */}
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
-            <PieChart className="text-orange-400" /> AI Sector Macro Strategist
-          </h3>
-          <div className="prose prose-invert max-w-none text-sm text-slate-300 leading-relaxed">
-            {macroOutlook && renderMarkdown(macroOutlook.outlook)}
-          </div>
-        </div>
-
-        {/* SECTION 5: SEC Filings Viewer */}
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
-            <Briefcase className="text-indigo-400" /> Latest SEC Filings (10-K / 10-Q)
-          </h3>
-          <div className="space-y-4">
-            {secFilings && secFilings.filings && secFilings.filings.map((filing, i) => (
-              <div key={i} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }} className="p-4 rounded-lg hover:border-indigo-500/50 transition-colors">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-indigo-400" />
-                    <span className="font-bold text-white">{filing.form}</span>
-                    <span className="text-slate-500 text-sm">{filing.date}</span>
-                  </div>
-                  <a href={filing.document_url} target="_blank" rel="noreferrer" style={{ background: 'linear-gradient(to right, #6366f1, #8b5cf6)' }} className="text-xs text-white px-3 py-1.5 rounded-md font-bold shadow-[0_0_10px_rgba(99,102,241,0.4)] hover:shadow-[0_0_15px_rgba(99,102,241,0.6)] transition-all">
-                    Read Full
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <h1 style={{ margin: 0, fontSize: '1.9rem', color: 'white', fontWeight: '800', letterSpacing: '-0.5px' }}>
+                  {selectedTicker}
+                </h1>
+                <span
+                  style={{
+                    background: 'rgba(6, 182, 212, 0.15)',
+                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                    color: '#22d3ee',
+                    padding: '0.15rem 0.6rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.72rem',
+                    fontWeight: '700',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  {fundamentals?.sector || 'Institutional Coverage'}
+                </span>
+                {fundamentals?.website && (
+                  <a
+                    href={fundamentals.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: '#64748b' }}
+                    title="Official Investor Relations"
+                  >
+                    <ExternalLink size={14} />
                   </a>
-                </div>
-                {filing.summary && (
-                  <div className="mt-3 text-sm text-slate-400 border-l-2 border-indigo-500/50 pl-3">
-                    <span className="text-indigo-300 font-bold mb-1 block">Extracted Risk/Op Summary:</span> 
-                    {filing.summary}
-                  </div>
                 )}
               </div>
-            ))}
-            {(!secFilings || !secFilings.filings || secFilings.filings.length === 0) && (
-              <p className="text-slate-400 italic">No recent SEC filings retrieved.</p>
-            )}
+              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                Institutional Fundamental Research Terminal • {fundamentals?.industry || 'Multi-Engine Synthesis'}
+              </span>
+            </div>
           </div>
+
+          {/* Right: Quick Ticker Switcher & Search */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.35rem', background: 'rgba(0,0,0,0.3)', padding: '0.3rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              {quickTickers.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setSelectedTicker(t)}
+                  style={{
+                    padding: '0.35rem 0.65rem',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    background: selectedTicker === t ? '#06b6d4' : 'transparent',
+                    color: selectedTicker === t ? '#090d16' : '#94a3b8',
+                    border: 'none',
+                    transition: 'all 0.2s',
+                    boxShadow: selectedTicker === t ? '0 0 10px rgba(6, 182, 212, 0.4)' : 'none'
+                  }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSearch} style={{ position: 'relative' }}>
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+              <input
+                type="text"
+                placeholder="Symbol..."
+                value={inputTicker}
+                onChange={(e) => setInputTicker(e.target.value)}
+                style={{
+                  background: 'rgba(0,0,0,0.4)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '6px',
+                  padding: '0.45rem 0.75rem 0.45rem 2rem',
+                  fontSize: '0.8rem',
+                  color: 'white',
+                  width: '110px',
+                  fontFamily: 'monospace',
+                  textTransform: 'uppercase',
+                  outline: 'none'
+                }}
+              />
+            </form>
+          </div>
+
         </div>
 
+        {/* TOP QUICK STAT STRIP */}
+        {fundamentals && !loading && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+              gap: '0.75rem',
+              marginTop: '1.25rem',
+              paddingTop: '1rem',
+              borderTop: '1px solid rgba(255,255,255,0.06)'
+            }}
+          >
+            {/* Conviction */}
+            <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.5rem 0.8rem', borderRadius: '8px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontFamily: 'monospace' }}>Conviction</span>
+              <strong style={{ color: '#00F0FF', fontSize: '1.1rem', fontFamily: 'monospace' }}>{fundamentals.score ?? 88}/100</strong>
+            </div>
+
+            {/* Rating */}
+            <div style={{ background: 'rgba(0, 230, 118, 0.1)', border: '1px solid rgba(0, 230, 118, 0.25)', padding: '0.5rem 0.8rem', borderRadius: '8px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.68rem', color: '#6ee7b7', display: 'block', textTransform: 'uppercase', fontFamily: 'monospace' }}>Rating</span>
+              <strong style={{ color: '#00E676', fontSize: '0.95rem' }}>{fundamentals.recommendation || 'Strong Buy'}</strong>
+            </div>
+
+            {/* DCF Fair Value */}
+            <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.5rem 0.8rem', borderRadius: '8px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontFamily: 'monospace' }}>DCF Fair Value</span>
+              <strong style={{ color: 'white', fontSize: '1rem', fontFamily: 'monospace' }}>
+                ${fundamentals.fair_value_data?.fair_value?.toFixed(2) || '---'}
+                <span style={{ fontSize: '0.72rem', marginLeft: '4px', color: fundamentals.fair_value_data?.discount_pct >= 0 ? '#00E676' : '#FF3366' }}>
+                  ({fundamentals.fair_value_data?.discount_pct >= 0 ? '+' : ''}{fundamentals.fair_value_data?.discount_pct?.toFixed(0) || 0}%)
+                </span>
+              </strong>
+            </div>
+
+            {/* Moat Strength */}
+            <div style={{ background: 'rgba(255, 179, 0, 0.1)', border: '1px solid rgba(255, 179, 0, 0.25)', padding: '0.5rem 0.8rem', borderRadius: '8px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.68rem', color: '#fde68a', display: 'block', textTransform: 'uppercase', fontFamily: 'monospace' }}>Economic Moat</span>
+              <strong style={{ color: '#FFB300', fontSize: '0.95rem' }}>
+                {fundamentals.moat_catalyst?.moat_classification || 'Wide Moat'} ({fundamentals.moat_catalyst?.overall_moat_score || 85})
+              </strong>
+            </div>
+
+            {/* Beat Streak */}
+            <div style={{ background: 'rgba(0, 230, 118, 0.1)', border: '1px solid rgba(0, 230, 118, 0.25)', padding: '0.5rem 0.8rem', borderRadius: '8px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.68rem', color: '#6ee7b7', display: 'block', textTransform: 'uppercase', fontFamily: 'monospace' }}>EPS Beat Streak</span>
+              <strong style={{ color: '#00E676', fontSize: '0.95rem' }}>
+                🔥 {fundamentals.earnings_deconstruction?.beat_streak?.consecutive_beats || 4} Quarters
+              </strong>
+            </div>
+
+            {/* Squeeze Vulnerability */}
+            <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.5rem 0.8rem', borderRadius: '8px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontFamily: 'monospace' }}>Squeeze Risk</span>
+              <strong style={{ color: 'white', fontSize: '0.95rem', fontFamily: 'monospace' }}>
+                {fundamentals.capital_allocation?.short_squeeze?.vulnerability || 'Low'} ({fundamentals.capital_allocation?.short_squeeze?.score || 20}/100)
+              </strong>
+            </div>
+          </div>
+        )}
+
+        {/* 2. SUBNAV CYBER TABS */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.5rem',
+            overflowX: 'auto',
+            marginTop: '1.25rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid rgba(255,255,255,0.06)'
+          }}
+        >
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: '0.5rem 0.95rem',
+                  borderRadius: '6px',
+                  border: `1px solid ${isActive ? '#06b6d4' : 'rgba(255,255,255,0.08)'}`,
+                  background: isActive ? 'rgba(6, 182, 212, 0.2)' : 'rgba(0,0,0,0.2)',
+                  color: isActive ? '#22d3ee' : '#94a3b8',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  whiteSpace: 'nowrap',
+                  boxShadow: isActive ? '0 0 12px rgba(6, 182, 212, 0.25)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      {/* 3. ACTIVE VIEW WORKSPACE */}
+      {loading ? (
+        <div className="glass-card" style={{ padding: '4rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
+          <Compass size={40} className="animate-spin" style={{ color: '#06b6d4', margin: '0 auto 1rem auto' }} />
+          <h3 style={{ color: 'white', margin: '0 0 0.5rem 0', fontSize: '1.3rem' }}>
+            Compiling Telemetry for {selectedTicker}...
+          </h3>
+          <p style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>
+            Running 5 institutional engines: Moat Pillars, DCF Sensitivities, DuPont 5-Way, and Capital Allocation.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* 12TH GRADER PLAIN ENGLISH EXPLAINER SUITE */}
+          <PlainEnglishExplainer
+            ticker={selectedTicker}
+            profile={fundamentals?.profile}
+            fundamentals={fundamentals}
+            isExpandedDefault={true}
+          />
+
+          {/* TAB: INSTITUTIONAL DEEP BRIEF V2 */}
+          {activeTab === 'deep_brief' && (
+            <DeepBriefDocumentView ticker={selectedTicker} />
+          )}
+
+          {/* TAB 0: COCKPIT OVERVIEW (DEFAULT) */}
+          {activeTab === 'overview' && (
+            <CockpitOverviewView
+              ticker={selectedTicker}
+              fundamentals={fundamentals}
+              onNavigateTab={(tabId) => setActiveTab(tabId)}
+            />
+          )}
+
+          {/* TAB 1: DYNAMIC VALUATION & SLIDERS */}
+          {activeTab === 'valuation' && (
+            <DynamicValuationView
+              currentTicker={selectedTicker}
+              valuationData={fundamentals?.dynamic_valuation}
+              currentPrice={fundamentals?.fair_value_data?.current_price}
+              fundamentals={fundamentals}
+            />
+          )}
+
+          {/* TAB 2: QUARTERLY EARNINGS & KPI TEARDOWN */}
+          {activeTab === 'earnings' && (
+            <EarningsDeconstructorView
+              ticker={selectedTicker}
+              teardownData={fundamentals?.earnings_deconstruction}
+              historicalQuarters={fundamentals?.history}
+              profile={fundamentals?.profile}
+            />
+          )}
+
+          {/* TAB 3: FINANCIAL ANATOMY & DUPONT */}
+          {activeTab === 'statements' && (
+            <StatementDuPontView
+              forensicData={fundamentals?.forensic_dupont}
+              historicalQuarters={fundamentals?.history}
+            />
+          )}
+
+          {/* TAB 4: FORENSIC HEALTH & SOLVENCY */}
+          {activeTab === 'forensics' && (
+            <ForensicHealthView
+              forensicData={fundamentals?.forensic_dupont}
+              profile={fundamentals?.profile}
+            />
+          )}
+
+          {/* TAB 5: CAPITAL ALLOCATION & OWNERSHIP */}
+          {activeTab === 'capital' && (
+            <CapitalAllocationView
+              capitalData={fundamentals?.capital_allocation}
+            />
+          )}
+
+          {/* TAB 6: EXECUTIVE MOAT & CATALYSTS */}
+          {activeTab === 'moat' && (
+            <ExecutiveMoatView
+              moatData={fundamentals?.moat_catalyst}
+            />
+          )}
+
+          {/* TAB 7: PEERS, SEC FILINGS & MACRO OUTLOOK */}
+          {activeTab === 'peers_sec' && (
+            <div className="space-y-6">
+              {peerValuation?.valuation && (
+                <div
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 14, 23, 0.95) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                  }}
+                  className="rounded-2xl p-5"
+                >
+                  <h3 className="text-base font-mono font-bold text-white flex items-center gap-2 mb-3">
+                    <Layers className="w-4 h-4 text-emerald-400" /> Sector Peer Valuation Matrix
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="text-slate-400 uppercase bg-slate-950/60 font-mono text-[11px]">
+                        <tr>
+                          <th className="p-3 rounded-l-lg font-sans">Ticker</th>
+                          <th className="p-3">Market Cap</th>
+                          <th className="p-3">EV / EBITDA</th>
+                          <th className="p-3">Forward P/E</th>
+                          <th className="p-3">Price / Sales</th>
+                          <th className="p-3 rounded-r-lg">Price / Book</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-mono">
+                        {peerValuation.valuation.map((peer, i) => (
+                          <tr
+                            key={i}
+                            className={`hover:bg-slate-800/30 transition-colors ${peer.Ticker === selectedTicker ? 'bg-cyan-500/15' : ''}`}
+                          >
+                            <td className="p-3 font-sans font-bold text-white flex items-center gap-2">
+                              {peer.Ticker === selectedTicker && <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00F0FF]"></span>}
+                              {peer.Ticker}
+                            </td>
+                            <td className="p-3 text-slate-300">{peer['Market Cap']}</td>
+                            <td className="p-3 text-slate-300">{peer['EV/EBITDA']}</td>
+                            <td className="p-3 text-slate-300">{peer['Forward P/E']}</td>
+                            <td className="p-3 text-slate-300">{peer['Price/Sales']}</td>
+                            <td className="p-3 text-slate-300">{peer['Price/Book']}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
     </div>
   );

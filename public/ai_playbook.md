@@ -1,75 +1,73 @@
-# 🏆 Master Analyst: Top 3 Trade Plans
-**Date:** September 09, 2026
+# 🤖 Quantitative AI Playbook
 
-By cross-referencing all Desktop scan results and backend algorithmic output, here are the absolute best 3 setups for today based on extreme multi-scanner confluence:
+**Date:** Friday, September 11, 2026
+
+Welcome to the Daily AI Playbook. Based on the overnight convergence of technical setups, fundamental momentum, and breakout scanners, here are the top high-probability trade setups for today.
+
+---
+
+### 1. MTCH - High Confluence Setup
+**Confluence Score:** 7 points
+
+**Quantitative Reasoning:**
+*   **Bearish Candlestick**: Bearish Hikkake
+*   **Vah Rejection**: Bouncing +1.8% off VAH $41.64
+*   **Vah Rejection Fixed**: Bouncing +3.8% off Fixed VAH (Q3) $40.85
+*   **Base Pullback Ma**: Squat Support at 10-SMA ($41.77)
+
+**Algorithmic Trade Plan:**
+*   **Entry Zone:** $42.91 (Current Market Price)
+*   **Stop Loss:** $41.19 (Dynamic trailing support)
+*   **Profit Target:** $48.08 (2.5R Risk/Reward)
+
+**Technical Health Card:**
+*   **Structural Stage:** Stage 2 (Advancing)
+*   **Momentum:** 🔥 Momentum Building (Bullish)
+*   **RSI:** 59.6
 
 ---
 
-### 1. DELL
-* **Confluence Score:** 6 (Found in: canslim_minervini_alerts.csv, candlestick_pullback_alerts.md, earnings_gap_alerts.md, darvas_box_alerts.md)
-**🎯 Algorithmic Trade Plan:**
-- Ideal Entry: $539.94
-- Target (3 ATR): $650.64
-- Stop Loss (1.5 ATR): $495.66
-- Risk %: 8.2%
+### 2. ACVA - High Confluence Setup
+**Confluence Score:** 6 points
 
-**📊 Fundamentals:**
-- Trailing P/E: 31.05759
-- Net Profit Margin: 7.5%
-- YoY Revenue Growth: 57.7%
+**Quantitative Reasoning:**
+*   **Relative Strength**: 🔥 Fresh High | +50.3% 5D | +27.9% 20D
+*   **Bearish Candlestick**: Bearish Hikkake
+*   **Darvas Strong**: Cleared $8.36 | Volume is 18.1x avg
+*   **Regression Channel Breakout**: Bullish Breakout (+12.3%) from Ascending Channel
 
-**🔥 Options Flow (Exp: 2026-09-11):**
-- Max Pain: $505.0
-- Put/Call Ratio: 1.09
+**Algorithmic Trade Plan:**
+*   **Entry Zone:** $10.49 (Current Market Price)
+*   **Stop Loss:** $10.43 (Dynamic trailing support)
+*   **Profit Target:** $10.65 (2.5R Risk/Reward)
 
-**📰 Social Sentiment & Catalysts:**
-- Michael Dell passes Jeff Bezos to become world's third-richest person (Quartz)
-- Quantum Launches ADM to Reduce Storage Costs and Optimize Data (Zacks)
-- Here's How Much You'd Have If You Invested $1000 in Dell Technologies a Decade Ago (Zacks)
-
-### 2. EZPW
-* **Confluence Score:** 6 (Found in: canslim_minervini_alerts.csv, candlestick_pullback_alerts.md, earnings_gap_alerts.md, darvas_box_alerts.md)
-**🎯 Algorithmic Trade Plan:**
-- Ideal Entry: $34.44
-- Target (3 ATR): $42.80
-- Stop Loss (1.5 ATR): $25.04
-- Risk %: 27.3%
-
-**📊 Fundamentals:**
-- Trailing P/E: 16.628141
-- Net Profit Margin: 10.0%
-- YoY Revenue Growth: 34.7%
-
-**🔥 Options Flow (Exp: 2026-09-18):**
-- Max Pain: $30.0
-- Put/Call Ratio: 1.09
-
-**📰 Social Sentiment & Catalysts:**
-- EZCORP (EZPW) Beat Expectations, Is The Stock Still Cheap? (Simply Wall St.)
-- EZCORP (EZPW) Stock Looks Reasonable, Not a Clear Bargain (Simply Wall St.)
-- Why Is Ezcorp (EZPW) Up 14.1% Since Last Earnings Report? (Zacks)
-
-### 3. SLDE
-* **Confluence Score:** 6 (Found in: canslim_minervini_alerts.csv, candlestick_pullback_alerts.md, earnings_gap_alerts.md, darvas_box_alerts.md)
-**🎯 Algorithmic Trade Plan:**
-- Ideal Entry: $23.48
-- Target (3 ATR): $28.04
-- Stop Loss (1.5 ATR): $19.64
-- Risk %: 16.4%
-
-**📊 Fundamentals:**
-- Trailing P/E: 5.9082127
-- Net Profit Margin: 40.0%
-- YoY Revenue Growth: 47.9%
-
-**🔥 Options Flow (Exp: 2026-09-18):**
-- Max Pain: $17.5
-- Put/Call Ratio: 0.19
-
-**📰 Social Sentiment & Catalysts:**
-- Best Value Stocks to Buy for September 2nd (Zacks)
-- Best Value Stocks to Buy for August 25th (Zacks)
-- Slide Insurance Holdings, Inc. (SLDE) Hits Fresh High: Is There Still Room to Run? (Zacks)
+**Technical Health Card:**
+*   **Structural Stage:** Stage 2 (Advancing)
+*   **Momentum:** 🔥 Momentum Building (Bullish)
+*   **RSI:** 80.3
 
 ---
-*Generated automatically before market open.*
+
+### 3. DK - High Confluence Setup
+**Confluence Score:** 6 points
+
+**Quantitative Reasoning:**
+*   **Relative Strength**: 🔥 Fresh High | +6.7% 5D | +18.1% 20D
+*   **Fresh 52W High**: New High: $78.43
+*   **All Time High**: ATH: $78.42
+*   **Post Earning Reaction**: Gap Up +5.1%
+
+**Algorithmic Trade Plan:**
+*   **Entry Zone:** $72.4 (Current Market Price)
+*   **Stop Loss:** $41.2 (Dynamic trailing support)
+*   **Profit Target:** $87.87 (2.5R Risk/Reward)
+
+**Technical Health Card:**
+*   **Structural Stage:** Stage 2 (Advancing)
+*   **Momentum:** 🔥 Momentum Building (Bullish)
+*   **RSI:** 60.5
+
+---
+
+> [!IMPORTANT]
+> Always adhere to your stop losses. These trade plans are quantitatively generated and assume a 1% portfolio risk per trade.

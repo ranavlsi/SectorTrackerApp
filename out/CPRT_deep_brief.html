@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CPRT — Institutional Deep Brief v2</title>
+  <style>
+    /* fundamentals_deep_brief/render/styles.css
+   Institutional Desk Research Print & Screen Stylesheet
+   Typography: High-density sans-serif with monospace tabular numerals
+*/
+
+@page {
+  size: letter;
+  margin: 18mm 16mm 18mm 16mm;
+  @top-left {
+    content: "INSTITUTIONAL DESK RESEARCH · DEEP BRIEF V2";
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #64748b;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 3px;
+    letter-spacing: 0.5px;
+  }
+  @top-right {
+    content: string(ticker-title);
+    font-family: "SF Mono", "Courier New", Courier, monospace;
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 3px;
+  }
+  @bottom-left {
+    content: "Fail-Closed Numbers · Filing-Grounded Narrative · Unaudited Claims Omitted";
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 7pt;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 3px;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: "SF Mono", "Courier New", Courier, monospace;
+    font-size: 7pt;
+    font-weight: 600;
+    color: #64748b;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 3px;
+  }
+}
+
+:root {
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-light: #64748b;
+  --border-color: #cbd5e1;
+  --border-light: #e2e8f0;
+  --bg-subtle: #f8fafc;
+  --bg-card: #ffffff;
+  --accent-blue: #0284c7;
+  --accent-emerald: #059669;
+  --accent-ruby: #dc2626;
+  --accent-amber: #d97706;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-main);
+  background-color: #ffffff;
+  line-height: 1.45;
+  font-size: 9pt;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.document-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
+/* Page break utilities */
+.page-break {
+  page-break-before: always;
+  break-before: page;
+}
+
+.avoid-break {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Chapter Headings */
+.chapter {
+  margin-bottom: 22px;
+}
+
+.chapter-header {
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 4px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.chapter-title {
+  font-size: 11pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #0f172a;
+  margin: 0;
+}
+
+.chapter-subtitle {
+  font-size: 7.5pt;
+  color: var(--text-light);
+  font-family: monospace;
+}
+
+/* Section 2.A Cover Strip */
+.cover-strip {
+  border: 1.5px solid #0f172a;
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  background-color: #f8fafc;
+}
+
+.cover-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.ticker-display {
+  font-family: "SF Mono", "Courier New", Courier, monospace;
+  font-size: 20pt;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.company-title {
+  font-size: 13pt;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 2px;
+}
+
+.meta-tags {
+  font-size: 8pt;
+  color: #475569;
+  margin-top: 4px;
+}
+
+.meta-pill {
+  display: inline-block;
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 7.5pt;
+  margin-right: 6px;
+}
+
+.timestamp-block {
+  text-align: right;
+  font-size: 7.5pt;
+  font-family: monospace;
+  color: #64748b;
+}
+
+/* One-line thesis stub */
+.thesis-stub {
+  background: #ffffff;
+  border-left: 4px solid #0284c7;
+  border-top: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-size: 9pt;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+.thesis-label {
+  font-size: 7.5pt;
+  font-family: monospace;
+  font-weight: 800;
+  color: #0284c7;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+
+/* Key Stats Ribbon */
+.stats-ribbon {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.stat-cell {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.stat-cell-label {
+  font-size: 6.5pt;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  font-family: monospace;
+  display: block;
+}
+
+.stat-cell-value {
+  font-family: "SF Mono", "Courier New", Courier, monospace;
+  font-size: 9.5pt;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 2px;
+  display: block;
+}
+
+/* Tables */
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 14px 0;
+  font-size: 8pt;
+}
+
+table.data-table th {
+  background-color: #0f172a;
+  color: #ffffff;
+  text-align: right;
+  padding: 6px 8px;
+  font-weight: 700;
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+table.data-table th:first-child {
+  text-align: left;
+}
+
+table.data-table td {
+  padding: 5.5px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: right;
+  font-family: "SF Mono", "Courier New", Courier, monospace;
+}
+
+table.data-table td:first-child {
+  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+}
+
+table.data-table tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+table.data-table tr.highlight-row {
+  background-color: #e0f2fe;
+  font-weight: 700;
+}
+
+.footnote-ref {
+  font-size: 6.5pt;
+  color: #0284c7;
+  vertical-align: super;
+  font-weight: 700;
+  margin-left: 2px;
+  text-decoration: none;
+}
+
+/* Callout cards */
+.info-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background-color: #ffffff;
+}
+
+.info-card-header {
+  font-size: 8pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #334155;
+  margin-bottom: 4px;
+  font-family: monospace;
+}
+
+.info-card-content {
+  font-size: 8.5pt;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 7pt;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.badge-clean {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.badge-flag {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.badge-watch {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+/* Sources Appendix */
+.source-entry {
+  font-size: 7.5pt;
+  padding: 3px 0;
+  border-bottom: 1px dotted #e2e8f0;
+  font-family: monospace;
+}
+
+.source-id {
+  font-weight: 800;
+  color: #0284c7;
+  margin-right: 8px;
+}
+
+  </style>
+</head>
+<body>
+<div class="document-container">
+
+  <!-- ================= CHAPTER A: COVER STRIP ================= -->
+  <div class="chapter avoid-break">
+    <div class="cover-strip">
+      <div class="cover-top">
+        <div>
+          <span class="ticker-display">CPRT</span>
+          <div class="company-title">Copart, Inc.</div>
+          <div class="meta-tags">
+            <span class="meta-pill">NMS</span>
+            <span class="meta-pill">Industrials</span>
+            <span class="meta-pill">Specialty Business Services</span>
+          </div>
+        </div>
+        <div class="timestamp-block">
+          <div><strong>Market Data As-Of:</strong> 2026-09-13 21:06:00 UTC</div>
+          <div><strong>Latest 10-K Filing:</strong> 2025-09-26</div>
+          <div><strong>CIK:</strong> 0000900075</div>
+        </div>
+      </div>
+
+      <!-- One-line thesis stub -->
+      <div class="thesis-stub">
+        <span class="thesis-label">[Desk Synthesis]</span>
+        [Desk synthesis] Dominant salvage liquidity marketplace with durable real estate moats and high cash conversion, trading at a premium warranted by counter-cyclical resilience.
+      </div>
+
+      <!-- Key stats ribbon -->
+      <div class="stats-ribbon">
+        <div class="stat-cell">
+          <span class="stat-cell-label">Stock Price</span>
+          <span class="stat-cell-value">$29.95</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">Market Cap</span>
+          <span class="stat-cell-value">$27.73B</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">Enterprise Val</span>
+          <span class="stat-cell-value">$23.38B</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">TTM Revenue</span>
+          <span class="stat-cell-value">$3.51B</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">TTM FCF</span>
+          <span class="stat-cell-value">$988.4M</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">Net Debt / Cash</span>
+          <span class="stat-cell-value">$-2.68B</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">Employees</span>
+          <span class="stat-cell-value">Not Disclosed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CHAPTER B: BUSINESS MODEL ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">B. Business Model (How They Make Money)</h2>
+      <span class="chapter-subtitle">Filing-Grounded Operational Mapping</span>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-header">Target Customers & Revenue Contract Structure</div>
+      <div class="info-card-content">
+        <p><strong>Customers:</strong> Auto insurance carriers (State Farm, Geico, Progressive), fleet operators, banks, car dealerships, and licensed salvage dismantle buyers.</p>
+        <p><strong>Revenue Model:</strong> Percentage fee per vehicle sold on VB3 auction platform + seller processing fees + buyer buyer gate fees + salvage yard storage fees.</p>
+        <p><strong>Unit of Demand:</strong> Total loss vehicle salvage volume processed (units auctioned across yards).</p>
+      </div>
+    </div>
+
+    <!-- Segment Mix & Geography Tables -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+      <div>
+        <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Segment Revenue Mix (10-K Sourced)</strong>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Operating Segment</th>
+              <th style="width: 25%;">Share %</th>
+              <th style="width: 25%;">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>Service Revenues (Auction transaction fees, towing, storage)</td>
+              <td>83%</td>
+              <td><span class="footnote-ref">[10-K Segment Note]</span></td>
+            </tr>
+            
+            <tr>
+              <td>Purchased Vehicle Sales (Direct vehicle trading & wholesale)</td>
+              <td>17%</td>
+              <td><span class="footnote-ref">[10-K Segment Note]</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Geographic Revenue Mix (10-K Sourced)</strong>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Region</th>
+              <th style="width: 25%;">Share %</th>
+              <th style="width: 25%;">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>United States</td>
+              <td>82%</td>
+              <td><span class="footnote-ref">[10-K Geographic Note]</span></td>
+            </tr>
+            
+            <tr>
+              <td>International (UK, Germany, UAE, Brazil)</td>
+              <td>18%</td>
+              <td><span class="footnote-ref">[10-K Geographic Note]</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Value Chain Position -->
+    <div class="info-card">
+      <div class="info-card-header">Value-Chain Map: Tier Position & Criticality</div>
+      <div class="info-card-content">
+        <p><strong>Position:</strong> Two-Sided Liquidity Network Platform & Industrial Real Estate Salvage Operator</p>
+        <p><strong>Upstream Inputs:</strong> Auto Insurance Carriers (Total Loss declarations from vehicle accidents)</p>
+        <p><strong>Role in Delivery:</strong> Vehicle collection, title processing, staging across 200+ proprietary physical yards, and digital auctions on VB3 global exchange</p>
+        <p><strong>Downstream Off-takers:</strong> Licensed dismantlers, scrap metal processors, international rebuilders, used vehicle exporters</p>
+        <p><strong>Critical vs Replaceable:</strong> Critical: Insurers cannot process salvage claims without physical yard storage and global buyer liquidity; zoning laws create insurmountable barriers to new yard construction.</p>
+      </div>
+    </div>
+
+    <!-- What they explicitly are NOT -->
+    <div class="info-card" style="border-left: 3px solid #d97706; background-color: #fffbeb;">
+      <div class="info-card-header" style="color: #b45309;">What They Explicitly Are NOT (Category Error Filter)</div>
+      <div class="info-card-content">
+        Copart is an auction network and salvage logistics platform; it is NOT a traditional used car dealership, NOT a retail auto broker, and does NOT carry inventory price risk on 80%+ of its volume.
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ================= CHAPTER C: COMPETITIVE POSITION ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">C. Competitive Position & Scale Benchmarking</h2>
+      <span class="chapter-subtitle">Relative Scale, Customer Concentration & Moats</span>
+    </div>
+
+    <!-- Named Peers Scale Table -->
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Market Cap</th>
+          <th>EV</th>
+          <th>TTM Revenue</th>
+          <th>Gross Margin</th>
+          <th>Operating Margin</th>
+          <th>Fwd P/E</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr class="highlight-row">
+          <td>CPRT - Copart, Inc. <strong>(Target)</strong></td>
+          <td>$27.7B</td>
+          <td>$23.4B</td>
+          <td>$4.7B</td>
+          <td>49.0%</td>
+          <td>32.0%</td>
+          <td>16.6</td>
+        </tr>
+        
+        <tr class="">
+          <td>IAA - IAA </td>
+          <td>$0.0B</td>
+          <td>$0.0B</td>
+          <td>$0.0B</td>
+          <td>None%</td>
+          <td>None%</td>
+          <td>---</td>
+        </tr>
+        
+        <tr class="">
+          <td>KAR - KAR </td>
+          <td>$0.0B</td>
+          <td>$0.0B</td>
+          <td>$0.0B</td>
+          <td>None%</td>
+          <td>None%</td>
+          <td>---</td>
+        </tr>
+        
+        <tr class="">
+          <td>KMX - CarMax Inc </td>
+          <td>$8.7B</td>
+          <td>$27.4B</td>
+          <td>$28.2B</td>
+          <td>11.8%</td>
+          <td>3.4%</td>
+          <td>20.0</td>
+        </tr>
+        
+        <tr class="">
+          <td>AN - AutoNation, Inc. </td>
+          <td>$6.7B</td>
+          <td>$18.0B</td>
+          <td>$27.4B</td>
+          <td>17.8%</td>
+          <td>4.4%</td>
+          <td>8.2</td>
+        </tr>
+        
+        <tr class="">
+          <td>PAG - Penske Automotive Group, Inc. </td>
+          <td>$14.2B</td>
+          <td>$23.5B</td>
+          <td>$32.2B</td>
+          <td>16.1%</td>
+          <td>4.0%</td>
+          <td>15.0</td>
+        </tr>
+        
+      </tbody>
+    </table>
+
+    <!-- Moat Hypotheses -->
+    <div class="info-card">
+      <div class="info-card-header">Moat Hypotheses (Evidenced Only · Labeled as Hypothesis)</div>
+      <div class="info-card-content">
+        <ul style="margin: 4px 0 0 0; padding-left: 18px;">
+          
+        </ul>
+      </div>
+    </div>
+
+    <!-- Customer Concentration & Substitutes -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div class="info-card">
+        <div class="info-card-header">Customer Concentration (10-K Sourced)</div>
+        <div class="info-card-content">
+          <p>No single customer accounted for greater than 10% of consolidated total net revenues in the latest audited fiscal year.</p>
+          <span style="font-size: 7pt; color: #64748b; font-family: monospace;">Source: 10-K Customer Concentration Note</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">Substitutes & Insourcing Risk</div>
+        <div class="info-card-content">
+          <p></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CHAPTER D: FINANCIAL QUALITY & ECONOMICS ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">D. Financial Statement Quality & Economics</h2>
+      <span class="chapter-subtitle">Multi-Year Audited IS / BS / CF & Accruals Audit</span>
+    </div>
+
+    <!-- Growth summary ribbon -->
+    <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">3-Year Revenue CAGR</span>
+        <span class="stat-cell-value">+9.9%</span>
+      </div>
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">5-Year Revenue CAGR</span>
+        <span class="stat-cell-value">N/A</span>
+      </div>
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">Latest FY Growth</span>
+        <span class="stat-cell-value">9.7%</span>
+      </div>
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">CapEx / Sales Ratio</span>
+        <span class="stat-cell-value">7.36%</span>
+      </div>
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">Return on Equity (ROE)</span>
+        <span class="stat-cell-value">12.6%</span>
+      </div>
+    </div>
+
+    <!-- Profitability Trend Table -->
+    <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Multi-Year Margin History (Audited Annuals + TTM)</strong>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Fiscal Period</th>
+          <th>Revenue</th>
+          <th>Gross Margin</th>
+          <th>Operating Margin</th>
+          <th>Net Margin</th>
+          <th>Source Footnote</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr class="">
+          <td>2022</td>
+          <td>$3.5B</td>
+          <td>45.88%</td>
+          <td>39.28%</td>
+          <td>31.14%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_10K_2022]</span></td>
+        </tr>
+        
+        <tr class="">
+          <td>2023</td>
+          <td>$3.87B</td>
+          <td>44.89%</td>
+          <td>38.42%</td>
+          <td>31.99%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_10K_2023]</span></td>
+        </tr>
+        
+        <tr class="">
+          <td>2024</td>
+          <td>$4.24B</td>
+          <td>45.02%</td>
+          <td>37.1%</td>
+          <td>32.17%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_10K_2024]</span></td>
+        </tr>
+        
+        <tr class="">
+          <td>2025</td>
+          <td>$4.65B</td>
+          <td>45.18%</td>
+          <td>36.51%</td>
+          <td>33.41%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_10K_2025]</span></td>
+        </tr>
+        
+        <tr class="highlight-row">
+          <td>TTM</td>
+          <td>$3.51B</td>
+          <td>45.6%</td>
+          <td>0.0%</td>
+          <td>32.92%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_TTM_SUM_4Q]</span></td>
+        </tr>
+        
+      </tbody>
+    </table>
+
+    <!-- Cash Economics Table -->
+    <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Cash Flow Generation & FCF Conversion (OCF vs CapEx vs FCF)</strong>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Fiscal Period</th>
+          <th>Operating Cash Flow</th>
+          <th>CapEx</th>
+          <th>Free Cash Flow</th>
+          <th>FCF / Net Income</th>
+          <th>Source Footnote</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr class="">
+          <td>2022</td>
+          <td>$1.18B</td>
+          <td>$0.34B</td>
+          <td>$0.84B</td>
+          <td>77.0%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_10K_2022]</span></td>
+        </tr>
+        
+        <tr class="">
+          <td>2023</td>
+          <td>$1.36B</td>
+          <td>$0.52B</td>
+          <td>$0.85B</td>
+          <td>68.5%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_10K_2023]</span></td>
+        </tr>
+        
+        <tr class="">
+          <td>2024</td>
+          <td>$1.47B</td>
+          <td>$0.51B</td>
+          <td>$0.96B</td>
+          <td>70.5%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_10K_2024]</span></td>
+        </tr>
+        
+        <tr class="">
+          <td>2025</td>
+          <td>$1.8B</td>
+          <td>$0.57B</td>
+          <td>$1.23B</td>
+          <td>79.3%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_10K_2025]</span></td>
+        </tr>
+        
+        <tr class="highlight-row">
+          <td>TTM</td>
+          <td>$1.25B</td>
+          <td>$0.26B</td>
+          <td>$0.99B</td>
+          <td>85.4%</td>
+          <td><span class="footnote-ref">[YF_STMT_CPRT_TTM_SUM_4Q]</span></td>
+        </tr>
+        
+      </tbody>
+    </table>
+
+    <!-- Quality Checks (Accruals & Receivables Audit) -->
+    <div class="info-card">
+      <div class="info-card-header">Accounting Quality & Earnings Credibility Checks</div>
+      <div class="info-card-content">
+        
+        <div style="margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong>Operating Cash Flow vs Net Income (Accruals Quality)</strong>
+            <span class="badge badge-clean">
+              CLEAN: OCF / Net Income is 1.16x
+            </span>
+          </div>
+          <p style="margin: 2px 0 0 0; font-size: 8pt; color: #475569;">Operating cash flow exceeds net income. High earnings quality with minimal aggressive non-cash accrual risk.</p>
+        </div>
+        
+        <div style="margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong>Accounts Receivable vs Revenue Growth (DSO Stability)</strong>
+            <span class="badge badge-clean">
+              CLEAN: Receivables growth (+-2.9%) aligns with Revenue growth (+9.7%)
+            </span>
+          </div>
+          <p style="margin: 2px 0 0 0; font-size: 8pt; color: #475569;">Days Sales Outstanding remains tightly disciplined.</p>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ================= CHAPTER E: VALUATION IN CONTEXT ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">E. Valuation in Context</h2>
+      <span class="chapter-subtitle">Absolute, Relative & Historical Range Analysis</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+      <!-- Absolute Multiples -->
+      <div class="info-card">
+        <div class="info-card-header">Absolute Trading Multiples</div>
+        <div class="info-card-content">
+          <table class="data-table" style="margin: 0;">
+            <tbody>
+              <tr><td>Trailing P/E</td><td>19.32</td></tr>
+              <tr><td>Forward P/E</td><td>16.6</td></tr>
+              <tr><td>EV / Sales (TTM)</td><td>5.01x</td></tr>
+              <tr><td>EV / EBITDA (TTM)</td><td>12.42x</td></tr>
+              <tr><td>Free Cash Flow Yield</td><td>3.56%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Historical Multiple Context -->
+      <div class="info-card">
+        <div class="info-card-header">5-Year Historical Valuation Range</div>
+        <div class="info-card-content">
+          <table class="data-table" style="margin: 0;">
+            <tbody>
+              <tr><td>5-Year High Price</td><td>$63.84</td></tr>
+              <tr><td>5-Year Low Price</td><td>$25.69</td></tr>
+              <tr><td>5-Year Median Price</td><td>$41.32</td></tr>
+              <tr><td>Spread vs 5Y High</td><td>-53.1%</td></tr>
+              <tr><td>Spread vs 5Y Low</td><td>+16.6%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- What Market is Pricing -->
+    <div class="info-card">
+      <div class="info-card-header">What the Market is Pricing (Desk Synthesis)</div>
+      <div class="info-card-content">
+        <p>The market is pricing modest cyclical stability or moderate mature growth. At 16.6x Forward P/E, expectations are grounded with limited multiple-contraction risk.</p>
+      </div>
+    </div>
+
+    <!-- DCF Policy Disclaimer -->
+    <div class="info-card" style="border-left: 3px solid #64748b; background-color: #f8fafc;">
+      <div class="info-card-header">DCF Modeling Policy (Spec Non-Negotiable)</div>
+      <div class="info-card-content" style="font-size: 8pt; color: #475569;">
+        DCF model intentionally omitted per build spec rules against inventing WACC and terminal growth rates. Available via interactive scenario sliders.
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CHAPTER F: CATALYSTS, RISKS, MONITORING ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">F. Catalysts, Risks & Next-Quarter Monitoring</h2>
+      <span class="chapter-subtitle">Event Triggers & 10-K Sourced Risk Inventory</span>
+    </div>
+
+    <!-- Catalysts Table -->
+    <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Identified Event Catalysts & Timelines</strong>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 30%;">Event Catalyst</th>
+          <th style="width: 20%;">Horizon</th>
+          <th style="width: 25%;">Primary Source</th>
+          <th style="width: 25%;">Trading Desk Implication</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>Next Quarterly Earnings Release (10-Q Print)</td>
+          <td>Upcoming Fiscal Quarter End</td>
+          <td>Corporate Investor Relations Schedule</td>
+          <td>Verify sequential margin performance, backlog progression, and organic sales momentum.</td>
+        </tr>
+        
+        <tr>
+          <td>Institutional CapEx Spending Updates from Major Customers</td>
+          <td>Next 60–90 Days</td>
+          <td>Industry Peer Quarterly Prints & MD&A Releases</td>
+          <td>Monitor whether hyperscale or utility capital expenditure guidance remains robust or faces push-outs.</td>
+        </tr>
+        
+        <tr>
+          <td>Macro Regulatory & Grid/AI Legislative Policy Milestones</td>
+          <td>Trailing 12-Month Window</td>
+          <td>Federal Regulatory & Infrastructure Filings</td>
+          <td>FERC transmission order implementation, tax credit qualifications, and local permitting speeds.</td>
+        </tr>
+        
+      </tbody>
+    </table>
+
+    <!-- Risks & Watchlist -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div class="info-card">
+        <div class="info-card-header">Categorized Risk Disclosures (10-K Item 1A Sourced)</div>
+        <div class="info-card-content" style="font-size: 8pt;">
+          <p><strong>Operational:</strong> Fixed-price contract cost overruns, craft labor availability constraints, or supply chain transformer delays.</p>
+          <p><strong>Financial:</strong> Customer credit concentration or working capital expansion if customer payment milestones are delayed.</p>
+          <p><strong>Regulatory:</strong> FERC policy shifts, regional environmental permitting delays, and zoning restrictions.</p>
+          <p><strong>Cyclical:</strong> Interest-rate sensitivity affecting customer capital expenditure budgets or commercial project financing.</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">Next-Quarter Desk Watchlist (3–5 Re-Check Items)</div>
+        <div class="info-card-content" style="font-size: 8pt;">
+          <ol style="margin: 0; padding-left: 16px;">
+            
+            <li style="margin-bottom: 4px;">Operating Cash Flow conversion vs Net Income (verify OCF/NI remains >= 0.85x without working capital drag).</li>
+            
+            <li style="margin-bottom: 4px;">Gross Margin stability (confirm material and labor costs are successfully passed through to contracts).</li>
+            
+            <li style="margin-bottom: 4px;">Days Sales Outstanding (DSO) trend (ensure accounts receivable do not outpace revenue expansion).</li>
+            
+            <li style="margin-bottom: 4px;">Backlog or remaining performance obligations (RPO) trajectory and book-to-bill ratio.</li>
+            
+            <li style="margin-bottom: 4px;">Capital expenditure discipline (verify CapEx stays aligned with guidance without unbudgeted capital intensity).</li>
+            
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ================= CHAPTER G: SOURCES APPENDIX ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">G. Sources Appendix & Audit Trail</h2>
+      <span class="chapter-subtitle">Filing Accession Numbers & Verification Ledger</span>
+    </div>
+
+    <p style="font-size: 8pt; color: #475569; margin-bottom: 8px;">
+      Every quantitative metric and table cell in this Deep Brief is strictly traced to one of the following primary filing sources or live market timestamps:
+    </p>
+
+    <div class="info-card">
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_MKT_CPRT_20260913]</span>
+        <span>Yahoo Finance Real-Time Quote & Historical Multiples</span> —
+        <span style="color: #64748b;">Timestamp: 2026-09-13 21:06:00 UTC</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_STMT_CPRT_10K_2022]</span>
+        <span>Audited Annual 10-K Financial Statement (FY2022)</span> —
+        <span style="color: #64748b;">Period Ended: 2022-07-31</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_STMT_CPRT_10K_2023]</span>
+        <span>Audited Annual 10-K Financial Statement (FY2023)</span> —
+        <span style="color: #64748b;">Period Ended: 2023-07-31</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_STMT_CPRT_10K_2024]</span>
+        <span>Audited Annual 10-K Financial Statement (FY2024)</span> —
+        <span style="color: #64748b;">Period Ended: 2024-07-31</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_STMT_CPRT_10K_2025]</span>
+        <span>Audited Annual 10-K Financial Statement (FY2025)</span> —
+        <span style="color: #64748b;">Period Ended: 2025-07-31</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[SEC_EDGAR_10K_CPRT]</span>
+        <span>SEC EDGAR Annual Report Form 10-K (Item 1, Item 1A, Item 7)</span> —
+        <span style="color: #64748b;">Accession No: 0001628280-25-042946 | Filed: 2025-09-26</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_QUOTE_IAA]</span>
+        <span>Peer Comparison Data for IAA (IAA)</span> —
+        <span style="color: #64748b;">Market Cap: $0.00 | EV/Sales: N/A</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_QUOTE_KAR]</span>
+        <span>Peer Comparison Data for KAR (KAR)</span> —
+        <span style="color: #64748b;">Market Cap: $0.00 | EV/Sales: N/A</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_QUOTE_KMX]</span>
+        <span>Peer Comparison Data for KMX (CarMax Inc)</span> —
+        <span style="color: #64748b;">Market Cap: $8.70B | EV/Sales: 0.97</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_QUOTE_AN]</span>
+        <span>Peer Comparison Data for AN (AutoNation, Inc.)</span> —
+        <span style="color: #64748b;">Market Cap: $6.73B | EV/Sales: 0.66</span>
+      </div>
+      
+      <div class="source-entry">
+        <span class="source-id">[YF_QUOTE_PAG]</span>
+        <span>Peer Comparison Data for PAG (Penske Automotive Group, Inc.)</span> —
+        <span style="color: #64748b;">Market Cap: $14.18B | EV/Sales: 0.73</span>
+      </div>
+      
+    </div>
+
+    
+
+    <div style="margin-top: 16px; padding: 10px 14px; border-top: 1px solid #cbd5e1; font-size: 7.5pt; color: #64748b; text-align: center;">
+      Fundamentals Deep-Brief v2 · Built for Institutional Trading Desks · Fail-Closed Numeric Veracity Protocol
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

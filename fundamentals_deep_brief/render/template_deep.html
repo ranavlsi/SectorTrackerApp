@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ data.cover.ticker }} — Institutional Deep Brief v2</title>
+  <style>
+    {{ css_content }}
+  </style>
+</head>
+<body>
+<div class="document-container">
+
+  <!-- ================= CHAPTER A: COVER STRIP ================= -->
+  <div class="chapter avoid-break">
+    <div class="cover-strip">
+      <div class="cover-top">
+        <div>
+          <span class="ticker-display">{{ data.cover.ticker }}</span>
+          <div class="company-title">{{ data.cover.company_name }}</div>
+          <div class="meta-tags">
+            <span class="meta-pill">{{ data.cover.exchange }}</span>
+            <span class="meta-pill">{{ data.cover.sector }}</span>
+            <span class="meta-pill">{{ data.cover.industry }}</span>
+          </div>
+        </div>
+        <div class="timestamp-block">
+          <div><strong>Market Data As-Of:</strong> {{ data.cover.as_of_market }}</div>
+          <div><strong>Latest 10-K Filing:</strong> {{ data.cover.as_of_filing }}</div>
+          <div><strong>CIK:</strong> {{ data.cover.cik or "N/A" }}</div>
+        </div>
+      </div>
+
+      <!-- One-line thesis stub -->
+      <div class="thesis-stub">
+        <span class="thesis-label">[Desk Synthesis]</span>
+        {{ data.cover.thesis_stub }}
+      </div>
+
+      <!-- Key stats ribbon -->
+      <div class="stats-ribbon">
+        <div class="stat-cell">
+          <span class="stat-cell-label">Stock Price</span>
+          <span class="stat-cell-value">${{ "%.2f"|format(data.cover.price) }}</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">Market Cap</span>
+          <span class="stat-cell-value">${{ data.cover.market_cap_str }}</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">Enterprise Val</span>
+          <span class="stat-cell-value">${{ data.cover.enterprise_value_str }}</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">TTM Revenue</span>
+          <span class="stat-cell-value">${{ data.cover.ttm_revenue_str }}</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">TTM FCF</span>
+          <span class="stat-cell-value">${{ data.cover.ttm_fcf_str }}</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">Net Debt / Cash</span>
+          <span class="stat-cell-value">${{ data.cover.net_debt_str }}</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-cell-label">Employees</span>
+          <span class="stat-cell-value">{{ data.cover.employees_str }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CHAPTER B: BUSINESS MODEL ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">B. Business Model (How They Make Money)</h2>
+      <span class="chapter-subtitle">Filing-Grounded Operational Mapping</span>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-header">Target Customers & Revenue Contract Structure</div>
+      <div class="info-card-content">
+        <p><strong>Customers:</strong> {{ data.business_model.customers }}</p>
+        <p><strong>Revenue Model:</strong> {{ data.business_model.revenue_model }}</p>
+        <p><strong>Unit of Demand:</strong> {{ data.business_model.unit_of_demand }}</p>
+      </div>
+    </div>
+
+    <!-- Segment Mix & Geography Tables -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+      <div>
+        <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Segment Revenue Mix (10-K Sourced)</strong>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Operating Segment</th>
+              <th style="width: 25%;">Share %</th>
+              <th style="width: 25%;">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in data.business_model.segment_mix %}
+            <tr>
+              <td>{{ s.segment }}</td>
+              <td>{{ s.percentage_str }}</td>
+              <td><span class="footnote-ref">[{{ s.source }}]</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Geographic Revenue Mix (10-K Sourced)</strong>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Region</th>
+              <th style="width: 25%;">Share %</th>
+              <th style="width: 25%;">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for g in data.business_model.geographic_mix %}
+            <tr>
+              <td>{{ g.region }}</td>
+              <td>{{ g.percentage_str }}</td>
+              <td><span class="footnote-ref">[{{ g.source }}]</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Value Chain Position -->
+    <div class="info-card">
+      <div class="info-card-header">Value-Chain Map: Tier Position & Criticality</div>
+      <div class="info-card-content">
+        <p><strong>Position:</strong> {{ data.business_model.value_chain.tier_position }}</p>
+        <p><strong>Upstream Inputs:</strong> {{ data.business_model.value_chain.upstream }}</p>
+        <p><strong>Role in Delivery:</strong> {{ data.business_model.value_chain.company_role }}</p>
+        <p><strong>Downstream Off-takers:</strong> {{ data.business_model.value_chain.downstream }}</p>
+        <p><strong>Critical vs Replaceable:</strong> {{ data.business_model.value_chain.criticality }}</p>
+      </div>
+    </div>
+
+    <!-- What they explicitly are NOT -->
+    <div class="info-card" style="border-left: 3px solid #d97706; background-color: #fffbeb;">
+      <div class="info-card-header" style="color: #b45309;">What They Explicitly Are NOT (Category Error Filter)</div>
+      <div class="info-card-content">
+        {{ data.business_model.what_they_are_not }}
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ================= CHAPTER C: COMPETITIVE POSITION ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">C. Competitive Position & Scale Benchmarking</h2>
+      <span class="chapter-subtitle">Relative Scale, Customer Concentration & Moats</span>
+    </div>
+
+    <!-- Named Peers Scale Table -->
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Market Cap</th>
+          <th>EV</th>
+          <th>TTM Revenue</th>
+          <th>Gross Margin</th>
+          <th>Operating Margin</th>
+          <th>Fwd P/E</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in data.competitive.peers_table %}
+        <tr class="{% if p.is_target %}highlight-row{% endif %}">
+          <td>{{ p.ticker }} - {{ p.company_name }} {% if p.is_target %}<strong>(Target)</strong>{% endif %}</td>
+          <td>{{ p.market_cap|billions(1) }}</td>
+          <td>{{ p.enterprise_value|billions(1) }}</td>
+          <td>{{ p.revenue_ttm|billions(1) }}</td>
+          <td>{{ p.gross_margin_pct|pct }}</td>
+          <td>{{ p.operating_margin_pct|pct }}</td>
+          <td>{{ p.forward_pe or "---" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Moat Hypotheses -->
+    <div class="info-card">
+      <div class="info-card-header">Moat Hypotheses (Evidenced Only · Labeled as Hypothesis)</div>
+      <div class="info-card-content">
+        <ul style="margin: 4px 0 0 0; padding-left: 18px;">
+          {% for m in data.competitive.moats %}
+          <li style="margin-bottom: 6px;">
+            <strong>{{ m.label }} {{ m.type }}:</strong> {{ m.text }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <!-- Customer Concentration & Substitutes -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div class="info-card">
+        <div class="info-card-header">Customer Concentration (10-K Sourced)</div>
+        <div class="info-card-content">
+          <p>{{ data.competitive.customer_concentration }}</p>
+          <span style="font-size: 7pt; color: #64748b; font-family: monospace;">Source: {{ data.competitive.customer_concentration_source }}</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">Substitutes & Insourcing Risk</div>
+        <div class="info-card-content">
+          <p>{{ data.competitive.substitutes }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CHAPTER D: FINANCIAL QUALITY & ECONOMICS ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">D. Financial Statement Quality & Economics</h2>
+      <span class="chapter-subtitle">Multi-Year Audited IS / BS / CF & Accruals Audit</span>
+    </div>
+
+    <!-- Growth summary ribbon -->
+    <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">3-Year Revenue CAGR</span>
+        <span class="stat-cell-value">{% if data.quality.growth.revenue_3y_cagr %}+{{ data.quality.growth.revenue_3y_cagr }}%{% else %}N/A{% endif %}</span>
+      </div>
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">5-Year Revenue CAGR</span>
+        <span class="stat-cell-value">{% if data.quality.growth.revenue_5y_cagr %}+{{ data.quality.growth.revenue_5y_cagr }}%{% else %}N/A{% endif %}</span>
+      </div>
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">Latest FY Growth</span>
+        <span class="stat-cell-value">{% if data.quality.growth.latest_fy_growth_pct %}{{ data.quality.growth.latest_fy_growth_pct }}%{% else %}N/A{% endif %}</span>
+      </div>
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">CapEx / Sales Ratio</span>
+        <span class="stat-cell-value">{{ data.quality.capital_intensity.capex_to_sales_pct }}%</span>
+      </div>
+      <div class="stat-cell" style="flex: 1;">
+        <span class="stat-cell-label">Return on Equity (ROE)</span>
+        <span class="stat-cell-value">{{ data.quality.capital_intensity.return_on_equity_pct or "N/A" }}%</span>
+      </div>
+    </div>
+
+    <!-- Profitability Trend Table -->
+    <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Multi-Year Margin History (Audited Annuals + TTM)</strong>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Fiscal Period</th>
+          <th>Revenue</th>
+          <th>Gross Margin</th>
+          <th>Operating Margin</th>
+          <th>Net Margin</th>
+          <th>Source Footnote</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in data.quality.profitability_table %}
+        <tr class="{% if r.period == 'TTM' %}highlight-row{% endif %}">
+          <td>{{ r.period }}</td>
+          <td>{{ r.revenue|billions(2) }}</td>
+          <td>{{ r.gross_margin_pct|pct }}</td>
+          <td>{{ r.operating_margin_pct|pct }}</td>
+          <td>{{ r.net_margin_pct|pct }}</td>
+          <td><span class="footnote-ref">[{{ r.source_id }}]</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Cash Economics Table -->
+    <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Cash Flow Generation & FCF Conversion (OCF vs CapEx vs FCF)</strong>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Fiscal Period</th>
+          <th>Operating Cash Flow</th>
+          <th>CapEx</th>
+          <th>Free Cash Flow</th>
+          <th>FCF / Net Income</th>
+          <th>Source Footnote</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in data.quality.cash_economics_table %}
+        <tr class="{% if c.period == 'TTM' %}highlight-row{% endif %}">
+          <td>{{ c.period }}</td>
+          <td>{{ c.operating_cash_flow|billions(2) }}</td>
+          <td>{{ c.capex|billions(2) }}</td>
+          <td>{{ c.free_cash_flow|billions(2) }}</td>
+          <td>{{ c.fcf_conversion_pct|pct }}</td>
+          <td><span class="footnote-ref">[{{ c.source_id }}]</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Quality Checks (Accruals & Receivables Audit) -->
+    <div class="info-card">
+      <div class="info-card-header">Accounting Quality & Earnings Credibility Checks</div>
+      <div class="info-card-content">
+        {% for q in data.quality.quality_checks %}
+        <div style="margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong>{{ q.test }}</strong>
+            <span class="badge {% if q.status == 'CLEAN' %}badge-clean{% elif q.status == 'FLAG' %}badge-flag{% else %}badge-watch{% endif %}">
+              {{ q.status }}: {{ q.result }}
+            </span>
+          </div>
+          <p style="margin: 2px 0 0 0; font-size: 8pt; color: #475569;">{{ q.finding }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ================= CHAPTER E: VALUATION IN CONTEXT ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">E. Valuation in Context</h2>
+      <span class="chapter-subtitle">Absolute, Relative & Historical Range Analysis</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+      <!-- Absolute Multiples -->
+      <div class="info-card">
+        <div class="info-card-header">Absolute Trading Multiples</div>
+        <div class="info-card-content">
+          <table class="data-table" style="margin: 0;">
+            <tbody>
+              <tr><td>Trailing P/E</td><td>{{ data.valuation.absolute_multiples.pe_trailing or "N/A" }}</td></tr>
+              <tr><td>Forward P/E</td><td>{{ data.valuation.absolute_multiples.pe_forward or "N/A" }}</td></tr>
+              <tr><td>EV / Sales (TTM)</td><td>{{ data.valuation.absolute_multiples.ev_sales or "N/A" }}x</td></tr>
+              <tr><td>EV / EBITDA (TTM)</td><td>{{ data.valuation.absolute_multiples.ev_ebitda or "N/A" }}x</td></tr>
+              <tr><td>Free Cash Flow Yield</td><td>{{ data.valuation.absolute_multiples.fcf_yield_pct or "N/A" }}%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Historical Multiple Context -->
+      <div class="info-card">
+        <div class="info-card-header">5-Year Historical Valuation Range</div>
+        <div class="info-card-content">
+          <table class="data-table" style="margin: 0;">
+            <tbody>
+              <tr><td>5-Year High Price</td><td>${{ data.valuation.historical_context.get("5y_high_price", "N/A") }}</td></tr>
+              <tr><td>5-Year Low Price</td><td>${{ data.valuation.historical_context.get("5y_low_price", "N/A") }}</td></tr>
+              <tr><td>5-Year Median Price</td><td>${{ data.valuation.historical_context.get("5y_median_price", "N/A") }}</td></tr>
+              <tr><td>Spread vs 5Y High</td><td>{{ data.valuation.historical_context.get("current_vs_5y_high_pct", "N/A") }}%</td></tr>
+              <tr><td>Spread vs 5Y Low</td><td>+{{ data.valuation.historical_context.get("current_vs_5y_low_pct", "N/A") }}%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- What Market is Pricing -->
+    <div class="info-card">
+      <div class="info-card-header">What the Market is Pricing (Desk Synthesis)</div>
+      <div class="info-card-content">
+        <p>{{ data.valuation.what_market_is_pricing }}</p>
+      </div>
+    </div>
+
+    <!-- DCF Policy Disclaimer -->
+    <div class="info-card" style="border-left: 3px solid #64748b; background-color: #f8fafc;">
+      <div class="info-card-header">DCF Modeling Policy (Spec Non-Negotiable)</div>
+      <div class="info-card-content" style="font-size: 8pt; color: #475569;">
+        {{ data.valuation.dcf_model.disclaimer }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CHAPTER F: CATALYSTS, RISKS, MONITORING ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">F. Catalysts, Risks & Next-Quarter Monitoring</h2>
+      <span class="chapter-subtitle">Event Triggers & 10-K Sourced Risk Inventory</span>
+    </div>
+
+    <!-- Catalysts Table -->
+    <strong style="font-size: 8pt; text-transform: uppercase; color: #475569;">Identified Event Catalysts & Timelines</strong>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 30%;">Event Catalyst</th>
+          <th style="width: 20%;">Horizon</th>
+          <th style="width: 25%;">Primary Source</th>
+          <th style="width: 25%;">Trading Desk Implication</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in data.synthesis.catalysts %}
+        <tr>
+          <td>{{ cat.event }}</td>
+          <td>{{ cat.timing }}</td>
+          <td>{{ cat.source }}</td>
+          <td>{{ cat.implication }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Risks & Watchlist -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div class="info-card">
+        <div class="info-card-header">Categorized Risk Disclosures (10-K Item 1A Sourced)</div>
+        <div class="info-card-content" style="font-size: 8pt;">
+          <p><strong>Operational:</strong> {{ data.synthesis.risks.operational }}</p>
+          <p><strong>Financial:</strong> {{ data.synthesis.risks.financial }}</p>
+          <p><strong>Regulatory:</strong> {{ data.synthesis.risks.regulatory }}</p>
+          <p><strong>Cyclical:</strong> {{ data.synthesis.risks.cyclical }}</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">Next-Quarter Desk Watchlist (3–5 Re-Check Items)</div>
+        <div class="info-card-content" style="font-size: 8pt;">
+          <ol style="margin: 0; padding-left: 16px;">
+            {% for w in data.synthesis.watchlist %}
+            <li style="margin-bottom: 4px;">{{ w }}</li>
+            {% endfor %}
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ================= CHAPTER G: SOURCES APPENDIX ================= -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <h2 class="chapter-title">G. Sources Appendix & Audit Trail</h2>
+      <span class="chapter-subtitle">Filing Accession Numbers & Verification Ledger</span>
+    </div>
+
+    <p style="font-size: 8pt; color: #475569; margin-bottom: 8px;">
+      Every quantitative metric and table cell in this Deep Brief is strictly traced to one of the following primary filing sources or live market timestamps:
+    </p>
+
+    <div class="info-card">
+      {% for src in data.sources.entries %}
+      <div class="source-entry">
+        <span class="source-id">[{{ src.id }}]</span>
+        <span>{{ src.description }}</span> —
+        <span style="color: #64748b;">{{ src.details }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if data.sources.failed_fetches %}
+    <div class="info-card" style="border-left: 3px solid #dc2626; background-color: #fef2f2; margin-top: 10px;">
+      <div class="info-card-header" style="color: #b91c1c;">Explicit Inventory of Failed Fetches (Omitted Claims)</div>
+      <div class="info-card-content" style="font-size: 8pt; color: #7f1d1d;">
+        <ul style="margin: 0; padding-left: 16px;">
+          {% for f in data.sources.failed_fetches %}
+          <li><strong>{{ f.field }}:</strong> {{ f.reason }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 16px; padding: 10px 14px; border-top: 1px solid #cbd5e1; font-size: 7.5pt; color: #64748b; text-align: center;">
+      Fundamentals Deep-Brief v2 · Built for Institutional Trading Desks · Fail-Closed Numeric Veracity Protocol
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

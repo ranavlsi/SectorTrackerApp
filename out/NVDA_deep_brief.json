@@ -1,0 +1,571 @@
+{
+  "cover": {
+    "ticker": "NVDA",
+    "company_name": "NVIDIA Corporation",
+    "exchange": "NMS",
+    "sector": "Technology",
+    "industry": "Semiconductors",
+    "as_of_market": "2026-09-13 21:06:43 UTC",
+    "as_of_filing": "2026-02-25",
+    "cik": "0001045810",
+    "thesis_stub": "[Desk synthesis] Dominant AI compute ecosystem with formidable CUDA moat and extraordinary cash conversion, balanced against customer capex concentration and cyclical digestion risk.",
+    "price": 218.29,
+    "market_cap_str": "5.27T",
+    "enterprise_value_str": "5.24T",
+    "ttm_revenue_str": "302.97B",
+    "ttm_fcf_str": "127.01B",
+    "net_debt_str": "-24.12B",
+    "employees_str": "42,000"
+  },
+  "business_model": {
+    "ticker": "NVDA",
+    "company_name": "NVIDIA Corporation",
+    "customers": "Hyperscale cloud service providers (Microsoft, Amazon, Google, Meta), sovereign AI initiatives, enterprise IT, and PC gaming OEMs.",
+    "revenue_model": "Fabless hardware sales (HGX/DGX systems, Hopper/Blackwell GPUs, NVLink interconnects, Mellanox networking) + enterprise AI software subscriptions (NVIDIA AI Enterprise).",
+    "unit_of_demand": "GPU accelerators shipped, compute nodes deployed, and network interconnect switches connected.",
+    "segment_mix": [
+      {
+        "segment": "Compute & Networking (Data Center, Mellanox, Enterprise AI)",
+        "percentage_str": "87%",
+        "value_pct": 87.0,
+        "source": "10-K Segment Note"
+      },
+      {
+        "segment": "Graphics (GeForce Gaming, Workstation RTX, Auto)",
+        "percentage_str": "13%",
+        "value_pct": 13.0,
+        "source": "10-K Segment Note"
+      }
+    ],
+    "geographic_mix": [
+      {
+        "region": "United States",
+        "percentage_str": "44%",
+        "value_pct": 44.0,
+        "source": "10-K Geographic Note"
+      },
+      {
+        "region": "Singapore / Asia Hubs",
+        "percentage_str": "22%",
+        "value_pct": 22.0,
+        "source": "10-K Geographic Note"
+      },
+      {
+        "region": "Taiwan",
+        "percentage_str": "16%",
+        "value_pct": 16.0,
+        "source": "10-K Geographic Note"
+      },
+      {
+        "region": "Other International",
+        "percentage_str": "18%",
+        "value_pct": 18.0,
+        "source": "10-K Geographic Note"
+      }
+    ],
+    "value_chain": {
+      "tier_position": "Accelerated Compute Architecture & Full-Stack AI Platform Designer",
+      "upstream": "TSMC (Foundry & CoWoS advanced packaging), SK Hynix / Micron (HBM3e memory)",
+      "company_role": "Silicon design, CUDA software stack, NVLink fabric architecture, and reference board engineering",
+      "downstream": "ODM System Integrators (Foxconn, Quanta, Wistron), Hyperscalers, AI Research Labs",
+      "criticality": "Critical ecosystem lock-in: CUDA proprietary libraries and NVLink high-bandwidth clustering create severe friction against competitive ASICs."
+    },
+    "what_they_are_not": "Nvidia is a fabless chip architect and software platform provider; it does NOT operate silicon semiconductor fabrication plants and does NOT perform mechanical chassis manufacturing."
+  },
+  "competitive": {
+    "customer_concentration": "No single customer accounted for greater than 10% of consolidated total net revenues in the latest audited fiscal year.",
+    "customer_concentration_source": "10-K Customer Concentration Note",
+    "moat_hypotheses": [
+      {
+        "type": "CUDA Software Lock-in",
+        "label": "[Hypothesis]",
+        "text": "Two decades of algorithmic optimization and millions of software developers standardizing on CUDA libraries."
+      },
+      {
+        "type": "Interconnect Systems Architecture",
+        "label": "[Hypothesis]",
+        "text": "NVLink clustering switch infrastructure enables scaling to thousands of GPUs with bandwidth unmatched by PCIe standards."
+      },
+      {
+        "type": "Full-Stack Deployment Velocity",
+        "label": "[Hypothesis]",
+        "text": "Complete DGX/HGX reference architecture minimizes hyperscaler data center time-to-production from quarters to weeks."
+      }
+    ],
+    "substitutes_and_insourcing_risk": "Custom hyperscaler ASICs (Google TPU, Amazon Trainium, Meta MTIA), AMD Instinct MI-series accelerators, and insourced model architectures.",
+    "peers_table": [
+      {
+        "ticker": "NVDA",
+        "is_target": true,
+        "company_name": "NVIDIA Corporation",
+        "market_cap": 5271048421376,
+        "enterprise_value": 5237179940864,
+        "revenue_ttm": 302970011648,
+        "gross_margin_pct": 74.7,
+        "operating_margin_pct": 66.2,
+        "ev_sales": 17.29,
+        "ev_ebitda": 26.02,
+        "forward_pe": 14.0,
+        "fcf_yield_pct": 0.79,
+        "source": "YF_QUOTE_NVDA"
+      },
+      {
+        "ticker": "AMD",
+        "is_target": false,
+        "company_name": "Advanced Micro Devices, Inc.",
+        "market_cap": 842569351168,
+        "enterprise_value": 833734311936,
+        "revenue_ttm": 41305001984,
+        "gross_margin_pct": 55.7,
+        "operating_margin_pct": 17.2,
+        "ev_sales": 20.18,
+        "ev_ebitda": 87.19,
+        "forward_pe": 33.3,
+        "fcf_yield_pct": 1.05,
+        "source": "YF_QUOTE_AMD"
+      },
+      {
+        "ticker": "AVGO",
+        "is_target": false,
+        "company_name": "Broadcom Inc.",
+        "market_cap": 1728006324224,
+        "enterprise_value": 1763450290176,
+        "revenue_ttm": 89103998976,
+        "gross_margin_pct": 75.5,
+        "operating_margin_pct": 54.3,
+        "ev_sales": 19.79,
+        "ev_ebitda": 33.74,
+        "forward_pe": 18.7,
+        "fcf_yield_pct": 1.77,
+        "source": "YF_QUOTE_AVGO"
+      },
+      {
+        "ticker": "QCOM",
+        "is_target": false,
+        "company_name": "QUALCOMM Incorporated",
+        "market_cap": 194354970624,
+        "enterprise_value": 198077071360,
+        "revenue_ttm": 44068999168,
+        "gross_margin_pct": 54.2,
+        "operating_margin_pct": 18.5,
+        "ev_sales": 4.5,
+        "ev_ebitda": 16.51,
+        "forward_pe": 17.8,
+        "fcf_yield_pct": 5.27,
+        "source": "YF_QUOTE_QCOM"
+      },
+      {
+        "ticker": "INTC",
+        "is_target": false,
+        "company_name": "Intel Corporation",
+        "market_cap": 544151666688,
+        "enterprise_value": 555640356864,
+        "revenue_ttm": 57031999488,
+        "gross_margin_pct": 38.9,
+        "operating_margin_pct": 12.2,
+        "ev_sales": 9.74,
+        "ev_ebitda": 32.99,
+        "forward_pe": 50.3,
+        "fcf_yield_pct": 0.89,
+        "source": "YF_QUOTE_INTC"
+      },
+      {
+        "ticker": "ARM",
+        "is_target": false,
+        "company_name": "Arm Holdings plc",
+        "market_cap": 282795343872,
+        "enterprise_value": 279392714752,
+        "revenue_ttm": 5155999744,
+        "gross_margin_pct": 97.5,
+        "operating_margin_pct": 7.6,
+        "ev_sales": 54.19,
+        "ev_ebitda": 262.66,
+        "forward_pe": 86.7,
+        "fcf_yield_pct": 0.47,
+        "source": "YF_QUOTE_ARM"
+      }
+    ]
+  },
+  "quality": {
+    "growth": {
+      "revenue_3y_cagr": 100.05,
+      "revenue_5y_cagr": null,
+      "latest_fy_growth_pct": 65.5,
+      "ttm_vs_prior_fy_pct": 40.3,
+      "notes": "Organic vs M&A breakdown: Not separately reported as distinct sub-line in primary income statement."
+    },
+    "profitability_table": [
+      {
+        "period": "2022",
+        "revenue": null,
+        "gross_margin_pct": null,
+        "operating_margin_pct": null,
+        "net_margin_pct": null,
+        "source_id": "YF_STMT_NVDA_10K_2022"
+      },
+      {
+        "period": "2023",
+        "revenue": 26974000000.0,
+        "gross_margin_pct": 56.93,
+        "operating_margin_pct": 20.68,
+        "net_margin_pct": 16.19,
+        "source_id": "YF_STMT_NVDA_10K_2023"
+      },
+      {
+        "period": "2024",
+        "revenue": 60922000000.0,
+        "gross_margin_pct": 72.72,
+        "operating_margin_pct": 54.12,
+        "net_margin_pct": 48.85,
+        "source_id": "YF_STMT_NVDA_10K_2024"
+      },
+      {
+        "period": "2025",
+        "revenue": 130497000000.0,
+        "gross_margin_pct": 74.99,
+        "operating_margin_pct": 62.42,
+        "net_margin_pct": 55.85,
+        "source_id": "YF_STMT_NVDA_10K_2025"
+      },
+      {
+        "period": "2026",
+        "revenue": 215938000000.0,
+        "gross_margin_pct": 71.07,
+        "operating_margin_pct": 60.38,
+        "net_margin_pct": 55.6,
+        "source_id": "YF_STMT_NVDA_10K_2026"
+      },
+      {
+        "period": "TTM",
+        "revenue": 302969000000.0,
+        "gross_margin_pct": 74.67,
+        "operating_margin_pct": 0.0,
+        "net_margin_pct": 63.66,
+        "source_id": "YF_STMT_NVDA_TTM_SUM_4Q"
+      }
+    ],
+    "cash_economics_table": [
+      {
+        "period": "2022",
+        "operating_cash_flow": null,
+        "capex": null,
+        "free_cash_flow": null,
+        "fcf_conversion_pct": null,
+        "source_id": "YF_STMT_NVDA_10K_2022"
+      },
+      {
+        "period": "2023",
+        "operating_cash_flow": 5641000000.0,
+        "capex": 1833000000.0,
+        "free_cash_flow": 3808000000.0,
+        "fcf_conversion_pct": 87.2,
+        "source_id": "YF_STMT_NVDA_10K_2023"
+      },
+      {
+        "period": "2024",
+        "operating_cash_flow": 28090000000.0,
+        "capex": 1069000000.0,
+        "free_cash_flow": 27021000000.0,
+        "fcf_conversion_pct": 90.8,
+        "source_id": "YF_STMT_NVDA_10K_2024"
+      },
+      {
+        "period": "2025",
+        "operating_cash_flow": 64089000000.0,
+        "capex": 3236000000.0,
+        "free_cash_flow": 60853000000.0,
+        "fcf_conversion_pct": 83.5,
+        "source_id": "YF_STMT_NVDA_10K_2025"
+      },
+      {
+        "period": "2026",
+        "operating_cash_flow": 102718000000.0,
+        "capex": 6042000000.0,
+        "free_cash_flow": 96676000000.0,
+        "fcf_conversion_pct": 80.5,
+        "source_id": "YF_STMT_NVDA_10K_2026"
+      },
+      {
+        "period": "TTM",
+        "operating_cash_flow": 134360000000.0,
+        "capex": 7354000000.0,
+        "free_cash_flow": 127006000000.0,
+        "fcf_conversion_pct": 65.8,
+        "source_id": "YF_STMT_NVDA_TTM_SUM_4Q"
+      }
+    ],
+    "balance_sheet": {
+      "cash_and_equivalents": 62469000000.0,
+      "gross_debt": 38351000000.0,
+      "net_debt": -24118000000.0,
+      "net_debt_position": "Net Cash",
+      "interest_coverage_ratio": 503.4,
+      "interest_coverage_assessment": "Robust (>10x)"
+    },
+    "quality_checks": [
+      {
+        "test": "Operating Cash Flow vs Net Income (Accruals Quality)",
+        "status": "WATCH",
+        "result": "OCF / Net Income is 0.86x",
+        "finding": "Cash conversion is slightly below 1.0x due to ordinary working capital timing differences."
+      },
+      {
+        "test": "Accounts Receivable vs Revenue Growth (DSO Stability)",
+        "status": "CLEAN",
+        "result": "Receivables growth (+66.8%) aligns with Revenue growth (+65.5%)",
+        "finding": "Days Sales Outstanding remains tightly disciplined."
+      }
+    ],
+    "capital_intensity": {
+      "capex_to_sales_pct": 2.43,
+      "intensity_classification": "Asset-Light (<4% CapEx/Sales)",
+      "return_on_equity_pct": 122.6,
+      "notes": "ROIC omitted per spec non-negotiable to avoid asserting fabricated WACC or unverified invested capital allocations."
+    }
+  },
+  "valuation": {
+    "absolute_multiples": {
+      "pe_trailing": 27.63,
+      "pe_forward": 14.02,
+      "ev_sales": 17.29,
+      "ev_ebitda": 26.02,
+      "ps_ratio": 17.4,
+      "pb_ratio": 23.02,
+      "fcf_yield_pct": 2.41,
+      "source": "YF_MKT_NVDA_20260913"
+    },
+    "peer_table": [
+      {
+        "ticker": "NVDA",
+        "is_target": true,
+        "company_name": "NVIDIA Corporation",
+        "market_cap": 5271048421376,
+        "enterprise_value": 5237179940864,
+        "revenue_ttm": 302970011648,
+        "gross_margin_pct": 74.7,
+        "operating_margin_pct": 66.2,
+        "ev_sales": 17.29,
+        "ev_ebitda": 26.02,
+        "forward_pe": 14.0,
+        "fcf_yield_pct": 0.79,
+        "source": "YF_QUOTE_NVDA"
+      },
+      {
+        "ticker": "AMD",
+        "is_target": false,
+        "company_name": "Advanced Micro Devices, Inc.",
+        "market_cap": 842569351168,
+        "enterprise_value": 833734311936,
+        "revenue_ttm": 41305001984,
+        "gross_margin_pct": 55.7,
+        "operating_margin_pct": 17.2,
+        "ev_sales": 20.18,
+        "ev_ebitda": 87.19,
+        "forward_pe": 33.3,
+        "fcf_yield_pct": 1.05,
+        "source": "YF_QUOTE_AMD"
+      },
+      {
+        "ticker": "AVGO",
+        "is_target": false,
+        "company_name": "Broadcom Inc.",
+        "market_cap": 1728006324224,
+        "enterprise_value": 1763450290176,
+        "revenue_ttm": 89103998976,
+        "gross_margin_pct": 75.5,
+        "operating_margin_pct": 54.3,
+        "ev_sales": 19.79,
+        "ev_ebitda": 33.74,
+        "forward_pe": 18.7,
+        "fcf_yield_pct": 1.77,
+        "source": "YF_QUOTE_AVGO"
+      },
+      {
+        "ticker": "QCOM",
+        "is_target": false,
+        "company_name": "QUALCOMM Incorporated",
+        "market_cap": 194354970624,
+        "enterprise_value": 198077071360,
+        "revenue_ttm": 44068999168,
+        "gross_margin_pct": 54.2,
+        "operating_margin_pct": 18.5,
+        "ev_sales": 4.5,
+        "ev_ebitda": 16.51,
+        "forward_pe": 17.8,
+        "fcf_yield_pct": 5.27,
+        "source": "YF_QUOTE_QCOM"
+      },
+      {
+        "ticker": "INTC",
+        "is_target": false,
+        "company_name": "Intel Corporation",
+        "market_cap": 544151666688,
+        "enterprise_value": 555640356864,
+        "revenue_ttm": 57031999488,
+        "gross_margin_pct": 38.9,
+        "operating_margin_pct": 12.2,
+        "ev_sales": 9.74,
+        "ev_ebitda": 32.99,
+        "forward_pe": 50.3,
+        "fcf_yield_pct": 0.89,
+        "source": "YF_QUOTE_INTC"
+      },
+      {
+        "ticker": "ARM",
+        "is_target": false,
+        "company_name": "Arm Holdings plc",
+        "market_cap": 282795343872,
+        "enterprise_value": 279392714752,
+        "revenue_ttm": 5155999744,
+        "gross_margin_pct": 97.5,
+        "operating_margin_pct": 7.6,
+        "ev_sales": 54.19,
+        "ev_ebitda": 262.66,
+        "forward_pe": 86.7,
+        "fcf_yield_pct": 0.47,
+        "source": "YF_QUOTE_ARM"
+      }
+    ],
+    "peer_medians": {
+      "median_ev_sales": 21.68,
+      "median_forward_pe": 41.4,
+      "median_ev_ebitda": 86.6
+    },
+    "premium_analysis": [
+      {
+        "metric": "EV / Sales",
+        "target_value": 17.29,
+        "peer_median": 21.68,
+        "spread_pct": -20.2,
+        "status": "Discount"
+      },
+      {
+        "metric": "Forward P/E",
+        "target_value": 14.02,
+        "peer_median": 41.4,
+        "spread_pct": -66.1,
+        "status": "Discount"
+      }
+    ],
+    "historical_context": {
+      "5y_high_price": 235.2,
+      "5y_low_price": 11.19,
+      "5y_median_price": 83.8,
+      "current_vs_5y_high_pct": -7.2,
+      "current_vs_5y_low_pct": 1851.3
+    },
+    "what_market_is_pricing": "The market is pricing modest cyclical stability or moderate mature growth. At 14.0x Forward P/E, expectations are grounded with limited multiple-contraction risk.",
+    "dcf_model": {
+      "status": "omitted_per_spec",
+      "is_truth": false,
+      "disclaimer": "DCF model intentionally omitted per build spec rules against inventing WACC and terminal growth rates. Available via interactive scenario sliders."
+    }
+  },
+  "synthesis": {
+    "catalysts": [
+      {
+        "event": "Next Quarterly Earnings Release (10-Q Print)",
+        "timing": "Upcoming Fiscal Quarter End",
+        "source": "Corporate Investor Relations Schedule",
+        "implication": "Verify sequential margin performance, backlog progression, and organic sales momentum."
+      },
+      {
+        "event": "Institutional CapEx Spending Updates from Major Customers",
+        "timing": "Next 60\u201390 Days",
+        "source": "Industry Peer Quarterly Prints & MD&A Releases",
+        "implication": "Monitor whether hyperscale or utility capital expenditure guidance remains robust or faces push-outs."
+      },
+      {
+        "event": "Macro Regulatory & Grid/AI Legislative Policy Milestones",
+        "timing": "Trailing 12-Month Window",
+        "source": "Federal Regulatory & Infrastructure Filings",
+        "implication": "FERC transmission order implementation, tax credit qualifications, and local permitting speeds."
+      }
+    ],
+    "risks": {
+      "operational": "Fixed-price contract cost overruns, craft labor availability constraints, or supply chain transformer delays.",
+      "financial": "Customer credit concentration or working capital expansion if customer payment milestones are delayed.",
+      "regulatory": "FERC policy shifts, regional environmental permitting delays, and zoning restrictions.",
+      "cyclical": "Interest-rate sensitivity affecting customer capital expenditure budgets or commercial project financing."
+    },
+    "watchlist": [
+      "Operating Cash Flow conversion vs Net Income (verify OCF/NI remains >= 0.85x without working capital drag).",
+      "Gross Margin stability (confirm material and labor costs are successfully passed through to contracts).",
+      "Days Sales Outstanding (DSO) trend (ensure accounts receivable do not outpace revenue expansion).",
+      "Backlog or remaining performance obligations (RPO) trajectory and book-to-bill ratio.",
+      "Capital expenditure discipline (verify CapEx stays aligned with guidance without unbudgeted capital intensity)."
+    ]
+  },
+  "sources": {
+    "entries": [
+      {
+        "id": "YF_MKT_NVDA_20260913",
+        "description": "Yahoo Finance Real-Time Quote & Historical Multiples",
+        "details": "Timestamp: 2026-09-13 21:06:43 UTC"
+      },
+      {
+        "id": "YF_STMT_NVDA_10K_2022",
+        "description": "Audited Annual 10-K Financial Statement (FY2022)",
+        "details": "Period Ended: 2022-01-31"
+      },
+      {
+        "id": "YF_STMT_NVDA_10K_2023",
+        "description": "Audited Annual 10-K Financial Statement (FY2023)",
+        "details": "Period Ended: 2023-01-31"
+      },
+      {
+        "id": "YF_STMT_NVDA_10K_2024",
+        "description": "Audited Annual 10-K Financial Statement (FY2024)",
+        "details": "Period Ended: 2024-01-31"
+      },
+      {
+        "id": "YF_STMT_NVDA_10K_2025",
+        "description": "Audited Annual 10-K Financial Statement (FY2025)",
+        "details": "Period Ended: 2025-01-31"
+      },
+      {
+        "id": "YF_STMT_NVDA_10K_2026",
+        "description": "Audited Annual 10-K Financial Statement (FY2026)",
+        "details": "Period Ended: 2026-01-31"
+      },
+      {
+        "id": "SEC_EDGAR_10K_NVDA",
+        "description": "SEC EDGAR Annual Report Form 10-K (Item 1, Item 1A, Item 7)",
+        "details": "Accession No: 0001045810-26-000021 | Filed: 2026-02-25"
+      },
+      {
+        "id": "YF_QUOTE_AMD",
+        "description": "Peer Comparison Data for AMD (Advanced Micro Devices, Inc.)",
+        "details": "Market Cap: $842.57B | EV/Sales: 20.18"
+      },
+      {
+        "id": "YF_QUOTE_AVGO",
+        "description": "Peer Comparison Data for AVGO (Broadcom Inc.)",
+        "details": "Market Cap: $1.73T | EV/Sales: 19.79"
+      },
+      {
+        "id": "YF_QUOTE_QCOM",
+        "description": "Peer Comparison Data for QCOM (QUALCOMM Incorporated)",
+        "details": "Market Cap: $194.35B | EV/Sales: 4.5"
+      },
+      {
+        "id": "YF_QUOTE_INTC",
+        "description": "Peer Comparison Data for INTC (Intel Corporation)",
+        "details": "Market Cap: $544.15B | EV/Sales: 9.74"
+      },
+      {
+        "id": "YF_QUOTE_ARM",
+        "description": "Peer Comparison Data for ARM (Arm Holdings plc)",
+        "details": "Market Cap: $282.80B | EV/Sales: 54.19"
+      }
+    ],
+    "failed_fetches": [],
+    "audit_violations_caught": 0
+  },
+  "metadata": {
+    "version": "v2.0",
+    "spec": "Fundamentals Deep-Brief App \u2014 Build Spec v2",
+    "generated_at": "2026-09-13T16:06:48.927896",
+    "focus_theme": null
+  }
+}

@@ -1,0 +1,1165 @@
+/* ========================================================================= */
+/* QUANT VOLATILITY SURFACE 3D & AI INTELLIGENCE SYSTEM                      */
+/* Institutional Fintech Styling (Bloomberg / Koyfin / Derivatives Desk)    */
+/* ========================================================================= */
+
+.vol-root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #e2e8f0;
+}
+
+.vol-root * {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 1. FIRST: AI VIEW ON THE TICKER                                           */
+/* ------------------------------------------------------------------------- */
+.vol-ai-card {
+  position: relative;
+  background: linear-gradient(135deg, #0a0e1c 0%, #060912 100%);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.vol-ai-glow-1 {
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+.vol-ai-glow-2 {
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+.vol-ai-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vol-ai-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.vol-ai-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(6, 182, 212, 0.25) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.2);
+  color: #00F0FF;
+}
+
+.vol-ai-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.vol-ai-main-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vol-ai-main-title h2 {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+}
+
+.vol-ai-live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(6, 182, 212, 0.15);
+  color: #00F0FF;
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+.vol-ai-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: -apple-system, sans-serif;
+}
+
+.vol-ai-badges-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vol-conviction-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.vol-conviction-pill .label {
+  color: #94a3b8;
+}
+
+.vol-conviction-pill .score {
+  color: #00E676;
+  font-weight: 800;
+}
+
+.vol-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #00E676;
+  box-shadow: 0 0 8px #00E676;
+}
+
+.vol-posture-pill {
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vol-posture-pill.long {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+.vol-posture-pill.short {
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #f43f5e;
+}
+
+.vol-posture-pill.neutral {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+/* Executive Synthesis Hero Box */
+.vol-hero-box {
+  position: relative;
+  z-index: 2;
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  border: 1px solid;
+}
+
+.vol-hero-box.long {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.06) 60%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.vol-hero-box.short {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(245, 158, 11, 0.06) 60%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.vol-hero-box.neutral {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(168, 85, 247, 0.06) 60%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(6, 182, 212, 0.35);
+}
+
+.vol-hero-text-wrap {
+  flex: 1;
+  min-width: 280px;
+  max-width: 820px;
+}
+
+.vol-hero-header-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.vol-hero-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.vol-hero-title {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+}
+
+.vol-hero-summary {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  font-family: -apple-system, sans-serif;
+}
+
+/* Implied Move Range Box */
+.vol-implied-box {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(5, 8, 16, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 260px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.vol-implied-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.vol-implied-tenor {
+  color: #00F0FF;
+  font-weight: 700;
+}
+
+.vol-implied-move-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.vol-implied-targets {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.vol-implied-bar {
+  margin-top: 8px;
+  width: 100%;
+  height: 6px;
+  background: #1e293b;
+  border-radius: 9999px;
+  display: flex;
+  overflow: hidden;
+}
+
+.vol-implied-bar-low {
+  width: 50%;
+  background: rgba(244, 63, 94, 0.6);
+}
+
+.vol-implied-bar-center {
+  width: 3px;
+  background: #ffffff;
+}
+
+.vol-implied-bar-high {
+  width: 50%;
+  background: rgba(16, 185, 129, 0.6);
+}
+
+/* 4-Pillar AI Diagnostic Grid */
+.vol-pillars-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+@media (max-width: 1024px) {
+  .vol-pillars-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .vol-pillars-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vol-pillar-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.vol-pillar-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.vol-pillar-card.border-emerald {
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.vol-pillar-card.border-rose {
+  border-color: rgba(244, 63, 94, 0.25);
+}
+
+.vol-pillar-card.border-purple {
+  border-color: rgba(168, 85, 247, 0.25);
+}
+
+.vol-pillar-card.border-cyan {
+  border-color: rgba(6, 182, 212, 0.25);
+}
+
+.vol-pillar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.vol-pillar-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.vol-pillar-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.vol-pillar-status.emerald { color: #10b981; }
+.vol-pillar-status.rose { color: #f43f5e; }
+.vol-pillar-status.purple { color: #c084fc; }
+.vol-pillar-status.cyan { color: #00F0FF; }
+
+.vol-pillar-metric {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.vol-pillar-metric.emerald { color: #10b981; }
+.vol-pillar-metric.rose { color: #f43f5e; }
+.vol-pillar-metric.purple { color: #c084fc; }
+.vol-pillar-metric.cyan { color: #00F0FF; }
+
+.vol-pillar-takeaway {
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  font-family: -apple-system, sans-serif;
+}
+
+/* Tail Risk & Jump Ribbon */
+.vol-risk-ribbon {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: rgba(5, 8, 16, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.vol-risk-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #cbd5e1;
+  font-family: -apple-system, sans-serif;
+}
+
+.vol-risk-jump-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00F0FF;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vol-risk-jump-link:hover {
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 2. THEN: 3D VOLATILITY SURFACE & DESK KPIS                                */
+/* ------------------------------------------------------------------------- */
+.vol-surface-card {
+  background: #0a0e17;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.vol-surface-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vol-surface-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vol-surface-title-wrap h3 {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #00F0FF;
+}
+
+.vol-surface-expirations-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* QUANT VOLATILITY DESK KPI STRIP */
+.vol-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .vol-kpis-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .vol-kpis-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.vol-kpi-tile {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.vol-kpi-tile.featured {
+  border-color: rgba(6, 182, 212, 0.3);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.vol-kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.vol-kpi-val {
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.vol-kpi-val.cyan { color: #00F0FF; }
+.vol-kpi-val.emerald { color: #00E676; }
+.vol-kpi-val.rose { color: #f43f5e; }
+.vol-kpi-val.amber { color: #fbbf24; }
+.vol-kpi-val.purple { color: #c084fc; }
+
+.vol-kpi-sub {
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.vol-kpi-sub.cyan { color: rgba(0, 240, 255, 0.8); }
+.vol-kpi-sub.emerald { color: rgba(0, 230, 118, 0.8); }
+
+/* Controls & View Mode Toggles */
+.vol-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.vol-view-tabs {
+  display: flex;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.vol-view-btn {
+  padding: 6px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+
+.vol-view-btn:hover {
+  color: #ffffff;
+}
+
+.vol-view-btn.active {
+  background: #00F0FF;
+  color: #09090b;
+  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.3);
+}
+
+.vol-expiry-select {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vol-legend-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  flex-wrap: wrap;
+}
+
+.vol-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vol-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.vol-legend-dot.atm { background-color: #fbbf24; }
+.vol-legend-dot.overpriced { background-color: #f43f5e; }
+.vol-legend-dot.underpriced { background-color: #00E676; }
+
+.vol-focus-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(6, 182, 212, 0.2);
+  color: #00F0FF;
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+/* Plotly Canvas Container */
+.vol-canvas-container {
+  width: 100%;
+  min-height: 580px;
+  background: #060910;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 3. IN LAST: ACTIONABLE VOLATILITY TRADE SETUPS MATRIX TABLE                */
+/* ------------------------------------------------------------------------- */
+.vol-setups-card {
+  position: relative;
+  background: linear-gradient(135deg, #090d18 0%, #060910 100%);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.vol-setups-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vol-setups-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vol-setups-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: #00F0FF;
+}
+
+.vol-setups-header-titles h3 {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #00F0FF;
+}
+
+.vol-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.9);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+}
+
+.vol-filter-tab-btn {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+
+.vol-filter-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vol-filter-tab-btn.active {
+  background: #00F0FF;
+  color: #09090b;
+  box-shadow: 0 2px 10px rgba(0, 240, 255, 0.25);
+}
+
+/* Quick Summary Pill Strip */
+.vol-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(5, 8, 16, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+@media (max-width: 860px) {
+  .vol-summary-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.vol-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.vol-summary-item:not(:first-child) {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vol-summary-item .label {
+  color: #94a3b8;
+}
+
+.vol-summary-item .val {
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.vol-summary-item .val.cyan { color: #00F0FF; }
+.vol-summary-item .val.emerald { color: #00E676; }
+.vol-summary-item .val.amber { color: #fbbf24; }
+
+/* The Derivatives Matrix Table */
+.vol-table-scroll-wrap {
+  overflow-x: auto;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 8, 16, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.vol-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1050px;
+  text-align: left;
+  font-family: -apple-system, sans-serif;
+}
+
+.vol-matrix-table th {
+  padding: 14px 16px;
+  background: #0f172a;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vol-matrix-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+.vol-matrix-tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.vol-matrix-tr:hover {
+  background: rgba(30, 41, 59, 0.4);
+}
+
+.vol-matrix-tr.expanded {
+  background: rgba(15, 23, 42, 0.95);
+  border-left: 3px solid #00F0FF;
+}
+
+/* Posture & Action Pill */
+.vol-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.vol-action-badge.sell-vol {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.vol-action-badge.buy-vol {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.vol-action-badge.calendar {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.35);
+}
+
+.vol-action-badge.credit-spread {
+  background: rgba(6, 182, 212, 0.15);
+  color: #00F0FF;
+  border-color: rgba(6, 182, 212, 0.35);
+}
+
+.vol-action-badge.call-fly {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.vol-action-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.vol-action-dot.sell-vol { background-color: #f43f5e; }
+.vol-action-dot.buy-vol { background-color: #10b981; }
+.vol-action-dot.calendar { background-color: #c084fc; }
+.vol-action-dot.credit-spread { background-color: #00F0FF; }
+.vol-action-dot.call-fly { background-color: #fbbf24; }
+
+.vol-action-badge-sub {
+  margin-top: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+  display: block;
+}
+
+/* Strategy & Structure Column */
+.vol-strategy-title {
+  font-weight: 700;
+  color: #f1f5f9;
+  font-size: 13px;
+}
+
+.vol-matrix-tr:hover .vol-strategy-title {
+  color: #00F0FF;
+}
+
+.vol-strategy-cat-pill {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vol-strategy-structure {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #00F0FF;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+/* Greeks Mini Pills */
+.vol-greek-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.vol-greek-pill.pos {
+  background: rgba(16, 185, 129, 0.12);
+  color: #00E676;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.vol-greek-pill.neg {
+  background: rgba(244, 63, 94, 0.12);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.25);
+}
+
+.vol-greek-pill.cyan {
+  background: rgba(6, 182, 212, 0.12);
+  color: #00F0FF;
+  border-color: rgba(6, 182, 212, 0.25);
+}
+
+/* PoP Progress Bar */
+.vol-pop-bar-wrap {
+  width: 80px;
+  height: 6px;
+  background: #1e293b;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 4px;
+}
+
+.vol-pop-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #10b981 0%, #00F0FF 100%);
+}
+
+/* 3D Focus Button */
+.vol-focus-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(6, 182, 212, 0.15);
+  color: #00F0FF;
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.vol-focus-btn:hover {
+  background: #00F0FF;
+  color: #09090b;
+  box-shadow: 0 2px 12px rgba(0, 240, 255, 0.4);
+}
+
+/* Expandable Drawer Architecture */
+.vol-drawer-cell {
+  padding: 20px !important;
+  background: #070a12 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vol-drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .vol-drawer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .vol-drawer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vol-drawer-box {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.vol-drawer-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 12px;
+}
+
+.vol-drawer-box-header .title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.vol-drawer-box-header .title.cyan { color: #00F0FF; }
+.vol-drawer-box-header .title.purple { color: #c084fc; }
+.vol-drawer-box-header .title.emerald { color: #00E676; }
+.vol-drawer-box-header .title.amber { color: #fbbf24; }
+
+.vol-drawer-box-header .sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.vol-drawer-spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  margin-bottom: 7px;
+}
+
+.vol-drawer-spec-row .k { color: #94a3b8; }
+.vol-drawer-spec-row .v { font-weight: 700; color: #ffffff; }
+.vol-drawer-spec-row .v.amber { color: #fbbf24; }
+.vol-drawer-spec-row .v.cyan { color: #00F0FF; }
+.vol-drawer-spec-row .v.emerald { color: #00E676; }
+.vol-drawer-spec-row .v.rose { color: #f43f5e; }
+
+.vol-greeks-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.vol-greek-tile {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vol-greek-tile .k {
+  font-size: 9px;
+  color: #94a3b8;
+  display: block;
+}
+
+.vol-greek-tile .v {
+  font-weight: 700;
+  margin-top: 2px;
+  display: block;
+}
+
+.vol-drawer-footer {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

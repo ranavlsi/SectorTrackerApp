@@ -1,0 +1,350 @@
+/* fundamentals_deep_brief/render/styles.css
+   Institutional Desk Research Print & Screen Stylesheet
+   Typography: High-density sans-serif with monospace tabular numerals
+*/
+
+@page {
+  size: letter;
+  margin: 18mm 16mm 18mm 16mm;
+  @top-left {
+    content: "INSTITUTIONAL DESK RESEARCH · DEEP BRIEF V2";
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #64748b;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 3px;
+    letter-spacing: 0.5px;
+  }
+  @top-right {
+    content: string(ticker-title);
+    font-family: "SF Mono", "Courier New", Courier, monospace;
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 3px;
+  }
+  @bottom-left {
+    content: "Fail-Closed Numbers · Filing-Grounded Narrative · Unaudited Claims Omitted";
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 7pt;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 3px;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: "SF Mono", "Courier New", Courier, monospace;
+    font-size: 7pt;
+    font-weight: 600;
+    color: #64748b;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 3px;
+  }
+}
+
+:root {
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-light: #64748b;
+  --border-color: #cbd5e1;
+  --border-light: #e2e8f0;
+  --bg-subtle: #f8fafc;
+  --bg-card: #ffffff;
+  --accent-blue: #0284c7;
+  --accent-emerald: #059669;
+  --accent-ruby: #dc2626;
+  --accent-amber: #d97706;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-main);
+  background-color: #ffffff;
+  line-height: 1.45;
+  font-size: 9pt;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.document-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
+/* Page break utilities */
+.page-break {
+  page-break-before: always;
+  break-before: page;
+}
+
+.avoid-break {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Chapter Headings */
+.chapter {
+  margin-bottom: 22px;
+}
+
+.chapter-header {
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 4px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.chapter-title {
+  font-size: 11pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #0f172a;
+  margin: 0;
+}
+
+.chapter-subtitle {
+  font-size: 7.5pt;
+  color: var(--text-light);
+  font-family: monospace;
+}
+
+/* Section 2.A Cover Strip */
+.cover-strip {
+  border: 1.5px solid #0f172a;
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  background-color: #f8fafc;
+}
+
+.cover-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.ticker-display {
+  font-family: "SF Mono", "Courier New", Courier, monospace;
+  font-size: 20pt;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.company-title {
+  font-size: 13pt;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 2px;
+}
+
+.meta-tags {
+  font-size: 8pt;
+  color: #475569;
+  margin-top: 4px;
+}
+
+.meta-pill {
+  display: inline-block;
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 7.5pt;
+  margin-right: 6px;
+}
+
+.timestamp-block {
+  text-align: right;
+  font-size: 7.5pt;
+  font-family: monospace;
+  color: #64748b;
+}
+
+/* One-line thesis stub */
+.thesis-stub {
+  background: #ffffff;
+  border-left: 4px solid #0284c7;
+  border-top: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-size: 9pt;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+.thesis-label {
+  font-size: 7.5pt;
+  font-family: monospace;
+  font-weight: 800;
+  color: #0284c7;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+
+/* Key Stats Ribbon */
+.stats-ribbon {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.stat-cell {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.stat-cell-label {
+  font-size: 6.5pt;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  font-family: monospace;
+  display: block;
+}
+
+.stat-cell-value {
+  font-family: "SF Mono", "Courier New", Courier, monospace;
+  font-size: 9.5pt;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 2px;
+  display: block;
+}
+
+/* Tables */
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 14px 0;
+  font-size: 8pt;
+}
+
+table.data-table th {
+  background-color: #0f172a;
+  color: #ffffff;
+  text-align: right;
+  padding: 6px 8px;
+  font-weight: 700;
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+table.data-table th:first-child {
+  text-align: left;
+}
+
+table.data-table td {
+  padding: 5.5px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: right;
+  font-family: "SF Mono", "Courier New", Courier, monospace;
+}
+
+table.data-table td:first-child {
+  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+}
+
+table.data-table tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+table.data-table tr.highlight-row {
+  background-color: #e0f2fe;
+  font-weight: 700;
+}
+
+.footnote-ref {
+  font-size: 6.5pt;
+  color: #0284c7;
+  vertical-align: super;
+  font-weight: 700;
+  margin-left: 2px;
+  text-decoration: none;
+}
+
+/* Callout cards */
+.info-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background-color: #ffffff;
+}
+
+.info-card-header {
+  font-size: 8pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #334155;
+  margin-bottom: 4px;
+  font-family: monospace;
+}
+
+.info-card-content {
+  font-size: 8.5pt;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 7pt;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.badge-clean {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.badge-flag {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.badge-watch {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+/* Sources Appendix */
+.source-entry {
+  font-size: 7.5pt;
+  padding: 3px 0;
+  border-bottom: 1px dotted #e2e8f0;
+  font-family: monospace;
+}
+
+.source-id {
+  font-weight: 800;
+  color: #0284c7;
+  margin-right: 8px;
+}

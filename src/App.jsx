@@ -862,14 +862,101 @@ function App() {
       )}
 
       {activeTab === 'volsurface' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <form onSubmit={(e) => { e.preventDefault(); setSearchedGex({ticker: gexSearch.toUpperCase()}); }} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-              <input type="text" placeholder="Enter ticker (e.g., TSLA, SPY, SMCI)..." value={gexSearch} onChange={(e) => setGexSearch(e.target.value.toUpperCase())} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: 'rgba(0,0,0,0.2)', color: 'white', flex: 1 }} />
-              <button type="submit" style={{ padding: '0.75rem 2rem', background: '#3b82f6', borderRadius: '8px', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>Map Surface</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
+          <div 
+            style={{
+              padding: '1.5rem',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #0d121f 0%, #080c14 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.35)', color: '#00F0FF', display: 'flex' }}>
+                  <Search size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontFamily: "'JetBrains Mono', monospace", fontSize: '1rem', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Institutional Volatility Manifold & Smile Screener
+                  </h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
+                    Select or type any optionable equity/ETF to calibrate real-time 3D IV surface and algorithmic setups
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Ticker Chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'AMD', 'META', 'AMZN', 'IWM'].map(sym => (
+                  <button
+                    key={sym}
+                    type="button"
+                    onClick={() => {
+                      setGexSearch(sym);
+                      setSearchedGex({ ticker: sym });
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      border: ((searchedGex?.ticker) || expertTickerData?.ticker || 'SPY') === sym ? '1px solid #00F0FF' : '1px solid rgba(255,255,255,0.1)',
+                      background: ((searchedGex?.ticker) || expertTickerData?.ticker || 'SPY') === sym ? 'rgba(6, 182, 212, 0.2)' : 'rgba(15, 23, 42, 0.8)',
+                      color: ((searchedGex?.ticker) || expertTickerData?.ticker || 'SPY') === sym ? '#00F0FF' : '#cbd5e1',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {sym}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); if (gexSearch) setSearchedGex({ticker: gexSearch.toUpperCase()}); }} style={{ display: 'flex', gap: '0.75rem' }}>
+              <input 
+                type="text" 
+                placeholder="Enter ticker (e.g., TSLA, SPY, NVDA, AAPL)..." 
+                value={gexSearch} 
+                onChange={(e) => setGexSearch(e.target.value.toUpperCase())} 
+                style={{ 
+                  padding: '0.75rem 1rem', 
+                  borderRadius: '10px', 
+                  border: '1px solid rgba(255, 255, 255, 0.15)', 
+                  background: 'rgba(5, 8, 16, 0.8)', 
+                  color: 'white', 
+                  flex: 1,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.9rem',
+                  letterSpacing: '0.05em'
+                }} 
+              />
+              <button 
+                type="submit" 
+                style={{ 
+                  padding: '0.75rem 1.75rem', 
+                  background: 'linear-gradient(135deg, #00F0FF 0%, #0ea5e9 100%)', 
+                  borderRadius: '10px', 
+                  border: 'none', 
+                  color: '#09090b', 
+                  cursor: 'pointer', 
+                  fontWeight: 800,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.85rem',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  boxShadow: '0 4px 15px rgba(0, 240, 255, 0.35)'
+                }}
+              >
+                Map Surface
+              </button>
             </form>
-            <VolatilitySurface3D ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
           </div>
+
+          <VolatilitySurface3D ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
         </div>
       )}
 

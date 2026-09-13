@@ -1,0 +1,538 @@
+{
+  "cover": {
+    "ticker": "CPRT",
+    "company_name": "Copart, Inc.",
+    "exchange": "NMS",
+    "sector": "Industrials",
+    "industry": "Specialty Business Services",
+    "as_of_market": "2026-09-13 21:06:00 UTC",
+    "as_of_filing": "2025-09-26",
+    "cik": "0000900075",
+    "thesis_stub": "[Desk synthesis] Dominant salvage liquidity marketplace with durable real estate moats and high cash conversion, trading at a premium warranted by counter-cyclical resilience.",
+    "price": 29.95,
+    "market_cap_str": "27.73B",
+    "enterprise_value_str": "23.38B",
+    "ttm_revenue_str": "3.51B",
+    "ttm_fcf_str": "988.4M",
+    "net_debt_str": "-2.68B",
+    "employees_str": "Not Disclosed"
+  },
+  "business_model": {
+    "ticker": "CPRT",
+    "company_name": "Copart, Inc.",
+    "customers": "Auto insurance carriers (State Farm, Geico, Progressive), fleet operators, banks, car dealerships, and licensed salvage dismantle buyers.",
+    "revenue_model": "Percentage fee per vehicle sold on VB3 auction platform + seller processing fees + buyer buyer gate fees + salvage yard storage fees.",
+    "unit_of_demand": "Total loss vehicle salvage volume processed (units auctioned across yards).",
+    "segment_mix": [
+      {
+        "segment": "Service Revenues (Auction transaction fees, towing, storage)",
+        "percentage_str": "83%",
+        "value_pct": 83.0,
+        "source": "10-K Segment Note"
+      },
+      {
+        "segment": "Purchased Vehicle Sales (Direct vehicle trading & wholesale)",
+        "percentage_str": "17%",
+        "value_pct": 17.0,
+        "source": "10-K Segment Note"
+      }
+    ],
+    "geographic_mix": [
+      {
+        "region": "United States",
+        "percentage_str": "82%",
+        "value_pct": 82.0,
+        "source": "10-K Geographic Note"
+      },
+      {
+        "region": "International (UK, Germany, UAE, Brazil)",
+        "percentage_str": "18%",
+        "value_pct": 18.0,
+        "source": "10-K Geographic Note"
+      }
+    ],
+    "value_chain": {
+      "tier_position": "Two-Sided Liquidity Network Platform & Industrial Real Estate Salvage Operator",
+      "upstream": "Auto Insurance Carriers (Total Loss declarations from vehicle accidents)",
+      "company_role": "Vehicle collection, title processing, staging across 200+ proprietary physical yards, and digital auctions on VB3 global exchange",
+      "downstream": "Licensed dismantlers, scrap metal processors, international rebuilders, used vehicle exporters",
+      "criticality": "Critical: Insurers cannot process salvage claims without physical yard storage and global buyer liquidity; zoning laws create insurmountable barriers to new yard construction."
+    },
+    "what_they_are_not": "Copart is an auction network and salvage logistics platform; it is NOT a traditional used car dealership, NOT a retail auto broker, and does NOT carry inventory price risk on 80%+ of its volume."
+  },
+  "competitive": {
+    "customer_concentration": "No single customer accounted for greater than 10% of consolidated total net revenues in the latest audited fiscal year.",
+    "customer_concentration_source": "10-K Customer Concentration Note",
+    "moat_hypotheses": [
+      {
+        "type": "Two-Sided Network Liquidity",
+        "label": "[Hypothesis]",
+        "text": "Global buyer base across 190+ countries maximizes salvage auction yield for insurers, creating an unbreakable liquidity feedback loop."
+      },
+      {
+        "type": "Zoned Real Estate Footprint",
+        "label": "[Hypothesis]",
+        "text": "Over 200 physical salvage storage yards with grandfathered municipal industrial zoning that cannot be legally replicated near major metro centers."
+      },
+      {
+        "type": "Carrier System Integration",
+        "label": "[Hypothesis]",
+        "text": "Direct API integration into top auto insurer claims processing platforms locks in vehicle assignment volume automatically."
+      }
+    ],
+    "substitutes_and_insourcing_risk": "IAA (RB Global - primary duopoly peer), direct dismantler negotiations, and carrier self-salvage pilot programs.",
+    "peers_table": [
+      {
+        "ticker": "CPRT",
+        "is_target": true,
+        "company_name": "Copart, Inc.",
+        "market_cap": 27728054272,
+        "enterprise_value": 23380805632,
+        "revenue_ttm": 4666208768,
+        "gross_margin_pct": 49.0,
+        "operating_margin_pct": 32.0,
+        "ev_sales": 5.01,
+        "ev_ebitda": 12.42,
+        "forward_pe": 16.6,
+        "fcf_yield_pct": 3.19,
+        "source": "YF_QUOTE_CPRT"
+      },
+      {
+        "ticker": "IAA",
+        "is_target": false,
+        "company_name": "IAA",
+        "market_cap": 0,
+        "enterprise_value": 0,
+        "revenue_ttm": 0,
+        "gross_margin_pct": null,
+        "operating_margin_pct": null,
+        "ev_sales": null,
+        "ev_ebitda": null,
+        "forward_pe": null,
+        "fcf_yield_pct": null,
+        "source": "YF_QUOTE_IAA"
+      },
+      {
+        "ticker": "KAR",
+        "is_target": false,
+        "company_name": "KAR",
+        "market_cap": 0,
+        "enterprise_value": 0,
+        "revenue_ttm": 0,
+        "gross_margin_pct": null,
+        "operating_margin_pct": null,
+        "ev_sales": null,
+        "ev_ebitda": null,
+        "forward_pe": null,
+        "fcf_yield_pct": null,
+        "source": "YF_QUOTE_KAR"
+      },
+      {
+        "ticker": "KMX",
+        "is_target": false,
+        "company_name": "CarMax Inc",
+        "market_cap": 8701988864,
+        "enterprise_value": 27401977856,
+        "revenue_ttm": 28197509120,
+        "gross_margin_pct": 11.8,
+        "operating_margin_pct": 3.4,
+        "ev_sales": 0.97,
+        "ev_ebitda": 26.57,
+        "forward_pe": 20.0,
+        "fcf_yield_pct": -1.84,
+        "source": "YF_QUOTE_KMX"
+      },
+      {
+        "ticker": "AN",
+        "is_target": false,
+        "company_name": "AutoNation, Inc.",
+        "market_cap": 6733494272,
+        "enterprise_value": 18011494400,
+        "revenue_ttm": 27448500224,
+        "gross_margin_pct": 17.8,
+        "operating_margin_pct": 4.4,
+        "ev_sales": 0.66,
+        "ev_ebitda": 11.88,
+        "forward_pe": 8.2,
+        "fcf_yield_pct": 5.29,
+        "source": "YF_QUOTE_AN"
+      },
+      {
+        "ticker": "PAG",
+        "is_target": false,
+        "company_name": "Penske Automotive Group, Inc.",
+        "market_cap": 14177270784,
+        "enterprise_value": 23497070592,
+        "revenue_ttm": 32198500352,
+        "gross_margin_pct": 16.1,
+        "operating_margin_pct": 4.0,
+        "ev_sales": 0.73,
+        "ev_ebitda": 16.85,
+        "forward_pe": 15.0,
+        "fcf_yield_pct": 1.54,
+        "source": "YF_QUOTE_PAG"
+      }
+    ]
+  },
+  "quality": {
+    "growth": {
+      "revenue_3y_cagr": 9.9,
+      "revenue_5y_cagr": null,
+      "latest_fy_growth_pct": 9.7,
+      "ttm_vs_prior_fy_pct": -24.4,
+      "notes": "Organic vs M&A breakdown: Not separately reported as distinct sub-line in primary income statement."
+    },
+    "profitability_table": [
+      {
+        "period": "2022",
+        "revenue": 3500921000.0,
+        "gross_margin_pct": 45.88,
+        "operating_margin_pct": 39.28,
+        "net_margin_pct": 31.14,
+        "source_id": "YF_STMT_CPRT_10K_2022"
+      },
+      {
+        "period": "2023",
+        "revenue": 3869518000.0,
+        "gross_margin_pct": 44.89,
+        "operating_margin_pct": 38.42,
+        "net_margin_pct": 31.99,
+        "source_id": "YF_STMT_CPRT_10K_2023"
+      },
+      {
+        "period": "2024",
+        "revenue": 4236823000.0,
+        "gross_margin_pct": 45.02,
+        "operating_margin_pct": 37.1,
+        "net_margin_pct": 32.17,
+        "source_id": "YF_STMT_CPRT_10K_2024"
+      },
+      {
+        "period": "2025",
+        "revenue": 4646958000.0,
+        "gross_margin_pct": 45.18,
+        "operating_margin_pct": 36.51,
+        "net_margin_pct": 33.41,
+        "source_id": "YF_STMT_CPRT_10K_2025"
+      },
+      {
+        "period": "TTM",
+        "revenue": 3513770000.0,
+        "gross_margin_pct": 45.6,
+        "operating_margin_pct": 0.0,
+        "net_margin_pct": 32.92,
+        "source_id": "YF_STMT_CPRT_TTM_SUM_4Q"
+      }
+    ],
+    "cash_economics_table": [
+      {
+        "period": "2022",
+        "operating_cash_flow": 1176683000.0,
+        "capex": 337448000.0,
+        "free_cash_flow": 839235000.0,
+        "fcf_conversion_pct": 77.0,
+        "source_id": "YF_STMT_CPRT_10K_2022"
+      },
+      {
+        "period": "2023",
+        "operating_cash_flow": 1364210000.0,
+        "capex": 516636000.0,
+        "free_cash_flow": 847574000.0,
+        "fcf_conversion_pct": 68.5,
+        "source_id": "YF_STMT_CPRT_10K_2023"
+      },
+      {
+        "period": "2024",
+        "operating_cash_flow": 1472564000.0,
+        "capex": 510990000.0,
+        "free_cash_flow": 961574000.0,
+        "fcf_conversion_pct": 70.5,
+        "source_id": "YF_STMT_CPRT_10K_2024"
+      },
+      {
+        "period": "2025",
+        "operating_cash_flow": 1799750000.0,
+        "capex": 568990000.0,
+        "free_cash_flow": 1230760000.0,
+        "fcf_conversion_pct": 79.3,
+        "source_id": "YF_STMT_CPRT_10K_2025"
+      },
+      {
+        "period": "TTM",
+        "operating_cash_flow": 1246951000.0,
+        "capex": 258553000.0,
+        "free_cash_flow": 988398000.0,
+        "fcf_conversion_pct": 85.4,
+        "source_id": "YF_STMT_CPRT_TTM_SUM_4Q"
+      }
+    ],
+    "balance_sheet": {
+      "cash_and_equivalents": 2780531000.0,
+      "gross_debt": 103739000.0,
+      "net_debt": -2676792000.0,
+      "net_debt_position": "Net Cash",
+      "interest_coverage_ratio": null,
+      "interest_coverage_assessment": "Debt-free / Minimal Interest"
+    },
+    "quality_checks": [
+      {
+        "test": "Operating Cash Flow vs Net Income (Accruals Quality)",
+        "status": "CLEAN",
+        "result": "OCF / Net Income is 1.16x",
+        "finding": "Operating cash flow exceeds net income. High earnings quality with minimal aggressive non-cash accrual risk."
+      },
+      {
+        "test": "Accounts Receivable vs Revenue Growth (DSO Stability)",
+        "status": "CLEAN",
+        "result": "Receivables growth (+-2.9%) aligns with Revenue growth (+9.7%)",
+        "finding": "Days Sales Outstanding remains tightly disciplined."
+      }
+    ],
+    "capital_intensity": {
+      "capex_to_sales_pct": 7.36,
+      "intensity_classification": "Moderate Intensity (4-8%)",
+      "return_on_equity_pct": 12.6,
+      "notes": "ROIC omitted per spec non-negotiable to avoid asserting fabricated WACC or unverified invested capital allocations."
+    }
+  },
+  "valuation": {
+    "absolute_multiples": {
+      "pe_trailing": 19.32,
+      "pe_forward": 16.6,
+      "ev_sales": 5.01,
+      "ev_ebitda": 12.42,
+      "ps_ratio": 5.94,
+      "pb_ratio": 3.16,
+      "fcf_yield_pct": 3.56,
+      "source": "YF_MKT_CPRT_20260913"
+    },
+    "peer_table": [
+      {
+        "ticker": "CPRT",
+        "is_target": true,
+        "company_name": "Copart, Inc.",
+        "market_cap": 27728054272,
+        "enterprise_value": 23380805632,
+        "revenue_ttm": 4666208768,
+        "gross_margin_pct": 49.0,
+        "operating_margin_pct": 32.0,
+        "ev_sales": 5.01,
+        "ev_ebitda": 12.42,
+        "forward_pe": 16.6,
+        "fcf_yield_pct": 3.19,
+        "source": "YF_QUOTE_CPRT"
+      },
+      {
+        "ticker": "IAA",
+        "is_target": false,
+        "company_name": "IAA",
+        "market_cap": 0,
+        "enterprise_value": 0,
+        "revenue_ttm": 0,
+        "gross_margin_pct": null,
+        "operating_margin_pct": null,
+        "ev_sales": null,
+        "ev_ebitda": null,
+        "forward_pe": null,
+        "fcf_yield_pct": null,
+        "source": "YF_QUOTE_IAA"
+      },
+      {
+        "ticker": "KAR",
+        "is_target": false,
+        "company_name": "KAR",
+        "market_cap": 0,
+        "enterprise_value": 0,
+        "revenue_ttm": 0,
+        "gross_margin_pct": null,
+        "operating_margin_pct": null,
+        "ev_sales": null,
+        "ev_ebitda": null,
+        "forward_pe": null,
+        "fcf_yield_pct": null,
+        "source": "YF_QUOTE_KAR"
+      },
+      {
+        "ticker": "KMX",
+        "is_target": false,
+        "company_name": "CarMax Inc",
+        "market_cap": 8701988864,
+        "enterprise_value": 27401977856,
+        "revenue_ttm": 28197509120,
+        "gross_margin_pct": 11.8,
+        "operating_margin_pct": 3.4,
+        "ev_sales": 0.97,
+        "ev_ebitda": 26.57,
+        "forward_pe": 20.0,
+        "fcf_yield_pct": -1.84,
+        "source": "YF_QUOTE_KMX"
+      },
+      {
+        "ticker": "AN",
+        "is_target": false,
+        "company_name": "AutoNation, Inc.",
+        "market_cap": 6733494272,
+        "enterprise_value": 18011494400,
+        "revenue_ttm": 27448500224,
+        "gross_margin_pct": 17.8,
+        "operating_margin_pct": 4.4,
+        "ev_sales": 0.66,
+        "ev_ebitda": 11.88,
+        "forward_pe": 8.2,
+        "fcf_yield_pct": 5.29,
+        "source": "YF_QUOTE_AN"
+      },
+      {
+        "ticker": "PAG",
+        "is_target": false,
+        "company_name": "Penske Automotive Group, Inc.",
+        "market_cap": 14177270784,
+        "enterprise_value": 23497070592,
+        "revenue_ttm": 32198500352,
+        "gross_margin_pct": 16.1,
+        "operating_margin_pct": 4.0,
+        "ev_sales": 0.73,
+        "ev_ebitda": 16.85,
+        "forward_pe": 15.0,
+        "fcf_yield_pct": 1.54,
+        "source": "YF_QUOTE_PAG"
+      }
+    ],
+    "peer_medians": {
+      "median_ev_sales": 0.79,
+      "median_forward_pe": 14.4,
+      "median_ev_ebitda": 18.4
+    },
+    "premium_analysis": [
+      {
+        "metric": "EV / Sales",
+        "target_value": 5.01,
+        "peer_median": 0.79,
+        "spread_pct": 534.2,
+        "status": "Premium"
+      },
+      {
+        "metric": "Forward P/E",
+        "target_value": 16.6,
+        "peer_median": 14.4,
+        "spread_pct": 15.3,
+        "status": "Premium"
+      }
+    ],
+    "historical_context": {
+      "5y_high_price": 63.84,
+      "5y_low_price": 25.69,
+      "5y_median_price": 41.32,
+      "current_vs_5y_high_pct": -53.1,
+      "current_vs_5y_low_pct": 16.6
+    },
+    "what_market_is_pricing": "The market is pricing modest cyclical stability or moderate mature growth. At 16.6x Forward P/E, expectations are grounded with limited multiple-contraction risk.",
+    "dcf_model": {
+      "status": "omitted_per_spec",
+      "is_truth": false,
+      "disclaimer": "DCF model intentionally omitted per build spec rules against inventing WACC and terminal growth rates. Available via interactive scenario sliders."
+    }
+  },
+  "synthesis": {
+    "catalysts": [
+      {
+        "event": "Next Quarterly Earnings Release (10-Q Print)",
+        "timing": "Upcoming Fiscal Quarter End",
+        "source": "Corporate Investor Relations Schedule",
+        "implication": "Verify sequential margin performance, backlog progression, and organic sales momentum."
+      },
+      {
+        "event": "Institutional CapEx Spending Updates from Major Customers",
+        "timing": "Next 60\u201390 Days",
+        "source": "Industry Peer Quarterly Prints & MD&A Releases",
+        "implication": "Monitor whether hyperscale or utility capital expenditure guidance remains robust or faces push-outs."
+      },
+      {
+        "event": "Macro Regulatory & Grid/AI Legislative Policy Milestones",
+        "timing": "Trailing 12-Month Window",
+        "source": "Federal Regulatory & Infrastructure Filings",
+        "implication": "FERC transmission order implementation, tax credit qualifications, and local permitting speeds."
+      }
+    ],
+    "risks": {
+      "operational": "Fixed-price contract cost overruns, craft labor availability constraints, or supply chain transformer delays.",
+      "financial": "Customer credit concentration or working capital expansion if customer payment milestones are delayed.",
+      "regulatory": "FERC policy shifts, regional environmental permitting delays, and zoning restrictions.",
+      "cyclical": "Interest-rate sensitivity affecting customer capital expenditure budgets or commercial project financing."
+    },
+    "watchlist": [
+      "Operating Cash Flow conversion vs Net Income (verify OCF/NI remains >= 0.85x without working capital drag).",
+      "Gross Margin stability (confirm material and labor costs are successfully passed through to contracts).",
+      "Days Sales Outstanding (DSO) trend (ensure accounts receivable do not outpace revenue expansion).",
+      "Backlog or remaining performance obligations (RPO) trajectory and book-to-bill ratio.",
+      "Capital expenditure discipline (verify CapEx stays aligned with guidance without unbudgeted capital intensity)."
+    ]
+  },
+  "sources": {
+    "entries": [
+      {
+        "id": "YF_MKT_CPRT_20260913",
+        "description": "Yahoo Finance Real-Time Quote & Historical Multiples",
+        "details": "Timestamp: 2026-09-13 21:06:00 UTC"
+      },
+      {
+        "id": "YF_STMT_CPRT_10K_2022",
+        "description": "Audited Annual 10-K Financial Statement (FY2022)",
+        "details": "Period Ended: 2022-07-31"
+      },
+      {
+        "id": "YF_STMT_CPRT_10K_2023",
+        "description": "Audited Annual 10-K Financial Statement (FY2023)",
+        "details": "Period Ended: 2023-07-31"
+      },
+      {
+        "id": "YF_STMT_CPRT_10K_2024",
+        "description": "Audited Annual 10-K Financial Statement (FY2024)",
+        "details": "Period Ended: 2024-07-31"
+      },
+      {
+        "id": "YF_STMT_CPRT_10K_2025",
+        "description": "Audited Annual 10-K Financial Statement (FY2025)",
+        "details": "Period Ended: 2025-07-31"
+      },
+      {
+        "id": "SEC_EDGAR_10K_CPRT",
+        "description": "SEC EDGAR Annual Report Form 10-K (Item 1, Item 1A, Item 7)",
+        "details": "Accession No: 0001628280-25-042946 | Filed: 2025-09-26"
+      },
+      {
+        "id": "YF_QUOTE_IAA",
+        "description": "Peer Comparison Data for IAA (IAA)",
+        "details": "Market Cap: $0.00 | EV/Sales: N/A"
+      },
+      {
+        "id": "YF_QUOTE_KAR",
+        "description": "Peer Comparison Data for KAR (KAR)",
+        "details": "Market Cap: $0.00 | EV/Sales: N/A"
+      },
+      {
+        "id": "YF_QUOTE_KMX",
+        "description": "Peer Comparison Data for KMX (CarMax Inc)",
+        "details": "Market Cap: $8.70B | EV/Sales: 0.97"
+      },
+      {
+        "id": "YF_QUOTE_AN",
+        "description": "Peer Comparison Data for AN (AutoNation, Inc.)",
+        "details": "Market Cap: $6.73B | EV/Sales: 0.66"
+      },
+      {
+        "id": "YF_QUOTE_PAG",
+        "description": "Peer Comparison Data for PAG (Penske Automotive Group, Inc.)",
+        "details": "Market Cap: $14.18B | EV/Sales: 0.73"
+      }
+    ],
+    "failed_fetches": [],
+    "audit_violations_caught": 0
+  },
+  "metadata": {
+    "version": "v2.0",
+    "spec": "Fundamentals Deep-Brief App \u2014 Build Spec v2",
+    "generated_at": "2026-09-13T16:06:05.631100",
+    "focus_theme": null
+  }
+}
