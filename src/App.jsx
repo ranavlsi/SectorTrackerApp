@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
@@ -12,6 +12,7 @@ import ZacksFundamentalReport from './ZacksFundamentalReport'
 import DeepFundamentalsDashboard from './DeepFundamentalsDashboard'
 import LiveAgentsDashboard from './LiveAgentsDashboard'
 import RsLineScanner from './RsLineScanner'
+import ScreenerMonitorDashboard from './ScreenerMonitorDashboard'
 import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { ScreenerDescriptions } from './ScreenerInfo';
@@ -761,6 +762,7 @@ function App() {
             }
           }}><BarChart2 size={18} /> Deep Charting</button>
           <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
+          <button className={activeTab === 'screenermonitor' ? 'tab-active' : ''} onClick={() => setActiveTab('screenermonitor')}><Target size={18} /> Screener Monitor 🎯</button>
           <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
           <button className={activeTab === 'playbook' ? 'tab-active' : ''} onClick={() => setActiveTab('playbook')}><BookOpen size={18} /> Weekly Playbook</button>
           <div style={{ marginTop: '2rem', padding: '0 10px' }}>
@@ -968,6 +970,10 @@ function App() {
 
       {activeTab === 'agents' && (
         <LiveAgentsDashboard initialTicker={searchQuery || 'NVDA'} />
+      )}
+
+      {activeTab === 'screenermonitor' && (
+        <ScreenerMonitorDashboard onTickerClick={fetchTickerData} />
       )}
 
       {activeTab === 'rslinescanner' && (

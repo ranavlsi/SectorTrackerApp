@@ -1916,6 +1916,25 @@ def get_agents():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/screener_monitor')
+def get_screener_monitor():
+    """Serves active trade surveillance, breakout triggers, and lifecycle states for screened stocks."""
+    status_filter = request.args.get('status', 'all')
+    category_filter = request.args.get('category', 'all')
+    force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+    try:
+        import sys
+        sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+        from screener_monitor_engine import get_screener_monitor_data
+        data = get_screener_monitor_data(
+            status_filter=status_filter,
+            category_filter=category_filter,
+            force_refresh=force_refresh
+        )
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/webhook_alert', methods=['POST'])
 def webhook_alert():
     """Receives JSON alerts from background agents and pushes them to the live React stream."""

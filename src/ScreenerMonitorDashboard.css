@@ -1,0 +1,506 @@
+/* ==========================================================================
+   EXPERT SCREENER LIVE MONITORING & SURVEILLANCE SUITE
+   Theme: High-Density Bloomberg / Cyberpunk Quantitative Station
+   ========================================================================== */
+
+.monitor-root {
+  min-height: 100vh;
+  background: #080c14;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 240, 255, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(16, 185, 129, 0.06), transparent);
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   1. MASTER HEADER & SURVEILLANCE BANNER
+   -------------------------------------------------------------------------- */
+.monitor-header-banner {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4);
+}
+
+.monitor-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.monitor-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.monitor-logo-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(16, 185, 129, 0.2));
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+}
+
+.monitor-titles h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.monitor-badge-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(0, 240, 255, 0.15);
+  color: #00F0FF;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+}
+
+.monitor-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monitor-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00E676;
+  box-shadow: 0 0 10px #00E676;
+  animation: monitorPulse 2s infinite;
+}
+
+@keyframes monitorPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+.monitor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.monitor-btn-refresh {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: #00F0FF;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.monitor-btn-refresh:hover {
+  background: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   2. KPI SURVEILLANCE CARDS
+   -------------------------------------------------------------------------- */
+.monitor-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .monitor-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .monitor-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.monitor-kpi-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.monitor-kpi-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.monitor-kpi-card.highlight {
+  border-color: rgba(0, 240, 255, 0.35);
+  background: linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, rgba(15, 23, 42, 0.7) 100%);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+}
+
+.monitor-kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.monitor-kpi-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.monitor-kpi-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.monitor-kpi-val.cyan { color: #00F0FF; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+.monitor-kpi-val.green { color: #00E676; text-shadow: 0 0 15px rgba(0, 230, 118, 0.3); }
+.monitor-kpi-val.amber { color: #fbbf24; }
+.monitor-kpi-val.rose { color: #f43f5e; }
+
+.monitor-kpi-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   3. FILTERS & WORKSPACE CONTROLS
+   -------------------------------------------------------------------------- */
+.monitor-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 20px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.monitor-status-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.monitor-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.monitor-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.monitor-tab-btn.active {
+  background: rgba(0, 240, 255, 0.15);
+  color: #00F0FF;
+  border-color: rgba(0, 240, 255, 0.35);
+}
+
+.monitor-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.monitor-filter-select {
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 6px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  outline: none;
+}
+
+.monitor-filter-input {
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #ffffff;
+  padding: 6px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  width: 140px;
+  outline: none;
+}
+
+.monitor-filter-input:focus {
+  border-color: #00F0FF;
+}
+
+/* --------------------------------------------------------------------------
+   4. SURVEILLANCE GRID TABLE
+   -------------------------------------------------------------------------- */
+.monitor-table-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.monitor-table-wrap {
+  overflow-x: auto;
+}
+
+.monitor-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.monitor-data-table th {
+  padding: 12px 14px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.monitor-data-table th:first-child,
+.monitor-data-table th:nth-child(2) {
+  text-align: left;
+}
+
+.monitor-data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  text-align: right;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.monitor-data-table td:first-child,
+.monitor-data-table td:nth-child(2) {
+  text-align: left;
+}
+
+.monitor-data-table tr:hover {
+  background: rgba(0, 240, 255, 0.03);
+}
+
+.monitor-ticker-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monitor-ticker-sym {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.monitor-ticker-sym:hover {
+  color: #00F0FF;
+  text-decoration: underline;
+}
+
+.monitor-confluence-chip {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.monitor-screeners-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  max-width: 260px;
+}
+
+.monitor-screener-tag {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.monitor-gain-pill {
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.monitor-gain-pill.pos {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+}
+
+.monitor-gain-pill.neg {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+}
+
+.monitor-gain-pill.zero {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+}
+
+/* Progress toward Target 1 */
+.monitor-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.monitor-progress-track {
+  width: 80px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.monitor-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00F0FF, #00E676);
+}
+
+.monitor-progress-num {
+  font-size: 10px;
+  color: #94a3b8;
+  width: 32px;
+  text-align: right;
+}
+
+/* Status Badges */
+.monitor-status-pill {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.04em;
+}
+
+.monitor-status-pill.TRIGGERED {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+  border: 1px solid rgba(0, 230, 118, 0.45);
+  box-shadow: 0 0 12px rgba(0, 230, 118, 0.2);
+}
+
+.monitor-status-pill.TARGET_HIT,
+.monitor-status-pill.TARGET_2_HIT {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00F0FF;
+  border: 1px solid rgba(0, 240, 255, 0.45);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+}
+
+.monitor-status-pill.PENDING {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.monitor-status-pill.STOPPED_OUT {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.45);
+}
+
+.monitor-status-pill.EXPIRED {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.4);
+}
+
+/* 1-Click Action Buttons */
+.monitor-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.monitor-action-btn:hover {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00F0FF;
+  border-color: rgba(0, 240, 255, 0.4);
+}
