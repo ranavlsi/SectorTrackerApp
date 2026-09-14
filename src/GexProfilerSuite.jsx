@@ -937,7 +937,10 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     />
                     <RechartsTooltip
                       contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: '#334155', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
-                      formatter={(val, name) => [formatDollarGex(val), name === 'call_gex' ? 'Call Gamma (Long)' : 'Put Gamma (Short)']}
+                      formatter={(val, name, item) => {
+                        const isCall = (item?.dataKey === 'call_gex' || name === 'call_gex' || String(name).toLowerCase().includes('call'));
+                        return [formatDollarGex(val), isCall ? 'Call Gamma (Long)' : 'Put Gamma (Short)'];
+                      }}
                     />
                     <Legend wrapperStyle={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} />
                     {spot > 0 && <ReferenceLine x={spot} stroke="#ffffff" strokeDasharray="4 4" strokeWidth={2} />}
@@ -1004,7 +1007,13 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     />
                     <RechartsTooltip
                       contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: '#334155', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
-                      formatter={(val, name) => [formatDollarGex(val), name === 'net_gex' ? 'Net GEX' : (name === 'call_gex' ? 'Call GEX' : 'Put GEX')]}
+                      formatter={(val, name, item) => {
+                        const key = item?.dataKey || name;
+                        let label = 'Net Term GEX';
+                        if (key === 'call_gex' || String(name).toLowerCase().includes('call')) label = 'Call GEX';
+                        else if (key === 'put_gex' || String(name).toLowerCase().includes('put')) label = 'Put GEX';
+                        return [formatDollarGex(val), label];
+                      }}
                     />
                     <Legend wrapperStyle={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} />
                     <ReferenceLine y={0} stroke="#475569" strokeWidth={1} />
