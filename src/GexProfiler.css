@@ -1,0 +1,826 @@
+/* ========================================================================= */
+/* src/GexProfiler.css                                                       */
+/* Institutional Gamma Exposure (GEX) & Dealer Positioning Terminal Styles   */
+/* ========================================================================= */
+
+.gex-root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 1. TOP COMMAND BAR & TICKER RIBBON                                        */
+/* ------------------------------------------------------------------------- */
+.gex-header-banner {
+  position: relative;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0d121f 0%, #080c14 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px 24px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.gex-header-glow {
+  position: absolute;
+  top: -100px;
+  right: -50px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(50px);
+}
+
+.gex-header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.gex-identity-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gex-logo-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 800;
+  color: #00F0FF;
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.2);
+}
+
+.gex-titles-block h1 {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gex-badge-tag {
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(6, 182, 212, 0.15);
+  color: #00F0FF;
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  font-weight: 700;
+}
+
+.gex-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.gex-controls-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gex-quick-chips {
+  display: flex;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gex-chip-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gex-chip-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.gex-chip-btn.active {
+  color: #00F0FF;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+}
+
+.gex-search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gex-search-input {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  width: 140px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.gex-search-input:focus {
+  border-color: #00F0FF;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+}
+
+.gex-search-btn {
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 8px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.gex-search-btn:hover {
+  opacity: 0.9;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 2. EXECUTIVE AI DEALER GAMMA INTELLIGENCE HERO                            */
+/* ------------------------------------------------------------------------- */
+.gex-ai-hero-card {
+  position: relative;
+  background: linear-gradient(135deg, #0a0e1c 0%, #060912 100%);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.gex-ai-glow-cyan {
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+.gex-ai-glow-purple {
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+.gex-ai-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gex-ai-titles-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.gex-ai-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.45);
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.2);
+  color: #00F0FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gex-ai-main-title h2 {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+}
+
+.gex-ai-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(6, 182, 212, 0.15);
+  color: #00F0FF;
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+.gex-ai-posture-pill {
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  color: #00F0FF;
+}
+
+/* Executive Verdict Box */
+.gex-ai-verdict-box {
+  position: relative;
+  z-index: 2;
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(168, 85, 247, 0.06) 60%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.gex-ai-verdict-text {
+  flex: 1;
+  min-width: 280px;
+  max-width: 820px;
+}
+
+.gex-ai-verdict-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  margin-bottom: 6px;
+}
+
+.gex-ai-verdict-title {
+  margin: 0 0 6px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+}
+
+.gex-ai-verdict-summary {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+
+/* Corridor Preview Box */
+.gex-corridor-box {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(5, 8, 16, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 270px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.gex-corridor-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.gex-corridor-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.gex-corridor-targets {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* 4-Pillar Grid */
+.gex-pillars-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+@media (max-width: 1024px) {
+  .gex-pillars-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .gex-pillars-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gex-pillar-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.gex-pillar-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.gex-pillar-card.border-emerald { border-color: rgba(16, 185, 129, 0.3); }
+.gex-pillar-card.border-cyan { border-color: rgba(6, 182, 212, 0.3); }
+.gex-pillar-card.border-purple { border-color: rgba(168, 85, 247, 0.3); }
+.gex-pillar-card.border-amber { border-color: rgba(245, 158, 11, 0.3); }
+
+.gex-pillar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.gex-pillar-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.gex-pillar-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.gex-pillar-status.emerald { color: #00E676; }
+.gex-pillar-status.cyan { color: #00F0FF; }
+.gex-pillar-status.purple { color: #c084fc; }
+.gex-pillar-status.amber { color: #fbbf24; }
+
+.gex-pillar-metric {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.gex-pillar-metric.emerald { color: #00E676; }
+.gex-pillar-metric.cyan { color: #00F0FF; }
+.gex-pillar-metric.purple { color: #c084fc; }
+.gex-pillar-metric.amber { color: #fbbf24; }
+
+.gex-pillar-takeaway {
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 3. QUANT AI ENTRY & POSITION ARCHITECTURE                                 */
+/* ------------------------------------------------------------------------- */
+.gex-entry-plan-card {
+  position: relative;
+  z-index: 2;
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.05) 50%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.gex-entry-plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gex-entry-plan-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gex-entry-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
+}
+
+.gex-entry-main-heading {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.gex-entry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: rgba(16, 185, 129, 0.2);
+  color: #00E676;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+.gex-entry-subheading {
+  margin: 3px 0 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.gex-entry-allocation-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00F0FF;
+}
+
+.gex-entry-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+@media (max-width: 1200px) {
+  .gex-entry-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .gex-entry-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.gex-entry-tile {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.gex-entry-tile:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.gex-entry-tile.primary {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
+}
+
+.gex-entry-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.gex-entry-tile-top .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+.gex-entry-tile-top .tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.gex-entry-tile-top .tag.green { background: rgba(16, 185, 129, 0.2); color: #00E676; }
+.gex-entry-tile-top .tag.cyan { background: rgba(6, 182, 212, 0.2); color: #00F0FF; }
+.gex-entry-tile-top .tag.rose { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+.gex-entry-tile-top .tag.emerald { background: rgba(16, 185, 129, 0.2); color: #00E676; }
+.gex-entry-tile-top .tag.purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+.gex-entry-tile-top .tag.amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+.gex-entry-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 6px;
+}
+
+.gex-entry-val.green { color: #00E676; }
+.gex-entry-val.cyan { color: #00F0FF; }
+.gex-entry-val.rose { color: #f43f5e; }
+.gex-entry-val.emerald { color: #00E676; }
+.gex-entry-val.purple { color: #c084fc; }
+.gex-entry-val.amber { color: #fbbf24; }
+
+.gex-entry-sub {
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 4. KEY STRUCTURAL TELEMETRY STRIP                                         */
+/* ------------------------------------------------------------------------- */
+.gex-kpis-strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .gex-kpis-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .gex-kpis-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.gex-kpi-tile {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.gex-kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.gex-kpi-val {
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.gex-kpi-sub {
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 5. INTERACTIVE GEX VISUALIZER DECK                                        */
+/* ------------------------------------------------------------------------- */
+.gex-visualizer-card {
+  position: relative;
+  background: #0a0e17;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.gex-visualizer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gex-visualizer-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gex-mode-toggles {
+  display: flex;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gex-mode-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gex-mode-btn.active {
+  background: rgba(6, 182, 212, 0.2);
+  color: #00F0FF;
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+.gex-expiry-select {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
+
+.gex-chart-container {
+  height: 440px;
+  width: 100%;
+  background: rgba(5, 8, 16, 0.6);
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ------------------------------------------------------------------------- */
+/* 6. DEALER PLAYBOOK & ACTIONABLE STRATEGIES TABLE                          */
+/* ------------------------------------------------------------------------- */
+.gex-playbook-card {
+  background: #0a0e17;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.gex-playbook-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.gex-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.gex-table th {
+  text-align: left;
+  padding: 10px 14px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gex-table td {
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+}
+
+.gex-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}

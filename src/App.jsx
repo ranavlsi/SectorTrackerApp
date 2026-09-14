@@ -850,14 +850,8 @@ function App() {
       )}
 
       {activeTab === 'gexprofiler' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <form onSubmit={(e) => { e.preventDefault(); setSearchedGex({ticker: gexSearch.toUpperCase()}); }} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-              <input type="text" placeholder="Enter ticker (e.g., TSLA, SPY, SMCI)..." value={gexSearch} onChange={(e) => setGexSearch(e.target.value.toUpperCase())} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: 'rgba(0,0,0,0.2)', color: 'white', flex: 1 }} />
-              <button type="submit" style={{ padding: '0.75rem 2rem', background: '#3b82f6', borderRadius: '8px', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>Scan Ticker</button>
-            </form>
-            <GexHeatmap ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
-          </div>
+        <div style={{ width: '100%' }}>
+          <GexHeatmap ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
         </div>
       )}
 

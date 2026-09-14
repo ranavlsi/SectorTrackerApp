@@ -1864,6 +1864,7 @@ def tv_watchlist_api():
 def api_gex():
     """Calculates and serves the Gamma Exposure (GEX) profile dynamically for a requested ticker."""
     ticker = request.args.get('ticker')
+    expiry = request.args.get('expiry', 'ALL')
     if not ticker:
         return jsonify({"error": "No ticker provided"}), 400
     try:
@@ -1871,7 +1872,7 @@ def api_gex():
         if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
             sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
         from gex_engine import get_gex_profile
-        data = get_gex_profile(ticker.upper())
+        data = get_gex_profile(ticker.upper(), expiry_filter=expiry)
         
         # Yahoo Finance often clears OI to 0 after hours/weekends, resulting in 0.0 GEX.
         # If all values are 0, gracefully fallback to the pre-calculated results file.
