@@ -77,7 +77,8 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
     if (!rawProfile.length || !spot) return rawProfile;
     const lower = spot * 0.88;
     const upper = spot * 1.12;
-    return rawProfile.filter(p => p.strike >= lower && p.strike <= upper);
+    const filtered = rawProfile.filter(p => p.strike >= lower && p.strike <= upper);
+    return filtered.length > 0 ? filtered : rawProfile;
   }, [rawProfile, spot]);
 
   // Construct trajectory series including T=0 Spot origin for cone visualization

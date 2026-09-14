@@ -292,7 +292,8 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                         strike = float(row['strike'])
                         oi = int(row['openInterest']) if pd.notna(row.get('openInterest')) else 0
                         vol = int(row['volume']) if pd.notna(row.get('volume')) else 0
-                        iv = float(row['impliedVolatility']) if pd.notna(row.get('impliedVolatility')) and row['impliedVolatility'] > 0 else 0.25
+                        raw_iv = float(row['impliedVolatility']) if pd.notna(row.get('impliedVolatility')) else 0.25
+                        iv = raw_iv if raw_iv > 0.02 else 0.25
 
                         if abs(strike - spot_price) / spot_price < 0.03:
                             atm_iv_samples.append(iv)
@@ -304,12 +305,15 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                         vanna = calculate_vanna(spot_price, strike, T, r, iv)
                         charm = calculate_charm(spot_price, strike, T, r, iv)
 
-                        call_dollar_gex = gamma * oi * 100.0 * (spot_price ** 2) * 0.01
-                        call_dollar_vex = vanna * oi * 100.0 * spot_price * 0.01
-                        call_dollar_cex = charm * oi * 100.0 * spot_price * (1.0 / 365.25)
+                        # Effective weight: use OI if populated; fallback seamlessly to Volume if OI is 0 (weekend clearing / intra-day zero-OI feeds)
+                        eff_weight = oi if oi > 0 else (vol if vol > 0 else 0)
+
+                        call_dollar_gex = gamma * eff_weight * 100.0 * (spot_price ** 2) * 0.01
+                        call_dollar_vex = vanna * eff_weight * 100.0 * spot_price * 0.01
+                        call_dollar_cex = charm * eff_weight * 100.0 * spot_price * (1.0 / 365.25)
 
                         term_structure_dict[exp_date_str]["call_gex"] += call_dollar_gex
-                        term_structure_dict[exp_date_str]["call_oi"] += oi
+                        term_structure_dict[exp_date_str]["call_oi"] += (oi if oi > 0 else vol)
 
                         if strike not in aggregated_strikes:
                             aggregated_strikes[strike] = {
@@ -330,14 +334,15 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                         if strike not in matrix_strikes:
                             matrix_strikes[strike] = {}
                         matrix_strikes[strike][exp_date_str] = matrix_strikes[strike].get(exp_date_str, 0.0) + call_dollar_gex
-                        all_calls_list.append({"strike": strike, "oi": oi})
+                        all_calls_list.append({"strike": strike, "oi": oi, "vol": vol, "weight": eff_weight})
 
                 if puts is not None and not puts.empty:
                     for _, row in puts.iterrows():
                         strike = float(row['strike'])
                         oi = int(row['openInterest']) if pd.notna(row.get('openInterest')) else 0
                         vol = int(row['volume']) if pd.notna(row.get('volume')) else 0
-                        iv = float(row['impliedVolatility']) if pd.notna(row.get('impliedVolatility')) and row['impliedVolatility'] > 0 else 0.25
+                        raw_iv = float(row['impliedVolatility']) if pd.notna(row.get('impliedVolatility')) else 0.25
+                        iv = raw_iv if raw_iv > 0.02 else 0.25
 
                         if abs(strike - spot_price) / spot_price < 0.03:
                             atm_iv_samples.append(iv)
@@ -349,12 +354,14 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                         vanna = calculate_vanna(spot_price, strike, T, r, iv)
                         charm = calculate_charm(spot_price, strike, T, r, iv)
 
-                        put_dollar_gex = -gamma * oi * 100.0 * (spot_price ** 2) * 0.01
-                        put_dollar_vex = -vanna * oi * 100.0 * spot_price * 0.01
-                        put_dollar_cex = -charm * oi * 100.0 * spot_price * (1.0 / 365.25)
+                        eff_weight = oi if oi > 0 else (vol if vol > 0 else 0)
+
+                        put_dollar_gex = -gamma * eff_weight * 100.0 * (spot_price ** 2) * 0.01
+                        put_dollar_vex = -vanna * eff_weight * 100.0 * spot_price * 0.01
+                        put_dollar_cex = -charm * eff_weight * 100.0 * spot_price * (1.0 / 365.25)
 
                         term_structure_dict[exp_date_str]["put_gex"] += put_dollar_gex
-                        term_structure_dict[exp_date_str]["put_oi"] += oi
+                        term_structure_dict[exp_date_str]["put_oi"] += (oi if oi > 0 else vol)
 
                         if strike not in aggregated_strikes:
                             aggregated_strikes[strike] = {
@@ -375,7 +382,7 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                         if strike not in matrix_strikes:
                             matrix_strikes[strike] = {}
                         matrix_strikes[strike][exp_date_str] = matrix_strikes[strike].get(exp_date_str, 0.0) + put_dollar_gex
-                        all_puts_list.append({"strike": strike, "oi": oi})
+                        all_puts_list.append({"strike": strike, "oi": oi, "vol": vol, "weight": eff_weight})
 
                 term_structure_dict[exp_date_str]["net_gex"] = (
                     term_structure_dict[exp_date_str]["call_gex"] + term_structure_dict[exp_date_str]["put_gex"]
@@ -456,16 +463,39 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
         put_call_vol_ratio = round(total_put_vol / total_call_vol, 2) if total_call_vol > 0 else 1.0
 
         # Key levels
-        call_wall_point = max(gex_profile, key=lambda x: x["net_gex"])
+        # 1. Call Wall:
+        # The primary upside resistance / dealer long gamma pin. We look for the highest positive Call Gamma strike AT OR ABOVE spot_price.
+        # If none exist above spot, search across all strikes. If tied or zero, fall back to highest call volume/OI.
+        calls_above = [p for p in gex_profile if p["strike"] >= spot_price and (p["call_gex"] > 0 or p["call_vol"] > 0 or p["call_oi"] > 0)]
+        if calls_above:
+            call_wall_point = max(calls_above, key=lambda x: (x["call_gex"], x["call_vol"], x["call_oi"]))
+        else:
+            calls_all = [p for p in gex_profile if p["call_gex"] > 0 or p["call_vol"] > 0 or p["call_oi"] > 0]
+            if calls_all:
+                call_wall_point = max(calls_all, key=lambda x: (x["call_gex"], x["call_vol"], x["call_oi"]))
+            else:
+                call_wall_point = min(gex_profile, key=lambda x: abs(x["strike"] - spot_price * 1.05))
         call_wall = call_wall_point["strike"]
 
-        put_wall_point = min(gex_profile, key=lambda x: x["net_gex"])
+        # 2. Put Wall:
+        # The primary downside support / dealer short gamma floor. We look for highest put gamma magnitude (most negative put_gex) AT OR BELOW spot_price.
+        # If none exist below spot, search across all strikes. If tied or zero, fall back to highest put volume/OI.
+        puts_below = [p for p in gex_profile if p["strike"] <= spot_price and (p["put_gex"] < 0 or p["put_vol"] > 0 or p["put_oi"] > 0)]
+        if puts_below:
+            put_wall_point = max(puts_below, key=lambda x: (abs(x["put_gex"]), x["put_vol"], x["put_oi"]))
+        else:
+            puts_all = [p for p in gex_profile if p["put_gex"] < 0 or p["put_vol"] > 0 or p["put_oi"] > 0]
+            if puts_all:
+                put_wall_point = max(puts_all, key=lambda x: (abs(x["put_gex"]), x["put_vol"], x["put_oi"]))
+            else:
+                put_wall_point = min(gex_profile, key=lambda x: abs(x["strike"] - spot_price * 0.95))
         put_wall = put_wall_point["strike"]
 
-        abs_gamma_point = max(gex_profile, key=lambda x: abs(x["net_gex"]))
+        # 3. Absolute Gamma Strike:
+        abs_gamma_point = max(gex_profile, key=lambda x: (abs(x["call_gex"]) + abs(x["put_gex"]), x["call_vol"] + x["put_vol"], x["call_oi"] + x["put_oi"]))
         abs_gamma_strike = abs_gamma_point["strike"]
 
-        # Zero Gamma crossover
+        # 4. Zero Gamma crossover
         zero_gamma = None
         for i in range(len(gex_profile) - 1):
             p1 = gex_profile[i]
@@ -480,20 +510,24 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
         if zero_gamma is None:
             zero_gamma = round(spot_price * 0.99, 2)
 
-        # Max Pain
+        # 5. Max Pain
         max_pain_strike = spot_price
         min_total_payout = float('inf')
         for test_k in sorted_strikes:
             payout = 0.0
             for c in all_calls_list:
+                wt = c.get("weight", c.get("oi", 0))
                 if test_k > c["strike"]:
-                    payout += (test_k - c["strike"]) * c["oi"] * 100
+                    payout += (test_k - c["strike"]) * wt * 100
             for p in all_puts_list:
+                wt = p.get("weight", p.get("oi", 0))
                 if test_k < p["strike"]:
-                    payout += (p["strike"] - test_k) * p["oi"] * 100
+                    payout += (p["strike"] - test_k) * wt * 100
             if payout < min_total_payout:
                 min_total_payout = payout
                 max_pain_strike = test_k
+        if min_total_payout == float('inf') or all(c.get("weight", 0) == 0 for c in all_calls_list):
+            max_pain_strike = min(sorted_strikes, key=lambda k: abs(k - spot_price))
 
         # ---------------------------------------------------------------------
         # Quantitative Risk Gauges: Squeeze Vulnerability & Pin Risk
