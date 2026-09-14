@@ -2,7 +2,7 @@
 
 **Generation Date:** Sunday, September 13, 2026
 
-**Market Posture:** `RISK_OFF` (Health Score: 17.8/100) · Defensive Sizing (0.75% - 1.0% per trade)
+**Market Posture:** `RISK_OFF` (Health Score: 31.1/100) · Defensive Sizing (0.75% - 1.0% per trade)
 
 This Institutional Playbook clusters overnight algorithmic scanner results into 4 discrete tactical regimes with strict risk boundaries.
 
@@ -19,11 +19,11 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 
 ### 🎯 Precision Execution Deck
 - **Accumulation Corridor:** `$42.05` ── `$42.73`
-- **Invalidation Sentinel (Stop Loss):** `$41.03` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$45.79` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$48.51` (+14.4%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $42.0 Call / Sell $48.5 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:2.5`
+- **Invalidation Sentinel (Stop Loss):** `$41.15` (-2.9% Risk Floor)
+- **Target 1 (Pin Target):** `$45.73` (+7.9%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$48.95` (+15.5%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $42.0 Call / Sell $49.0 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:2.7`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -43,11 +43,11 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 
 ### 🎯 Precision Execution Deck
 - **Accumulation Corridor:** `$95.85` ── `$97.39`
-- **Invalidation Sentinel (Stop Loss):** `$94.72` (-2.0% Risk Floor)
-- **Target 1 (Pin Target):** `$101.37` (+4.9%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$109.48` (+13.3%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $95.8 Call / Sell $109.5 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:2.5`
+- **Invalidation Sentinel (Stop Loss):** `$94.77` (-1.9% Risk Floor)
+- **Target 1 (Pin Target):** `$102.9` (+6.5%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$106.23` (+9.9%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $95.8 Call / Sell $106.2 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:3.4`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -67,11 +67,11 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 
 ### 🎯 Precision Execution Deck
 - **Accumulation Corridor:** `$10.33` ── `$10.49`
-- **Invalidation Sentinel (Stop Loss):** `$10.08` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$11.23` (+7.9%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$11.89` (+14.2%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $10.3 Call / Sell $11.9 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:2.5`
+- **Invalidation Sentinel (Stop Loss):** `$10.05` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$11.81` (+13.4%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$13.74` (+32.0%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $10.3 Call / Sell $13.7 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:3.9`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -91,11 +91,11 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 
 ### 🎯 Precision Execution Deck
 - **Accumulation Corridor:** `$75.49` ── `$76.71`
-- **Invalidation Sentinel (Stop Loss):** `$73.66` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$82.2` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$87.08` (+14.4%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $75.5 Call / Sell $87.1 Call (FUNDAMENTAL ACCELERATION Vertical)`
-- **Risk/Reward Expectancy:** `1:2.5`
+- **Invalidation Sentinel (Stop Loss):** `$73.44` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$87.27` (+14.7%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$96.34` (+26.6%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $75.5 Call / Sell $96.3 Call (FUNDAMENTAL ACCELERATION Vertical)`
+- **Risk/Reward Expectancy:** `1:4.2`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -115,11 +115,11 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 
 ### 🎯 Precision Execution Deck
 - **Accumulation Corridor:** `$562.75` ── `$571.83`
-- **Invalidation Sentinel (Stop Loss):** `$549.14` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$612.66` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$648.96` (+14.4%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $562.8 Call / Sell $649.0 Call (FUNDAMENTAL ACCELERATION Vertical)`
-- **Risk/Reward Expectancy:** `1:2.5`
+- **Invalidation Sentinel (Stop Loss):** `$547.43` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$650.7` (+14.7%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$720.69` (+27.0%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $562.8 Call / Sell $720.7 Call (FUNDAMENTAL ACCELERATION Vertical)`
+- **Risk/Reward Expectancy:** `1:4.2`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -139,11 +139,11 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 
 ### 🎯 Precision Execution Deck
 - **Accumulation Corridor:** `$61.59` ── `$62.59`
-- **Invalidation Sentinel (Stop Loss):** `$60.1` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$67.07` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$71.05` (+14.4%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $61.6 Call / Sell $71.0 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:2.5`
+- **Invalidation Sentinel (Stop Loss):** `$59.92` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$67.91` (+9.4%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$76.13` (+22.6%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $61.6 Call / Sell $76.1 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:2.7`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -163,11 +163,11 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 
 ### 🎯 Precision Execution Deck
 - **Accumulation Corridor:** `$62.4` ── `$63.4`
-- **Invalidation Sentinel (Stop Loss):** `$60.89` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$67.93` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$71.95` (+14.4%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $62.4 Call / Sell $72.0 Call (FUNDAMENTAL ACCELERATION Vertical)`
-- **Risk/Reward Expectancy:** `1:2.5`
+- **Invalidation Sentinel (Stop Loss):** `$60.7` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$68.85` (+9.5%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$73.53` (+16.9%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $62.4 Call / Sell $73.5 Call (FUNDAMENTAL ACCELERATION Vertical)`
+- **Risk/Reward Expectancy:** `1:2.7`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -187,11 +187,11 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 
 ### 🎯 Precision Execution Deck
 - **Accumulation Corridor:** `$48.34` ── `$49.12`
-- **Invalidation Sentinel (Stop Loss):** `$47.17` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$52.68` (+8.1%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$55.75` (+14.4%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $48.3 Call / Sell $55.8 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:2.5`
+- **Invalidation Sentinel (Stop Loss):** `$47.02` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$55.1` (+13.1%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$58.55` (+20.2%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $48.3 Call / Sell $58.5 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:3.7`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)

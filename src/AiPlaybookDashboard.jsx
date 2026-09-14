@@ -89,6 +89,16 @@ Current: $${setup.current_price} | Conviction: ${setup.conviction_rating}
     return list;
   }, [allSetups, activeCategory, searchQuery]);
 
+  const avgAsymmetry = useMemo(() => {
+    if (!allSetups.length) return '1:3.2';
+    const ratios = allSetups
+      .map(s => parseFloat(s.execution?.risk_reward?.replace('1:', '')))
+      .filter(r => !isNaN(r));
+    if (!ratios.length) return '1:3.2';
+    const avg = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+    return `1:${avg.toFixed(1)}`;
+  }, [allSetups]);
+
   return (
     <div className="ai-playbook-root">
       
@@ -151,6 +161,10 @@ Current: $${setup.current_price} | Conviction: ${setup.conviction_rating}
             <div className="stat-pill">
               <span className="label">Total Setups:</span>
               <span className="val">{allSetups.length}</span>
+            </div>
+            <div className="stat-pill">
+              <span className="label">Avg Asymmetry:</span>
+              <span className="val" style={{ color: '#fbbf24' }}>{avgAsymmetry}</span>
             </div>
             <div className="stat-pill">
               <span className="label">Generated:</span>

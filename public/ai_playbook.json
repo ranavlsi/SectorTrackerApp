@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-09-13T19:55:57.969137",
+  "generated_at": "2026-09-13T20:00:54.945770",
   "date_str": "Sunday, September 13, 2026",
   "market_regime": {
     "label": "RISK_OFF",
-    "score": 17.8,
+    "score": 31.1,
     "color": "#f43f5e",
     "guidance": "Defensive Sizing (0.75% - 1.0% per trade)"
   },
@@ -39,14 +39,14 @@
           42.73
         ],
         "ideal_entry": 42.38999938964844,
-        "stop_loss": 41.03,
-        "stop_loss_pct": -3.2,
-        "target_primary": 45.79,
-        "target_primary_pct": 8.0,
-        "target_secondary": 48.51,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $42.0 Call / Sell $48.5 Call (MA PULLBACK Vertical)",
+        "stop_loss": 41.15,
+        "stop_loss_pct": -2.9,
+        "target_primary": 45.73,
+        "target_primary_pct": 7.9,
+        "target_secondary": 48.95,
+        "target_secondary_pct": 15.5,
+        "risk_reward": "1:2.7",
+        "options_spec": "Buy $42.0 Call / Sell $49.0 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 59.6,
@@ -58,9 +58,9 @@
         "execution_checklist": [
           "Verify price action inside $42.05 \u2500\u2500 $42.73 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.83x ADV).",
-          "Place tight structural invalidation stop at $41.03 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($45.79, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($48.51, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $41.15 (-2.9% max risk).",
+          "Scale out 50% at Target 1 ($45.73, +7.9%, 1:2.7 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($48.95, +15.5%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -93,14 +93,14 @@
           97.39
         ],
         "ideal_entry": 96.62000274658203,
-        "stop_loss": 94.72,
-        "stop_loss_pct": -2.0,
-        "target_primary": 101.37,
-        "target_primary_pct": 4.9,
-        "target_secondary": 109.48,
-        "target_secondary_pct": 13.3,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $95.8 Call / Sell $109.5 Call (MA PULLBACK Vertical)",
+        "stop_loss": 94.77,
+        "stop_loss_pct": -1.9,
+        "target_primary": 102.9,
+        "target_primary_pct": 6.5,
+        "target_secondary": 106.23,
+        "target_secondary_pct": 9.9,
+        "risk_reward": "1:3.4",
+        "options_spec": "Buy $95.8 Call / Sell $106.2 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 63.4,
@@ -112,9 +112,9 @@
         "execution_checklist": [
           "Verify price action inside $95.85 \u2500\u2500 $97.39 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.84x ADV).",
-          "Place tight structural invalidation stop at $94.72 (-2.0% max risk).",
-          "Scale out 50% at Target 1 ($101.37, +4.9%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($109.48, +13.3%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $94.77 (-1.9% max risk).",
+          "Scale out 50% at Target 1 ($102.90, +6.5%, 1:3.4 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($106.23, +9.9%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -147,14 +147,14 @@
           10.49
         ],
         "ideal_entry": 10.40999984741211,
-        "stop_loss": 10.08,
-        "stop_loss_pct": -3.2,
-        "target_primary": 11.23,
-        "target_primary_pct": 7.9,
-        "target_secondary": 11.89,
-        "target_secondary_pct": 14.2,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $10.3 Call / Sell $11.9 Call (MA PULLBACK Vertical)",
+        "stop_loss": 10.05,
+        "stop_loss_pct": -3.5,
+        "target_primary": 11.81,
+        "target_primary_pct": 13.4,
+        "target_secondary": 13.74,
+        "target_secondary_pct": 32.0,
+        "risk_reward": "1:3.9",
+        "options_spec": "Buy $10.3 Call / Sell $13.7 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 80.3,
@@ -166,9 +166,9 @@
         "execution_checklist": [
           "Verify price action inside $10.33 \u2500\u2500 $10.49 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 11.97x ADV).",
-          "Place tight structural invalidation stop at $10.08 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($11.23, +7.9%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($11.89, +14.2%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $10.05 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($11.81, +13.4%, 1:3.9 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($13.74, +32.0%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -201,14 +201,14 @@
           76.71
         ],
         "ideal_entry": 76.0999984741211,
-        "stop_loss": 73.66,
-        "stop_loss_pct": -3.2,
-        "target_primary": 82.2,
-        "target_primary_pct": 8.0,
-        "target_secondary": 87.08,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $75.5 Call / Sell $87.1 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "stop_loss": 73.44,
+        "stop_loss_pct": -3.5,
+        "target_primary": 87.27,
+        "target_primary_pct": 14.7,
+        "target_secondary": 96.34,
+        "target_secondary_pct": 26.6,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $75.5 Call / Sell $96.3 Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
         "stage": "Stage 2 (Advancing)",
         "rsi": 60.5,
@@ -220,9 +220,9 @@
         "execution_checklist": [
           "Verify price action inside $75.49 \u2500\u2500 $76.71 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.47x ADV).",
-          "Place tight structural invalidation stop at $73.66 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($82.20, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($87.08, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $73.44 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($87.27, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($96.34, +26.6%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -255,14 +255,14 @@
           571.83
         ],
         "ideal_entry": 567.2899780273438,
-        "stop_loss": 549.14,
-        "stop_loss_pct": -3.2,
-        "target_primary": 612.66,
-        "target_primary_pct": 8.0,
-        "target_secondary": 648.96,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $562.8 Call / Sell $649.0 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "stop_loss": 547.43,
+        "stop_loss_pct": -3.5,
+        "target_primary": 650.7,
+        "target_primary_pct": 14.7,
+        "target_secondary": 720.69,
+        "target_secondary_pct": 27.0,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $562.8 Call / Sell $720.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
         "stage": "Stage 2 (Advancing)",
         "rsi": 71.2,
@@ -274,9 +274,9 @@
         "execution_checklist": [
           "Verify price action inside $562.75 \u2500\u2500 $571.83 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.63x ADV).",
-          "Place tight structural invalidation stop at $549.14 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($612.66, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($648.96, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $547.43 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($650.70, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($720.69, +27.0%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     }
@@ -315,14 +315,14 @@
               35.76
             ],
             "ideal_entry": 35.47999954223633,
-            "stop_loss": 34.34,
-            "stop_loss_pct": -3.2,
-            "target_primary": 38.33,
-            "target_primary_pct": 8.0,
-            "target_secondary": 40.61,
-            "target_secondary_pct": 14.5,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $35.2 Call / Sell $40.6 Call (ALPHA BREAKOUT Vertical)",
+            "stop_loss": 34.24,
+            "stop_loss_pct": -3.5,
+            "target_primary": 40.69,
+            "target_primary_pct": 14.7,
+            "target_secondary": 45.99,
+            "target_secondary_pct": 29.6,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $35.2 Call / Sell $46.0 Call (ALPHA BREAKOUT Vertical)",
             "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
             "stage": "Stage 2 (Advancing)",
             "rsi": 71.5,
@@ -334,9 +334,9 @@
             "execution_checklist": [
               "Verify price action inside $35.20 \u2500\u2500 $35.76 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.69x ADV).",
-              "Place tight structural invalidation stop at $34.34 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($38.33, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($40.61, +14.5%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $34.24 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($40.69, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($45.99, +29.6%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -368,14 +368,14 @@
               393.54
             ],
             "ideal_entry": 390.4200134277344,
-            "stop_loss": 378.55,
-            "stop_loss_pct": -3.0,
-            "target_primary": 420.1,
-            "target_primary_pct": 7.6,
-            "target_secondary": 443.84,
-            "target_secondary_pct": 13.7,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $387.3 Call / Sell $443.8 Call (ALPHA BREAKOUT Vertical)",
+            "stop_loss": 381.11,
+            "stop_loss_pct": -2.4,
+            "target_primary": 429.52,
+            "target_primary_pct": 10.0,
+            "target_secondary": 463.52,
+            "target_secondary_pct": 18.7,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $387.3 Call / Sell $463.5 Call (ALPHA BREAKOUT Vertical)",
             "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
             "stage": "Stage 2 (Advancing)",
             "rsi": 80.4,
@@ -387,9 +387,9 @@
             "execution_checklist": [
               "Verify price action inside $387.30 \u2500\u2500 $393.54 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.25x ADV).",
-              "Place tight structural invalidation stop at $378.55 (-3.0% max risk).",
-              "Scale out 50% at Target 1 ($420.10, +7.6%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($443.84, +13.7%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $381.11 (-2.4% max risk).",
+              "Scale out 50% at Target 1 ($429.52, +10.0%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($463.52, +18.7%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -421,14 +421,14 @@
               117.58
             ],
             "ideal_entry": 116.6500015258789,
-            "stop_loss": 112.92,
-            "stop_loss_pct": -3.2,
-            "target_primary": 125.98,
-            "target_primary_pct": 8.0,
-            "target_secondary": 133.44,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $115.7 Call / Sell $133.4 Call (ALPHA BREAKOUT Vertical)",
+            "stop_loss": 112.57,
+            "stop_loss_pct": -3.5,
+            "target_primary": 133.79,
+            "target_primary_pct": 14.7,
+            "target_secondary": 149.18,
+            "target_secondary_pct": 27.9,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $115.7 Call / Sell $149.2 Call (ALPHA BREAKOUT Vertical)",
             "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
             "stage": "Stage 2 (Advancing)",
             "rsi": 89.2,
@@ -440,9 +440,9 @@
             "execution_checklist": [
               "Verify price action inside $115.72 \u2500\u2500 $117.58 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 2.01x ADV).",
-              "Place tight structural invalidation stop at $112.92 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($125.98, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($133.44, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $112.57 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($133.79, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($149.18, +27.9%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -472,14 +472,14 @@
               43.99
             ],
             "ideal_entry": 43.63999938964844,
-            "stop_loss": 42.24,
-            "stop_loss_pct": -3.2,
-            "target_primary": 47.14,
-            "target_primary_pct": 8.0,
-            "target_secondary": 49.94,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $43.3 Call / Sell $49.9 Call (ALPHA BREAKOUT Vertical)",
+            "stop_loss": 42.72,
+            "stop_loss_pct": -2.1,
+            "target_primary": 47.5,
+            "target_primary_pct": 8.8,
+            "target_secondary": 53.62,
+            "target_secondary_pct": 22.9,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $43.3 Call / Sell $53.6 Call (ALPHA BREAKOUT Vertical)",
             "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
             "stage": "Stage 2 (Advancing)",
             "rsi": 84.9,
@@ -491,9 +491,9 @@
             "execution_checklist": [
               "Verify price action inside $43.29 \u2500\u2500 $43.99 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 2.12x ADV).",
-              "Place tight structural invalidation stop at $42.24 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($47.14, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($49.94, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $42.72 (-2.1% max risk).",
+              "Scale out 50% at Target 1 ($47.50, +8.8%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($53.62, +22.9%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         }
@@ -534,14 +534,14 @@
               42.73
             ],
             "ideal_entry": 42.38999938964844,
-            "stop_loss": 41.03,
-            "stop_loss_pct": -3.2,
-            "target_primary": 45.79,
-            "target_primary_pct": 8.0,
-            "target_secondary": 48.51,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $42.0 Call / Sell $48.5 Call (MA PULLBACK Vertical)",
+            "stop_loss": 41.15,
+            "stop_loss_pct": -2.9,
+            "target_primary": 45.73,
+            "target_primary_pct": 7.9,
+            "target_secondary": 48.95,
+            "target_secondary_pct": 15.5,
+            "risk_reward": "1:2.7",
+            "options_spec": "Buy $42.0 Call / Sell $49.0 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 59.6,
@@ -553,9 +553,9 @@
             "execution_checklist": [
               "Verify price action inside $42.05 \u2500\u2500 $42.73 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.83x ADV).",
-              "Place tight structural invalidation stop at $41.03 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($45.79, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($48.51, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $41.15 (-2.9% max risk).",
+              "Scale out 50% at Target 1 ($45.73, +7.9%, 1:2.7 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($48.95, +15.5%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -588,14 +588,14 @@
               97.39
             ],
             "ideal_entry": 96.62000274658203,
-            "stop_loss": 94.72,
-            "stop_loss_pct": -2.0,
-            "target_primary": 101.37,
-            "target_primary_pct": 4.9,
-            "target_secondary": 109.48,
-            "target_secondary_pct": 13.3,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $95.8 Call / Sell $109.5 Call (MA PULLBACK Vertical)",
+            "stop_loss": 94.77,
+            "stop_loss_pct": -1.9,
+            "target_primary": 102.9,
+            "target_primary_pct": 6.5,
+            "target_secondary": 106.23,
+            "target_secondary_pct": 9.9,
+            "risk_reward": "1:3.4",
+            "options_spec": "Buy $95.8 Call / Sell $106.2 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 63.4,
@@ -607,9 +607,9 @@
             "execution_checklist": [
               "Verify price action inside $95.85 \u2500\u2500 $97.39 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.84x ADV).",
-              "Place tight structural invalidation stop at $94.72 (-2.0% max risk).",
-              "Scale out 50% at Target 1 ($101.37, +4.9%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($109.48, +13.3%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $94.77 (-1.9% max risk).",
+              "Scale out 50% at Target 1 ($102.90, +6.5%, 1:3.4 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($106.23, +9.9%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -642,14 +642,14 @@
               10.49
             ],
             "ideal_entry": 10.40999984741211,
-            "stop_loss": 10.08,
-            "stop_loss_pct": -3.2,
-            "target_primary": 11.23,
-            "target_primary_pct": 7.9,
-            "target_secondary": 11.89,
-            "target_secondary_pct": 14.2,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $10.3 Call / Sell $11.9 Call (MA PULLBACK Vertical)",
+            "stop_loss": 10.05,
+            "stop_loss_pct": -3.5,
+            "target_primary": 11.81,
+            "target_primary_pct": 13.4,
+            "target_secondary": 13.74,
+            "target_secondary_pct": 32.0,
+            "risk_reward": "1:3.9",
+            "options_spec": "Buy $10.3 Call / Sell $13.7 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 80.3,
@@ -661,9 +661,9 @@
             "execution_checklist": [
               "Verify price action inside $10.33 \u2500\u2500 $10.49 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 11.97x ADV).",
-              "Place tight structural invalidation stop at $10.08 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($11.23, +7.9%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($11.89, +14.2%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $10.05 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($11.81, +13.4%, 1:3.9 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($13.74, +32.0%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -696,14 +696,14 @@
               62.59
             ],
             "ideal_entry": 62.09000015258789,
-            "stop_loss": 60.1,
-            "stop_loss_pct": -3.2,
-            "target_primary": 67.07,
-            "target_primary_pct": 8.0,
-            "target_secondary": 71.05,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $61.6 Call / Sell $71.0 Call (MA PULLBACK Vertical)",
+            "stop_loss": 59.92,
+            "stop_loss_pct": -3.5,
+            "target_primary": 67.91,
+            "target_primary_pct": 9.4,
+            "target_secondary": 76.13,
+            "target_secondary_pct": 22.6,
+            "risk_reward": "1:2.7",
+            "options_spec": "Buy $61.6 Call / Sell $76.1 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 63.7,
@@ -715,9 +715,9 @@
             "execution_checklist": [
               "Verify price action inside $61.59 \u2500\u2500 $62.59 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.66x ADV).",
-              "Place tight structural invalidation stop at $60.10 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($67.07, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($71.05, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $59.92 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($67.91, +9.4%, 1:2.7 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($76.13, +22.6%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -749,14 +749,14 @@
               49.12
             ],
             "ideal_entry": 48.72999954223633,
-            "stop_loss": 47.17,
-            "stop_loss_pct": -3.2,
-            "target_primary": 52.68,
-            "target_primary_pct": 8.1,
-            "target_secondary": 55.75,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $48.3 Call / Sell $55.8 Call (MA PULLBACK Vertical)",
+            "stop_loss": 47.02,
+            "stop_loss_pct": -3.5,
+            "target_primary": 55.1,
+            "target_primary_pct": 13.1,
+            "target_secondary": 58.55,
+            "target_secondary_pct": 20.2,
+            "risk_reward": "1:3.7",
+            "options_spec": "Buy $48.3 Call / Sell $58.5 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 45.6,
@@ -768,9 +768,9 @@
             "execution_checklist": [
               "Verify price action inside $48.34 \u2500\u2500 $49.12 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.85x ADV).",
-              "Place tight structural invalidation stop at $47.17 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($52.68, +8.1%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($55.75, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $47.02 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($55.10, +13.1%, 1:3.7 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($58.55, +20.2%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -802,14 +802,14 @@
               411.61
             ],
             "ideal_entry": 408.3399963378906,
-            "stop_loss": 395.27,
-            "stop_loss_pct": -3.2,
-            "target_primary": 441.01,
-            "target_primary_pct": 8.0,
-            "target_secondary": 467.15,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $405.1 Call / Sell $467.1 Call (MA PULLBACK Vertical)",
+            "stop_loss": 394.05,
+            "stop_loss_pct": -3.5,
+            "target_primary": 442.64,
+            "target_primary_pct": 8.4,
+            "target_secondary": 468.36,
+            "target_secondary_pct": 14.7,
+            "risk_reward": "1:2.4",
+            "options_spec": "Buy $405.1 Call / Sell $468.4 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 47.9,
@@ -821,9 +821,9 @@
             "execution_checklist": [
               "Verify price action inside $405.07 \u2500\u2500 $411.61 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.78x ADV).",
-              "Place tight structural invalidation stop at $395.27 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($441.01, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($467.15, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $394.05 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($442.64, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($468.36, +14.7%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -855,14 +855,14 @@
               28.09
             ],
             "ideal_entry": 27.8700008392334,
-            "stop_loss": 26.98,
-            "stop_loss_pct": -3.2,
-            "target_primary": 30.1,
-            "target_primary_pct": 8.0,
-            "target_secondary": 31.88,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $27.6 Call / Sell $31.9 Call (MA PULLBACK Vertical)",
+            "stop_loss": 26.89,
+            "stop_loss_pct": -3.5,
+            "target_primary": 30.22,
+            "target_primary_pct": 8.4,
+            "target_secondary": 31.98,
+            "target_secondary_pct": 14.7,
+            "risk_reward": "1:2.4",
+            "options_spec": "Buy $27.6 Call / Sell $32.0 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 47.5,
@@ -874,9 +874,9 @@
             "execution_checklist": [
               "Verify price action inside $27.65 \u2500\u2500 $28.09 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.89x ADV).",
-              "Place tight structural invalidation stop at $26.98 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($30.10, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($31.88, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $26.89 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($30.22, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($31.98, +14.7%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -908,14 +908,14 @@
               30.5
             ],
             "ideal_entry": 30.260000228881836,
-            "stop_loss": 29.47,
-            "stop_loss_pct": -2.6,
-            "target_primary": 32.24,
-            "target_primary_pct": 6.5,
-            "target_secondary": 34.82,
-            "target_secondary_pct": 15.1,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $30.0 Call / Sell $34.8 Call (MA PULLBACK Vertical)",
+            "stop_loss": 29.54,
+            "stop_loss_pct": -2.4,
+            "target_primary": 33.27,
+            "target_primary_pct": 9.9,
+            "target_secondary": 35.59,
+            "target_secondary_pct": 17.6,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $30.0 Call / Sell $35.6 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 60.3,
@@ -927,9 +927,9 @@
             "execution_checklist": [
               "Verify price action inside $30.02 \u2500\u2500 $30.50 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.88x ADV).",
-              "Place tight structural invalidation stop at $29.47 (-2.6% max risk).",
-              "Scale out 50% at Target 1 ($32.24, +6.5%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($34.82, +15.1%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $29.54 (-2.4% max risk).",
+              "Scale out 50% at Target 1 ($33.27, +9.9%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($35.59, +17.6%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -961,14 +961,14 @@
               38.4
             ],
             "ideal_entry": 38.099998474121094,
-            "stop_loss": 37.3,
+            "stop_loss": 37.31,
             "stop_loss_pct": -2.1,
-            "target_primary": 40.1,
-            "target_primary_pct": 5.2,
-            "target_secondary": 43.31,
-            "target_secondary_pct": 13.7,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $37.8 Call / Sell $43.3 Call (MA PULLBACK Vertical)",
+            "target_primary": 41.1,
+            "target_primary_pct": 7.9,
+            "target_secondary": 44.28,
+            "target_secondary_pct": 16.2,
+            "risk_reward": "1:3.8",
+            "options_spec": "Buy $37.8 Call / Sell $44.3 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 56.5,
@@ -980,9 +980,9 @@
             "execution_checklist": [
               "Verify price action inside $37.80 \u2500\u2500 $38.40 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.99x ADV).",
-              "Place tight structural invalidation stop at $37.30 (-2.1% max risk).",
-              "Scale out 50% at Target 1 ($40.10, +5.2%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($43.31, +13.7%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $37.31 (-2.1% max risk).",
+              "Scale out 50% at Target 1 ($41.10, +7.9%, 1:3.8 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($44.28, +16.2%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -1012,14 +1012,14 @@
               55.99
             ],
             "ideal_entry": 55.54999923706055,
-            "stop_loss": 53.77,
-            "stop_loss_pct": -3.2,
-            "target_primary": 60.0,
-            "target_primary_pct": 8.0,
-            "target_secondary": 63.56,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $55.1 Call / Sell $63.6 Call (MA PULLBACK Vertical)",
+            "stop_loss": 53.61,
+            "stop_loss_pct": -3.5,
+            "target_primary": 60.21,
+            "target_primary_pct": 8.4,
+            "target_secondary": 63.7,
+            "target_secondary_pct": 14.7,
+            "risk_reward": "1:2.4",
+            "options_spec": "Buy $55.1 Call / Sell $63.7 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
             "stage": "Stage 2 (Advancing)",
             "rsi": 69.0,
@@ -1031,9 +1031,9 @@
             "execution_checklist": [
               "Verify price action inside $55.11 \u2500\u2500 $55.99 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.84x ADV).",
-              "Place tight structural invalidation stop at $53.77 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($60.00, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($63.56, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $53.61 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($60.21, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($63.70, +14.7%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         }
@@ -1072,14 +1072,14 @@
               40.42
             ],
             "ideal_entry": 40.099998474121094,
-            "stop_loss": 38.82,
-            "stop_loss_pct": -3.2,
-            "target_primary": 43.3,
-            "target_primary_pct": 8.0,
-            "target_secondary": 45.86,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $39.8 Call / Sell $45.9 Call (SQUEEZE / GAMMA Vertical)",
+            "stop_loss": 38.7,
+            "stop_loss_pct": -3.5,
+            "target_primary": 45.98,
+            "target_primary_pct": 14.7,
+            "target_secondary": 51.86,
+            "target_secondary_pct": 29.3,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $39.8 Call / Sell $51.9 Call (SQUEEZE / GAMMA Vertical)",
             "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
             "stage": "Stage 2 (Advancing)",
             "rsi": 57.6,
@@ -1091,9 +1091,9 @@
             "execution_checklist": [
               "Verify price action inside $39.78 \u2500\u2500 $40.42 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.16x ADV).",
-              "Place tight structural invalidation stop at $38.82 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($43.30, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($45.86, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $38.70 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($45.98, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($51.86, +29.3%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         }
@@ -1133,14 +1133,14 @@
               76.71
             ],
             "ideal_entry": 76.0999984741211,
-            "stop_loss": 73.66,
-            "stop_loss_pct": -3.2,
-            "target_primary": 82.2,
-            "target_primary_pct": 8.0,
-            "target_secondary": 87.08,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $75.5 Call / Sell $87.1 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "stop_loss": 73.44,
+            "stop_loss_pct": -3.5,
+            "target_primary": 87.27,
+            "target_primary_pct": 14.7,
+            "target_secondary": 96.34,
+            "target_secondary_pct": 26.6,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $75.5 Call / Sell $96.3 Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
             "stage": "Stage 2 (Advancing)",
             "rsi": 60.5,
@@ -1152,9 +1152,9 @@
             "execution_checklist": [
               "Verify price action inside $75.49 \u2500\u2500 $76.71 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.47x ADV).",
-              "Place tight structural invalidation stop at $73.66 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($82.20, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($87.08, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $73.44 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($87.27, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($96.34, +26.6%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -1187,14 +1187,14 @@
               571.83
             ],
             "ideal_entry": 567.2899780273438,
-            "stop_loss": 549.14,
-            "stop_loss_pct": -3.2,
-            "target_primary": 612.66,
-            "target_primary_pct": 8.0,
-            "target_secondary": 648.96,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $562.8 Call / Sell $649.0 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "stop_loss": 547.43,
+            "stop_loss_pct": -3.5,
+            "target_primary": 650.7,
+            "target_primary_pct": 14.7,
+            "target_secondary": 720.69,
+            "target_secondary_pct": 27.0,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $562.8 Call / Sell $720.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
             "stage": "Stage 2 (Advancing)",
             "rsi": 71.2,
@@ -1206,9 +1206,9 @@
             "execution_checklist": [
               "Verify price action inside $562.75 \u2500\u2500 $571.83 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.63x ADV).",
-              "Place tight structural invalidation stop at $549.14 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($612.66, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($648.96, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $547.43 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($650.70, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($720.69, +27.0%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -1240,14 +1240,14 @@
               63.4
             ],
             "ideal_entry": 62.900001525878906,
-            "stop_loss": 60.89,
-            "stop_loss_pct": -3.2,
-            "target_primary": 67.93,
-            "target_primary_pct": 8.0,
-            "target_secondary": 71.95,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $62.4 Call / Sell $72.0 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "stop_loss": 60.7,
+            "stop_loss_pct": -3.5,
+            "target_primary": 68.85,
+            "target_primary_pct": 9.5,
+            "target_secondary": 73.53,
+            "target_secondary_pct": 16.9,
+            "risk_reward": "1:2.7",
+            "options_spec": "Buy $62.4 Call / Sell $73.5 Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
             "stage": "Stage 2 (Advancing)",
             "rsi": 59.9,
@@ -1259,9 +1259,9 @@
             "execution_checklist": [
               "Verify price action inside $62.40 \u2500\u2500 $63.40 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.73x ADV).",
-              "Place tight structural invalidation stop at $60.89 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($67.93, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($71.95, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $60.70 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($68.85, +9.5%, 1:2.7 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($73.53, +16.9%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -1291,14 +1291,14 @@
               123.39
             ],
             "ideal_entry": 122.41000366210938,
-            "stop_loss": 118.49,
-            "stop_loss_pct": -3.2,
-            "target_primary": 132.21,
-            "target_primary_pct": 8.0,
-            "target_secondary": 140.05,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $121.4 Call / Sell $140.1 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "stop_loss": 120.94,
+            "stop_loss_pct": -1.2,
+            "target_primary": 128.58,
+            "target_primary_pct": 5.0,
+            "target_secondary": 144.56,
+            "target_secondary_pct": 18.1,
+            "risk_reward": "1:4.2",
+            "options_spec": "Buy $121.4 Call / Sell $144.6 Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
             "stage": "Stage 2 (Advancing)",
             "rsi": 64.5,
@@ -1310,9 +1310,9 @@
             "execution_checklist": [
               "Verify price action inside $121.43 \u2500\u2500 $123.39 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.78x ADV).",
-              "Place tight structural invalidation stop at $118.49 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($132.21, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($140.05, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $120.94 (-1.2% max risk).",
+              "Scale out 50% at Target 1 ($128.58, +5.0%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($144.56, +18.1%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -1344,12 +1344,12 @@
             "ideal_entry": 353.7799987792969,
             "stop_loss": 343.64,
             "stop_loss_pct": -2.9,
-            "target_primary": 379.13,
-            "target_primary_pct": 7.2,
-            "target_secondary": 399.41,
-            "target_secondary_pct": 12.9,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $350.9 Call / Sell $399.4 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "target_primary": 390.42,
+            "target_primary_pct": 10.4,
+            "target_secondary": 408.67,
+            "target_secondary_pct": 15.5,
+            "risk_reward": "1:3.6",
+            "options_spec": "Buy $350.9 Call / Sell $408.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
             "stage": "Stage 2 (Advancing)",
             "rsi": 43.5,
@@ -1362,8 +1362,8 @@
               "Verify price action inside $350.95 \u2500\u2500 $356.61 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 0.77x ADV).",
               "Place tight structural invalidation stop at $343.64 (-2.9% max risk).",
-              "Scale out 50% at Target 1 ($379.13, +7.2%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($399.41, +12.9%, 1:4.5 R:R) using 15m trailing stop."
+              "Scale out 50% at Target 1 ($390.42, +10.4%, 1:3.6 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($408.67, +15.5%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         },
@@ -1395,14 +1395,14 @@
               57.25
             ],
             "ideal_entry": 56.79999923706055,
-            "stop_loss": 54.98,
-            "stop_loss_pct": -3.2,
-            "target_primary": 61.35,
-            "target_primary_pct": 8.0,
-            "target_secondary": 64.99,
-            "target_secondary_pct": 14.4,
-            "risk_reward": "1:2.5",
-            "options_spec": "Buy $56.4 Call / Sell $65.0 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "stop_loss": 54.81,
+            "stop_loss_pct": -3.5,
+            "target_primary": 63.02,
+            "target_primary_pct": 11.0,
+            "target_secondary": 67.9,
+            "target_secondary_pct": 19.5,
+            "risk_reward": "1:3.1",
+            "options_spec": "Buy $56.4 Call / Sell $67.9 Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
             "stage": "Stage 2 (Advancing)",
             "rsi": 73.6,
@@ -1414,9 +1414,9 @@
             "execution_checklist": [
               "Verify price action inside $56.35 \u2500\u2500 $57.25 accumulation corridor.",
               "Ensure volume confirmation (current volume ratio 1.13x ADV).",
-              "Place tight structural invalidation stop at $54.98 (-3.2% max risk).",
-              "Scale out 50% at Target 1 ($61.35, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($64.99, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+              "Place tight structural invalidation stop at $54.81 (-3.5% max risk).",
+              "Scale out 50% at Target 1 ($63.02, +11.0%, 1:3.1 R:R) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($67.90, +19.5%, 1:4.5 R:R) using 15m trailing stop."
             ]
           }
         }
@@ -1454,14 +1454,14 @@
           42.73
         ],
         "ideal_entry": 42.38999938964844,
-        "stop_loss": 41.03,
-        "stop_loss_pct": -3.2,
-        "target_primary": 45.79,
-        "target_primary_pct": 8.0,
-        "target_secondary": 48.51,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $42.0 Call / Sell $48.5 Call (MA PULLBACK Vertical)",
+        "stop_loss": 41.15,
+        "stop_loss_pct": -2.9,
+        "target_primary": 45.73,
+        "target_primary_pct": 7.9,
+        "target_secondary": 48.95,
+        "target_secondary_pct": 15.5,
+        "risk_reward": "1:2.7",
+        "options_spec": "Buy $42.0 Call / Sell $49.0 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 59.6,
@@ -1473,9 +1473,9 @@
         "execution_checklist": [
           "Verify price action inside $42.05 \u2500\u2500 $42.73 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.83x ADV).",
-          "Place tight structural invalidation stop at $41.03 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($45.79, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($48.51, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $41.15 (-2.9% max risk).",
+          "Scale out 50% at Target 1 ($45.73, +7.9%, 1:2.7 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($48.95, +15.5%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1508,14 +1508,14 @@
           97.39
         ],
         "ideal_entry": 96.62000274658203,
-        "stop_loss": 94.72,
-        "stop_loss_pct": -2.0,
-        "target_primary": 101.37,
-        "target_primary_pct": 4.9,
-        "target_secondary": 109.48,
-        "target_secondary_pct": 13.3,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $95.8 Call / Sell $109.5 Call (MA PULLBACK Vertical)",
+        "stop_loss": 94.77,
+        "stop_loss_pct": -1.9,
+        "target_primary": 102.9,
+        "target_primary_pct": 6.5,
+        "target_secondary": 106.23,
+        "target_secondary_pct": 9.9,
+        "risk_reward": "1:3.4",
+        "options_spec": "Buy $95.8 Call / Sell $106.2 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 63.4,
@@ -1527,9 +1527,9 @@
         "execution_checklist": [
           "Verify price action inside $95.85 \u2500\u2500 $97.39 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.84x ADV).",
-          "Place tight structural invalidation stop at $94.72 (-2.0% max risk).",
-          "Scale out 50% at Target 1 ($101.37, +4.9%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($109.48, +13.3%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $94.77 (-1.9% max risk).",
+          "Scale out 50% at Target 1 ($102.90, +6.5%, 1:3.4 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($106.23, +9.9%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1562,14 +1562,14 @@
           10.49
         ],
         "ideal_entry": 10.40999984741211,
-        "stop_loss": 10.08,
-        "stop_loss_pct": -3.2,
-        "target_primary": 11.23,
-        "target_primary_pct": 7.9,
-        "target_secondary": 11.89,
-        "target_secondary_pct": 14.2,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $10.3 Call / Sell $11.9 Call (MA PULLBACK Vertical)",
+        "stop_loss": 10.05,
+        "stop_loss_pct": -3.5,
+        "target_primary": 11.81,
+        "target_primary_pct": 13.4,
+        "target_secondary": 13.74,
+        "target_secondary_pct": 32.0,
+        "risk_reward": "1:3.9",
+        "options_spec": "Buy $10.3 Call / Sell $13.7 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 80.3,
@@ -1581,9 +1581,9 @@
         "execution_checklist": [
           "Verify price action inside $10.33 \u2500\u2500 $10.49 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 11.97x ADV).",
-          "Place tight structural invalidation stop at $10.08 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($11.23, +7.9%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($11.89, +14.2%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $10.05 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($11.81, +13.4%, 1:3.9 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($13.74, +32.0%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1616,14 +1616,14 @@
           76.71
         ],
         "ideal_entry": 76.0999984741211,
-        "stop_loss": 73.66,
-        "stop_loss_pct": -3.2,
-        "target_primary": 82.2,
-        "target_primary_pct": 8.0,
-        "target_secondary": 87.08,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $75.5 Call / Sell $87.1 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "stop_loss": 73.44,
+        "stop_loss_pct": -3.5,
+        "target_primary": 87.27,
+        "target_primary_pct": 14.7,
+        "target_secondary": 96.34,
+        "target_secondary_pct": 26.6,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $75.5 Call / Sell $96.3 Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
         "stage": "Stage 2 (Advancing)",
         "rsi": 60.5,
@@ -1635,9 +1635,9 @@
         "execution_checklist": [
           "Verify price action inside $75.49 \u2500\u2500 $76.71 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.47x ADV).",
-          "Place tight structural invalidation stop at $73.66 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($82.20, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($87.08, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $73.44 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($87.27, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($96.34, +26.6%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1670,14 +1670,14 @@
           571.83
         ],
         "ideal_entry": 567.2899780273438,
-        "stop_loss": 549.14,
-        "stop_loss_pct": -3.2,
-        "target_primary": 612.66,
-        "target_primary_pct": 8.0,
-        "target_secondary": 648.96,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $562.8 Call / Sell $649.0 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "stop_loss": 547.43,
+        "stop_loss_pct": -3.5,
+        "target_primary": 650.7,
+        "target_primary_pct": 14.7,
+        "target_secondary": 720.69,
+        "target_secondary_pct": 27.0,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $562.8 Call / Sell $720.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
         "stage": "Stage 2 (Advancing)",
         "rsi": 71.2,
@@ -1689,9 +1689,9 @@
         "execution_checklist": [
           "Verify price action inside $562.75 \u2500\u2500 $571.83 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.63x ADV).",
-          "Place tight structural invalidation stop at $549.14 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($612.66, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($648.96, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $547.43 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($650.70, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($720.69, +27.0%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1724,14 +1724,14 @@
           62.59
         ],
         "ideal_entry": 62.09000015258789,
-        "stop_loss": 60.1,
-        "stop_loss_pct": -3.2,
-        "target_primary": 67.07,
-        "target_primary_pct": 8.0,
-        "target_secondary": 71.05,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $61.6 Call / Sell $71.0 Call (MA PULLBACK Vertical)",
+        "stop_loss": 59.92,
+        "stop_loss_pct": -3.5,
+        "target_primary": 67.91,
+        "target_primary_pct": 9.4,
+        "target_secondary": 76.13,
+        "target_secondary_pct": 22.6,
+        "risk_reward": "1:2.7",
+        "options_spec": "Buy $61.6 Call / Sell $76.1 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 63.7,
@@ -1743,9 +1743,9 @@
         "execution_checklist": [
           "Verify price action inside $61.59 \u2500\u2500 $62.59 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.66x ADV).",
-          "Place tight structural invalidation stop at $60.10 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($67.07, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($71.05, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $59.92 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($67.91, +9.4%, 1:2.7 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($76.13, +22.6%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1777,14 +1777,14 @@
           63.4
         ],
         "ideal_entry": 62.900001525878906,
-        "stop_loss": 60.89,
-        "stop_loss_pct": -3.2,
-        "target_primary": 67.93,
-        "target_primary_pct": 8.0,
-        "target_secondary": 71.95,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $62.4 Call / Sell $72.0 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "stop_loss": 60.7,
+        "stop_loss_pct": -3.5,
+        "target_primary": 68.85,
+        "target_primary_pct": 9.5,
+        "target_secondary": 73.53,
+        "target_secondary_pct": 16.9,
+        "risk_reward": "1:2.7",
+        "options_spec": "Buy $62.4 Call / Sell $73.5 Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
         "stage": "Stage 2 (Advancing)",
         "rsi": 59.9,
@@ -1796,9 +1796,9 @@
         "execution_checklist": [
           "Verify price action inside $62.40 \u2500\u2500 $63.40 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.73x ADV).",
-          "Place tight structural invalidation stop at $60.89 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($67.93, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($71.95, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $60.70 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($68.85, +9.5%, 1:2.7 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($73.53, +16.9%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1830,14 +1830,14 @@
           49.12
         ],
         "ideal_entry": 48.72999954223633,
-        "stop_loss": 47.17,
-        "stop_loss_pct": -3.2,
-        "target_primary": 52.68,
-        "target_primary_pct": 8.1,
-        "target_secondary": 55.75,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $48.3 Call / Sell $55.8 Call (MA PULLBACK Vertical)",
+        "stop_loss": 47.02,
+        "stop_loss_pct": -3.5,
+        "target_primary": 55.1,
+        "target_primary_pct": 13.1,
+        "target_secondary": 58.55,
+        "target_secondary_pct": 20.2,
+        "risk_reward": "1:3.7",
+        "options_spec": "Buy $48.3 Call / Sell $58.5 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 45.6,
@@ -1849,9 +1849,9 @@
         "execution_checklist": [
           "Verify price action inside $48.34 \u2500\u2500 $49.12 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.85x ADV).",
-          "Place tight structural invalidation stop at $47.17 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($52.68, +8.1%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($55.75, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $47.02 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($55.10, +13.1%, 1:3.7 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($58.55, +20.2%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1883,14 +1883,14 @@
           411.61
         ],
         "ideal_entry": 408.3399963378906,
-        "stop_loss": 395.27,
-        "stop_loss_pct": -3.2,
-        "target_primary": 441.01,
-        "target_primary_pct": 8.0,
-        "target_secondary": 467.15,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $405.1 Call / Sell $467.1 Call (MA PULLBACK Vertical)",
+        "stop_loss": 394.05,
+        "stop_loss_pct": -3.5,
+        "target_primary": 442.64,
+        "target_primary_pct": 8.4,
+        "target_secondary": 468.36,
+        "target_secondary_pct": 14.7,
+        "risk_reward": "1:2.4",
+        "options_spec": "Buy $405.1 Call / Sell $468.4 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 47.9,
@@ -1902,9 +1902,9 @@
         "execution_checklist": [
           "Verify price action inside $405.07 \u2500\u2500 $411.61 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.78x ADV).",
-          "Place tight structural invalidation stop at $395.27 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($441.01, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($467.15, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $394.05 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($442.64, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($468.36, +14.7%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1936,14 +1936,14 @@
           28.09
         ],
         "ideal_entry": 27.8700008392334,
-        "stop_loss": 26.98,
-        "stop_loss_pct": -3.2,
-        "target_primary": 30.1,
-        "target_primary_pct": 8.0,
-        "target_secondary": 31.88,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $27.6 Call / Sell $31.9 Call (MA PULLBACK Vertical)",
+        "stop_loss": 26.89,
+        "stop_loss_pct": -3.5,
+        "target_primary": 30.22,
+        "target_primary_pct": 8.4,
+        "target_secondary": 31.98,
+        "target_secondary_pct": 14.7,
+        "risk_reward": "1:2.4",
+        "options_spec": "Buy $27.6 Call / Sell $32.0 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 47.5,
@@ -1955,9 +1955,9 @@
         "execution_checklist": [
           "Verify price action inside $27.65 \u2500\u2500 $28.09 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.89x ADV).",
-          "Place tight structural invalidation stop at $26.98 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($30.10, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($31.88, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $26.89 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($30.22, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($31.98, +14.7%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -1989,14 +1989,14 @@
           30.5
         ],
         "ideal_entry": 30.260000228881836,
-        "stop_loss": 29.47,
-        "stop_loss_pct": -2.6,
-        "target_primary": 32.24,
-        "target_primary_pct": 6.5,
-        "target_secondary": 34.82,
-        "target_secondary_pct": 15.1,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $30.0 Call / Sell $34.8 Call (MA PULLBACK Vertical)",
+        "stop_loss": 29.54,
+        "stop_loss_pct": -2.4,
+        "target_primary": 33.27,
+        "target_primary_pct": 9.9,
+        "target_secondary": 35.59,
+        "target_secondary_pct": 17.6,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $30.0 Call / Sell $35.6 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 60.3,
@@ -2008,9 +2008,9 @@
         "execution_checklist": [
           "Verify price action inside $30.02 \u2500\u2500 $30.50 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.88x ADV).",
-          "Place tight structural invalidation stop at $29.47 (-2.6% max risk).",
-          "Scale out 50% at Target 1 ($32.24, +6.5%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($34.82, +15.1%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $29.54 (-2.4% max risk).",
+          "Scale out 50% at Target 1 ($33.27, +9.9%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($35.59, +17.6%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2042,14 +2042,14 @@
           38.4
         ],
         "ideal_entry": 38.099998474121094,
-        "stop_loss": 37.3,
+        "stop_loss": 37.31,
         "stop_loss_pct": -2.1,
-        "target_primary": 40.1,
-        "target_primary_pct": 5.2,
-        "target_secondary": 43.31,
-        "target_secondary_pct": 13.7,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $37.8 Call / Sell $43.3 Call (MA PULLBACK Vertical)",
+        "target_primary": 41.1,
+        "target_primary_pct": 7.9,
+        "target_secondary": 44.28,
+        "target_secondary_pct": 16.2,
+        "risk_reward": "1:3.8",
+        "options_spec": "Buy $37.8 Call / Sell $44.3 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 56.5,
@@ -2061,9 +2061,9 @@
         "execution_checklist": [
           "Verify price action inside $37.80 \u2500\u2500 $38.40 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.99x ADV).",
-          "Place tight structural invalidation stop at $37.30 (-2.1% max risk).",
-          "Scale out 50% at Target 1 ($40.10, +5.2%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($43.31, +13.7%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $37.31 (-2.1% max risk).",
+          "Scale out 50% at Target 1 ($41.10, +7.9%, 1:3.8 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($44.28, +16.2%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2093,14 +2093,14 @@
           123.39
         ],
         "ideal_entry": 122.41000366210938,
-        "stop_loss": 118.49,
-        "stop_loss_pct": -3.2,
-        "target_primary": 132.21,
-        "target_primary_pct": 8.0,
-        "target_secondary": 140.05,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $121.4 Call / Sell $140.1 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "stop_loss": 120.94,
+        "stop_loss_pct": -1.2,
+        "target_primary": 128.58,
+        "target_primary_pct": 5.0,
+        "target_secondary": 144.56,
+        "target_secondary_pct": 18.1,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $121.4 Call / Sell $144.6 Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
         "stage": "Stage 2 (Advancing)",
         "rsi": 64.5,
@@ -2112,9 +2112,9 @@
         "execution_checklist": [
           "Verify price action inside $121.43 \u2500\u2500 $123.39 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.78x ADV).",
-          "Place tight structural invalidation stop at $118.49 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($132.21, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($140.05, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $120.94 (-1.2% max risk).",
+          "Scale out 50% at Target 1 ($128.58, +5.0%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($144.56, +18.1%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2144,14 +2144,14 @@
           55.99
         ],
         "ideal_entry": 55.54999923706055,
-        "stop_loss": 53.77,
-        "stop_loss_pct": -3.2,
-        "target_primary": 60.0,
-        "target_primary_pct": 8.0,
-        "target_secondary": 63.56,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $55.1 Call / Sell $63.6 Call (MA PULLBACK Vertical)",
+        "stop_loss": 53.61,
+        "stop_loss_pct": -3.5,
+        "target_primary": 60.21,
+        "target_primary_pct": 8.4,
+        "target_secondary": 63.7,
+        "target_secondary_pct": 14.7,
+        "risk_reward": "1:2.4",
+        "options_spec": "Buy $55.1 Call / Sell $63.7 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
         "stage": "Stage 2 (Advancing)",
         "rsi": 69.0,
@@ -2163,9 +2163,9 @@
         "execution_checklist": [
           "Verify price action inside $55.11 \u2500\u2500 $55.99 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.84x ADV).",
-          "Place tight structural invalidation stop at $53.77 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($60.00, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($63.56, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $53.61 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($60.21, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($63.70, +14.7%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2197,12 +2197,12 @@
         "ideal_entry": 353.7799987792969,
         "stop_loss": 343.64,
         "stop_loss_pct": -2.9,
-        "target_primary": 379.13,
-        "target_primary_pct": 7.2,
-        "target_secondary": 399.41,
-        "target_secondary_pct": 12.9,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $350.9 Call / Sell $399.4 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "target_primary": 390.42,
+        "target_primary_pct": 10.4,
+        "target_secondary": 408.67,
+        "target_secondary_pct": 15.5,
+        "risk_reward": "1:3.6",
+        "options_spec": "Buy $350.9 Call / Sell $408.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
         "stage": "Stage 2 (Advancing)",
         "rsi": 43.5,
@@ -2215,8 +2215,8 @@
           "Verify price action inside $350.95 \u2500\u2500 $356.61 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 0.77x ADV).",
           "Place tight structural invalidation stop at $343.64 (-2.9% max risk).",
-          "Scale out 50% at Target 1 ($379.13, +7.2%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($399.41, +12.9%, 1:4.5 R:R) using 15m trailing stop."
+          "Scale out 50% at Target 1 ($390.42, +10.4%, 1:3.6 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($408.67, +15.5%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2248,14 +2248,14 @@
           35.76
         ],
         "ideal_entry": 35.47999954223633,
-        "stop_loss": 34.34,
-        "stop_loss_pct": -3.2,
-        "target_primary": 38.33,
-        "target_primary_pct": 8.0,
-        "target_secondary": 40.61,
-        "target_secondary_pct": 14.5,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $35.2 Call / Sell $40.6 Call (ALPHA BREAKOUT Vertical)",
+        "stop_loss": 34.24,
+        "stop_loss_pct": -3.5,
+        "target_primary": 40.69,
+        "target_primary_pct": 14.7,
+        "target_secondary": 45.99,
+        "target_secondary_pct": 29.6,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $35.2 Call / Sell $46.0 Call (ALPHA BREAKOUT Vertical)",
         "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
         "stage": "Stage 2 (Advancing)",
         "rsi": 71.5,
@@ -2267,9 +2267,9 @@
         "execution_checklist": [
           "Verify price action inside $35.20 \u2500\u2500 $35.76 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.69x ADV).",
-          "Place tight structural invalidation stop at $34.34 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($38.33, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($40.61, +14.5%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $34.24 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($40.69, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($45.99, +29.6%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2301,14 +2301,14 @@
           117.58
         ],
         "ideal_entry": 116.6500015258789,
-        "stop_loss": 112.92,
-        "stop_loss_pct": -3.2,
-        "target_primary": 125.98,
-        "target_primary_pct": 8.0,
-        "target_secondary": 133.44,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $115.7 Call / Sell $133.4 Call (ALPHA BREAKOUT Vertical)",
+        "stop_loss": 112.57,
+        "stop_loss_pct": -3.5,
+        "target_primary": 133.79,
+        "target_primary_pct": 14.7,
+        "target_secondary": 149.18,
+        "target_secondary_pct": 27.9,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $115.7 Call / Sell $149.2 Call (ALPHA BREAKOUT Vertical)",
         "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
         "stage": "Stage 2 (Advancing)",
         "rsi": 89.2,
@@ -2320,9 +2320,9 @@
         "execution_checklist": [
           "Verify price action inside $115.72 \u2500\u2500 $117.58 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 2.01x ADV).",
-          "Place tight structural invalidation stop at $112.92 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($125.98, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($133.44, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $112.57 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($133.79, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($149.18, +27.9%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2354,14 +2354,14 @@
           40.42
         ],
         "ideal_entry": 40.099998474121094,
-        "stop_loss": 38.82,
-        "stop_loss_pct": -3.2,
-        "target_primary": 43.3,
-        "target_primary_pct": 8.0,
-        "target_secondary": 45.86,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $39.8 Call / Sell $45.9 Call (SQUEEZE / GAMMA Vertical)",
+        "stop_loss": 38.7,
+        "stop_loss_pct": -3.5,
+        "target_primary": 45.98,
+        "target_primary_pct": 14.7,
+        "target_secondary": 51.86,
+        "target_secondary_pct": 29.3,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $39.8 Call / Sell $51.9 Call (SQUEEZE / GAMMA Vertical)",
         "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
         "stage": "Stage 2 (Advancing)",
         "rsi": 57.6,
@@ -2373,9 +2373,9 @@
         "execution_checklist": [
           "Verify price action inside $39.78 \u2500\u2500 $40.42 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.16x ADV).",
-          "Place tight structural invalidation stop at $38.82 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($43.30, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($45.86, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $38.70 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($45.98, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($51.86, +29.3%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2405,14 +2405,14 @@
           43.99
         ],
         "ideal_entry": 43.63999938964844,
-        "stop_loss": 42.24,
-        "stop_loss_pct": -3.2,
-        "target_primary": 47.14,
-        "target_primary_pct": 8.0,
-        "target_secondary": 49.94,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $43.3 Call / Sell $49.9 Call (ALPHA BREAKOUT Vertical)",
+        "stop_loss": 42.72,
+        "stop_loss_pct": -2.1,
+        "target_primary": 47.5,
+        "target_primary_pct": 8.8,
+        "target_secondary": 53.62,
+        "target_secondary_pct": 22.9,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $43.3 Call / Sell $53.6 Call (ALPHA BREAKOUT Vertical)",
         "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
         "stage": "Stage 2 (Advancing)",
         "rsi": 84.9,
@@ -2424,9 +2424,9 @@
         "execution_checklist": [
           "Verify price action inside $43.29 \u2500\u2500 $43.99 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 2.12x ADV).",
-          "Place tight structural invalidation stop at $42.24 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($47.14, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($49.94, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $42.72 (-2.1% max risk).",
+          "Scale out 50% at Target 1 ($47.50, +8.8%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($53.62, +22.9%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2458,14 +2458,14 @@
           393.54
         ],
         "ideal_entry": 390.4200134277344,
-        "stop_loss": 378.55,
-        "stop_loss_pct": -3.0,
-        "target_primary": 420.1,
-        "target_primary_pct": 7.6,
-        "target_secondary": 443.84,
-        "target_secondary_pct": 13.7,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $387.3 Call / Sell $443.8 Call (ALPHA BREAKOUT Vertical)",
+        "stop_loss": 381.11,
+        "stop_loss_pct": -2.4,
+        "target_primary": 429.52,
+        "target_primary_pct": 10.0,
+        "target_secondary": 463.52,
+        "target_secondary_pct": 18.7,
+        "risk_reward": "1:4.2",
+        "options_spec": "Buy $387.3 Call / Sell $463.5 Call (ALPHA BREAKOUT Vertical)",
         "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
         "stage": "Stage 2 (Advancing)",
         "rsi": 80.4,
@@ -2477,9 +2477,9 @@
         "execution_checklist": [
           "Verify price action inside $387.30 \u2500\u2500 $393.54 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.25x ADV).",
-          "Place tight structural invalidation stop at $378.55 (-3.0% max risk).",
-          "Scale out 50% at Target 1 ($420.10, +7.6%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($443.84, +13.7%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $381.11 (-2.4% max risk).",
+          "Scale out 50% at Target 1 ($429.52, +10.0%, 1:4.2 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($463.52, +18.7%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     },
@@ -2511,14 +2511,14 @@
           57.25
         ],
         "ideal_entry": 56.79999923706055,
-        "stop_loss": 54.98,
-        "stop_loss_pct": -3.2,
-        "target_primary": 61.35,
-        "target_primary_pct": 8.0,
-        "target_secondary": 64.99,
-        "target_secondary_pct": 14.4,
-        "risk_reward": "1:2.5",
-        "options_spec": "Buy $56.4 Call / Sell $65.0 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "stop_loss": 54.81,
+        "stop_loss_pct": -3.5,
+        "target_primary": 63.02,
+        "target_primary_pct": 11.0,
+        "target_secondary": 67.9,
+        "target_secondary_pct": 19.5,
+        "risk_reward": "1:3.1",
+        "options_spec": "Buy $56.4 Call / Sell $67.9 Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
         "stage": "Stage 2 (Advancing)",
         "rsi": 73.6,
@@ -2530,9 +2530,9 @@
         "execution_checklist": [
           "Verify price action inside $56.35 \u2500\u2500 $57.25 accumulation corridor.",
           "Ensure volume confirmation (current volume ratio 1.13x ADV).",
-          "Place tight structural invalidation stop at $54.98 (-3.2% max risk).",
-          "Scale out 50% at Target 1 ($61.35, +8.0%, 1:2.5 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($64.99, +14.4%, 1:4.5 R:R) using 15m trailing stop."
+          "Place tight structural invalidation stop at $54.81 (-3.5% max risk).",
+          "Scale out 50% at Target 1 ($63.02, +11.0%, 1:3.1 R:R) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($67.90, +19.5%, 1:4.5 R:R) using 15m trailing stop."
         ]
       }
     }
