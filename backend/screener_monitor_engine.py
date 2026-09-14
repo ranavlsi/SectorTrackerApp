@@ -275,12 +275,12 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
             status_label = f"⏳ PENDING PIVOT ({dist_to_pivot}%)"
             color = 'amber'
 
-        # Trigger alerts on fresh breakout or target hit
-        if prev_status != status and status in ('TRIGGERED', 'TARGET_HIT'):
+        # Trigger alerts on fresh breakout, target achievement, or stop out
+        if prev_status != status and status in ('TRIGGERED', 'TARGET_HIT', 'TARGET_2_HIT', 'STOPPED_OUT'):
             new_alerts.append({
                 'ticker': t,
                 'status': status,
-                'msg': f"🎯 SCREENER ALERT: ${t} {status_label}! Current: ${price:.2f} ({gain_pct:+.1f}% from alert). Setup: {screeners[0]}."
+                'msg': f"🎯 SCREENER MONITOR: ${t} {status_label}! Current: ${price:.2f} ({gain_pct:+.1f}% from alert). Setup: {screeners[0]}."
             })
 
         # Target 1 Progress Percentage (0 - 100%)
@@ -313,7 +313,7 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
 
     # Dispatch alerts
     for a in new_alerts:
-        broadcast_screener_alert(a['ticker'], a['msg'])
+        broadcast_screener_alert(a['ticker'], a['msg'], a['status'])
 
     # Save to disk
     try:
@@ -329,8 +329,8 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
     return build_monitor_payload(existing_state)
 
 
-def broadcast_screener_alert(ticker: str, message: str):
-    """Logs to alerts.json and optionally sends to Telegram."""
+def broadcast_screener_alert(ticker: str, message: str, status: str = 'TRIGGERED'):
+    """Logs to alerts.json and posts directly to the live server webhook for Telegram and SSE stream."""
     if os.path.exists(ALERTS_FILE):
         try:
             with open(ALERTS_FILE, 'r') as f:
@@ -343,6 +343,7 @@ def broadcast_screener_alert(ticker: str, message: str):
     alerts.insert(0, {
         'ticker': ticker,
         'message': message,
+        'status': status,
         'timestamp': datetime.now().isoformat()
     })
     alerts = alerts[:50]
@@ -351,6 +352,23 @@ def broadcast_screener_alert(ticker: str, message: str):
             json.dump(alerts, f)
     except Exception:
         pass
+
+    # Post to Flask webhook for live React stream & Telegram dispatch
+    try:
+        import requests
+        color = "#00E676" if status in ("TRIGGERED", "TARGET_HIT", "TARGET_2_HIT") else "#f43f5e"
+        payload = {
+            "council": "🎯 SCREENER MONITOR",
+            "ticker": ticker,
+            "setup": message,
+            "color": color,
+            "status": status,
+            "send_telegram": True,
+            "source": "screener_monitor"
+        }
+        requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=2)
+    except Exception as e:
+        logger.debug(f"Webhook alert post skipped: {e}")
 
 
 def build_monitor_payload(monitored_dict: Dict[str, Any]) -> Dict[str, Any]:

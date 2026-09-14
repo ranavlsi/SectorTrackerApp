@@ -35,6 +35,120 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 telegram_queue = queue.Queue()
 
+# ==============================================================================
+# SCREENER MONITOR FIRST DISPATCH GATEKEEPER
+# ==============================================================================
+_monitored_tickers_cache = set()
+_monitored_tickers_last_loaded = 0
+
+def get_screener_monitored_tickers():
+    """Returns the set of all tickers actively monitored or discovered by expert screeners."""
+    global _monitored_tickers_cache, _monitored_tickers_last_loaded
+    now = time.time()
+    if now - _monitored_tickers_last_loaded < 60 and _monitored_tickers_cache:
+        return _monitored_tickers_cache
+
+    tickers = set()
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # 1. From screener_monitor.json
+    monitor_file = os.path.join(base_dir, 'backend', 'data', 'screener_monitor.json')
+    if os.path.exists(monitor_file):
+        try:
+            with open(monitor_file, 'r') as f:
+                d = json.load(f)
+                tickers.update([k.upper().strip() for k in d.get('monitored_stocks', {}).keys()])
+        except Exception:
+            pass
+
+    # 2. From rolling_watch.json
+    rolling_file = os.path.join(base_dir, 'backend', 'data', 'rolling_watch.json')
+    if os.path.exists(rolling_file):
+        try:
+            with open(rolling_file, 'r') as f:
+                d = json.load(f)
+                tickers.update([k.upper().strip() for k in d.keys()])
+        except Exception:
+            pass
+
+    # 3. From screener_results.json (all 39 expert screeners)
+    expert_file = os.path.join(base_dir, 'public', 'screener_results.json')
+    if os.path.exists(expert_file):
+        try:
+            with open(expert_file, 'r') as f:
+                d = json.load(f)
+                for cat, items in d.items():
+                    for it in items:
+                        t = it.get('ticker')
+                        if t: tickers.add(t.upper().strip())
+        except Exception:
+            pass
+
+    # 4. From rs_scanner_results.json
+    rs_file = os.path.join(base_dir, 'public', 'rs_scanner_results.json')
+    if os.path.exists(rs_file):
+        try:
+            with open(rs_file, 'r') as f:
+                d = json.load(f)
+                for it in d.get('results', []):
+                    t = it.get('ticker')
+                    if t: tickers.add(t.upper().strip())
+        except Exception:
+            pass
+
+    # 5. From squeeze_results.json
+    sq_file = os.path.join(base_dir, 'public', 'squeeze_results.json')
+    if os.path.exists(sq_file):
+        try:
+            with open(sq_file, 'r') as f:
+                d = json.load(f)
+                for cat, items in d.items():
+                    for it in items:
+                        t = it.get('ticker')
+                        if t: tickers.add(t.upper().strip())
+        except Exception:
+            pass
+
+    _monitored_tickers_cache = tickers
+    _monitored_tickers_last_loaded = now
+    return tickers
+
+def is_screener_monitored_ticker(ticker: str) -> bool:
+    if not ticker:
+        return False
+    return ticker.upper().strip() in get_screener_monitored_tickers()
+
+def should_dispatch_alert(alert: dict) -> bool:
+    """
+    Strict Screener-First Gatekeeper:
+    1. Premarket Morning Briefing is ALWAYS permitted (delivered first before market open).
+    2. Once market open: ONLY alerts originating from the Screener Monitor OR for stocks 
+       actively monitored by the Screener Monitor are allowed.
+    3. All unmonitored noisy ticker alerts are strictly suppressed.
+    """
+    if not alert or not isinstance(alert, dict):
+        return False
+
+    alert_type = alert.get("type", "")
+    council = alert.get("council", "")
+    source = alert.get("source", "")
+    ticker = (alert.get("ticker") or "").upper().strip()
+
+    # 1. Premarket Briefing always permitted
+    if alert_type == "PREMARKET_BRIEFING" or "PREMARKET" in council:
+        return True
+
+    # 2. Alerts originating from the Screener Monitor always permitted
+    if source == "screener_monitor" or "SCREENER MONITOR" in council or "MASTER 30-DAY RADAR" in council:
+        return True
+
+    # 3. For any ticker-based alert, ensure ticker is monitored by the Screener Monitor
+    if ticker and ticker not in ("MARKET", "UNKNOWN", "MACRO"):
+        if is_screener_monitored_ticker(ticker):
+            return True
+
+    return False
+
 def telegram_worker():
     while True:
         alert = telegram_queue.get()
@@ -51,20 +165,24 @@ def telegram_worker():
             ticker = alert.get("ticker", "").replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             setup = alert.get("setup", "").replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             
-            msg = f"<b>{council}</b>\n\n🚨 {ticker}: {setup}"
+            # Format message based on alert type
+            if alert.get("type") == "PREMARKET_BRIEFING" or "PREMARKET" in council:
+                msg = f"🌅 <b>MORNING PREMARKET BRIEFING</b>\n\n{setup}"
+                if alert.get("payload", {}).get("top_movers"):
+                    msg += "\n\n🚀 <b>TOP MOVERS</b>"
+                    for m in alert.get("payload", {}).get("top_movers", []):
+                        r = m['reason'].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                        msg += f"\n• {m['ticker']} ({m['change']}): {r}"
+                        
+                    msg += "\n\n📰 <b>MACRO NEWS</b>"
+                    for m in alert.get("payload", {}).get("macro_news", []):
+                        n = m.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                        msg += f"\n• {n}"
+            elif "SCREENER MONITOR" in council or alert.get("source") == "screener_monitor":
+                msg = f"🎯 <b>SCREENER MONITOR SURVEILLANCE</b>\n\n🚨 {ticker}: {setup}"
+            else:
+                msg = f"<b>{council}</b>\n\n🚨 {ticker}: {setup}"
             
-            # Expand full payload for massive alerts like the Morning Briefing
-            if alert.get("type") == "PREMARKET_BRIEFING":
-                msg += "\n\n🚀 <b>TOP MOVERS</b>"
-                for m in alert.get("payload", {}).get("top_movers", []):
-                    r = m['reason'].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                    msg += f"\n• {m['ticker']} ({m['change']}): {r}"
-                    
-                msg += "\n\n📰 <b>MACRO NEWS</b>"
-                for m in alert.get("payload", {}).get("macro_news", []):
-                    n = m.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                    msg += f"\n• {n}"
-                    
             url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
             chat_ids = [cid.strip() for cid in TELEGRAM_CHAT_ID.split(',')]
             
@@ -80,7 +198,6 @@ def telegram_worker():
                     retry_after = response.json().get("parameters", {}).get("retry_after", 5)
                     print(f"⚠️ Telegram Rate Limit Hit! Sleeping for {retry_after} seconds...")
                     time.sleep(retry_after + 1)
-                    # Retry once synchronously for this specific user to avoid queue duplication
                     requests.post(url, json={
                         "chat_id": cid,
                         "text": msg,
@@ -101,8 +218,9 @@ def telegram_worker():
 threading.Thread(target=telegram_worker, daemon=True).start()
 
 def send_telegram_alert(alert):
-    """Adds a formatted markdown alert to the Telegram queue."""
-    telegram_queue.put(alert)
+    """Adds an alert to the Telegram queue only if it passes the screener-first gatekeeper."""
+    if should_dispatch_alert(alert):
+        telegram_queue.put(alert)
 
 warnings.filterwarnings('ignore')
 
@@ -1948,9 +2066,15 @@ def webhook_alert():
             "council": data.get("council", "🎯 INTRADAY EXPERT"),
             "ticker": data.get("ticker", "UNKNOWN"),
             "setup": data.get("setup", "Triggered Setup"),
-            "color": data.get("color", "#f59e0b"), # Default amber for execution
-            "timestamp": datetime.now().strftime("%I:%M:%S %p")
+            "color": data.get("color", "#f59e0b"),
+            "timestamp": datetime.now().strftime("%I:%M:%S %p"),
+            "source": data.get("source", ""),
+            "type": data.get("type", "")
         }
+        
+        # Strict Screener-First Gatekeeper: Drop any unmonitored ticker alert
+        if not should_dispatch_alert(alert):
+            return jsonify({"status": "suppressed", "message": f"Alert for {alert.get('ticker')} suppressed: not monitored by Screener Monitor"}), 200
         
         # Optionally send to Telegram as well
         if data.get("send_telegram"):
@@ -1958,6 +2082,19 @@ def webhook_alert():
             
         alert_queue.put(alert)
         return jsonify({"status": "success", "message": "Alert injected into stream"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/trigger_premarket', methods=['POST', 'GET'])
+def trigger_premarket_api():
+    """Manually triggers the Premarket Briefing morning alert for testing / on-demand dispatch."""
+    try:
+        import sys
+        if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+            sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+        from premarket_gappers import fetch_premarket_briefing
+        threading.Thread(target=fetch_premarket_briefing, daemon=True).start()
+        return jsonify({"status": "success", "message": "Premarket Briefing dispatch triggered."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -2182,7 +2319,38 @@ def expert_screener_worker():
         except Exception as e:
             print(f"Expert Screener Worker Error: {e}")
             
-        time.sleep(60) # Check every minute
+@app.route('/api/ai_playbook', methods=['GET'])
+def get_ai_playbook_api():
+    """Returns the latest institutional AI Playbook payload."""
+    playbook_json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'ai_playbook.json')
+    if os.path.exists(playbook_json_path):
+        try:
+            with open(playbook_json_path, 'r') as f:
+                return jsonify(json.load(f)), 200
+        except Exception as e:
+            return jsonify({"error": f"Failed reading playbook JSON: {e}"}), 500
+    try:
+        import sys
+        if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+            sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+        from playbook_generator import generate_ai_playbook
+        data = generate_ai_playbook()
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/run_ai_playbook', methods=['POST'])
+def run_ai_playbook_api():
+    """Triggers real-time re-generation of the AI Playbook."""
+    try:
+        import sys
+        if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+            sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+        from playbook_generator import generate_ai_playbook
+        data = generate_ai_playbook()
+        return jsonify({"status": "success", "message": "AI Playbook re-generated successfully", "data": data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/run_rs_scanner', methods=['POST'])
 def run_rs_scanner_api():
@@ -2275,12 +2443,47 @@ def get_personality():
         print(f"Error calculating personality for {ticker}: {e}")
         return jsonify({"error": str(e)}), 500
 
+def screener_monitor_worker():
+    """Continuously evaluates monitored screener stocks during market hours."""
+    import sys
+    if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+        sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+    try:
+        from screener_monitor_engine import update_screener_monitor
+        print("🛰️ Screener Monitor Lifecycle Surveillance Worker active.")
+        while True:
+            try:
+                if is_market_open():
+                    update_screener_monitor(force_refresh=True)
+                    time.sleep(60)
+                else:
+                    time.sleep(300)
+            except Exception as err:
+                print(f"Screener Monitor Worker loop error: {err}")
+                time.sleep(60)
+    except Exception as e:
+        print(f"Could not initialize screener_monitor_worker: {e}")
+
+def expert_monitor_agent_worker():
+    """Runs the 1-minute intraday VWAP / ORB / HOD radar on screener candidates."""
+    try:
+        import sys
+        if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+            sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+        from expert_monitor_agent import monitor_loop
+        print("🎯 Expert Monitor Agent Worker active.")
+        monitor_loop()
+    except Exception as e:
+        print(f"Expert Monitor Agent Error: {e}")
+
 if __name__ == '__main__':
     # Start autonomous councils in background threads
     # threading.Thread(target=technical_council_worker, daemon=True).start() # Replaced by live Intraday Engine
     threading.Thread(target=insider_council_worker, daemon=True).start()
     threading.Thread(target=darkpool_council_worker, daemon=True).start()
     threading.Thread(target=premarket_council_worker, daemon=True).start()
+    threading.Thread(target=screener_monitor_worker, daemon=True).start()
+    threading.Thread(target=expert_monitor_agent_worker, daemon=True).start()
     threading.Thread(target=synergy_council_worker, daemon=True).start()
     threading.Thread(target=tradingview_sync_worker, daemon=True).start()
     threading.Thread(target=market_health_worker, daemon=True).start()

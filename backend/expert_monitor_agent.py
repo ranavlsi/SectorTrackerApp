@@ -78,11 +78,12 @@ def get_target_tickers():
 
 def send_alert(ticker, setup_name, color="#f59e0b"):
     payload = {
-        "council": "🎯 MASTER 30-DAY RADAR",
+        "council": "🎯 SCREENER MONITOR",
         "ticker": ticker,
         "setup": setup_name,
         "color": color,
-        "send_telegram": True
+        "send_telegram": True,
+        "source": "screener_monitor"
     }
     try:
         requests.post(WEBHOOK_URL, json=payload, timeout=5)

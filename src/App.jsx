@@ -21,6 +21,7 @@ import { StockPersonalityBadge, RossHaberPersonalityPanel } from './StockPersona
 import WeeklyPlaybookDashboard from './WeeklyPlaybookDashboard';
 import SeasonalityRadarDashboard from './SeasonalityRadarDashboard';
 import MacroMatrixDashboard from './MacroMatrixDashboard';
+import AiPlaybookDashboard from './AiPlaybookDashboard';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -761,11 +762,36 @@ function App() {
               fetchTickerData('SPY');
             }
           }}><BarChart2 size={18} /> Deep Charting</button>
+          <button 
+            className={activeTab === 'agents' ? 'tab-active' : ''} 
+            onClick={() => setActiveTab('agents')}
+            style={{
+              background: activeTab === 'agents' ? undefined : 'rgba(0, 240, 255, 0.08)',
+              borderLeft: activeTab === 'agents' ? undefined : '3px solid #00F0FF',
+              color: activeTab === 'agents' ? undefined : '#00F0FF',
+              fontWeight: 700
+            }}
+          >
+            <Bot size={18} color="#00F0FF" /> AI Market Agents 🤖
+          </button>
           <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
           <button className={activeTab === 'screenermonitor' ? 'tab-active' : ''} onClick={() => setActiveTab('screenermonitor')}><Target size={18} /> Screener Monitor 🎯</button>
+          <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
           <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
           <button className={activeTab === 'playbook' ? 'tab-active' : ''} onClick={() => setActiveTab('playbook')}><BookOpen size={18} /> Weekly Playbook</button>
-          <div style={{ marginTop: '2rem', padding: '0 10px' }}>
+          <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
+          <button className={activeTab === 'seasonality' ? 'tab-active' : ''} onClick={() => setActiveTab('seasonality')}><Compass size={18} /> Seasonality Radar</button>
+          <button className={activeTab === 'intraday' ? 'tab-active' : ''} onClick={fetchIntradayAlerts}><Radio size={18} /> Intraday Radar</button>
+          <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
+          <button className={activeTab === 'rslinescanner' ? 'tab-active' : ''} onClick={() => setActiveTab('rslinescanner')}><Star size={18} /> RS Line Scanner</button>
+          <button className={activeTab === 'volsurface' ? 'tab-active' : ''} onClick={() => setActiveTab('volsurface')}><Activity size={18} /> 3D Vol Surface</button>
+          <button className={activeTab === 'earnings' ? 'tab-active' : ''} onClick={() => setActiveTab('earnings')}><User size={18} /> AI Earnings</button>
+          <button className={activeTab === 'zacks' ? 'tab-active' : ''} onClick={() => setActiveTab('zacks')}><BookOpen size={18} /> Zacks Fundamentals</button>
+          <button className={activeTab === 'deepfundamentals' ? 'tab-active' : ''} onClick={() => setActiveTab('deepfundamentals')}><PieChartIcon size={18} /> Deep Fundamentals</button>
+          <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
+          <button className={activeTab === 'tvsync' ? 'tab-active' : ''} onClick={() => setActiveTab('tvsync')}><Link size={18} /> TradingView Sync</button>
+          <button className={activeTab === 'ask_ai' ? 'tab-active' : ''} onClick={() => setActiveTab('ask_ai')}><Bot size={18} /> Ask AI (Live)</button>
+          <div style={{ marginTop: '1.25rem', padding: '0 10px', paddingBottom: '1rem' }}>
             <button 
               className="trade-button" 
               onClick={() => {
@@ -777,20 +803,6 @@ function App() {
               <RefreshCw size={16} /> Sync Lakehouse
             </button>
           </div>
-          <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
-          <button className={activeTab === 'seasonality' ? 'tab-active' : ''} onClick={() => setActiveTab('seasonality')}><Compass size={18} /> Seasonality Radar</button>
-          <button className={activeTab === 'intraday' ? 'tab-active' : ''} onClick={fetchIntradayAlerts}><Radio size={18} /> Intraday Radar</button>
-          <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
-          <button className={activeTab === 'rslinescanner' ? 'tab-active' : ''} onClick={() => setActiveTab('rslinescanner')}><Star size={18} /> RS Line Scanner</button>
-          <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
-          <button className={activeTab === 'volsurface' ? 'tab-active' : ''} onClick={() => setActiveTab('volsurface')}><Activity size={18} /> 3D Vol Surface</button>
-          <button className={activeTab === 'earnings' ? 'tab-active' : ''} onClick={() => setActiveTab('earnings')}><User size={18} /> AI Earnings</button>
-          <button className={activeTab === 'zacks' ? 'tab-active' : ''} onClick={() => setActiveTab('zacks')}><BookOpen size={18} /> Zacks Fundamentals</button>
-          <button className={activeTab === 'deepfundamentals' ? 'tab-active' : ''} onClick={() => setActiveTab('deepfundamentals')}><PieChartIcon size={18} /> Deep Fundamentals</button>
-          <button className={activeTab === 'agents' ? 'tab-active' : ''} onClick={() => setActiveTab('agents')}><Search size={18} /> AI Market Agents</button>
-          <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
-          <button className={activeTab === 'tvsync' ? 'tab-active' : ''} onClick={() => setActiveTab('tvsync')}><Link size={18} /> TradingView Sync</button>
-          <button className={activeTab === 'ask_ai' ? 'tab-active' : ''} onClick={() => setActiveTab('ask_ai')}><Bot size={18} /> Ask AI (Live)</button>
         </div>
       </div>
 
@@ -983,9 +995,7 @@ function App() {
       )}
 
       {activeTab === 'analysis' && (
-        <div className="glass-card analysis-container" style={{ padding: '2rem' }}>
-          <ReactMarkdown>{playbookContent}</ReactMarkdown>
-        </div>
+        <AiPlaybookDashboard onTickerClick={fetchTickerData} />
       )}
 
       {activeTab === 'squeeze' && squeezeData && (
