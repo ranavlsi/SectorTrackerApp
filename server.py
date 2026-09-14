@@ -390,6 +390,32 @@ def chat():
             "suggested_prompts": ["Analyze $NVDA", "Show Top Setups", "Check Market Health"]
         })
 
+def solve_bs_iv(price, S, K, T, r=0.045, is_call=True):
+    if price is None or price <= 0 or S <= 0 or K <= 0 or T <= 0:
+        return None
+    from scipy.stats import norm
+    intrinsic = max(0.0, (S - K) if is_call else (K - S))
+    if price < intrinsic:
+        price = intrinsic + 0.01
+    low_sig = 0.05
+    high_sig = 4.0
+    for _ in range(25):
+        mid_sig = (low_sig + high_sig) / 2.0
+        d1 = (math.log(S / K) + (r + 0.5 * mid_sig ** 2) * T) / (mid_sig * math.sqrt(T))
+        d2 = d1 - mid_sig * math.sqrt(T)
+        if is_call:
+            theo = S * norm.cdf(d1) - K * math.exp(-r * T) * norm.cdf(d2)
+        else:
+            theo = K * math.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+        diff = theo - price
+        if abs(diff) < 0.005:
+            return mid_sig
+        if diff > 0:
+            high_sig = mid_sig
+        else:
+            low_sig = mid_sig
+    return mid_sig
+
 @app.route('/api/volatility_surface')
 def get_vol_surface():
     ticker = request.args.get('ticker')
@@ -431,6 +457,7 @@ def get_vol_surface():
                 dte = max(1, (exp_date - today).days)
             except Exception:
                 dte = 30
+            T = dte / 365.25
                 
             try:
                 chain = t.option_chain(expiry)
@@ -451,6 +478,7 @@ def get_vol_surface():
                 
             atm_strike = min(all_strikes, key=lambda s: abs(s - spot))
             exp_atm_iv = 0.0
+            pts_this_exp = []
             
             for st in all_strikes:
                 call_row = calls_f[calls_f['strike'] == st]
@@ -458,6 +486,16 @@ def get_vol_surface():
                 
                 c_iv = float(call_row['impliedVolatility'].iloc[0]) if not call_row.empty and pd.notna(call_row['impliedVolatility'].iloc[0]) and call_row['impliedVolatility'].iloc[0] > 0 else None
                 p_iv = float(put_row['impliedVolatility'].iloc[0]) if not put_row.empty and pd.notna(put_row['impliedVolatility'].iloc[0]) and put_row['impliedVolatility'].iloc[0] > 0 else None
+                
+                # If Yahoo Finance returns a dummy zero-bid/ask floor (< 0.06), solve from lastPrice
+                if (c_iv is None or c_iv < 0.06) and not call_row.empty and pd.notna(call_row.get('lastPrice', pd.Series([None])).iloc[0]) and call_row['lastPrice'].iloc[0] > 0:
+                    solved = solve_bs_iv(float(call_row['lastPrice'].iloc[0]), spot, float(st), T, 0.045, True)
+                    if solved:
+                        c_iv = solved
+                if (p_iv is None or p_iv < 0.06) and not put_row.empty and pd.notna(put_row.get('lastPrice', pd.Series([None])).iloc[0]) and put_row['lastPrice'].iloc[0] > 0:
+                    solved = solve_bs_iv(float(put_row['lastPrice'].iloc[0]), spot, float(st), T, 0.045, False)
+                    if solved:
+                        p_iv = solved
                 
                 # True OTM Volatility Surface:
                 # - Puts for strikes < spot (downside fear skew)
@@ -475,7 +513,7 @@ def get_vol_surface():
                         chosen_iv = c_iv if c_iv is not None else p_iv
                     point_type = 'atm'
                     
-                if chosen_iv and 0.02 <= chosen_iv <= 3.5:
+                if chosen_iv and 0.05 <= chosen_iv <= 3.5:
                     pt = {
                         "expiry": expiry,
                         "dte": dte,
@@ -486,21 +524,27 @@ def get_vol_surface():
                     }
                     surface_data.append(pt)
                     all_points.append(pt)
+                    pts_this_exp.append(pt)
                     
                     if abs(st - atm_strike) < 0.01:
                         exp_atm_iv = pt["iv"]
 
+            # If exact ATM strike had no clean IV, use the closest strike resolved on this expiry
+            if exp_atm_iv == 0.0 and pts_this_exp:
+                atm_closest = min(pts_this_exp, key=lambda p: abs(p["strike"] - spot))
+                exp_atm_iv = atm_closest["iv"]
+
             if exp_atm_iv > 0:
-                expected_move_pct = round(exp_atm_iv * np.sqrt(dte / 365.0), 2)
-                expected_move_pts = round(spot * (expected_move_pct / 100.0), 2)
+                expected_move_pct = float(round(exp_atm_iv * np.sqrt(dte / 365.0), 2))
+                expected_move_pts = float(round(spot * (expected_move_pct / 100.0), 2))
                 term_structure.append({
                     "expiry": expiry,
                     "dte": dte,
-                    "atm_iv": exp_atm_iv,
+                    "atm_iv": float(exp_atm_iv),
                     "expected_move_pct": expected_move_pct,
                     "expected_move_pts": expected_move_pts
                 })
-                atm_ivs.append(exp_atm_iv)
+                atm_ivs.append(float(exp_atm_iv))
 
         atm_iv_30d = atm_ivs[0] if atm_ivs else 22.0
         iv_hv_ratio = round(atm_iv_30d / (hv_30d if hv_30d > 0 else 1.0), 2)
