@@ -842,9 +842,9 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     Open Interest (OI)
                   </button>
                 </div>
-                {!hasOiData && (
+                {(totals?.is_oi_clearing || !hasOiData) && (
                   <span style={{ color: '#fbbf24', fontSize: '11px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    ⚡ Note: OCC clearing in progress (weekend/clearing cycle). Displaying active volume flow.
+                    ⚡ Pre-Market OCC Clearing: Displaying pending volume flow as Open Interest proxy until 9:00 AM ET OCC release.
                   </span>
                 )}
               </div>
@@ -1036,20 +1036,20 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     <Legend wrapperStyle={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} />
                     {spot > 0 && <ReferenceLine x={spot} stroke="#ffffff" strokeDasharray="4 4" strokeWidth={2} label={{ position: 'top', value: `Spot $${spot.toFixed(2)}`, fill: '#ffffff', fontSize: 10 }} />}
 
-                    {/* Volume Bars (Always available, including weekend clearing) */}
-                    {(oiVolSubMode === 'both' || oiVolSubMode === 'volume' || !hasOiData) && (
+                    {/* Volume Bars */}
+                    {(oiVolSubMode === 'both' || oiVolSubMode === 'volume') && (
                       <Bar dataKey="call_vol" name="Call Volume" fill="#00E676" fillOpacity={0.85} radius={[3, 3, 0, 0]} />
                     )}
-                    {(oiVolSubMode === 'both' || oiVolSubMode === 'volume' || !hasOiData) && (
+                    {(oiVolSubMode === 'both' || oiVolSubMode === 'volume') && (
                       <Bar dataKey="put_vol" name="Put Volume" fill="#f43f5e" fillOpacity={0.85} radius={[3, 3, 0, 0]} />
                     )}
 
-                    {/* Open Interest Bars (When available from OCC) */}
-                    {(oiVolSubMode === 'both' || oiVolSubMode === 'oi') && hasOiData && (
-                      <Bar dataKey="call_oi" name="Call Open Interest" fill="#38bdf8" fillOpacity={0.65} radius={[3, 3, 0, 0]} />
+                    {/* Open Interest Bars */}
+                    {(oiVolSubMode === 'both' || oiVolSubMode === 'oi') && (
+                      <Bar dataKey="call_oi" name={totals?.is_oi_clearing ? "Call OI (Proxy)" : "Call Open Interest"} fill="#38bdf8" fillOpacity={0.75} radius={[3, 3, 0, 0]} />
                     )}
-                    {(oiVolSubMode === 'both' || oiVolSubMode === 'oi') && hasOiData && (
-                      <Bar dataKey="put_oi" name="Put Open Interest" fill="#c084fc" fillOpacity={0.65} radius={[3, 3, 0, 0]} />
+                    {(oiVolSubMode === 'both' || oiVolSubMode === 'oi') && (
+                      <Bar dataKey="put_oi" name={totals?.is_oi_clearing ? "Put OI (Proxy)" : "Put Open Interest"} fill="#c084fc" fillOpacity={0.75} radius={[3, 3, 0, 0]} />
                     )}
                   </ComposedChart>
                 )}

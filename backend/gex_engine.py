@@ -459,6 +459,21 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
         total_call_vol = sum(p["call_vol"] for p in gex_profile)
         total_put_vol = sum(p["put_vol"] for p in gex_profile)
 
+        # Pre-Market / Weekend OCC Clearing Detection:
+        # If Yahoo Finance reports 0 openInterest due to overnight OCC settlement clearing,
+        # synthesize latest active volume as the Open Interest proxy so OI analysis is never empty.
+        is_oi_clearing = (total_call_oi == 0 and total_call_vol > 0) or (total_put_oi == 0 and total_put_vol > 0)
+        if is_oi_clearing:
+            for p in gex_profile:
+                if p["call_oi"] == 0 and p["call_vol"] > 0:
+                    p["call_oi"] = p["call_vol"]
+                    p["is_oi_proxy"] = True
+                if p["put_oi"] == 0 and p["put_vol"] > 0:
+                    p["put_oi"] = p["put_vol"]
+                    p["is_oi_proxy"] = True
+            total_call_oi = sum(p["call_oi"] for p in gex_profile)
+            total_put_oi = sum(p["put_oi"] for p in gex_profile)
+
         put_call_oi_ratio = round(total_put_oi / total_call_oi, 2) if total_call_oi > 0 else 1.0
         put_call_vol_ratio = round(total_put_vol / total_call_vol, 2) if total_call_vol > 0 else 1.0
 
@@ -839,6 +854,9 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                 "total_net_cex": round(total_net_cex, 2),
                 "total_call_oi": total_call_oi,
                 "total_put_oi": total_put_oi,
+                "total_call_vol": total_call_vol,
+                "total_put_vol": total_put_vol,
+                "is_oi_clearing": is_oi_clearing,
                 "put_call_oi_ratio": put_call_oi_ratio,
                 "put_call_vol_ratio": put_call_vol_ratio
             },
