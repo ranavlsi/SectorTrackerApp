@@ -369,6 +369,7 @@
 .tile-val.purple { color: #c084fc; }
 .tile-val.amber { color: #fbbf24; }
 .tile-val.cyan { color: #00F0FF; }
+.tile-val.white { color: #f8fafc; }
 
 .card-actions-strip {
   display: flex;

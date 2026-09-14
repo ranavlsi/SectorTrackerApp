@@ -346,6 +346,29 @@ export default function AskAiLiveDashboard({
                           <span className="tile-lbl">Options Spec</span>
                           <span className="tile-val cyan" title={card.options_spec}>{card.options_spec}</span>
                         </div>
+
+                        {card.fundamentals && (
+                          <>
+                            <div className="card-tile">
+                              <span className="tile-lbl">P/E · Fwd P/E</span>
+                              <span className="tile-val white">
+                                {card.fundamentals.pe ? `${card.fundamentals.pe.toFixed(1)}x` : 'N/A'} · {card.fundamentals.fwd_pe ? `${card.fundamentals.fwd_pe.toFixed(1)}x` : 'N/A'}
+                              </span>
+                            </div>
+
+                            <div className="card-tile">
+                              <span className="tile-lbl">Market Cap</span>
+                              <span className="tile-val white">{card.fundamentals.market_cap || 'N/A'}</span>
+                            </div>
+
+                            <div className="card-tile">
+                              <span className="tile-lbl">Analyst Target</span>
+                              <span className="tile-val emerald">
+                                {card.fundamentals.target_mean ? `$${card.fundamentals.target_mean.toFixed(2)} (${card.fundamentals.analyst_rec})` : 'N/A'}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {card.quick_actions && (
