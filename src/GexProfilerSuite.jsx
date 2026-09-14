@@ -19,7 +19,8 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
   const [ticker, setTicker] = useState(initialTicker || 'SPY');
   const [searchInput, setSearchInput] = useState('');
   const [selectedExpiry, setSelectedExpiry] = useState('ALL');
-  const [activeChartMode, setActiveChartMode] = useState('net_gex'); // 'net_gex' | 'call_put_split' | 'oi_heatmap' | 'cumulative'
+  const [activeChartMode, setActiveChartMode] = useState('net_gex'); // 'net_gex' | 'call_put_split' | 'vanna_vex' | 'term_structure' | 'oi_heatmap' | 'cumulative'
+  const [showMatrixModal, setShowMatrixModal] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -65,6 +66,11 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
   const tradeSetup = data?.trade_setup || {};
   const expirations = data?.expirations || [];
   const rawProfile = data?.gex_profile || [];
+  const expectedMove = data?.expected_move || null;
+  const riskScores = data?.risk_scores || null;
+  const greekProjection = data?.greek_projection || null;
+  const termStructure = data?.term_structure || [];
+  const matrixData = data?.matrix_data || [];
 
   // Filter strikes within ±12% of spot for high-definition chart visualization
   const filteredProfile = useMemo(() => {
@@ -73,6 +79,24 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
     const upper = spot * 1.12;
     return rawProfile.filter(p => p.strike >= lower && p.strike <= upper);
   }, [rawProfile, spot]);
+
+  // Construct trajectory series including T=0 Spot origin for cone visualization
+  const projectionChartData = useMemo(() => {
+    if (!greekProjection?.trajectory_series || !spot) return [];
+    const startPoint = {
+      day: 0,
+      label: 'Now',
+      base_target: Number(spot.toFixed(2)),
+      upper_1sigma: Number(spot.toFixed(2)),
+      lower_1sigma: Number(spot.toFixed(2)),
+      upper_2sigma: Number(spot.toFixed(2)),
+      lower_2sigma: Number(spot.toFixed(2)),
+      call_wall: keyLevels.call_wall,
+      put_wall: keyLevels.put_wall,
+      pin_anchor: greekProjection?.pin_equilibrium_anchor || spot,
+    };
+    return [startPoint, ...greekProjection.trajectory_series];
+  }, [greekProjection, spot, keyLevels]);
 
   // Format Large Values ($ Millions / Billions)
   const formatDollarGex = (val) => {
@@ -188,18 +212,78 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                 </div>
               </div>
 
-              <div className="gex-ai-posture-pill">
-                {regime.badge || 'DEALER REGIME'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                {expectedMove && (
+                  <div className="gex-em-pill">
+                    <span className="gex-em-label">1D EXPECTED MOVE:</span>
+                    <span className="gex-em-val">±${expectedMove.move_1d} ({expectedMove.move_1d_pct}%)</span>
+                    <span className="gex-em-range">[{expectedMove.range_1d[0]} – {expectedMove.range_1d[1]}]</span>
+                  </div>
+                )}
+                <div className="gex-ai-posture-pill">
+                  {regime.badge || 'DEALER REGIME'}
+                </div>
               </div>
             </div>
 
-            {/* Verdict Hero Box */}
+            {/* Verdict Hero Box with Dual Risk Meters */}
             <div className="gex-ai-verdict-box">
               <div className="gex-ai-verdict-text">
                 <span className="gex-ai-verdict-badge">{regime.badge}</span>
                 <h3 className="gex-ai-verdict-title">{regime.title}</h3>
                 <p className="gex-ai-verdict-summary">{regime.summary}</p>
               </div>
+
+              {/* Quantitative Risk Dial Gauges: Squeeze & Pin Risk */}
+              {riskScores && (
+                <div className="gex-risk-meters-wrap">
+                  {/* Gauge 1: Gamma Squeeze */}
+                  <div className="gex-risk-gauge">
+                    <div className="gex-risk-gauge-top">
+                      <span className="gex-risk-title">SQUEEZE RISK</span>
+                      <Flame size={14} color={riskScores.squeeze_color} />
+                    </div>
+                    <div className="gex-risk-score-num" style={{ color: riskScores.squeeze_color }}>
+                      {riskScores.squeeze_score}<span style={{ fontSize: '11px', color: '#64748b' }}>/100</span>
+                    </div>
+                    <div className="gex-risk-bar-track">
+                      <div
+                        className="gex-risk-bar-fill"
+                        style={{
+                          width: `${riskScores.squeeze_score}%`,
+                          backgroundColor: riskScores.squeeze_color
+                        }}
+                      />
+                    </div>
+                    <span className="gex-risk-rating" style={{ color: riskScores.squeeze_color }}>
+                      {riskScores.squeeze_rating}
+                    </span>
+                  </div>
+
+                  {/* Gauge 2: Pin Probability */}
+                  <div className="gex-risk-gauge">
+                    <div className="gex-risk-gauge-top">
+                      <span className="gex-risk-title">PIN RISK</span>
+                      <Target size={14} color={riskScores.pin_color} />
+                    </div>
+                    <div className="gex-risk-score-num" style={{ color: riskScores.pin_color }}>
+                      {riskScores.pin_score}<span style={{ fontSize: '11px', color: '#64748b' }}>/100</span>
+                    </div>
+                    <div className="gex-risk-bar-track">
+                      <div
+                        className="gex-risk-bar-fill"
+                        style={{
+                          width: `${riskScores.pin_score}%`,
+                          backgroundColor: riskScores.pin_color
+                        }}
+                      />
+                    </div>
+                    <span className="gex-risk-rating" style={{ color: riskScores.pin_color }}>
+                      {riskScores.pin_rating}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Gamma Range Corridor Preview Box */}
               <div className="gex-corridor-box">
@@ -363,6 +447,160 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                 </div>
               </div>
             )}
+
+            {/* ================================================================= */}
+            {/* 3B. QUANTITATIVE GREEK PRICE PROJECTIONS (5D & 20D HORIZON)       */}
+            {/* ================================================================= */}
+            {greekProjection && (
+              <div className="gex-projections-container">
+                <div className="gex-projections-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="gex-proj-icon-box">
+                      <TrendingUp style={{ width: '18px', height: '18px', color: '#00F0FF' }} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h4 className="gex-entry-main-heading">
+                          Quantitative Greek Price Projections · 5-Day & 20-Day Model
+                        </h4>
+                        <span className="gex-ai-tag">
+                          <Brain style={{ width: '10px', height: '10px' }} />
+                          SDE JUMP-DIFFUSION
+                        </span>
+                      </div>
+                      <p className="gex-entry-subheading">
+                        Mathematical framework: Gamma-Attenuated Ornstein-Uhlenbeck Mean Reversion + Vanna Delta Drift Vector
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="gex-proj-vol-badge">
+                    <Activity size={13} color="#c084fc" />
+                    <span>Realized Vol Compression: {greekProjection.effective_realized_vol_pct}%</span>
+                  </div>
+                </div>
+
+                {/* Dual Horizon Cards (5-Day & 20-Day) */}
+                <div className="gex-horizons-grid">
+                  {/* 5-Day Projection Card */}
+                  <div className="gex-horizon-card">
+                    <div className="gex-horizon-card-top">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="gex-horizon-badge cyan">5-DAY OUTLOOK</span>
+                        <span className="gex-horizon-title">Next Week OpEx Pin</span>
+                      </div>
+                      <div className="gex-horizon-ret-pill" style={{ color: greekProjection.proj_5d.base_return_pct >= 0 ? '#00E676' : '#f43f5e' }}>
+                        {greekProjection.proj_5d.base_return_pct >= 0 ? '+' : ''}{greekProjection.proj_5d.base_return_pct}% Exp Return
+                      </div>
+                    </div>
+
+                    <div className="gex-horizon-main-target">
+                      <span className="label">Projected Median Pin</span>
+                      <div className="val cyan">${greekProjection.proj_5d.base_target}</div>
+                      <span className="sub">Anchor: Max Pain ${greekProjection.pin_equilibrium_anchor}</span>
+                    </div>
+
+                    {/* Confidence Corridors */}
+                    <div className="gex-conf-corridors">
+                      <div className="gex-conf-row">
+                        <span className="conf-label">68% Confidence (±1σ)</span>
+                        <span className="conf-val">${greekProjection.proj_5d.lower_1sigma} ── ${greekProjection.proj_5d.upper_1sigma}</span>
+                      </div>
+                      <div className="gex-conf-row">
+                        <span className="conf-label">95% Confidence (±2σ)</span>
+                        <span className="conf-val">${greekProjection.proj_5d.lower_2sigma} ── ${greekProjection.proj_5d.upper_2sigma}</span>
+                      </div>
+                    </div>
+
+                    {/* Scenarios Mini-Bar */}
+                    <div className="gex-scenario-minibar">
+                      <div className="scen-item">
+                        <span className="scen-lbl">Bull Squeeze</span>
+                        <span className="scen-val emerald">${greekProjection.proj_5d.bull_squeeze_target}</span>
+                      </div>
+                      <div className="scen-item">
+                        <span className="scen-lbl">Base Pin</span>
+                        <span className="scen-val cyan">${greekProjection.proj_5d.base_target}</span>
+                      </div>
+                      <div className="scen-item">
+                        <span className="scen-lbl">Bear Cascade</span>
+                        <span className="scen-val rose">${greekProjection.proj_5d.bear_cascade_target}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 20-Day Projection Card */}
+                  <div className="gex-horizon-card">
+                    <div className="gex-horizon-card-top">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="gex-horizon-badge purple">20-DAY OUTLOOK</span>
+                        <span className="gex-horizon-title">Monthly OpEx Horizon</span>
+                      </div>
+                      <div className="gex-horizon-ret-pill" style={{ color: greekProjection.proj_20d.base_return_pct >= 0 ? '#00E676' : '#f43f5e' }}>
+                        {greekProjection.proj_20d.base_return_pct >= 0 ? '+' : ''}{greekProjection.proj_20d.base_return_pct}% Exp Return
+                      </div>
+                    </div>
+
+                    <div className="gex-horizon-main-target">
+                      <span className="label">Projected Monthly Target</span>
+                      <div className="val purple">${greekProjection.proj_20d.base_target}</div>
+                      <span className="sub">Macro Wall Channel: ${keyLevels.put_wall} ── ${keyLevels.call_wall}</span>
+                    </div>
+
+                    {/* Confidence Corridors */}
+                    <div className="gex-conf-corridors">
+                      <div className="gex-conf-row">
+                        <span className="conf-label">68% Confidence (±1σ)</span>
+                        <span className="conf-val">${greekProjection.proj_20d.lower_1sigma} ── ${greekProjection.proj_20d.upper_1sigma}</span>
+                      </div>
+                      <div className="gex-conf-row">
+                        <span className="conf-label">95% Confidence (±2σ)</span>
+                        <span className="conf-val">${greekProjection.proj_20d.lower_2sigma} ── ${greekProjection.proj_20d.upper_2sigma}</span>
+                      </div>
+                    </div>
+
+                    {/* Scenarios Mini-Bar */}
+                    <div className="gex-scenario-minibar">
+                      <div className="scen-item">
+                        <span className="scen-lbl">Bull Squeeze</span>
+                        <span className="scen-val emerald">${greekProjection.proj_20d.bull_squeeze_target}</span>
+                      </div>
+                      <div className="scen-item">
+                        <span className="scen-lbl">Base Target</span>
+                        <span className="scen-val purple">${greekProjection.proj_20d.base_target}</span>
+                      </div>
+                      <div className="scen-item">
+                        <span className="scen-lbl">Bear Cascade</span>
+                        <span className="scen-val rose">${greekProjection.proj_20d.bear_cascade_target}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3-Way Greek Scenario Probability Deck */}
+                <div className="gex-scenario-cards-grid">
+                  {greekProjection.scenarios.map((scen) => (
+                    <div key={scen.id} className={`gex-scen-card border-${scen.color}`}>
+                      <div className="gex-scen-card-top">
+                        <span className="gex-scen-name">{scen.name}</span>
+                        <span className={`gex-scen-prob-badge ${scen.color}`}>{scen.probability} Probability</span>
+                      </div>
+                      <div className="gex-scen-targets-row">
+                        <div>
+                          <span className="t-lbl">5D Target:</span>
+                          <span className={`t-val ${scen.color}`}>{scen.target_5d}</span>
+                        </div>
+                        <div>
+                          <span className="t-lbl">20D Target:</span>
+                          <span className={`t-val ${scen.color}`}>{scen.target_20d}</span>
+                        </div>
+                      </div>
+                      <p className="gex-scen-narrative">{scen.narrative}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ===================================================================== */}
@@ -456,6 +694,27 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setActiveChartMode('vanna_vex')}
+                    className={`gex-mode-btn ${activeChartMode === 'vanna_vex' ? 'active' : ''}`}
+                  >
+                    Net Vanna (VEX)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveChartMode('term_structure')}
+                    className={`gex-mode-btn ${activeChartMode === 'term_structure' ? 'active' : ''}`}
+                  >
+                    Term Structure
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveChartMode('price_projection')}
+                    className={`gex-mode-btn ${activeChartMode === 'price_projection' ? 'active' : ''}`}
+                  >
+                    5D & 20D Projections 🚀
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setActiveChartMode('oi_heatmap')}
                     className={`gex-mode-btn ${activeChartMode === 'oi_heatmap' ? 'active' : ''}`}
                   >
@@ -469,6 +728,15 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     Cumulative GEX
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowMatrixModal(!showMatrixModal)}
+                  className={`gex-matrix-toggle-btn ${showMatrixModal ? 'active' : ''}`}
+                >
+                  <Layers size={13} />
+                  {showMatrixModal ? 'Hide Matrix' : 'Strike × Expiry Matrix'}
+                </button>
 
                 {expirations.length > 0 && (
                   <select
@@ -584,6 +852,74 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                   </ComposedChart>
                 )}
 
+                {activeChartMode === 'vanna_vex' && (
+                  <ComposedChart data={filteredProfile} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis
+                      dataKey="strike"
+                      stroke="#94a3b8"
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
+                      label={{ value: 'Strike Price ($)', position: 'insideBottom', offset: -10, fill: '#94a3b8', fontSize: 11 }}
+                    />
+                    <YAxis
+                      stroke="#94a3b8"
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
+                      tickFormatter={(val) => formatDollarGex(val)}
+                      label={{ value: 'Net Vanna Exposure ($/1% IV)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: '#334155', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
+                      formatter={(val) => [formatDollarGex(val), 'Net Dollar Vanna (VEX)']}
+                    />
+                    {spot > 0 && (
+                      <ReferenceLine
+                        x={spot}
+                        stroke="#ffffff"
+                        strokeDasharray="4 4"
+                        strokeWidth={2}
+                        label={{ position: 'top', value: `Spot $${spot.toFixed(2)}`, fill: '#ffffff', fontSize: 11, fontWeight: 700 }}
+                      />
+                    )}
+                    <ReferenceLine y={0} stroke="#475569" strokeWidth={1} />
+                    <Bar dataKey="net_vex" radius={[3, 3, 0, 0]}>
+                      {filteredProfile.map((entry) => (
+                        <Cell
+                          key={`vcell-${entry.strike}`}
+                          fill={entry.net_vex >= 0 ? '#38bdf8' : '#fb7185'}
+                          fillOpacity={0.85}
+                        />
+                      ))}
+                    </Bar>
+                  </ComposedChart>
+                )}
+
+                {activeChartMode === 'term_structure' && (
+                  <ComposedChart data={termStructure} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis
+                      dataKey="expiry"
+                      stroke="#94a3b8"
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
+                      label={{ value: 'Expiration Date (OpEx)', position: 'insideBottom', offset: -10, fill: '#94a3b8', fontSize: 11 }}
+                    />
+                    <YAxis
+                      stroke="#94a3b8"
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
+                      tickFormatter={(val) => formatDollarGex(val)}
+                      label={{ value: 'Net Gamma by Expiry ($)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: '#334155', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
+                      formatter={(val, name) => [formatDollarGex(val), name === 'net_gex' ? 'Net GEX' : (name === 'call_gex' ? 'Call GEX' : 'Put GEX')]}
+                    />
+                    <Legend wrapperStyle={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} />
+                    <ReferenceLine y={0} stroke="#475569" strokeWidth={1} />
+                    <Bar dataKey="call_gex" name="Call GEX" fill="#00E676" fillOpacity={0.7} stackId="t" />
+                    <Bar dataKey="put_gex" name="Put GEX" fill="#f43f5e" fillOpacity={0.7} stackId="t" />
+                    <Line type="monotone" dataKey="net_gex" name="Net Term GEX" stroke="#00F0FF" strokeWidth={3} dot={{ r: 4, fill: '#00F0FF' }} />
+                  </ComposedChart>
+                )}
+
                 {activeChartMode === 'oi_heatmap' && (
                   <ComposedChart data={filteredProfile} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -636,6 +972,111 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                       strokeWidth={3}
                       fill="rgba(6, 182, 212, 0.15)"
                       name="Cumulative GEX"
+                    />
+                  </ComposedChart>
+                )}
+
+                {activeChartMode === 'price_projection' && (
+                  <ComposedChart data={projectionChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis
+                      dataKey="label"
+                      stroke="#94a3b8"
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
+                      label={{ value: 'Time Horizon (Trading Days Ahead)', position: 'insideBottom', offset: -10, fill: '#94a3b8', fontSize: 11 }}
+                    />
+                    <YAxis
+                      stroke="#94a3b8"
+                      domain={['auto', 'auto']}
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
+                      tickFormatter={(val) => `$${Number(val).toFixed(0)}`}
+                      label={{ value: 'Greek SDE Projected Price ($)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: '#334155', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
+                      formatter={(val, name) => [`$${Number(val).toFixed(2)}`, name]}
+                      labelFormatter={(label) => `Horizon: ${label}`}
+                    />
+                    <Legend wrapperStyle={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} />
+                    {spot > 0 && (
+                      <ReferenceLine
+                        y={spot}
+                        stroke="#ffffff"
+                        strokeDasharray="4 4"
+                        strokeWidth={1.5}
+                        label={{ position: 'top', value: `Spot $${spot.toFixed(2)}`, fill: '#ffffff', fontSize: 10, fontWeight: 700 }}
+                      />
+                    )}
+                    {keyLevels.call_wall && (
+                      <ReferenceLine
+                        y={keyLevels.call_wall}
+                        stroke="#00E676"
+                        strokeDasharray="3 3"
+                        strokeWidth={1.5}
+                        label={{ position: 'top', value: `Call Wall $${keyLevels.call_wall}`, fill: '#00E676', fontSize: 10 }}
+                      />
+                    )}
+                    {keyLevels.put_wall && (
+                      <ReferenceLine
+                        y={keyLevels.put_wall}
+                        stroke="#f43f5e"
+                        strokeDasharray="3 3"
+                        strokeWidth={1.5}
+                        label={{ position: 'bottom', value: `Put Wall $${keyLevels.put_wall}`, fill: '#f43f5e', fontSize: 10 }}
+                      />
+                    )}
+                    {greekProjection?.pin_equilibrium_anchor && (
+                      <ReferenceLine
+                        y={greekProjection.pin_equilibrium_anchor}
+                        stroke="#38bdf8"
+                        strokeDasharray="2 2"
+                        strokeWidth={1}
+                        label={{ position: 'insideTopLeft', value: `Gamma Pin Equilibrium $${greekProjection.pin_equilibrium_anchor}`, fill: '#38bdf8', fontSize: 10 }}
+                      />
+                    )}
+                    <Line
+                      type="monotone"
+                      dataKey="upper_2sigma"
+                      name="+2σ Bull Expansion (95% Cl)"
+                      stroke="#64748b"
+                      strokeDasharray="4 4"
+                      strokeWidth={1}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="upper_1sigma"
+                      name="+1σ Gamma Corridor (68% Cl)"
+                      stroke="#c084fc"
+                      strokeDasharray="3 3"
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="base_target"
+                      name="Expected Price (Gamma Mean-Reversion + Vanna Drift)"
+                      stroke="#00F0FF"
+                      strokeWidth={3}
+                      dot={{ r: 3, fill: '#00F0FF' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="lower_1sigma"
+                      name="-1σ Gamma Corridor (68% Cl)"
+                      stroke="#c084fc"
+                      strokeDasharray="3 3"
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="lower_2sigma"
+                      name="-2σ Bear Cascade (95% Cl)"
+                      stroke="#64748b"
+                      strokeDasharray="4 4"
+                      strokeWidth={1}
+                      dot={false}
                     />
                   </ComposedChart>
                 )}
@@ -711,6 +1152,83 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
               </table>
             </div>
           </div>
+
+          {/* ===================================================================== */}
+          {/* 7. STRIKE × EXPIRATION MATRIX TABLE MODAL / SECTION                   */}
+          {/* ===================================================================== */}
+          {showMatrixModal && matrixData.length > 0 && (
+            <div className="gex-matrix-card">
+                <div className="gex-matrix-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Layers size={18} color="#00F0FF" />
+                    <div>
+                      <h3 style={{ margin: 0, fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 800, textTransform: 'uppercase' }}>
+                        Strike × Expiration Gamma Matrix Heatmap
+                      </h3>
+                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                        Pinpoint exact expiration concentration across active strikes
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowMatrixModal(false)}
+                    className="gex-matrix-close-btn"
+                  >
+                    Close Matrix
+                  </button>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="gex-matrix-table">
+                    <thead>
+                      <tr>
+                        <th>Strike</th>
+                        {expirations.slice(0, 6).map((exp) => (
+                          <th key={exp}>{exp}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {matrixData.map((row) => {
+                        const isAtTheMoney = Math.abs(row.strike - spot) / spot < 0.015;
+                        const isCallWall = row.strike === keyLevels.call_wall;
+                        const isPutWall = row.strike === keyLevels.put_wall;
+
+                        return (
+                          <tr key={row.strike} className={isAtTheMoney ? 'atm-row' : ''}>
+                            <td className="strike-cell">
+                              ${row.strike.toFixed(1)}
+                              {isAtTheMoney && <span className="atm-tag">ATM</span>}
+                              {isCallWall && <span className="wall-tag call">CALL WALL</span>}
+                              {isPutWall && <span className="wall-tag put">PUT WALL</span>}
+                            </td>
+                            {expirations.slice(0, 6).map((exp) => {
+                              const val = row[exp] || 0;
+                              const isPos = val >= 0;
+                              return (
+                                <td
+                                  key={exp}
+                                  className="matrix-val-cell"
+                                  style={{
+                                    color: isPos ? '#00E676' : '#f43f5e',
+                                    background: isPos
+                                      ? `rgba(0, 230, 118, ${Math.min(0.25, Math.abs(val) / 5e7)})`
+                                      : `rgba(244, 63, 94, ${Math.min(0.25, Math.abs(val) / 5e7)})`
+                                  }}
+                                >
+                                  {formatDollarGex(val)}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
         </>
       )}
     </div>
