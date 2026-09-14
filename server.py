@@ -372,174 +372,23 @@ def log_error():
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    data = request.json
-    prompt = data.get('prompt', '').lower()
+    data = request.json or {}
+    prompt = data.get('prompt', '')
     ticker = data.get('ticker', 'UNKNOWN')
-    persona = data.get('persona', 'quant')
+    persona = data.get('persona', 'master')
     context = data.get('context', {})
     
-    # Simulate LLM generation delay
-    import time
-    time.sleep(1.0)
-    
-    response = ""
-    
-    import re
-    
-    # Conversational Intercepts for small talk and "dumb questions"
-    if re.search(r'\b(hi|hello|hey|sup|greetings)\b', prompt):
-        return jsonify({"response": "👋 **Hello!** I am your SectorTracker AI Assistant. You can ask me for technical analysis, options flow, fundamentals, or top algorithmic setups. What ticker are we analyzing today?"})
-        
-    if re.search(r'\b(who are you|what are you)\b', prompt):
-        return jsonify({"response": "🤖 **I am the SectorTracker AI.** I am a simulated ensemble of institutional quantitative models designed to provide you with technical, fundamental, and options data in milliseconds."})
-        
-    if re.search(r'\b(dumb|stupid|joke|fluid|silly)\b', prompt):
-        return jsonify({"response": "💡 There are no dumb questions in trading, only dumb risk management! I've been upgraded to handle casual conversation fluidly. However, my true power lies in the charts. Ask me about any stock's support/resistance, options flow, or fundamental data."})
-        
-    if re.search(r'\b(how to trade|learn|teach me|explain)\b', prompt):
-        return jsonify({"response": "📚 **Trading 101**: The best way to trade is to wait for high-probability setups at major support/resistance levels, while managing your risk with a strict stop-loss. Would you like me to scan for the 'best setups' right now?"})
-    
-    # Intercept general screener/recommendation queries
-    if any(word in prompt for word in ["top", "best", "recommend", "screen", "ideas", "picks", "play"]):
-        response = "🔍 **Top Algorithmic Setups for Tomorrow**:\n\n" \
-                   "1. **NVDA** (Trend Continuation): Massive relative strength. Institutional dark pool accumulation detected near $900.\n" \
-                   "2. **TSLA** (Gamma Squeeze): Heavy ATM Call sweeps today. If dealers are forced to hedge, expect a rapid expansion above resistance.\n" \
-                   "3. **SMCI** (Volatility Contraction): Standard deviation bands are the tightest they've been in 3 months. Imminent explosive breakout.\n\n" \
-                   "*Agent Note*: Algorithms suggest waiting for the first 15-minute ORB (Opening Range Breakout) before entry."
-        import time
-        time.sleep(1.0)
-        return jsonify({"response": response})
-        
-    import re
-    
-    # NLP Ticker Extraction (Always run to detect explicit overrides in the prompt)
-    raw_prompt = data.get('prompt', '').strip('?.! ')
-    extracted_ticker = None
-    
-    # 1. Look for explicit $TICKER
-    match = re.search(r'\$([A-Za-z]{1,5})\b', raw_prompt)
-    if match:
-        extracted_ticker = match.group(1).upper()
-    else:
-        # 2. Scan sentence for the first word that looks like a ticker
-        stop_words = {"what", "is", "the", "for", "on", "and", "it", "to", "of", "in", "a", "an", "are", "news", "wall", "put", "call", "support", "resistance", "technical", "fundamental", "sec", "filing", "latest", "about", "give", "me", "show", "tell", "any", "some", "can", "you", "my", "i", "need", "want", "find", "get", "has", "have", "does", "do", "how", "why", "who", "when", "where", "with", "from", "stock", "company", "price", "data", "report", "gex", "level", "levels"}
-        
-        import difflib
-        heuristic_keywords = ["news", "headline", "support", "resistance", "technical", "levels", "fundamental", "revenue", "margin", "options", "wall", "gamma", "atm", "sweep", "gex", "sec", "filing", "insider"]
-        
-        words = re.sub(r'[^A-Za-z\s]', '', raw_prompt).split()
-        possible_tickers = []
-        for w in words:
-            if 1 <= len(w) <= 5 and w.lower() not in stop_words:
-                # Check if this word is just a typo of a heuristic keyword
-                if not difflib.get_close_matches(w.lower(), heuristic_keywords, n=1, cutoff=0.7):
-                    possible_tickers.append(w.upper())
-        
-        if possible_tickers:
-            # Reverse scan is safer! "compare aapl to tsla" -> extracts TSLA.
-            extracted_ticker = possible_tickers[-1]
-            
-    # Priority: 1. Extracted from prompt, 2. Frontend active ticker, 3. SPY
-    if extracted_ticker:
-        ticker = extracted_ticker
-    elif ticker == 'UNKNOWN':
-        ticker = "SPY"
-                
-    # Try fetching real data if a valid ticker is provided
-    ticker_obj = None
-    if ticker != 'UNKNOWN' and ticker != 'BRIEFING':
-        try:
-            ticker_obj = yf.Ticker(ticker)
-        except:
-            pass
-            
-    # Universal Intents regardless of persona (Fuzzy Matched)
-    prompt_words = re.sub(r'[^A-Za-z\s]', '', prompt.lower()).split()
-    def has_intent(keywords):
-        for w in prompt_words:
-            if difflib.get_close_matches(w, keywords, n=1, cutoff=0.7):
-                return True
-        return False
-
-    if has_intent(["support", "resistance", "technical", "levels"]):
-        try:
-            hist = ticker_obj.history(period="1mo")
-            recent_low = hist['Low'].min()
-            recent_high = hist['High'].max()
-            current = hist['Close'].iloc[-1]
-            response = f"📊 **Technical Analysis for {ticker}**:\n- **Current Price**: ${current:.2f}\n- **Major Support**: ${recent_low:.2f} (1-Month Low)\n- **Major Resistance**: ${recent_high:.2f} (1-Month High)\n\n*Agent Note*: Look for a break above resistance on heavy volume to confirm a Stage 2 markup."
-        except:
-            response = f"📊 **Technical Analysis for {ticker}**:\nBased on recent price action, {ticker} has strong structural support near the 50-day moving average and significant overhead resistance at the previous swing high."
-            
-    elif has_intent(["fundamental", "pe", "revenue", "margin"]):
-        try:
-            info = ticker_obj.info
-            pe = info.get('trailingPE', 'N/A')
-            forward_pe = info.get('forwardPE', 'N/A')
-            margin = info.get('profitMargins', 0) * 100 if info.get('profitMargins') else 'N/A'
-            margin_str = f"{margin:.1f}%" if isinstance(margin, float) else margin
-            response = f"📈 **Fundamentals for {ticker}**:\n- **Trailing P/E**: {pe}\n- **Forward P/E**: {forward_pe}\n- **Net Profit Margin**: {margin_str}\n\n*Agent Note*: These metrics suggest {ticker} is trading at a {'premium' if type(pe) in [int, float] and pe > 30 else 'discount'} relative to the broader sector median."
-        except:
-            response = f"📈 **Fundamental Analysis for {ticker}**:\n{ticker} exhibits strong year-over-year revenue growth, but operating margins are currently under pressure due to macroeconomic headwinds."
-            
-    elif has_intent(["options", "wall", "gamma", "atm", "sweep", "gex"]):
-        try:
-            hist = ticker_obj.history(period="5d")
-            current = hist['Close'].iloc[-1]
-            call_wall = round(current * 1.05, 0)
-            put_wall = round(current * 0.95, 0)
-            response = f"🔥 **Options Flow & GEX for {ticker}**:\n- **Spot Price**: ${current:.2f}\n- **Major Call Wall**: ${call_wall} (High Gamma Resistance)\n- **Major Put Wall**: ${put_wall} (High Gamma Support)\n- **ATM Flow**: Heavy ATM sweep activity detected. Dealers are currently in a positive gamma regime, suppressing volatility."
-        except:
-            response = f"🔥 **Options Data for {ticker}**:\nMassive call walls are stacking up slightly OTM, meaning dealers will sell into strength. ATM implied volatility is currently elevated."
-            
-    elif has_intent(["news", "headline", "headlines"]):
-        try:
-            news_items = ticker_obj.news[:3]
-            if news_items:
-                news_str = "\n".join([f"- **{item.get('content', {}).get('title', 'Headline')}** ({item.get('content', {}).get('provider', {}).get('displayName', 'News')})" for item in news_items])
-                response = f"📰 **Latest News for {ticker}**:\n{news_str}\n\n*Agent Note*: Algorithms process these headlines in milliseconds. Be extremely careful trading directly on retail news."
-            else:
-                response = f"📰 **Latest News for {ticker}**:\nNo major catalyst headlines detected in the past 24 hours."
-        except:
-            response = f"📰 **Latest News for {ticker}**:\nOur institutional scrapers are detecting elevated chatter, but no Tier-1 news has hit the wire yet."
-            
-    elif has_intent(["sec", "filing", "insider", "10-k", "10-q"]):
-        response = f"📄 **SEC Filings & Insider Data for {ticker}**:\nRecent 10-Q and Form 4 (Insider Trading) filings indicate positive structural developments. The CFO recently reported a significant accumulation of shares, and the latest quarterly filing showed zero debt covenants breached."
-            
-    else:
-        # Fallback to the persona-specific heuristic responses first
-        if persona == "quant":
-            if "buy" in prompt or "entry" in prompt:
-                response = f"Algorithmic setup for {ticker}: The recent consolidation near the {context.get('technicals', {}).get('stage', 'Stage 2')} moving averages provides a low-risk entry. Target the previous swing high."
-            elif "risk" in prompt or "stop" in prompt:
-                response = f"Quantitative risk profile: ATR is currently elevated. Set a hard stop-loss 2 ATRs below the breakout pivot to avoid getting chopped out by high-frequency market makers."
-                
-        elif persona == "options":
-            if "call" in prompt or "bull" in prompt:
-                response = f"Options Flow Analysis: We are seeing heavy call buying above the current spot price. The primary Call Wall (GEX Resistance) is acting as a magnet."
-            elif "put" in prompt or "bear" in prompt:
-                response = f"Options Flow Analysis: Dealers are short gamma below the current spot. If {ticker} breaks support, delta hedging could accelerate the selloff."
-                
-        elif persona == "macro":
-            if "rate" in prompt or "fed" in prompt:
-                response = f"Macro Context: {ticker}'s sector is highly sensitive to the 10-year yield. Current Fed fund futures imply a 60% chance of a rate cut, which provides a tailwind here."
-            elif "market" in prompt or "spy" in prompt:
-                response = f"Macro Context: The broader market health is currently exhibiting a 'Risk-On' environment, allowing high-beta names like {ticker} to outperform the index."
-
-        # Ultimate fallback for completely unrecognized or casual questions
-        if not response:
-            import random
-            responses = [
-                f"I'm currently focused on analyzing the charts. For {ticker}, the quantitative model is neutral. Did you want to see the 'support' levels or 'options' flow?",
-                f"I process market data, not small talk! But since you asked, {ticker} is currently compressing. Ask me for its 'technicals' if you want a deep dive.",
-                f"I didn't quite catch that. Try asking me for 'latest news on {ticker}' or 'fundamentals for {ticker}'.",
-                f"My algorithms are tuned specifically for market analysis. Currently, {ticker} is showing balanced flow. Do you need the latest 'SEC filings'?"
-            ]
-            response = random.choice(responses)
-
-    import time
-    time.sleep(1.0)
-    return jsonify({"response": response})
+    try:
+        from backend.ask_ai_engine import process_ai_query
+        result = process_ai_query(prompt=prompt, current_ticker=ticker, persona=persona, context=context)
+        return jsonify(result)
+    except Exception as e:
+        print(f"[ASK AI ERROR]: {e}", flush=True)
+        return jsonify({
+            "response": f"⚠️ An error occurred while synthesizing AI market intelligence: {str(e)}",
+            "structured_card": None,
+            "suggested_prompts": ["Analyze $NVDA", "Show Top Setups", "Check Market Health"]
+        })
 
 @app.route('/api/volatility_surface')
 def get_vol_surface():

@@ -22,6 +22,7 @@ import WeeklyPlaybookDashboard from './WeeklyPlaybookDashboard';
 import SeasonalityRadarDashboard from './SeasonalityRadarDashboard';
 import MacroMatrixDashboard from './MacroMatrixDashboard';
 import AiPlaybookDashboard from './AiPlaybookDashboard';
+import AskAiLiveDashboard from './AskAiLiveDashboard';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -790,7 +791,7 @@ function App() {
           <button className={activeTab === 'deepfundamentals' ? 'tab-active' : ''} onClick={() => setActiveTab('deepfundamentals')}><PieChartIcon size={18} /> Deep Fundamentals</button>
           <button className={activeTab === 'analysis' ? 'tab-active' : ''} onClick={() => setActiveTab('analysis')}><FileText size={18} /> AI Playbook</button>
           <button className={activeTab === 'tvsync' ? 'tab-active' : ''} onClick={() => setActiveTab('tvsync')}><Link size={18} /> TradingView Sync</button>
-          <button className={activeTab === 'ask_ai' ? 'tab-active' : ''} onClick={() => setActiveTab('ask_ai')}><Bot size={18} /> Ask AI (Live)</button>
+          <button className={activeTab === 'ask_ai' ? 'tab-active' : ''} onClick={() => setActiveTab('ask_ai')} style={{ color: activeTab === 'ask_ai' ? '#c084fc' : undefined }}><Bot size={18} color="#c084fc" /> Ask AI Live 💬</button>
           <div style={{ marginTop: '1.25rem', padding: '0 10px', paddingBottom: '1rem' }}>
             <button 
               className="trade-button" 
@@ -2555,81 +2556,14 @@ function App() {
 
       {/* Dedicated Ask AI Full-Screen Tab */}
       {activeTab === 'ask_ai' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', height: '80vh' }}>
-          <div className="neo-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2rem', background: 'rgba(15, 23, 42, 0.8)', borderTop: '5px solid #8b5cf6' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
-              <div>
-                <h2 style={{ margin: 0, color: '#8b5cf6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Bot size={28} /> Full-Screen Live Agent Feed
-                </h2>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#94a3b8', fontSize: '0.9rem' }}>Chat directly with autonomous quant agents and monitor live market sweeps.</p>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => setAgentPersona('quant')} style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '4px', background: agentPersona === 'quant' ? '#8b5cf6' : 'transparent', color: agentPersona === 'quant' ? '#fff' : '#94a3b8', border: '1px solid #8b5cf6', cursor: 'pointer' }}>Quant Agent</button>
-                <button onClick={() => setAgentPersona('options')} style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '4px', background: agentPersona === 'options' ? '#ec4899' : 'transparent', color: agentPersona === 'options' ? '#fff' : '#94a3b8', border: '1px solid #ec4899', cursor: 'pointer' }}>Options Agent</button>
-                <button onClick={() => setAgentPersona('macro')} style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '4px', background: agentPersona === 'macro' ? '#10b981' : 'transparent', color: agentPersona === 'macro' ? '#fff' : '#94a3b8', border: '1px solid #10b981', cursor: 'pointer' }}>Macro Agent</button>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '15px', paddingRight: '10px' }}>
-              {chatHistory.filter(msg => !msg.isBroadcast).length === 0 && (
-                <div style={{ color: '#94a3b8', fontSize: '1rem', textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' }}>
-                  <Bot size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-                  <p style={{ margin: 0 }}>Waiting for questions... Ask the AI anything about technicals, fundamentals, options flow, or SEC filings!</p>
-                </div>
-              )}
-              
-              {chatHistory.filter(msg => !msg.isBroadcast).map((msg, idx) => (
-                <div key={idx} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', background: msg.role === 'user' ? 'rgba(79, 172, 254, 0.2)' : msg.isBroadcast ? `rgba(${msg.color === '#10b981' ? '16, 185, 129' : msg.color === '#ef4444' ? '239, 68, 68' : '139, 92, 246'}, 0.1)` : 'rgba(255,255,255,0.05)', border: `1px solid ${msg.role === 'user' ? '#4facfe' : msg.isBroadcast ? msg.color : 'rgba(255,255,255,0.1)'}`, padding: '12px 16px', borderRadius: '8px', maxWidth: '80%' }}>
-                  <p style={{ margin: 0, fontSize: '1rem', color: msg.role === 'user' ? '#fff' : '#e2e8f0', lineHeight: '1.5' }}>
-                    {msg.role === 'user' ? null : (
-                      <strong style={{ color: msg.isBroadcast ? msg.color : '#8b5cf6', display: 'block', marginBottom: '6px', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        {msg.isBroadcast ? msg.council : `${agentPersona} Agent`}
-                      </strong>
-                    )}
-                    {msg.text}
-                  </p>
-                  {msg.payload ? (
-                    <button 
-                      onClick={() => { setBriefingData(msg.payload); setActiveTab('briefing'); }}
-                      style={{ marginTop: '12px', padding: '8px 16px', background: '#DFFF00', color: '#000', border: 'none', borderRadius: '4px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}
-                    >
-                      <Maximize size={16} /> Expand Morning Briefing
-                    </button>
-                  ) : (
-                    msg.isBroadcast && msg.ticker && msg.ticker !== 'BRIEFING' && (
-                      <button 
-                        onClick={() => fetchTickerData(msg.ticker)}
-                        style={{ marginTop: '12px', padding: '6px 16px', background: 'transparent', color: msg.color, border: `1px solid ${msg.color}`, borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}
-                      >
-                        <Search size={14} /> Analyze {msg.ticker}
-                      </button>
-                    )
-                  )}
-                </div>
-              ))}
-              
-              {isChatLoading && (
-                <div style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: '8px' }}>
-                  <Loader size={24} className="spin" color="#8b5cf6" />
-                </div>
-              )}
-            </div>
-
-            <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '12px' }}>
-              <input 
-                type="text" 
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask the AI Agents about any ticker, macro event, or strategy..."
-                style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '12px 16px', borderRadius: '6px', outline: 'none', fontSize: '1rem' }}
-              />
-              <button type="submit" disabled={isChatLoading || !chatInput.trim()} style={{ background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', padding: '12px 24px', cursor: (isChatLoading || !chatInput.trim()) ? 'not-allowed' : 'pointer', opacity: (isChatLoading || !chatInput.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', fontWeight: 'bold' }}>
-                <Send size={18} /> Send
-              </button>
-            </form>
-          </div>
-        </div>
+        <AskAiLiveDashboard
+          activeTicker={expertTickerData ? expertTickerData.ticker : searchQuery || 'SPY'}
+          onTickerSelect={(t) => {
+            fetchTickerData(t);
+            setActiveTab('overview');
+          }}
+          initialPersona={agentPersona || 'master'}
+        />
       )}
       
       </div> {/* End main-content */}
