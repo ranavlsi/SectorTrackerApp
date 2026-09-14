@@ -2,7 +2,7 @@
 
 **Generation Date:** Sunday, September 13, 2026
 
-**Market Posture:** `CAUTIOUS` (Health Score: 40.4/100) · Standard Tactical Allocation (1.0% - 1.5% per trade)
+**Market Posture:** `RISK_OFF` (Health Score: 17.8/100) · Defensive Sizing (0.75% - 1.0% per trade)
 
 This Institutional Playbook clusters overnight algorithmic scanner results into 4 discrete tactical regimes with strict risk boundaries.
 
@@ -18,12 +18,12 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 - **Base Pullback Ma**: Squat Support at 10-SMA ($41.77)
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$41.87` ── `$42.39`
-- **Invalidation Sentinel (Stop Loss):** `$40.54` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$43.47` (+2.5%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$46.51` (+9.7%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $41.9 Call / Sell $46.5 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:0.8`
+- **Accumulation Corridor:** `$42.05` ── `$42.73`
+- **Invalidation Sentinel (Stop Loss):** `$41.03` (-3.2% Risk Floor)
+- **Target 1 (Pin Target):** `$45.79` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$48.51` (+14.4%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $42.0 Call / Sell $48.5 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:2.5`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -42,12 +42,12 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 - **Zacks Rank 1**: Score: 4 | PEG: 1.79
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$96.26` ── `$97.21`
-- **Invalidation Sentinel (Stop Loss):** `$93.59` (-2.8% Risk Floor)
-- **Target 1 (Pin Target):** `$99.85` (+2.7%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$106.84` (+9.9%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $96.3 Call / Sell $106.8 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:1.0`
+- **Accumulation Corridor:** `$95.85` ── `$97.39`
+- **Invalidation Sentinel (Stop Loss):** `$94.72` (-2.0% Risk Floor)
+- **Target 1 (Pin Target):** `$101.37` (+4.9%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$109.48` (+13.3%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $95.8 Call / Sell $109.5 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:2.5`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -66,12 +66,12 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 - **Regression Channel Breakout**: Bullish Breakout (+12.3%) from Ascending Channel
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$7.76` ── `$10.41`
-- **Invalidation Sentinel (Stop Loss):** `$7.45` (-4.0% Risk Floor)
-- **Target 1 (Pin Target):** `$10.46` (+0.5%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$11.19` (+7.5%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $7.8 Call / Sell $11.2 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:0.2`
+- **Accumulation Corridor:** `$10.33` ── `$10.49`
+- **Invalidation Sentinel (Stop Loss):** `$10.08` (-3.2% Risk Floor)
+- **Target 1 (Pin Target):** `$11.23` (+7.9%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$11.89` (+14.2%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $10.3 Call / Sell $11.9 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:2.5`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -90,12 +90,12 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 - **Post Earning Reaction**: Gap Up +5.1%
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$75.34` ── `$76.86`
-- **Invalidation Sentinel (Stop Loss):** `$72.7` (-3.5% Risk Floor)
-- **Target 1 (Pin Target):** `$83.78` (+9.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$92.23` (+20.0%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $75.3 Call / Sell $92.2 Call (FUNDAMENTAL ACCELERATION Vertical)`
-- **Risk/Reward Expectancy:** `1:2.6`
+- **Accumulation Corridor:** `$75.49` ── `$76.71`
+- **Invalidation Sentinel (Stop Loss):** `$73.66` (-3.2% Risk Floor)
+- **Target 1 (Pin Target):** `$82.2` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$87.08` (+14.4%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $75.5 Call / Sell $87.1 Call (FUNDAMENTAL ACCELERATION Vertical)`
+- **Risk/Reward Expectancy:** `1:2.5`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -114,12 +114,12 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 - **Zacks Rank 1**: Score: 5 | PEG: 0.63
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$561.62` ── `$572.96`
-- **Invalidation Sentinel (Stop Loss):** `$541.96` (-3.5% Risk Floor)
-- **Target 1 (Pin Target):** `$624.53` (+9.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$687.55` (+20.0%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $561.6 Call / Sell $687.5 Call (FUNDAMENTAL ACCELERATION Vertical)`
-- **Risk/Reward Expectancy:** `1:2.6`
+- **Accumulation Corridor:** `$562.75` ── `$571.83`
+- **Invalidation Sentinel (Stop Loss):** `$549.14` (-3.2% Risk Floor)
+- **Target 1 (Pin Target):** `$612.66` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$648.96` (+14.4%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $562.8 Call / Sell $649.0 Call (FUNDAMENTAL ACCELERATION Vertical)`
+- **Risk/Reward Expectancy:** `1:2.5`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -138,12 +138,12 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 - **Zacks Rank 1**: Score: 5 | PEG: 0.47
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$56.26` ── `$62.09`
-- **Invalidation Sentinel (Stop Loss):** `$54.01` (-4.0% Risk Floor)
-- **Target 1 (Pin Target):** `$62.15` (+0.1%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$66.5` (+7.1%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $56.3 Call / Sell $66.5 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:0.0`
+- **Accumulation Corridor:** `$61.59` ── `$62.59`
+- **Invalidation Sentinel (Stop Loss):** `$60.1` (-3.2% Risk Floor)
+- **Target 1 (Pin Target):** `$67.07` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$71.05` (+14.4%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $61.6 Call / Sell $71.0 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:2.5`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -162,12 +162,12 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 - **Zacks Rank 1**: Score: 5 | PEG: 0.2
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$62.27` ── `$63.53`
-- **Invalidation Sentinel (Stop Loss):** `$60.09` (-3.5% Risk Floor)
-- **Target 1 (Pin Target):** `$69.25` (+9.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$76.24` (+20.0%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $62.3 Call / Sell $76.2 Call (FUNDAMENTAL ACCELERATION Vertical)`
-- **Risk/Reward Expectancy:** `1:2.6`
+- **Accumulation Corridor:** `$62.4` ── `$63.4`
+- **Invalidation Sentinel (Stop Loss):** `$60.89` (-3.2% Risk Floor)
+- **Target 1 (Pin Target):** `$67.93` (+8.0%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$71.95` (+14.4%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $62.4 Call / Sell $72.0 Call (FUNDAMENTAL ACCELERATION Vertical)`
+- **Risk/Reward Expectancy:** `1:2.5`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)
@@ -186,12 +186,12 @@ This Institutional Playbook clusters overnight algorithmic scanner results into 
 - **Medium Base Breakout**: 13 Months | Coiled
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$48.73` ── `$49.85`
-- **Invalidation Sentinel (Stop Loss):** `$47.03` (-3.5% Risk Floor)
-- **Target 1 (Pin Target):** `$52.68` (+5.7%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$56.37` (+13.1%) → *15m Trailing Stop*
-- **Options Contract:** `Buy $48.7 Call / Sell $56.4 Call (MA PULLBACK Vertical)`
-- **Risk/Reward Expectancy:** `1:1.7`
+- **Accumulation Corridor:** `$48.34` ── `$49.12`
+- **Invalidation Sentinel (Stop Loss):** `$47.17` (-3.2% Risk Floor)
+- **Target 1 (Pin Target):** `$52.68` (+8.1%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$55.75` (+14.4%) → *15m Trailing Stop*
+- **Options Contract:** `Buy $48.3 Call / Sell $55.8 Call (MA PULLBACK Vertical)`
+- **Risk/Reward Expectancy:** `1:2.5`
 
 ### 📊 Technical Health & Structure
 - **Structural Stage:** Stage 2 (Advancing)

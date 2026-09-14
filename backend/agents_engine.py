@@ -614,20 +614,22 @@ def synthesize_council(ticker: str, spot: float, change_pct: float,
     if entry_min > entry_max:
         entry_min, entry_max = entry_max, entry_min
 
-    # Stop Loss: Placed strictly below EMA21 & Put Wall (disciplined risk)
-    stop_candidate = min(shelf_sup, ema21, put_wall)
-    stop_loss = round(max(stop_candidate - (atr * 0.2), spot * 0.94), 2)
+    # Stop Loss: Capped strictly between 1.5% and 3.2% max risk
+    raw_stop = max(shelf_sup - (atr * 0.1), ema21 - (atr * 0.1), put_wall * 0.99)
+    max_risk_price = spot * 0.968  # 3.2% max risk floor
+    min_risk_price = spot * 0.985  # 1.5% min risk buffer
+    stop_loss = round(max(min(raw_stop, min_risk_price), max_risk_price), 2)
     stop_pct = round(((stop_loss - spot) / spot) * 100, 2)
+    risk_dollars = max(spot - stop_loss, 0.01)
 
-    # Targets: Target 1 at 20-day high / Call Wall, Target 2 at extended expansion
-    target_1 = round(max(call_wall, spot * 1.05), 2)
+    # Targets: Asymmetric 2.5R Target 1, 4.5R Target 2
+    target_1 = round(spot + max(2.5 * risk_dollars, spot * 0.05), 2)
     target_1_pct = round(((target_1 - spot) / spot) * 100, 2)
 
-    target_2 = round(max(target_1 * 1.06, spot * 1.12), 2)
+    target_2 = round(spot + max(4.5 * risk_dollars, spot * 0.10), 2)
     target_2_pct = round(((target_2 - spot) / spot) * 100, 2)
 
     # Risk to Reward
-    risk_dollars = max(spot - stop_loss, 0.01)
     reward_dollars = max(target_1 - spot, 0.01)
     rr_ratio = round(reward_dollars / risk_dollars, 1)
 

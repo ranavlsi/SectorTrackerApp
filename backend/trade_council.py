@@ -410,17 +410,21 @@ class TradeCouncil:
             final_sl = entry - (1.0 * atr)
         if final_sl >= current_price:
             final_sl = current_price - (0.5 * atr)
+
+        # Strict Institutional Risk Enforcement: Capped strictly between 1.5% and 3.2% max risk
+        max_sl_price = entry * 0.968  # 3.2% max risk floor
+        min_sl_price = entry * 0.985  # 1.5% min risk buffer
+        final_sl = max(min(final_sl, min_sl_price), max_sl_price)
             
         risk_dollars = max(0.01, entry - final_sl)
         
-        # 3. Evaluate Profit Target
+        # 3. Evaluate Profit Target (Asymmetric 2.5R - 3.0R)
         if setup_type == "Composite Breakout (VCP)":
-            # 3.0R Asymmetric Target
             final_pt = entry + (3.0 * risk_dollars)
         elif setup_type in ["Flat Base Consolidation", "High-Tight Flag Breakout", "Ascending Momentum Breakout", "Ascending Base Breakout", "52-Week High Breakout"]:
             final_pt = entry + (3.0 * risk_dollars)
         elif "Pullback" in setup_type or "Downward Channel" in setup_type:
-            # 2.5R Target or Retest of Upper Pivot High
+            # At least 2.5R Target or Retest of Upper Pivot High
             final_pt = max(trend_data['pivot_15d'], entry + (2.5 * risk_dollars))
         elif setup_type == "Parabolic Momentum Tracker":
             final_pt = entry + (2.5 * risk_dollars)
@@ -428,9 +432,13 @@ class TradeCouncil:
             swing_low = struct_data['support']
             swing_high = struct_data['resistance']
             swing_range = swing_high - swing_low
-            final_pt = swing_high + (swing_range * 0.618)
+            final_pt = max(swing_high + (swing_range * 0.618), entry + (2.5 * risk_dollars))
         else:
             final_pt = entry + (3.0 * risk_dollars)
+
+        # Guarantee minimum 2.5R profit target
+        if final_pt < entry + (2.5 * risk_dollars):
+            final_pt = entry + (2.5 * risk_dollars)
             
         # Format the entry zone dynamically
         entry_str = f"{entry:.2f}"

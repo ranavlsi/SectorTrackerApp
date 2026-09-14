@@ -124,6 +124,7 @@ def fetch_batch_quotes(tickers: List[str]) -> Dict[str, Dict[str, float]]:
                     price = float(hist['Close'].iloc[-1])
                 recent_high = float(hist['High'].tail(20).max())
                 recent_low = float(hist['Low'].tail(20).min())
+                recent_3d_low = float(hist['Low'].tail(3).min())
                 avg_vol = float(hist['Volume'].tail(20).mean())
                 curr_vol = float(hist['Volume'].iloc[-1])
                 
@@ -135,6 +136,7 @@ def fetch_batch_quotes(tickers: List[str]) -> Dict[str, Dict[str, float]]:
                     'price': round(price, 2),
                     'recent_high': round(recent_high, 2),
                     'recent_low': round(recent_low, 2),
+                    'recent_3d_low': round(recent_3d_low, 2),
                     'avg_vol': avg_vol,
                     'curr_vol': curr_vol,
                     'atr': round(atr, 2)
@@ -144,6 +146,7 @@ def fetch_batch_quotes(tickers: List[str]) -> Dict[str, Dict[str, float]]:
                     'price': round(price, 2),
                     'recent_high': round(price * 1.03, 2),
                     'recent_low': round(price * 0.95, 2),
+                    'recent_3d_low': round(price * 0.97, 2),
                     'avg_vol': 100000,
                     'curr_vol': 100000,
                     'atr': round(price * 0.03, 2)
@@ -208,6 +211,7 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
         atr = q['atr']
         recent_high = q['recent_high']
         recent_low = q['recent_low']
+        recent_3d_low = q.get('recent_3d_low', recent_low)
         curr_vol = q['curr_vol']
         avg_vol = max(q['avg_vol'], 1.0)
         vol_ratio = round(curr_vol / avg_vol, 2)
@@ -216,20 +220,26 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
             rec = existing_state[t]
             alert_price = rec.get('alert_price', price)
             pivot_price = rec.get('pivot_price', recent_high)
-            stop_loss = rec.get('stop_loss', round(alert_price - (atr * 1.5), 2))
-            target_1 = rec.get('target_1', round(alert_price * 1.08, 2))
-            target_2 = rec.get('target_2', round(alert_price * 1.20, 2))
             first_detected = rec.get('first_detected', today_str)
             prev_status = rec.get('lifecycle_status', 'PENDING')
         else:
             alert_price = price
-            # Pivot is the recent high
             pivot_price = recent_high
-            stop_loss = round(max(recent_low, alert_price * 0.93), 2)
-            target_1 = round(alert_price * 1.08, 2)
-            target_2 = round(alert_price * 1.20, 2)
             first_detected = today_str
             prev_status = 'PENDING'
+
+        # Strict Micro-Structural Stop Loss (capped strictly between 1.5% and 3.2% max risk)
+        raw_stop = recent_3d_low - (0.10 * atr)
+        max_risk_price = round(alert_price * 0.968, 2)  # 3.2% max risk floor
+        min_risk_price = round(alert_price * 0.985, 2)  # 1.5% min risk buffer
+        stop_loss = round(max(min(raw_stop, min_risk_price), max_risk_price), 2)
+        risk_dollars = max(alert_price - stop_loss, 0.01)
+
+        # Asymmetric Profit Targets (2.5R Pin Target, 4.5R Runner Target)
+        target_1 = round(alert_price + (2.5 * risk_dollars), 2)
+        target_2 = round(alert_price + (4.5 * risk_dollars), 2)
+        t1_pct = round(((target_1 - alert_price) / alert_price) * 100, 1)
+        t2_pct = round(((target_2 - alert_price) / alert_price) * 100, 1)
 
         # Calculate P&L
         gain_pct = round(((price - alert_price) / alert_price) * 100, 2)
@@ -250,11 +260,11 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
         # ----------------------------------------------------------------------
         if price >= target_2:
             status = 'TARGET_2_HIT'
-            status_label = '🎯 TARGET 2 ACHIEVED (+20%)'
+            status_label = f'🎯 TARGET 2 ACHIEVED (+{t2_pct}%)'
             color = 'emerald'
         elif price >= target_1:
             status = 'TARGET_HIT'
-            status_label = '🎯 TARGET 1 HIT (+8%)'
+            status_label = f'🎯 TARGET 1 HIT (+{t1_pct}%)'
             color = 'cyan'
             # Ratchet stop loss to breakeven if in profit
             stop_loss = max(stop_loss, alert_price)

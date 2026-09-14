@@ -206,56 +206,60 @@ def compute_institutional_execution(ticker: str, hist: pd.DataFrame, playbook_in
     vol_surge = round(curr_vol / max(avg_vol_20, 1.0), 2)
 
     # -------------------------------------------------------------------------
-    # Precision Execution Corridor & Strict Invalidation Floor
+    # Strict Institutional Risk Engineering (Tight Corridor, Micro Stop, Asymmetric Targets)
     # -------------------------------------------------------------------------
     playbook_id = playbook_info["id"]
 
-    if playbook_id == "alpha_breakout":
-        entry_min = round(current_price * 0.995, 2)
-        entry_max = round(max(current_price, recent_high_20 * 1.002), 2)
-        raw_stop = max(recent_low_20, entry_min - (1.2 * atr))
-        stop_loss = round(max(raw_stop, entry_min * 0.965), 2)
-        target_primary = round(entry_max * 1.08, 2)
-        target_secondary = round(entry_max * 1.18, 2)
-    elif playbook_id == "ma_pullback":
-        entry_min = round(min(current_price, ema_10 * 1.005), 2)
-        entry_max = round(max(current_price, ema_10 * 1.015), 2)
-        raw_stop = min(ema_21 * 0.99, entry_min - (1.1 * atr))
-        stop_loss = round(max(raw_stop, entry_min * 0.96), 2)
-        target_primary = round(recent_high_20, 2)
-        target_secondary = round(recent_high_20 * 1.07, 2)
-    elif playbook_id == "squeeze_gamma":
-        entry_min = round(current_price * 0.995, 2)
-        entry_max = round(current_price * 1.015, 2)
-        raw_stop = max(recent_low_20, entry_min - (1.3 * atr))
-        stop_loss = round(max(raw_stop, entry_min * 0.96), 2)
-        target_primary = round(entry_max * 1.12, 2)
-        target_secondary = round(entry_max * 1.25, 2)
-    else: # fundamental_acceleration
-        entry_min = round(current_price * 0.99, 2)
-        entry_max = round(current_price * 1.01, 2)
-        raw_stop = max(ema_21, entry_min - (1.2 * atr))
-        stop_loss = round(max(raw_stop, entry_min * 0.965), 2)
-        target_primary = round(entry_max * 1.09, 2)
-        target_secondary = round(entry_max * 1.20, 2)
+    recent_3d_low = float(low.tail(3).min())
+    recent_5d_low = float(low.tail(5).min())
+    recent_3d_high = float(high.tail(3).max())
+    recent_20d_high = recent_high_20
 
-    # Ensure corridor is properly ordered
+    # 1. Tight Entry Corridor (bounded within 0.8% - 1.2% of spot)
+    ideal_entry = current_price
+    entry_min = round(current_price * 0.992, 2)
+    entry_max = round(current_price * 1.008, 2)
+    if playbook_id == "alpha_breakout" and recent_20d_high > current_price and recent_20d_high <= current_price * 1.02:
+        entry_max = round(recent_20d_high * 1.002, 2)
+
     if entry_min > entry_max:
         entry_min, entry_max = entry_max, entry_min
 
-    # Ensure stop loss is strictly below entry_min and max risk capped at 5.5%
-    if stop_loss >= entry_min:
-        stop_loss = round(entry_min * 0.965, 2)
-    min_stop_floor = round(entry_min * 0.945, 2)
-    if stop_loss < min_stop_floor:
-        stop_loss = min_stop_floor
+    # 2. Tight Structural Invalidation Floor (Stop Loss)
+    # Anchor to micro-structure swing low minus micro-buffer (0.10 * ATR)
+    if playbook_id == "alpha_breakout":
+        structural_stop = recent_3d_low - (0.10 * atr)
+    elif playbook_id == "ma_pullback":
+        structural_stop = min(recent_3d_low, float(close.tail(2).min())) - (0.10 * atr)
+    elif playbook_id == "squeeze_gamma":
+        structural_stop = recent_3d_low - (0.15 * atr)
+    else: # fundamental_acceleration
+        structural_stop = recent_5d_low - (0.10 * atr)
 
-    risk_dollars = max(entry_min - stop_loss, 0.01)
-    rew_dollars = max(target_primary - entry_max, 0.01)
+    # Strictly cap risk envelope between 1.2% and 3.2% maximum risk
+    max_risk_price = round(ideal_entry * 0.968, 2)  # 3.2% max risk floor
+    min_risk_price = round(ideal_entry * 0.988, 2)  # 1.2% min risk buffer (avoid noise)
+    stop_loss = round(max(min(structural_stop, min_risk_price), max_risk_price), 2)
+
+    risk_dollars = max(ideal_entry - stop_loss, 0.01)
+    stop_loss_pct = round(((stop_loss - ideal_entry) / ideal_entry) * 100, 1)
+
+    # 3. Asymmetric Profit Targets (Strict Minimum 2.5R to 4.5R)
+    t1_from_r = ideal_entry + (2.5 * risk_dollars)
+    target_primary = round(t1_from_r, 2)
+    if recent_20d_high > target_primary and recent_20d_high <= ideal_entry + (3.5 * risk_dollars):
+        target_primary = round(recent_20d_high, 2)
+    if target_primary < ideal_entry + (2.2 * risk_dollars):
+        target_primary = round(ideal_entry + (2.5 * risk_dollars), 2)
+
+    target_secondary = round(ideal_entry + (4.5 * risk_dollars), 2)
+    if target_secondary < target_primary * 1.05:
+        target_secondary = round(target_primary * 1.08, 2)
+
+    rew_dollars = max(target_primary - ideal_entry, 0.01)
     rr_ratio = round(rew_dollars / risk_dollars, 1)
-    stop_loss_pct = round(((stop_loss - entry_min) / entry_min) * 100, 1)
-    target_primary_pct = round(((target_primary - entry_max) / entry_max) * 100, 1)
-    target_secondary_pct = round(((target_secondary - entry_max) / entry_max) * 100, 1)
+    target_primary_pct = round(((target_primary - ideal_entry) / ideal_entry) * 100, 1)
+    target_secondary_pct = round(((target_secondary - ideal_entry) / ideal_entry) * 100, 1)
 
     # Options strike specifications
     long_k = round(entry_min, 1)
@@ -266,14 +270,14 @@ def compute_institutional_execution(ticker: str, hist: pd.DataFrame, playbook_in
     checklist = [
         f"Verify price action inside ${entry_min:.2f} ── ${entry_max:.2f} accumulation corridor.",
         f"Ensure volume confirmation (current volume ratio {vol_surge}x ADV).",
-        f"Place structural invalidation stop at ${stop_loss:.2f} ({stop_loss_pct}% max risk).",
-        f"Scale out 50% at Target 1 (${target_primary:.2f}, +{target_primary_pct}%) and ratchet stop to Breakeven.",
-        f"Trail remaining 50% toward Target 2 (${target_secondary:.2f}, +{target_secondary_pct}%) using 15m trailing stop."
+        f"Place tight structural invalidation stop at ${stop_loss:.2f} ({stop_loss_pct}% max risk).",
+        f"Scale out 50% at Target 1 (${target_primary:.2f}, +{target_primary_pct}%, 1:{rr_ratio} R:R) and ratchet stop to Breakeven.",
+        f"Trail remaining 50% toward Target 2 (${target_secondary:.2f}, +{target_secondary_pct}%, 1:4.5 R:R) using 15m trailing stop."
     ]
 
     return {
         "entry_range": [entry_min, entry_max],
-        "ideal_entry": entry_min,
+        "ideal_entry": ideal_entry,
         "stop_loss": stop_loss,
         "stop_loss_pct": stop_loss_pct,
         "target_primary": target_primary,
