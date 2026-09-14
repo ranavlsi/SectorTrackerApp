@@ -20,6 +20,7 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
   const [searchInput, setSearchInput] = useState('');
   const [selectedExpiry, setSelectedExpiry] = useState('ALL');
   const [activeChartMode, setActiveChartMode] = useState('net_gex'); // 'net_gex' | 'call_put_split' | 'vanna_vex' | 'term_structure' | 'oi_heatmap' | 'cumulative'
+  const [oiVolSubMode, setOiVolSubMode] = useState('both'); // 'both' | 'volume' | 'oi'
   const [showMatrixModal, setShowMatrixModal] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -80,6 +81,11 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
     const filtered = rawProfile.filter(p => p.strike >= lower && p.strike <= upper);
     return filtered.length > 0 ? filtered : rawProfile;
   }, [rawProfile, spot]);
+
+  // Check if Open Interest is populated or if clearing is in progress
+  const hasOiData = useMemo(() => {
+    return (rawProfile || []).some(p => (p.call_oi || 0) > 0 || (p.put_oi || 0) > 0);
+  }, [rawProfile]);
 
   // Construct trajectory series including T=0 Spot origin for cone visualization
   const projectionChartData = useMemo(() => {
@@ -794,6 +800,56 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
               </div>
             </div>
 
+            {/* Interactive Chart Sub-Bar for OI & Volume */}
+            {activeChartMode === 'oi_heatmap' && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', background: 'rgba(15, 23, 42, 0.7)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#94a3b8', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace' }}>VIEW MODE:</span>
+                  <button
+                    type="button"
+                    onClick={() => setOiVolSubMode('both')}
+                    style={{
+                      background: oiVolSubMode === 'both' ? '#38bdf8' : 'rgba(255,255,255,0.06)',
+                      color: oiVolSubMode === 'both' ? '#000' : '#cbd5e1',
+                      border: '1px solid ' + (oiVolSubMode === 'both' ? '#38bdf8' : 'rgba(255,255,255,0.1)'),
+                      borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '11px', fontFamily: 'monospace'
+                    }}
+                  >
+                    All (Volume & OI)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOiVolSubMode('volume')}
+                    style={{
+                      background: oiVolSubMode === 'volume' ? '#00E676' : 'rgba(255,255,255,0.06)',
+                      color: oiVolSubMode === 'volume' ? '#000' : '#cbd5e1',
+                      border: '1px solid ' + (oiVolSubMode === 'volume' ? '#00E676' : 'rgba(255,255,255,0.1)'),
+                      borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '11px', fontFamily: 'monospace'
+                    }}
+                  >
+                    Active Volume Flow
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOiVolSubMode('oi')}
+                    style={{
+                      background: oiVolSubMode === 'oi' ? '#818cf8' : 'rgba(255,255,255,0.06)',
+                      color: oiVolSubMode === 'oi' ? '#000' : '#cbd5e1',
+                      border: '1px solid ' + (oiVolSubMode === 'oi' ? '#818cf8' : 'rgba(255,255,255,0.1)'),
+                      borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '11px', fontFamily: 'monospace'
+                    }}
+                  >
+                    Open Interest (OI)
+                  </button>
+                </div>
+                {!hasOiData && (
+                  <span style={{ color: '#fbbf24', fontSize: '11px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    ⚡ Note: OCC clearing in progress (weekend/clearing cycle). Displaying active volume flow.
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Interactive Chart */}
             <div className="gex-chart-container">
               <ResponsiveContainer width="100%" height="100%">
@@ -970,15 +1026,31 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     <YAxis
                       stroke="#94a3b8"
                       tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
-                      label={{ value: 'Open Interest Contracts', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }}
+                      tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
+                      label={{ value: oiVolSubMode === 'volume' ? 'Volume (Contracts)' : (oiVolSubMode === 'oi' ? 'Open Interest (Contracts)' : 'Contracts (Volume & OI)'), angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }}
                     />
                     <RechartsTooltip
                       contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: '#334155', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
+                      formatter={(val, name) => [val != null ? val.toLocaleString() : 0, name]}
                     />
                     <Legend wrapperStyle={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} />
-                    {spot > 0 && <ReferenceLine x={spot} stroke="#ffffff" strokeDasharray="4 4" strokeWidth={2} />}
-                    <Bar dataKey="call_oi" name="Call Open Interest" fill="#38bdf8" fillOpacity={0.8} />
-                    <Bar dataKey="put_oi" name="Put Open Interest" fill="#f43f5e" fillOpacity={0.8} />
+                    {spot > 0 && <ReferenceLine x={spot} stroke="#ffffff" strokeDasharray="4 4" strokeWidth={2} label={{ position: 'top', value: `Spot $${spot.toFixed(2)}`, fill: '#ffffff', fontSize: 10 }} />}
+
+                    {/* Volume Bars (Always available, including weekend clearing) */}
+                    {(oiVolSubMode === 'both' || oiVolSubMode === 'volume' || !hasOiData) && (
+                      <Bar dataKey="call_vol" name="Call Volume" fill="#00E676" fillOpacity={0.85} radius={[3, 3, 0, 0]} />
+                    )}
+                    {(oiVolSubMode === 'both' || oiVolSubMode === 'volume' || !hasOiData) && (
+                      <Bar dataKey="put_vol" name="Put Volume" fill="#f43f5e" fillOpacity={0.85} radius={[3, 3, 0, 0]} />
+                    )}
+
+                    {/* Open Interest Bars (When available from OCC) */}
+                    {(oiVolSubMode === 'both' || oiVolSubMode === 'oi') && hasOiData && (
+                      <Bar dataKey="call_oi" name="Call Open Interest" fill="#38bdf8" fillOpacity={0.65} radius={[3, 3, 0, 0]} />
+                    )}
+                    {(oiVolSubMode === 'both' || oiVolSubMode === 'oi') && hasOiData && (
+                      <Bar dataKey="put_oi" name="Put Open Interest" fill="#c084fc" fillOpacity={0.65} radius={[3, 3, 0, 0]} />
+                    )}
                   </ComposedChart>
                 )}
 
