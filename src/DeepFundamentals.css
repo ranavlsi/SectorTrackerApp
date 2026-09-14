@@ -568,6 +568,266 @@
   font-family: -apple-system, sans-serif;
 }
 
+/* ========================================================================= */
+/* 2B. INSTITUTIONAL ENTRY PLAN & POSITION ARCHITECTURE                      */
+/* ========================================================================= */
+.fund-entry-plan-card {
+  position: relative;
+  z-index: 2;
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.05) 50%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.fund-entry-plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fund-entry-plan-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fund-entry-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
+}
+
+.fund-entry-main-heading {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.fund-entry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: rgba(16, 185, 129, 0.2);
+  color: #00E676;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+.fund-entry-subheading {
+  margin: 3px 0 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: -apple-system, sans-serif;
+}
+
+.fund-entry-allocation-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00F0FF;
+}
+
+.fund-entry-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+@media (max-width: 1200px) {
+  .fund-entry-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .fund-entry-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.fund-entry-tile {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.fund-entry-tile:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.fund-entry-tile.primary {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
+}
+
+.fund-entry-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.fund-entry-tile-top .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+.fund-entry-tile-top .tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.fund-entry-tile-top .tag.green { background: rgba(16, 185, 129, 0.2); color: #00E676; }
+.fund-entry-tile-top .tag.cyan { background: rgba(6, 182, 212, 0.2); color: #00F0FF; }
+.fund-entry-tile-top .tag.rose { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+.fund-entry-tile-top .tag.emerald { background: rgba(16, 185, 129, 0.2); color: #00E676; }
+.fund-entry-tile-top .tag.purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+.fund-entry-tile-top .tag.amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+.fund-entry-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 6px;
+}
+
+.fund-entry-val.green { color: #00E676; }
+.fund-entry-val.cyan { color: #00F0FF; }
+.fund-entry-val.rose { color: #f43f5e; }
+.fund-entry-val.emerald { color: #00E676; }
+.fund-entry-val.purple { color: #c084fc; }
+.fund-entry-val.amber { color: #fbbf24; }
+
+.fund-entry-sub {
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.fund-entry-footer-ribbon {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(5, 8, 16, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fund-entry-rationale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  font-family: -apple-system, sans-serif;
+  flex: 1;
+  min-width: 260px;
+}
+
+.fund-entry-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fund-entry-tab-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(6, 182, 212, 0.15);
+  color: #00F0FF;
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fund-entry-tab-link:hover {
+  background: rgba(6, 182, 212, 0.25);
+  border-color: #00F0FF;
+}
+
+.fund-entry-tab-link.secondary {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.35);
+}
+
+.fund-entry-tab-link.secondary:hover {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #c084fc;
+}
+
+.fund-risk-directive-strip {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(5, 8, 16, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 /* ------------------------------------------------------------------------- */
 /* 3. INSTITUTIONAL KPI STATS STRIP                                          */
 /* ------------------------------------------------------------------------- */

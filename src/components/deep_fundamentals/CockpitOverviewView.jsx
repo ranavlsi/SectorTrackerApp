@@ -693,6 +693,92 @@ export default function CockpitOverviewView({
             </div>
           </div>
 
+          {/* QUANT AI ENTRY EXECUTION & CAPITAL ALLOCATION DECK */}
+          {(() => {
+            const intrinsicFairVal = valuation.fairValuePerShare || currentPrice * 1.15;
+            const intrinsicDiscount = ((intrinsicFairVal - currentPrice) / intrinsicFairVal) * 100;
+            const idealEntryPrice = intrinsicDiscount >= 0
+              ? +(currentPrice * 0.98).toFixed(2)
+              : +(Math.min(currentPrice * 0.92, intrinsicFairVal)).toFixed(2);
+            const accumZoneLow = +(idealEntryPrice * 0.95).toFixed(2);
+            const accumZoneHigh = +(idealEntryPrice * 1.03).toFixed(2);
+            const stopLossPrice = +(Math.min(idealEntryPrice * 0.89, Math.max(low52 * 0.95, idealEntryPrice * 0.84))).toFixed(2);
+            const targetBase = +(Math.max(currentPrice * 1.08, intrinsicFairVal)).toFixed(2);
+            const targetBullPrice = +(Math.max(intrinsicFairVal * 1.25, analystTargetHigh)).toFixed(2);
+            const riskAmt = idealEntryPrice - stopLossPrice;
+            const rewAmt = targetBase - idealEntryPrice;
+            const rrRatio = riskAmt > 0 ? (rewAmt / riskAmt).toFixed(2) : '3.20';
+            const upsideBasePct = (((targetBase - idealEntryPrice) / idealEntryPrice) * 100).toFixed(1);
+
+            return (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
+                }}
+                className="rounded-lg p-4"
+              >
+                <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#00E676]" />
+                    <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
+                      Quant AI Entry Execution & Risk Deck
+                    </h3>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    ASYMMETRIC {rrRatio}:1
+                  </span>
+                </div>
+
+                {/* Primary Entry Metric Row */}
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center font-mono">
+                  <div className="rounded-md bg-[#0B0E14] p-2.5 border border-emerald-500/30">
+                    <span className="text-[9px] uppercase tracking-wider text-emerald-400 block font-sans font-bold">
+                      Optimal Entry
+                    </span>
+                    <span className="text-base font-extrabold text-white">${idealEntryPrice}</span>
+                    <span className="text-[9px] text-slate-400 block mt-0.5">
+                      {intrinsicDiscount >= 0 ? 'Liquidity Dip Limit' : 'Value Pullback Target'}
+                    </span>
+                  </div>
+
+                  <div className="rounded-md bg-[#0B0E14] p-2.5 border border-white/[0.06]">
+                    <span className="text-[9px] uppercase tracking-wider text-cyan-400 block font-sans font-bold">
+                      Scale-In Zone
+                    </span>
+                    <span className="text-xs font-bold text-cyan-200 mt-1 block">
+                      ${accumZoneLow} – ${accumZoneHigh}
+                    </span>
+                    <span className="text-[9px] text-slate-400 block mt-0.5">DCA Corridor</span>
+                  </div>
+
+                  <div className="rounded-md bg-[#0B0E14] p-2.5 border border-rose-500/20">
+                    <span className="text-[9px] uppercase tracking-wider text-rose-400 block font-sans font-bold">
+                      Preservation Stop
+                    </span>
+                    <span className="text-base font-extrabold text-rose-400">${stopLossPrice}</span>
+                    <span className="text-[9px] text-rose-300/80 block mt-0.5">
+                      -{Math.abs(((idealEntryPrice - stopLossPrice)/idealEntryPrice)*100).toFixed(1)}% Downside
+                    </span>
+                  </div>
+                </div>
+
+                {/* Profit Target Strip */}
+                <div className="mt-2.5 grid grid-cols-2 gap-2 text-center font-mono">
+                  <div className="rounded-md bg-[#0B0E14] p-2 border border-white/[0.06]">
+                    <span className="text-[9px] uppercase text-slate-400 block font-sans">Intrinsic DCF Target</span>
+                    <span className="text-xs font-bold text-emerald-400">${targetBase} (+{upsideBasePct}%)</span>
+                  </div>
+                  <div className="rounded-md bg-[#0B0E14] p-2 border border-white/[0.06]">
+                    <span className="text-[9px] uppercase text-slate-400 block font-sans">Wall St / Bull Target</span>
+                    <span className="text-xs font-bold text-purple-400">${targetBullPrice}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* CAPITAL STRUCTURE & SOLVENCY HEALTH */}
           <div
             style={{

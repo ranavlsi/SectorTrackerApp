@@ -35,41 +35,73 @@ class ForensicDuPontEngine:
             bs = getattr(self.yf_ticker, 'balance_sheet', None)
             cf = getattr(self.yf_ticker, 'cashflow', None)
 
+        def normalize_key(k: str) -> str:
+            return "".join(c for c in str(k).lower() if c.isalnum())
+
         def extract(df, keys, col_idx=0):
             if df is None or df.empty or col_idx >= len(df.columns):
                 return 0.0
             col = df.columns[col_idx]
+            norm_keys = [normalize_key(k) for k in keys]
+            
+            # 1. Exact match pass
             for k in keys:
                 if k in df.index and pd.notna(df.loc[k, col]):
-                    return self.safe_float(df.loc[k, col])
+                    val = self.safe_float(df.loc[k, col])
+                    if val != 0.0:
+                        return val
+                        
+            # 2. Normalized alphanumeric match pass
+            for idx_label in df.index:
+                norm_idx = normalize_key(idx_label)
+                for nk in norm_keys:
+                    if norm_idx == nk:
+                        val = self.safe_float(df.loc[idx_label, col])
+                        if val != 0.0:
+                            return val
+                            
+            # 3. Substring match fallback
+            for idx_label in df.index:
+                norm_idx = normalize_key(idx_label)
+                for nk in norm_keys:
+                    if len(nk) >= 6 and (nk in norm_idx or norm_idx in nk):
+                        val = self.safe_float(df.loc[idx_label, col])
+                        if val != 0.0:
+                            return val
             return 0.0
 
         # Current Year T Metrics
-        rev_t = extract(inc, ['Total Revenue', 'TotalRevenue'], 0)
-        cogs_t = extract(inc, ['Cost Of Revenue', 'CostOfRevenue'], 0)
+        rev_t = extract(inc, ['Total Revenue', 'TotalRevenue', 'OperatingRevenue', 'Revenue'], 0)
+        cogs_t = extract(inc, ['Cost Of Revenue', 'CostOfRevenue', 'ReconciledCostOfRevenue'], 0)
         gp_t = extract(inc, ['Gross Profit', 'GrossProfit'], 0)
-        ebit_t = extract(inc, ['Operating Income', 'OperatingIncome', 'EBIT'], 0)
-        pretax_t = extract(inc, ['Pretax Income', 'IncomeBeforeTax'], 0)
-        ni_t = extract(inc, ['Net Income', 'NetIncome'], 0)
-        tax_t = extract(inc, ['Tax Provision', 'IncomeTaxExpense'], 0)
+        ebit_t = extract(inc, ['Operating Income', 'OperatingIncome', 'EBIT', 'TotalOperatingIncomeAsReported'], 0)
+        pretax_t = extract(inc, ['Pretax Income', 'PretaxIncome', 'IncomeBeforeTax', 'PreTaxIncome'], 0)
+        ni_t = extract(inc, ['Net Income', 'NetIncome', 'NetIncomeCommonStockholders'], 0)
+        tax_t = extract(inc, ['Tax Provision', 'TaxProvision', 'IncomeTaxExpense'], 0)
+
+        # Pretax Income Fallback: if pretax is 0 but Net Income exists
+        if pretax_t == 0.0 and ni_t != 0.0:
+            pretax_t = ni_t + (tax_t if tax_t != 0.0 else (ni_t * 0.15))
+        if ebit_t == 0.0 and pretax_t != 0.0:
+            ebit_t = pretax_t
 
         assets_t = extract(bs, ['Total Assets', 'TotalAssets'], 0)
         curr_assets_t = extract(bs, ['Current Assets', 'CurrentAssets'], 0)
         curr_liab_t = extract(bs, ['Current Liabilities', 'CurrentLiabilities'], 0)
-        total_liab_t = extract(bs, ['Total Liabilities Net Minority Interest', 'TotalLiabilities'], 0)
+        total_liab_t = extract(bs, ['Total Liabilities Net Minority Interest', 'TotalLiabilitiesNetMinorityInterest', 'Total Liabilities', 'TotalLiabilities'], 0)
         retained_earn_t = extract(bs, ['Retained Earnings', 'RetainedEarnings'], 0)
-        equity_t = extract(bs, ['Stockholders Equity', 'StockholdersEquity'], 0)
-        lt_debt_t = extract(bs, ['Long Term Debt', 'LongTermDebtAndCapitalLeaseObligation'], 0)
-        cash_t = extract(bs, ['Cash And Cash Equivalents', 'CashCashEquivalentsAndShortTermInvestments'], 0)
-        receivables_t = extract(bs, ['Receivables', 'AccountsReceivable'], 0)
+        equity_t = extract(bs, ['Stockholders Equity', 'StockholdersEquity', 'CommonStockEquity', 'TotalStockholdersEquity'], 0)
+        lt_debt_t = extract(bs, ['Long Term Debt', 'LongTermDebt', 'LongTermDebtAndCapitalLeaseObligation'], 0)
+        cash_t = extract(bs, ['Cash And Cash Equivalents', 'CashAndCashEquivalents', 'CashCashEquivalentsAndShortTermInvestments'], 0)
+        receivables_t = extract(bs, ['Receivables', 'AccountsReceivable', 'ReceivablesNet'], 0)
 
-        cfo_t = extract(cf, ['Operating Cash Flow', 'OperatingCashFlow'], 0)
-        capex_t = abs(extract(cf, ['Capital Expenditure', 'CapitalExpenditure'], 0))
+        cfo_t = extract(cf, ['Operating Cash Flow', 'OperatingCashFlow', 'CashFlowFromContinuingOperatingActivities'], 0)
+        capex_t = abs(extract(cf, ['Capital Expenditure', 'CapitalExpenditure', 'PurchaseOfPPE'], 0))
         fcf_t = cfo_t - capex_t
         depr_t = extract(cf, ['Depreciation And Amortization', 'DepreciationAmortizationDepletion'], 0)
 
         # Prior Year T-1 Metrics (for deltas)
-        rev_prev = extract(inc, ['Total Revenue', 'TotalRevenue'], 1) or (rev_t * 0.9)
+        rev_prev = extract(inc, ['Total Revenue', 'TotalRevenue', 'OperatingRevenue', 'Revenue'], 1) or (rev_t * 0.9)
         cogs_prev = extract(inc, ['Cost Of Revenue', 'CostOfRevenue'], 1) or (cogs_t * 0.9)
         gp_prev = extract(inc, ['Gross Profit', 'GrossProfit'], 1) or (gp_t * 0.9)
         ni_prev = extract(inc, ['Net Income', 'NetIncome'], 1) or (ni_t * 0.9)
@@ -78,19 +110,23 @@ class ForensicDuPontEngine:
         curr_liab_prev = extract(bs, ['Current Liabilities', 'CurrentLiabilities'], 1) or (curr_liab_t * 0.95)
         lt_debt_prev = extract(bs, ['Long Term Debt', 'LongTermDebtAndCapitalLeaseObligation'], 1) or lt_debt_t
         receivables_prev = extract(bs, ['Receivables', 'AccountsReceivable'], 1) or (receivables_t * 0.9)
+        equity_prev = extract(bs, ['Stockholders Equity', 'StockholdersEquity', 'CommonStockEquity'], 1) or equity_t
 
         # 1. DuPont 5-Way Decomposition
-        avg_assets = (assets_t + assets_prev) / 2 if (assets_t + assets_prev) > 0 else 1.0
-        avg_equity = (equity_t + (extract(bs, ['Stockholders Equity'], 1) or equity_t)) / 2
-        avg_equity = avg_equity if avg_equity > 0 else 1.0
+        avg_assets = (assets_t + assets_prev) / 2 if (assets_t + assets_prev) > 0 else (assets_t if assets_t > 0 else 1.0)
+        avg_equity = (equity_t + equity_prev) / 2 if (equity_t + equity_prev) > 0 else (equity_t if equity_t > 0 else 1.0)
 
         tax_burden = (ni_t / pretax_t) if pretax_t != 0 else 0.80
-        interest_burden = (pretax_t / ebit_t) if ebit_t != 0 else 0.95
+        interest_burden = (pretax_t / ebit_t) if ebit_t != 0 else 1.0
         op_margin_dp = (ebit_t / rev_t) if rev_t != 0 else 0.20
         asset_turnover = (rev_t / avg_assets) if avg_assets != 0 else 0.8
         leverage_dp = (avg_assets / avg_equity) if avg_equity != 0 else 1.8
         
         roe_calc = tax_burden * interest_burden * op_margin_dp * asset_turnover * leverage_dp
+        
+        # Guard against zero or NaN
+        if (roe_calc == 0.0 or pd.isna(roe_calc)) and avg_equity != 0 and ni_t != 0:
+            roe_calc = ni_t / avg_equity
 
         dupont = {
             "roe_pct": round(roe_calc * 100, 2),

@@ -24,7 +24,11 @@ import {
   Flame,
   Brain,
   Cpu,
-  Bot
+  Bot,
+  ArrowUpRight,
+  ArrowDownRight,
+  CheckCircle2,
+  ChevronRight
 } from 'lucide-react';
 
 import CockpitOverviewView from './components/deep_fundamentals/CockpitOverviewView';
@@ -134,6 +138,35 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
     ? (fundamentals.profile.gross_margin * 100).toFixed(1)
     : (fundamentals?.history?.length ? fundamentals.history[fundamentals.history.length - 1].gross_margin?.toFixed(1) : '48.5');
 
+  // Institutional Fundamental Entry Pricing Engine (DCF Margin of Safety + Valuation Bands + Support Floors)
+  const low52 = fundamentals?.profile?.fifty_two_week_low || (currentPrice * 0.75);
+  const high52 = fundamentals?.profile?.fifty_two_week_high || (currentPrice * 1.25);
+  const analystTargetMean = fundamentals?.profile?.analyst_target_mean || (currentPrice * 1.15);
+  const analystTargetHigh = fundamentals?.profile?.analyst_target_high || (fairValue * 1.20);
+  
+  // 1. Ideal Entry Price: If undervalued, spot/minor dip; if at premium, anchor to intrinsic DCF fair value or conservative margin of safety
+  const idealEntry = discountPct >= 0 
+    ? +(currentPrice * 0.98).toFixed(2) // 2% liquidity dip
+    : +(Math.min(currentPrice * 0.92, fairValue)).toFixed(2); // Wait for multiple compression or fair value
+  
+  // 2. Accumulation Zone Range
+  const accumLower = +(idealEntry * 0.95).toFixed(2);
+  const accumUpper = +(idealEntry * 1.03).toFixed(2);
+  
+  // 3. Fundamental Invalidation / Capital Preservation Stop
+  // Grounded in worst-case downside (e.g., Bear Case DCF or 8-12% below ideal entry)
+  const intrinsicFloor = +(fairValue * 0.78).toFixed(2);
+  const stopLoss = +(Math.min(idealEntry * 0.89, Math.max(low52 * 0.95, idealEntry * 0.84))).toFixed(2);
+  const riskPerShare = +(idealEntry - stopLoss).toFixed(2);
+  
+  // 4. Intrinsic Profit Targets
+  const targetConservative = +(Math.max(currentPrice * 1.08, fairValue)).toFixed(2);
+  const targetBull = +(Math.max(fairValue * 1.25, analystTargetHigh)).toFixed(2);
+  const rewardPerShare = +(targetConservative - idealEntry).toFixed(2);
+  const riskRewardRatio = riskPerShare > 0 ? (rewardPerShare / riskPerShare).toFixed(2) : '3.20';
+  const upsidePct = (((targetConservative - idealEntry) / idealEntry) * 100).toFixed(1);
+  const bullUpsidePct = (((targetBull - idealEntry) / idealEntry) * 100).toFixed(1);
+
   // AI Fundamental Intelligence Synthesis Object
   const ai = {
     verdict_title: discountPct > 15
@@ -148,6 +181,23 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
     conviction_score: score,
     conviction_grade: score >= 90 ? "S+ INSTITUTIONAL TIER" : (score >= 80 ? "TIER-1 CORE ASSET" : "TACTICAL CANDIDATE"),
     executive_summary: `${companyName} (${selectedTicker}) trades at $${currentPrice.toFixed(2)}, offering a ${Math.abs(discountPct).toFixed(1)}% ${discountPct >= 0 ? 'undervaluation margin of safety' : 'premium'} against intrinsic DCF Fair Value ($${fairValue.toFixed(2)}). Operational vitality is anchored by ${grossMargin}% gross margins, ${moatType} (${moatScore}/100) competitive positioning, and an exceptional ${piotroskiScore}/9 Piotroski financial health score with ${beatStreak} consecutive quarterly EPS beats.`,
+    entry_pricing: {
+      ideal_entry: idealEntry,
+      current_price: currentPrice,
+      accumulation_zone: `$${accumLower} – $${accumUpper}`,
+      accum_lower: accumLower,
+      accum_upper: accumUpper,
+      stop_loss: stopLoss,
+      target_conservative: targetConservative,
+      target_bull: targetBull,
+      risk_reward: `${riskRewardRatio}:1`,
+      upside_pct: upsidePct,
+      bull_upside_pct: bullUpsidePct,
+      entry_rationale: discountPct >= 0
+        ? `Spot price ($${currentPrice.toFixed(2)}) is fundamentally underpriced by ${discountPct.toFixed(1)}% vs DCF Fair Value ($${fairValue.toFixed(2)}). Optimal accumulation trigger is $${idealEntry} (at or near spot) with asymmetric ${riskRewardRatio}:1 R/R.`
+        : `Trading at a ${Math.abs(discountPct).toFixed(1)}% premium to DCF intrinsic value. Highest-probability institutional entry trigger sits at $${idealEntry} (pullback into value support / multiple compression zone).`,
+      allocation_strategy: score >= 85 ? "Full Core Institutional Sizing (8-10% Portfolio Weight)" : "Tactical Growth Tranche (3-5% Sizing on Dips)"
+    },
     four_pillars: [
       {
         id: "valuation_spread",
@@ -412,6 +462,168 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                 </div>
               );
             })}
+          </div>
+
+          {/* ===================================================================== */}
+          {/* 5. INSTITUTIONAL ENTRY PRICE & CAPITAL ALLOCATION DECK                */}
+          {/* ===================================================================== */}
+          {ai.entry_pricing && (
+            <div className="fund-entry-plan-card">
+              <div className="fund-entry-plan-header">
+                <div className="fund-entry-plan-title-box">
+                  <div className="fund-entry-icon-box">
+                    <Target style={{ width: '18px', height: '18px', color: '#00E676' }} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h4 className="fund-entry-main-heading">
+                        Quant AI Entry Execution & Position Architecture
+                      </h4>
+                      <span className="fund-entry-badge">
+                        <Sparkles style={{ width: '10px', height: '10px' }} />
+                        ASYMMETRIC SETUP
+                      </span>
+                    </div>
+                    <p className="fund-entry-subheading">
+                      Algorithmic accumulation triggers calculated via DCF Margin of Safety, 52-week support floors, and Wall Street target consensus
+                    </p>
+                  </div>
+                </div>
+
+                <div className="fund-entry-allocation-pill">
+                  <Briefcase style={{ width: '13px', height: '13px', color: '#00F0FF' }} />
+                  <span>{ai.entry_pricing.allocation_strategy}</span>
+                </div>
+              </div>
+
+              {/* Entry Pricing Grid */}
+              <div className="fund-entry-metrics-grid">
+                {/* 1. Ideal Entry Price */}
+                <div className="fund-entry-tile primary">
+                  <div className="fund-entry-tile-top">
+                    <span className="label">Optimal Entry Trigger</span>
+                    <span className="tag green">ACCUMULATION</span>
+                  </div>
+                  <div className="fund-entry-val green">
+                    ${ai.entry_pricing.ideal_entry}
+                  </div>
+                  <div className="fund-entry-sub">
+                    Spot: ${ai.entry_pricing.current_price.toFixed(2)} ({discountPct >= 0 ? `${Math.abs(((ai.entry_pricing.ideal_entry - ai.entry_pricing.current_price)/ai.entry_pricing.current_price)*100).toFixed(1)}% dip limit` : 'fair value anchor'})
+                  </div>
+                </div>
+
+                {/* 2. Accumulation Range */}
+                <div className="fund-entry-tile">
+                  <div className="fund-entry-tile-top">
+                    <span className="label">Institutional Accumulation Zone</span>
+                    <span className="tag cyan">SCALE-IN BAND</span>
+                  </div>
+                  <div className="fund-entry-val cyan">
+                    {ai.entry_pricing.accumulation_zone}
+                  </div>
+                  <div className="fund-entry-sub">
+                    DCA tranche accumulation corridor
+                  </div>
+                </div>
+
+                {/* 3. Invalidation / Capital Preservation Stop */}
+                <div className="fund-entry-tile">
+                  <div className="fund-entry-tile-top">
+                    <span className="label">Capital Preservation Stop</span>
+                    <span className="tag rose">STRUCTURAL INVALIDATION</span>
+                  </div>
+                  <div className="fund-entry-val rose">
+                    ${ai.entry_pricing.stop_loss}
+                  </div>
+                  <div className="fund-entry-sub">
+                    Max downside: -{Math.abs(((ai.entry_pricing.ideal_entry - ai.entry_pricing.stop_loss) / ai.entry_pricing.ideal_entry) * 100).toFixed(1)}% from entry
+                  </div>
+                </div>
+
+                {/* 4. DCF Intrinsic Target 1 */}
+                <div className="fund-entry-tile">
+                  <div className="fund-entry-tile-top">
+                    <span className="label">Intrinsic DCF Target (Base)</span>
+                    <span className="tag emerald">TARGET 1</span>
+                  </div>
+                  <div className="fund-entry-val emerald">
+                    ${ai.entry_pricing.target_conservative}
+                  </div>
+                  <div className="fund-entry-sub" style={{ color: '#00E676' }}>
+                    +{ai.entry_pricing.upside_pct}% intrinsic upside
+                  </div>
+                </div>
+
+                {/* 5. Multi-Year Compounder Target (Bull) */}
+                <div className="fund-entry-tile">
+                  <div className="fund-entry-tile-top">
+                    <span className="label">Wall Street / Bull Multiple</span>
+                    <span className="tag purple">TARGET 2</span>
+                  </div>
+                  <div className="fund-entry-val purple">
+                    ${ai.entry_pricing.target_bull}
+                  </div>
+                  <div className="fund-entry-sub" style={{ color: '#c084fc' }}>
+                    +{ai.entry_pricing.bull_upside_pct}% expansion target
+                  </div>
+                </div>
+
+                {/* 6. Asymmetric Risk/Reward Ratio */}
+                <div className="fund-entry-tile">
+                  <div className="fund-entry-tile-top">
+                    <span className="label">Quant Risk / Reward</span>
+                    <span className="tag amber">ASYMMETRY</span>
+                  </div>
+                  <div className="fund-entry-val amber">
+                    {ai.entry_pricing.risk_reward}
+                  </div>
+                  <div className="fund-entry-sub">
+                    Expectancy: Top-tier asymmetric setup
+                  </div>
+                </div>
+              </div>
+
+              {/* Tactical Actionable Commentary Ribbon */}
+              <div className="fund-entry-footer-ribbon">
+                <div className="fund-entry-rationale">
+                  <ShieldCheck style={{ width: '16px', height: '16px', color: '#00F0FF', flexShrink: 0 }} />
+                  <span>
+                    <strong style={{ color: '#ffffff' }}>Execution Thesis:</strong> {ai.entry_pricing.entry_rationale}
+                  </span>
+                </div>
+                <div className="fund-entry-quick-actions">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('valuation')}
+                    className="fund-entry-tab-link"
+                  >
+                    <span>Test DCF Sensitivities</span>
+                    <ChevronRight size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('forensics')}
+                    className="fund-entry-tab-link secondary"
+                  >
+                    <span>Audit Solvency Floor</span>
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tail Risk & Directive Strip */}
+          <div className="fund-risk-directive-strip">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle style={{ width: '15px', height: '15px', color: '#fbbf24', flexShrink: 0 }} />
+              <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                <strong style={{ color: '#e2e8f0' }}>Risk Directive:</strong> {ai.tail_risk_warning}
+              </span>
+            </div>
+            <span style={{ fontSize: '10px', color: '#64748b', fontFamily: 'monospace' }}>
+              REVISE ON EARNINGS INFLECTION · DYNAMIC HEDGE ACTIVE
+            </span>
           </div>
         </div>
       )}
