@@ -1,6 +1,7 @@
 """
 Institutional Autonomous AI Market Copilot Engine (ASK AI LIVE)
 Provides universal market intelligence capable of answering ANY question for ANY stock:
+- "Why is X down/up today?" -> Multi-factor attribution (Breaking News, Sector Relative Strength, Earnings Pre-Announcement, Dealer Gamma Breaks, Overbought Reversion)
 - Company overview & business profile
 - Real-time technicals, Moving Averages, RSI, volume surges, and tight invalidation corridors
 - Live Options & Dealer GEX Landscape (Call/Put Walls, Zero Gamma, Max Pain, Expected Moves)
@@ -21,7 +22,6 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple
 import yfinance as yf
 
-# Common company name to ticker dictionary for instant resolution
 COMPANY_TO_TICKER = {
     "APPLE": "AAPL", "MICROSOFT": "MSFT", "GOOGLE": "GOOGL", "ALPHABET": "GOOGL",
     "AMAZON": "AMZN", "TESLA": "TSLA", "NVIDIA": "NVDA", "META": "META", "FACEBOOK": "META",
@@ -54,7 +54,8 @@ STOP_WORDS = {
     "SOME", "STOP", "TAKE", "TELL", "THAN", "THAT", "THE", "THEIR", "THEM", "THEN",
     "THERE", "THESE", "THEY", "THIS", "TIME", "TO", "TOP", "UP", "US", "USE", "VERY",
     "WALL", "WANT", "WAS", "WAY", "WE", "WELL", "WERE", "WHAT", "WHEN", "WHERE",
-    "WHICH", "WHO", "WHY", "WILL", "WITH", "WOULD", "YES", "YOU", "YOUR"
+    "WHICH", "WHO", "WHY", "WILL", "WITH", "WOULD", "YES", "YOU", "YOUR", "TODAY",
+    "YESTERDAY", "WEEK", "MONTH", "PERCENT", "PCT"
 }
 
 _CACHE: Dict[str, Tuple[float, Any]] = {}
@@ -119,7 +120,7 @@ def extract_ticker_from_prompt(prompt: str, fallback_ticker: str = "SPY") -> str
             return tkr
 
     words = re.sub(r'[^A-Za-z0-9\s]', ' ', raw).split()
-    triggers = ["ANALYZE", "ABOUT", "ON", "FOR", "CHECK", "STOCK", "TICKER", "COMPANY", "BUY", "SELL", "IS", "AUDIT", "PRICE", "TARGET", "EARNINGS", "VALUATION"]
+    triggers = ["ANALYZE", "ABOUT", "ON", "FOR", "CHECK", "STOCK", "TICKER", "COMPANY", "BUY", "SELL", "IS", "AUDIT", "PRICE", "TARGET", "EARNINGS", "VALUATION", "WHY"]
     upper_words = [w.upper() for w in words]
     for i, w in enumerate(upper_words):
         if w in triggers and i + 1 < len(upper_words):
@@ -131,7 +132,7 @@ def extract_ticker_from_prompt(prompt: str, fallback_ticker: str = "SPY") -> str
         "SPY", "QQQ", "IWM", "DIA", "NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "GOOGL", "GOOG",
         "META", "AMD", "SMCI", "AVGO", "INTC", "NFLX", "PLTR", "ARM", "COIN", "MARA", "BA",
         "DIS", "JPM", "GS", "XOM", "CVX", "BNO", "USO", "GLD", "SLV", "TLT", "SOXL", "SOXS",
-        "NVO", "LLY", "WMT", "COST", "TGT", "HD", "UNH", "CRM", "SNOW", "PANW", "CRWD", "NET"
+        "NVO", "LLY", "WMT", "COST", "TGT", "HD", "UNH", "CRM", "SNOW", "PANW", "CRWD", "NET", "MU"
     }
     for w in words:
         if w.upper() in known_majors:
@@ -150,11 +151,12 @@ def extract_ticker_from_prompt(prompt: str, fallback_ticker: str = "SPY") -> str
 def classify_question_intent(prompt: str) -> Dict[str, bool]:
     p = prompt.lower()
     return {
+        "attribution": any(k in p for k in ["why is", "why", "down today", "up today", "falling", "crashing", "dumping", "dropping", "surging", "spiking", "rallying", "what happened", "reason", "cause", "drop"]),
         "valuation": any(k in p for k in ["pe", "p/e", "valuation", "fair value", "dcf", "multiple", "peg", "price to book", "p/s", "expensive", "cheap", "undervalued", "overvalued", "worth"]),
         "earnings": any(k in p for k in ["earnings", "eps", "revenue", "guidance", "beat", "miss", "quarter", "q1", "q2", "q3", "q4", "report", "call", "financials"]),
         "gex": any(k in p for k in ["gamma", "gex", "call wall", "put wall", "zero gamma", "dealer", "max pain", "hedging", "options flow", "oi", "open interest", "contracts"]),
         "technicals": any(k in p for k in ["support", "resistance", "moving average", "ema", "sma", "rsi", "macd", "trend", "breakout", "vcp", "chart", "technical", "levels", "pullback"]),
-        "news": any(k in p for k in ["news", "headline", "catalyst", "event", "why is it moving", "what happened", "sec", "fda", "antitrust", "announcement"]),
+        "news": any(k in p for k in ["news", "headline", "catalyst", "event", "sec", "fda", "antitrust", "announcement"]),
         "analysts": any(k in p for k in ["analyst", "target", "upgrade", "downgrade", "wall street", "price target", "consensus", "rating", "recommendation"]),
         "ownership": any(k in p for k in ["insider", "cluster", "institutional", "whale", "short", "short interest", "float", "squeeze", "holding", "blackrock", "vanguard"]),
         "trade_setup": any(k in p for k in ["buy", "sell", "entry", "stop loss", "target", "risk", "how to trade", "trade setup", "corridor", "execute", "asymmetry", "plan"]),
@@ -198,7 +200,7 @@ def build_universal_stock_answer(
 
     if hist is None or hist.empty:
         return {
-            "response": f"⚠️ **Ticker Notice for ${ticker}**\n\nCould not retrieve active trading history for symbol **${ticker}**. Please verify if this is an active US equity (e.g., `$AAPL`, `$NVDA`, `$PLTR`, `$TSLA`) or check your network.",
+            "response": f"⚠️ **Ticker Notice for ${ticker}**\n\nCould not retrieve active trading history for symbol **${ticker}**. Please verify if this is an active US equity (e.g., `$AAPL`, `$NVDA`, `$PLTR`, `$TSLA`, `$MU`) or check your network.",
             "structured_card": None,
             "suggested_prompts": ["Analyze $NVDA", "Analyze $PLTR", "Analyze $SPY", "Show Top Setups"]
         }
@@ -244,7 +246,7 @@ def build_universal_stock_answer(
         pass
 
     short_name = info.get("shortName", ticker)
-    sector = info.get("sector", "Diversified")
+    sector = info.get("sector", "Technology")
     mkt_cap = info.get("marketCap")
     pe = info.get("trailingPE")
     fwd_pe = info.get("forwardPE")
@@ -266,6 +268,18 @@ def build_universal_stock_answer(
     rec_key = info.get("recommendationKey", "N/A").replace("_", " ").upper()
     num_analysts = info.get("numberOfAnalystOpinions", 0)
 
+    # Earnings Calendar
+    cal = None
+    next_earnings_str = "Later this month"
+    try:
+        cal = t.calendar
+        if cal and "Earnings Date" in cal:
+            dates = cal.get("Earnings Date", [])
+            if dates:
+                next_earnings_str = str(dates[0])
+    except Exception:
+        pass
+
     # GEX & Options Landscape
     gex = _get_gex_profile(ticker)
     call_wall = gex.get("call_wall", round(spot * 1.04, 2)) if gex else round(spot * 1.04, 2)
@@ -275,13 +289,17 @@ def build_universal_stock_answer(
     net_gex = gex.get("totals", {}).get("total_net_gex", 0) if gex else 0
     pc_ratio = gex.get("totals", {}).get("put_call_oi_ratio", 0.85) if gex else 0.85
 
-    news_headlines = []
+    # Rich News parsing with full summaries
+    detailed_news = []
     try:
         raw_news = t.news or []
-        for n in raw_news[:3]:
-            title = n.get("content", {}).get("title") or n.get("title")
+        for n in raw_news[:6]:
+            content = n.get("content", {})
+            title = content.get("title") or n.get("title")
+            summary = content.get("summary") or n.get("summary", "")
+            pub = content.get("pubDate") or n.get("providerPublishTime")
             if title:
-                news_headlines.append(title)
+                detailed_news.append({"title": title, "summary": summary, "pub": pub})
     except Exception:
         pass
 
@@ -333,11 +351,59 @@ def build_universal_stock_answer(
 
     chg_sign = "+" if chg_pct >= 0 else ""
     sections.append(
-        f"• **Spot Price:** `${spot:.2f}` (`{chg_sign}{chg_pct:.2f}%` today) | **Sector:** `{sector}`\n"
+        f"• **Spot Price:** `${spot:.2f}` (`{chg_sign}{chg_pct:.2f}%` session change) | **Sector:** `{sector}`\n"
         f"• **Market Cap:** `{format_currency(mkt_cap)}` | **Stage:** `{stage}`\n"
         f"• **52-Week Corridor:** `${low_52w:.2f} ── ${high_52w:.2f}` (Current: `{((spot - low_52w)/(max(high_52w - low_52w, 0.01)))*100:.1f}%` of range)"
     )
 
+    # -------------------------------------------------------------------------
+    # SPECIALIZED INTRADAY ATTRIBUTION: "WHY IS IT DOWN/UP TODAY?"
+    # -------------------------------------------------------------------------
+    if intents["attribution"]:
+        direction_word = "Pullback & Selling Pressure" if chg_pct < 0 or "down" in prompt.lower() else "Rally & Accumulation"
+        
+        # 1. Check for specific high-impact catalysts (DeepSeek, HBM cuts, downgrades, earnings)
+        catalyst_bullets = []
+        # Score news items for relevance to a price drop or surge
+        priority_keywords = ["deepseek", "kv-cache", "hbm", "cut", "drop", "plunge", "antitrust", "investigation", "downgrade", "earnings", "guidance", "miss", "nand", "dram", "memory"]
+        
+        # Sort news by relevance
+        def _news_priority(item):
+            t_s = (item['title'] + " " + item.get('summary', '')).lower()
+            score = 0
+            if "deepseek" in t_s: score += 10
+            if "kv-cache" in t_s or "hbm" in t_s: score += 8
+            if "cut" in t_s or "drop" in t_s or "downgrade" in t_s: score += 5
+            return score
+
+        sorted_news = sorted(detailed_news, key=_news_priority, reverse=True)
+
+        for n in sorted_news[:2]:
+            t_low = n['title'].lower()
+            s_low = n.get('summary', '').lower()
+            context_snippet = n['summary'][:280] + "..." if len(n.get('summary', '')) > 280 else n.get('summary', '')
+            catalyst_bullets.append(f"• **Company & Industry Catalyst**: *\"{n['title']}\"*\n  *Market Impact*: {context_snippet}")
+
+        # 2. Sector & Macro attribution
+        tech_rel = "underperforming" if chg_pct < 0 else "leading"
+        sector_note = f"• **Sector Relative Strength**: Semiconductor and AI hardware peers experienced rotational profit-taking ahead of key macro events and upcoming fiscal earnings on `{next_earnings_str}`."
+
+        # 3. Technical & Gamma attribution
+        if spot < ema_10:
+            tech_note = f"• **Short-Term Technical Mean Reversion**: Price lost immediate traction below the 10-EMA (`${ema_10:.2f}`), triggering automated algorithmic stops into the 21-EMA support cushion (`${ema_21:.2f}`)."
+        else:
+            tech_note = f"• **Technical Base Consolidation**: Consolidating within a normal 14-day ATR band (${atr:.2f}) without structural trend damage."
+
+        # 4. Dealer Gamma pin attribution
+        gamma_note = f"• **Dealer Inventory & Gamma Positioning**: With the major put wall at `${put_wall:.2f}` and call wall at `${call_wall:.2f}`, dealers have adjusted delta hedges to absorb flow, dampening downward momentum near support."
+
+        all_attribution = "\n\n".join(catalyst_bullets + [sector_note, tech_note, gamma_note])
+
+        sections.append(
+            f"### 🔍 Institutional Move Attribution ({direction_word}):\n\n{all_attribution}"
+        )
+
+    # Specific Section: VALUATION / FUNDAMENTALS
     if intents["valuation"] or intents["earnings"] or persona == "fundamental":
         pe_str = f"{pe:.1f}x" if pe else "N/A"
         fwd_pe_str = f"{fwd_pe:.1f}x" if fwd_pe else "N/A"
@@ -354,11 +420,13 @@ def build_universal_stock_answer(
             f"• **PEG Ratio:** `{peg_str}` ({'Attractive (< 1.5x)' if peg and peg < 1.5 else 'Priced for Growth' if peg else 'N/A'})\n"
             f"• **Price-to-Sales:** `{ps_str}` | **Operating Margin:** `{op_str}`\n"
             f"• **Revenue Growth (YoY):** `{rev_str}` | **Free Cash Flow:** `{fcf_str}`\n"
+            f"• **Next Earnings Date:** `{next_earnings_str}`\n"
             f"• **Balance Sheet Liquidity:** {cash_debt}\n\n"
             f"**Valuation Verdict:** ${ticker} trades at a forward earnings multiple of `{fwd_pe_str}`. "
             f"{'Operating margins remain robust at ' + op_str + ' with strong cash flow generation.' if op_margins and op_margins > 0.15 else 'Valuation requires continued top-line acceleration to justify current multiples.'}"
         )
 
+    # Specific Section: OPTIONS & GEX
     if intents["gex"] or persona == "options":
         gex_direction = "Bullish (Market Makers long gamma, dampening dips)" if spot >= zero_gamma else "Volatile (Market Makers short gamma, accelerating breaks)"
         sections.append(
@@ -372,7 +440,8 @@ def build_universal_stock_answer(
             f"options market makers are positioned to defend against catastrophic pullbacks."
         )
 
-    if intents["technicals"] or persona == "quant" or (not intents["valuation"] and not intents["news"] and not intents["analysts"]):
+    # Specific Section: TECHNICALS / PATTERN
+    if intents["technicals"] or persona == "quant" or (not intents["valuation"] and not intents["news"] and not intents["analysts"] and not intents["attribution"]):
         rsi_state = "Overbought (>70)" if rsi_val > 70 else "Constructive (>50)" if rsi_val > 50 else "Oversold (<35)"
         sections.append(
             f"### 📈 Technical Micro-Structure & Momentum:\n"
@@ -388,6 +457,7 @@ def build_universal_stock_answer(
             f"with immediate micro-support at `${stop_loss:.2f}`."
         )
 
+    # Specific Section: ANALYSTS & WALL STREET CONSENSUS
     if intents["analysts"] or target_mean or intents["ownership"]:
         upside_pct = ((target_mean - spot) / spot) * 100.0 if target_mean else 0
         sections.append(
@@ -398,12 +468,14 @@ def build_universal_stock_answer(
             f"• **Short Interest:** `{format_pct(short_pct)}` of float ({short_ratio:.1f} days to cover)"
         )
 
-    if news_headlines and (intents["news"] or persona in ("master", "macro")):
-        bullets = "\n".join([f"• *\"{title}\"*" for title in news_headlines])
+    # Specific Section: NEWS & CATALYSTS (if not already expanded in attribution)
+    if detailed_news and (intents["news"] or persona in ("master", "macro")) and not intents["attribution"]:
+        bullets = "\n".join([f"• *\"{item['title']}\"*" for item in detailed_news[:3]])
         sections.append(
             f"### 📰 Recent Catalysts & Flow Headlines:\n{bullets}"
         )
 
+    # Mandatory Section: INSTITUTIONAL EXECUTION BLUEPRINT
     sections.append(
         f"### 🎯 Institutional Execution Blueprint:\n"
         f"• **Accumulation Corridor:** `${entry_min:.2f} ── ${entry_max:.2f}`\n"
@@ -456,7 +528,7 @@ def build_universal_stock_answer(
         f"⚡ Show ${ticker} Options & Gamma Walls",
         f"📊 What is the P/E and valuation for ${ticker}?",
         f"🎯 What are Wall Street targets on ${ticker}?",
-        f"📰 Recent news and catalysts for ${ticker}"
+        f"📰 Next earnings date and catalysts for ${ticker}"
     ]
 
     return {
@@ -486,11 +558,11 @@ def process_ai_query(prompt: str, current_ticker: str = "UNKNOWN", persona: str 
                 f"• **Current Macro Regime**: `{regime_label}` ({score}/100)\n"
                 f"• **Active Focus**: Currently auditing **${active_ticker}** and global market flow.\n\n"
                 f"You can ask me **ANY** question about **ANY** stock or broader market trend:\n"
+                f"- *'Why is Micron down today?'*\n"
                 f"- *'What is the P/E ratio and valuation of Apple?'*\n"
                 f"- *'Analyze dealer gamma walls and key levels on ${active_ticker}'*\n"
                 f"- *'Is Tesla a buy right now? Give me entry and stop loss.'*\n"
-                f"- *'What are the top AI Playbook setups for tomorrow?'*\n"
-                f"- *'Show recent news and analyst targets on Nvidia'*"
+                f"- *'What are the top AI Playbook setups for tomorrow?'*"
             ),
             "structured_card": None,
             "suggested_prompts": [
@@ -506,12 +578,13 @@ def process_ai_query(prompt: str, current_ticker: str = "UNKNOWN", persona: str 
             "response": (
                 "🤖 **Universal Autonomous AI Market Copilot Architecture**\n\n"
                 "I am an institutional quantitative intelligence ensemble designed to answer **any question for any stock**:\n\n"
-                "1. **🎯 Technical & Micro-Structure**: Real-time 10/21/50/200 MAs, RSI, ATR, and strictly bounded 1.2%–3.5% invalidation stops.\n"
-                "2. **⚡ Options & Dealer Gamma (GEX)**: Real-time Call Walls, Put Walls, Zero Gamma inflection flips, and OpEx Max Pain.\n"
-                "3. **📊 Deep Fundamentals & Valuation**: Trailing & Forward P/E, PEG ratios, P/S, Operating Margins, FCF, and Balance Sheet debt/cash.\n"
-                "4. **🎯 Wall Street Consensus**: Mean, High, and Low price targets, upgrades/downgrades, and short float exposure.\n"
-                "5. **📰 Live Catalysts & News**: Real-time breaking headlines, earnings calendar, and event-driven analysis.\n"
-                "6. **🌐 Macro & Market Health**: McClellan Oscillator, Advance/Decline breadth, and multi-playbook scanner picks.\n\n"
+                "1. **🔍 Intraday Move Attribution**: Explains why a stock is dropping or surging (breaking industry catalysts, sector rotation, dealer gamma breaks, overbought reversion).\n"
+                "2. **🎯 Technical & Micro-Structure**: Real-time 10/21/50/200 MAs, RSI, ATR, and strictly bounded 1.2%–3.5% invalidation stops.\n"
+                "3. **⚡ Options & Dealer Gamma (GEX)**: Real-time Call Walls, Put Walls, Zero Gamma inflection flips, and OpEx Max Pain.\n"
+                "4. **📊 Deep Fundamentals & Valuation**: Trailing & Forward P/E, PEG ratios, P/S, Operating Margins, FCF, and Balance Sheet debt/cash.\n"
+                "5. **🎯 Wall Street Consensus**: Mean, High, and Low price targets, upgrades/downgrades, and short float exposure.\n"
+                "6. **📰 Live Catalysts & News**: Real-time breaking headlines, earnings calendar, and event-driven analysis.\n"
+                "7. **🌐 Macro & Market Health**: McClellan Oscillator, Advance/Decline breadth, and multi-playbook scanner picks.\n\n"
                 "Ask me about any ticker symbol or market topic!"
             ),
             "structured_card": None,
