@@ -584,34 +584,150 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             regime_badge = "STABILIZING REGIME"
             regime_summary = f"{ticker} trades in deep Positive Gamma above ${zero_gamma}. Market makers actively counter price moves ('buy the dips, sell the rips'), pinning the ticker into an orderly mean-reversion trading range between ${put_wall} and ${call_wall}."
 
-        if spot_price > zero_gamma:
-            setup_name = "Long Gamma Mean-Reversion Pin"
-            ideal_entry = round(max(put_wall, spot_price * 0.985), 2)
-            stop_loss = round(min(put_wall * 0.98, zero_gamma * 0.985), 2)
-            target_primary = round(min(call_wall, spot_price * 1.03), 2)
-            target_secondary = round(call_wall * 1.02, 2)
-        else:
-            setup_name = "Gamma Breakdown Momentum / Volatility Spike"
-            ideal_entry = round(spot_price * 0.995, 2)
-            stop_loss = round(zero_gamma * 1.01, 2)
-            target_primary = round(put_wall, 2)
-            target_secondary = round(put_wall * 0.97, 2)
+        # ----------------------------------------------------------------------
+        # INSTITUTIONAL QUANT AI DEALER EXECUTION ARCHITECTURE
+        # ----------------------------------------------------------------------
+        dist_to_cw = (call_wall - spot_price) / spot_price
+        dist_to_pw = (spot_price - put_wall) / spot_price
+        is_long_gamma = total_net_gex >= 0
+        is_above_zg = spot_price >= zero_gamma
 
-        risk_amt = abs(ideal_entry - stop_loss)
-        rew_amt = abs(target_primary - ideal_entry)
-        rr_ratio = round(rew_amt / risk_amt, 2) if risk_amt > 0 else 3.20
+        if dist_to_cw <= 0.015 and is_above_zg:
+            playbook_id = "gamma_squeeze_expansion"
+            setup_name = "Call Wall Gamma Squeeze Breakout 🚀"
+            bias = "BULLISH BREAKOUT"
+            bias_color = "emerald"
+            entry_min = round(spot_price * 0.995, 2)
+            entry_max = round(max(spot_price, call_wall * 1.002), 2)
+            stop_loss = round(max(call_wall * 0.978, spot_price * 0.975), 2)
+            target_primary = round(call_wall * 1.035, 2)
+            target_secondary = round(call_wall * 1.075, 2)
+            strategy_name = "Long Call Outright or Bull Call Debit Vertical"
+            long_strike = round(call_wall, 1)
+            short_strike = round(target_secondary, 1)
+            options_spec = f"Buy ${long_strike:.1f} Call / Sell ${short_strike:.1f} Call (Call Wall Breakout Vertical)"
+            trigger_condition = f"5-minute candle close above Call Wall (${call_wall}) with intraday volume > 1.8x average."
+            invalidation_condition = f"15-minute close back below ${stop_loss} voids the dealer short-gamma acceleration."
+            sizing_recommendation = "Tactical Momentum Sizing (1.5% - 2.0% Risk Allocation)"
+            expected_holding = "1 to 3 Trading Days (Short-Gamma Acceleration Window)"
+        elif dist_to_pw <= 0.02 and is_long_gamma:
+            playbook_id = "put_wall_bounce"
+            setup_name = "Put Wall Volatility Cushion Bounce 🛡️"
+            bias = "BULLISH REVERSAL"
+            bias_color = "cyan"
+            entry_min = round(put_wall * 0.998, 2)
+            entry_max = round(max(spot_price, put_wall * 1.008), 2)
+            stop_loss = round(min(put_wall * 0.985, zero_gamma * 0.99), 2)
+            target_primary = round(min(max_pain_strike, spot_price * 1.04), 2)
+            target_secondary = round(call_wall, 2)
+            strategy_name = "Bull Put Credit Spread or ATM Long Call"
+            long_strike = round(put_wall, 1)
+            short_strike = round(put_wall * 0.96, 1)
+            options_spec = f"Sell ${long_strike:.1f} Put / Buy ${short_strike:.1f} Put (Put Wall Cushion Credit Spread)"
+            trigger_condition = f"Price touches Put Wall (${put_wall}) with wick rejection and positive dealer delta absorption."
+            invalidation_condition = f"Fatal breach below Put Wall (${stop_loss}) triggers dealer downside cascade liquidations."
+            sizing_recommendation = "Standard Institutional Allocation (2.0% - 2.5% Risk Allocation)"
+            expected_holding = "3 to 8 Trading Days (Mean-Reversion toward OpEx Pin)"
+        elif is_above_zg and is_long_gamma:
+            playbook_id = "positive_gamma_pin"
+            setup_name = "Positive Gamma Magnet Pinning 🧲"
+            bias = "ACCUMULATE ON DIP"
+            bias_color = "cyan"
+            entry_min = round(max(zero_gamma * 1.005, spot_price * 0.988), 2)
+            entry_max = round(spot_price * 1.002, 2)
+            stop_loss = round(max(zero_gamma * 0.985, spot_price * 0.965), 2)
+            target_primary = round(min(call_wall, max(max_pain_strike, spot_price * 1.035)), 2)
+            target_secondary = round(call_wall * 1.015, 2)
+            strategy_name = "Bull Call Debit Spread or Diagonal Calendar"
+            long_strike = round(entry_min, 1)
+            short_strike = round(call_wall, 1)
+            options_spec = f"Buy ${long_strike:.1f} Call / Sell ${short_strike:.1f} Call (Pinning Corridor Vertical)"
+            trigger_condition = f"Limit order execution on pullback into ${entry_min} - ${entry_max} zone above Zero Gamma."
+            invalidation_condition = f"Daily close below Zero Gamma (${zero_gamma}) flips market maker posture to short gamma."
+            sizing_recommendation = "Full Tactical Allocation (2.5% Portfolio Risk Budget)"
+            expected_holding = "3 to 10 Trading Days (OpEx Magnet Phase)"
+        else:
+            playbook_id = "negative_gamma_cascade"
+            setup_name = "Negative Gamma Volatility Cascade / Short ⚠️"
+            bias = "BEARISH CASCADE / HEDGE"
+            bias_color = "rose"
+            entry_min = round(spot_price * 0.995, 2)
+            entry_max = round(spot_price * 1.005, 2)
+            stop_loss = round(max(zero_gamma * 1.015, spot_price * 1.025), 2)
+            target_primary = round(put_wall * 0.99, 2)
+            target_secondary = round(put_wall * 0.95, 2)
+            strategy_name = "Bear Put Debit Spread or Long Put Outright"
+            long_strike = round(spot_price, 1)
+            short_strike = round(put_wall, 1)
+            options_spec = f"Buy ${long_strike:.1f} Put / Sell ${short_strike:.1f} Put (Volatility Expansion Vertical)"
+            trigger_condition = f"Failure to reclaim Zero Gamma (${zero_gamma}) with accelerated put volume."
+            invalidation_condition = f"Reclaim and hold above Zero Gamma (${zero_gamma}) forces dealer short covering."
+            sizing_recommendation = "Defensive Scaled Sizing (1.0% Max Risk Budget due to high volatility)"
+            expected_holding = "1 to 5 Trading Days (High Velocity Range Expansion)"
+
+        if entry_min > entry_max:
+            entry_min, entry_max = entry_max, entry_min
+
+        risk_amt = max(abs(entry_min - stop_loss), 0.01)
+        rew_amt_t1 = max(abs(target_primary - entry_max), 0.01)
+        rew_amt_t2 = max(abs(target_secondary - entry_max), 0.01)
+        rr_ratio_t1 = round(rew_amt_t1 / risk_amt, 1)
+        rr_ratio_t2 = round(rew_amt_t2 / risk_amt, 1)
+
+        stop_loss_pct = round(((stop_loss - entry_min) / entry_min) * 100, 1)
+        target_primary_pct = round(((target_primary - entry_max) / entry_max) * 100, 1)
+        target_secondary_pct = round(((target_secondary - entry_max) / entry_max) * 100, 1)
+
+        execution_checklist = [
+            {
+                "phase": "Phase 1: Pre-Trade Greek Audit",
+                "detail": f"Verify Spot (${spot_price:.2f}) posture relative to Zero Gamma (${zero_gamma}) and Call Wall (${call_wall}). Confirm regime: {regime_badge}."
+            },
+            {
+                "phase": "Phase 2: Precision Entry",
+                "detail": f"{trigger_condition} Enter within ${entry_min:.2f} ── ${entry_max:.2f} accumulation corridor."
+            },
+            {
+                "phase": "Phase 3: Invalidation Sentinel",
+                "detail": f"Place hard stop loss at ${stop_loss:.2f} ({stop_loss_pct}% risk). {invalidation_condition}"
+            },
+            {
+                "phase": "Phase 4: Target 1 Scaling & Breakeven Ratchet",
+                "detail": f"When Target 1 (${target_primary:.2f}) is tagged (+{target_primary_pct}%), close 50% of position and immediately ratchet stop loss to Breakeven (${entry_min:.2f})."
+            },
+            {
+                "phase": "Phase 5: Runner Extension",
+                "detail": f"Trail remaining 50% toward Target 2 (${target_secondary:.2f}) (+{target_secondary_pct}%) using 15m trailing stop."
+            }
+        ]
 
         trade_setup = {
             "setup_name": setup_name,
-            "ideal_entry": ideal_entry,
+            "playbook_id": playbook_id,
+            "bias": bias,
+            "bias_color": bias_color,
+            "ideal_entry": entry_min,
+            "entry_range": [entry_min, entry_max],
             "stop_loss": stop_loss,
+            "stop_loss_pct": stop_loss_pct,
             "target_primary": target_primary,
+            "target_primary_pct": target_primary_pct,
             "target_secondary": target_secondary,
-            "risk_reward": f"{rr_ratio}:1",
+            "target_secondary_pct": target_secondary_pct,
+            "risk_reward": f"1:{rr_ratio_t1}",
+            "risk_reward_t2": f"1:{rr_ratio_t2}",
             "max_pain_pin": max_pain_strike,
+            "strategy_name": strategy_name,
+            "options_spec": options_spec,
+            "trigger_condition": trigger_condition,
+            "invalidation_condition": invalidation_condition,
+            "sizing_recommendation": sizing_recommendation,
+            "expected_holding": expected_holding,
+            "execution_checklist": execution_checklist,
             "execution_tactic": (
-                f"Accumulate near ${ideal_entry} with structural invalidation below ${stop_loss}. "
-                f"Take primary profits at dealer pin target ${target_primary}."
+                f"{strategy_name}: Accumulate inside ${entry_min} - ${entry_max}. "
+                f"Stop at ${stop_loss} ({stop_loss_pct}%). Target 1 at ${target_primary} (+{target_primary_pct}%). "
+                f"Target 2 at ${target_secondary} (+{target_secondary_pct}%)."
             )
         }
 

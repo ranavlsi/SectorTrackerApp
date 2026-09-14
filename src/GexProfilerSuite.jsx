@@ -331,7 +331,7 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
             {/* ================================================================= */}
             {/* 3. QUANT AI ENTRY & POSITION ARCHITECTURE DECK                    */}
             {/* ================================================================= */}
-            {tradeSetup && (
+            {data?.trade_setup && (
               <div className="gex-entry-plan-card">
                 <div className="gex-entry-plan-header">
                   <div className="gex-entry-plan-title-box">
@@ -343,39 +343,50 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                         <h4 className="gex-entry-main-heading">
                           Quant AI Dealer Execution Plan · {tradeSetup.setup_name}
                         </h4>
-                        <span className="gex-entry-badge">
+                        <span className={`gex-entry-badge ${tradeSetup.bias_color || 'emerald'}`}>
                           <Sparkles style={{ width: '10px', height: '10px' }} />
-                          GEX TRIGGER
+                          {tradeSetup.bias || 'GEX TRIGGER'}
                         </span>
                       </div>
                       <p className="gex-entry-subheading">
+                        {tradeSetup.strategy_name ? `${tradeSetup.strategy_name} · ` : ''}
                         Algorithmic entries anchored to dealer hedging flip points, Call/Put walls, and OpEx pin gravitational magnets
                       </p>
                     </div>
                   </div>
 
-                  <div className="gex-entry-allocation-pill">
-                    <Briefcase style={{ width: '13px', height: '13px', color: '#00F0FF' }} />
-                    <span>Risk/Reward {tradeSetup.risk_reward}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {tradeSetup.sizing_recommendation && (
+                      <div className="gex-entry-allocation-pill" style={{ borderColor: 'rgba(0, 230, 118, 0.3)', color: '#00E676' }}>
+                        <ShieldCheck style={{ width: '13px', height: '13px', color: '#00E676' }} />
+                        <span>{tradeSetup.sizing_recommendation}</span>
+                      </div>
+                    )}
+                    <div className="gex-entry-allocation-pill">
+                      <Briefcase style={{ width: '13px', height: '13px', color: '#00F0FF' }} />
+                      <span>R/R {tradeSetup.risk_reward || '1:3.0'} {tradeSetup.risk_reward_t2 ? `(T2: ${tradeSetup.risk_reward_t2})` : ''}</span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="gex-entry-metrics-grid">
-                  {/* 1. Optimal Trigger */}
+                  {/* 1. Optimal Trigger / Accumulation Corridor */}
                   <div className="gex-entry-tile primary">
                     <div className="gex-entry-tile-top">
-                      <span className="label">Optimal Entry Trigger</span>
+                      <span className="label">Accumulation Corridor</span>
                       <span className="tag green">ENTRY</span>
                     </div>
-                    <div className="gex-entry-val green">
-                      ${tradeSetup.ideal_entry}
+                    <div className="gex-entry-val green" style={{ fontSize: tradeSetup.entry_range ? '15px' : '18px' }}>
+                      {tradeSetup.entry_range
+                        ? `$${tradeSetup.entry_range[0]} ── $${tradeSetup.entry_range[1]}`
+                        : `$${tradeSetup.ideal_entry}`}
                     </div>
                     <div className="gex-entry-sub">
-                      Spot: ${spot.toFixed(2)}
+                      Spot: ${spot.toFixed(2)} {tradeSetup.entry_range && spot >= tradeSetup.entry_range[0] && spot <= tradeSetup.entry_range[1] ? '🎯 In Corridor' : ''}
                     </div>
                   </div>
 
-                  {/* 2. Structural Stop */}
+                  {/* 2. Structural Invalidation Sentinel */}
                   <div className="gex-entry-tile">
                     <div className="gex-entry-tile-top">
                       <span className="label">Invalidation Stop</span>
@@ -385,66 +396,92 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                       ${tradeSetup.stop_loss}
                     </div>
                     <div className="gex-entry-sub">
-                      Max Risk: -{Math.abs(((tradeSetup.ideal_entry - tradeSetup.stop_loss) / tradeSetup.ideal_entry) * 100).toFixed(1)}%
+                      Risk: {tradeSetup.stop_loss_pct !== undefined ? `${tradeSetup.stop_loss_pct}%` : `-${Math.abs(((tradeSetup.ideal_entry - tradeSetup.stop_loss) / tradeSetup.ideal_entry) * 100).toFixed(1)}%`}
                     </div>
                   </div>
 
                   {/* 3. Primary Pin Target */}
                   <div className="gex-entry-tile">
                     <div className="gex-entry-tile-top">
-                      <span className="label">Primary Target (Pin)</span>
-                      <span className="tag emerald">TARGET 1</span>
+                      <span className="label">Target 1 (Pin)</span>
+                      <span className="tag emerald">TRIM 50%</span>
                     </div>
                     <div className="gex-entry-val emerald">
                       ${tradeSetup.target_primary}
                     </div>
                     <div className="gex-entry-sub" style={{ color: '#00E676' }}>
-                      +{Math.abs(((tradeSetup.target_primary - tradeSetup.ideal_entry) / tradeSetup.ideal_entry) * 100).toFixed(1)}% Gain
+                      +{tradeSetup.target_primary_pct !== undefined ? `${tradeSetup.target_primary_pct}%` : Math.abs(((tradeSetup.target_primary - tradeSetup.ideal_entry) / tradeSetup.ideal_entry) * 100).toFixed(1)}% Gain
                     </div>
                   </div>
 
-                  {/* 4. Secondary Target */}
+                  {/* 4. Secondary Target Runner */}
                   <div className="gex-entry-tile">
                     <div className="gex-entry-tile-top">
                       <span className="label">Secondary Target</span>
-                      <span className="tag purple">TARGET 2</span>
+                      <span className="tag purple">RUNNER</span>
                     </div>
                     <div className="gex-entry-val purple">
                       ${tradeSetup.target_secondary}
                     </div>
                     <div className="gex-entry-sub" style={{ color: '#c084fc' }}>
-                      Expansion target
+                      +{tradeSetup.target_secondary_pct !== undefined ? `${tradeSetup.target_secondary_pct}%` : ''} Trailing
                     </div>
                   </div>
 
-                  {/* 5. Max Pain Magnet */}
+                  {/* 5. Options Structure */}
                   <div className="gex-entry-tile">
                     <div className="gex-entry-tile-top">
-                      <span className="label">Max Pain Magnet</span>
-                      <span className="tag amber">OPEX PIN</span>
+                      <span className="label">Options Contract</span>
+                      <span className="tag cyan">STRATEGY</span>
                     </div>
-                    <div className="gex-entry-val amber">
-                      ${tradeSetup.max_pain_pin}
+                    <div className="gex-entry-val cyan" style={{ fontSize: '11px', lineHeight: '1.4', marginTop: '4px' }}>
+                      {tradeSetup.options_spec || tradeSetup.strategy_name || 'Vertical Spread'}
                     </div>
                     <div className="gex-entry-sub">
-                      Options expiration gravity
+                      Horizon: {tradeSetup.expected_holding || '3-8 Days'}
                     </div>
                   </div>
 
-                  {/* 6. Asymmetry Expectancy */}
+                  {/* 6. Asymmetry & Sizing */}
                   <div className="gex-entry-tile">
                     <div className="gex-entry-tile-top">
-                      <span className="label">Quant R/R Expectancy</span>
-                      <span className="tag cyan">ASYMMETRY</span>
+                      <span className="label">Quant Asymmetry</span>
+                      <span className="tag amber">R:R EDGE</span>
                     </div>
-                    <div className="gex-entry-val cyan">
+                    <div className="gex-entry-val amber">
                       {tradeSetup.risk_reward}
                     </div>
                     <div className="gex-entry-sub">
-                      High-probability edge
+                      Max Pain: ${tradeSetup.max_pain_pin || '---'}
                     </div>
                   </div>
                 </div>
+
+                {/* 5-Phase Execution Checklist */}
+                {tradeSetup.execution_checklist && tradeSetup.execution_checklist.length > 0 && (
+                  <div className="gex-checklist-box">
+                    <div className="gex-checklist-header">
+                      <div className="gex-checklist-title">
+                        <CheckCircle2 style={{ width: '15px', height: '15px', color: '#00F0FF' }} />
+                        <span>5-Phase Institutional Execution Protocol</span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>
+                        Rigorous Invalidation & Scale-Out Discipline
+                      </span>
+                    </div>
+                    <div className="gex-checklist-grid">
+                      {tradeSetup.execution_checklist.map((step, idx) => (
+                        <div key={idx} className="gex-checklist-step">
+                          <div className="step-badge">{idx + 1}</div>
+                          <div className="step-content">
+                            <span className="step-phase">{step.phase}</span>
+                            <span className="step-detail">{step.detail}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
