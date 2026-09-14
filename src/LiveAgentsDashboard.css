@@ -1,0 +1,838 @@
+/* ==========================================================================
+   AI MARKET AGENT DASHBOARD - INSTITUTIONAL TERMINAL STYLING
+   Theme: High-Density Bloomberg / Cyberpunk Quantitative Suite
+   ========================================================================== */
+
+.agents-terminal-root {
+  min-height: 100vh;
+  background: #080c14;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 240, 255, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168, 85, 247, 0.06), transparent);
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   1. MASTER HEADER RIBBON & COMMAND BAR
+   -------------------------------------------------------------------------- */
+.agents-header-ribbon {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4);
+}
+
+.agents-header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.agents-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.agents-logo-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.2));
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+}
+
+.agents-title-block h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agents-title-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(0, 240, 255, 0.15);
+  color: #00F0FF;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+}
+
+.agents-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agents-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00E676;
+  box-shadow: 0 0 10px #00E676;
+  animation: agentsPulse 2s infinite;
+}
+
+@keyframes agentsPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+.agents-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.agents-quick-chips {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.agents-chip-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agents-chip-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.agents-chip-btn.active {
+  background: rgba(0, 240, 255, 0.15);
+  color: #00F0FF;
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+}
+
+.agents-search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agents-search-input {
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 8px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  width: 140px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.agents-search-input:focus {
+  border-color: #00F0FF;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+  width: 170px;
+}
+
+.agents-search-btn {
+  background: linear-gradient(135deg, #00F0FF, #0099FF);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 8px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.agents-search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   2. CHIEF AI COUNCIL HERO BANNER
+   -------------------------------------------------------------------------- */
+.agents-council-hero {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(10, 14, 23, 0.98) 100%);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 240, 255, 0.08);
+}
+
+.agents-council-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #00F0FF, #a855f7, #00E676);
+}
+
+.agents-hero-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+@media (max-width: 960px) {
+  .agents-hero-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.agents-conviction-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.agents-conviction-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 240, 255, 0.3);
+  border-top-color: #00F0FF;
+  border-right-color: #00E676;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+}
+
+.agents-conviction-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.agents-conviction-pct {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #94a3b8;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.agents-conviction-lbl {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.agents-verdict-badge {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agents-verdict-badge.emerald {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+  border: 1px solid rgba(0, 230, 118, 0.45);
+  box-shadow: 0 0 15px rgba(0, 230, 118, 0.25);
+}
+
+.agents-verdict-badge.cyan {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00F0FF;
+  border: 1px solid rgba(0, 240, 255, 0.45);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+}
+
+.agents-verdict-badge.amber {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.agents-verdict-badge.rose {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.45);
+}
+
+.agents-hero-briefing-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.agents-hero-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 12px;
+}
+
+.agents-spot-cluster {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.agents-spot-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.agents-change-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.agents-change-pill.pos {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+}
+
+.agents-change-pill.neg {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+}
+
+.agents-meta-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.agents-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.agents-executive-summary {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   3. TRADE EXECUTION BLUEPRINT CARD
+   -------------------------------------------------------------------------- */
+.agents-blueprint-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.agents-blueprint-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.agents-bp-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agents-bp-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agents-bp-action-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #00E676;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.agents-bp-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .agents-bp-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .agents-bp-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.agents-bp-tile {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.agents-bp-tile.highlight {
+  border-color: rgba(0, 240, 255, 0.35);
+  background: rgba(0, 240, 255, 0.05);
+}
+
+.agents-bp-tile-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.agents-bp-tile-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.agents-bp-tile-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.agents-bp-tile-sub.green { color: #00E676; }
+.agents-bp-tile-sub.rose { color: #f43f5e; }
+.agents-bp-tile-sub.cyan { color: #00F0FF; }
+
+/* --------------------------------------------------------------------------
+   4. NAVIGATION TABS
+   -------------------------------------------------------------------------- */
+.agents-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+
+.agents-tab-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.agents-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.agents-tab-btn.active {
+  color: #00F0FF;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   5. SPECIALIST AGENTS GRID (5 CARDS)
+   -------------------------------------------------------------------------- */
+.agents-swarm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.agents-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.agents-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.agents-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.agents-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agents-card-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: #00F0FF;
+}
+
+.agents-card-title-wrap h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.agents-card-role {
+  margin: 2px 0 0 0;
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.agents-card-stance {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.agents-card-stance.STRONG_BULLISH,
+.agents-card-stance.BULLISH {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+  border: 1px solid rgba(0, 230, 118, 0.4);
+}
+
+.agents-card-stance.NEUTRAL {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.agents-card-stance.BEARISH {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+}
+
+.agents-card-meter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.agents-meter-bar-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0 10px;
+}
+
+.agents-meter-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00F0FF, #00E676);
+  transition: width 0.5s ease;
+}
+
+.agents-card-headline {
+  font-size: 12px;
+  font-weight: 700;
+  color: #38bdf8;
+  line-height: 1.4;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 2px solid #00F0FF;
+}
+
+.agents-card-findings {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agents-card-findings li {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #cbd5e1;
+  position: relative;
+  padding-left: 14px;
+}
+
+.agents-card-findings li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #00F0FF;
+  font-family: monospace;
+}
+
+.agents-card-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.agents-mini-metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.agents-mini-metric-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.agents-mini-metric-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* --------------------------------------------------------------------------
+   6. WHALE OPTIONS RADAR TABLE
+   -------------------------------------------------------------------------- */
+.agents-panel {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.agents-table-wrap {
+  overflow-x: auto;
+}
+
+.agents-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.agents-data-table th {
+  padding: 10px 14px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: right;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.agents-data-table th:first-child {
+  text-align: left;
+}
+
+.agents-data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  text-align: right;
+  color: #e2e8f0;
+}
+
+.agents-data-table td:first-child {
+  text-align: left;
+}
+
+/* --------------------------------------------------------------------------
+   7. SENTIMENT & SOCIAL FEED STREAM
+   -------------------------------------------------------------------------- */
+.agents-feeds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.agents-feed-col {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.agents-feed-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.agents-feed-col-header h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.agents-feed-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.agents-feed-item {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+
+/* --------------------------------------------------------------------------
+   8. AGENT CONFLUENCE MATRIX TABLE
+   -------------------------------------------------------------------------- */
+.agents-matrix-table td.confluence-badge {
+  font-weight: 800;
+}
+.agents-matrix-table .HIGH_CONFLUENCE {
+  color: #00E676;
+}
+.agents-matrix-table .ALIGNED {
+  color: #00F0FF;
+}
+.agents-matrix-table .DIVERGENT {
+  color: #f43f5e;
+}

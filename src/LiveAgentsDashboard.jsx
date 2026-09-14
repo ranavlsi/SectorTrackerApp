@@ -1,350 +1,393 @@
 import React, { useState, useEffect } from 'react';
+import './LiveAgentsDashboard.css';
+import {
+  Brain, Zap, Globe, TrendingUp, TrendingDown, ShieldCheck,
+  Activity, Search, RefreshCw, Layers, Crosshair, Sparkles,
+  ArrowUpRight, ArrowDownRight, Shield, AlertTriangle, MessageSquare,
+  Radio, CheckCircle2, ChevronRight
+} from 'lucide-react';
 
-const LiveAgentsDashboard = ({ initialTicker = 'AAPL' }) => {
-  const [ticker, setTicker] = useState(initialTicker);
-  const [searchInput, setSearchInput] = useState(initialTicker);
+export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
+  const [ticker, setTicker] = useState(initialTicker || 'NVDA');
+  const [searchInput, setSearchInput] = useState('');
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'whale_flow' | 'social_feed' | 'confluence'
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!ticker) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/agents?ticker=${ticker}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError(err.message || 'Failed to fetch data');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const quickTickers = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMD', 'SMCI'];
 
-    fetchData();
+  const fetchAgentsData = async (targetTicker) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/agents?ticker=${targetTicker}`);
+      if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+      const json = await res.json();
+      if (json.error) {
+        setError(json.error);
+      } else {
+        setData(json);
+      }
+    } catch (err) {
+      console.error('Failed to load agents intelligence:', err);
+      setError(err.message || 'Failed to communicate with Autonomous AI Market Swarm');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (ticker) {
+      fetchAgentsData(ticker);
+    }
   }, [ticker]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchInput.trim()) {
-      setTicker(searchInput.trim().toUpperCase());
+    if (!searchInput.trim()) return;
+    const clean = searchInput.trim().toUpperCase();
+    setTicker(clean);
+    setSearchInput('');
+  };
+
+  const getAgentIcon = (id) => {
+    switch (id) {
+      case 'macro': return <Globe size={18} />;
+      case 'technical': return <TrendingUp size={18} />;
+      case 'options_whale': return <Zap size={18} />;
+      case 'fundamental': return <ShieldCheck size={18} />;
+      case 'sentiment': return <Activity size={18} />;
+      default: return <Brain size={18} />;
     }
   };
 
+  const briefing = data?.council_briefing || {};
+  const blueprint = data?.trade_blueprint || {};
+  const agents = data?.agents || [];
+  const confluence = data?.confluence_matrix || [];
+  const unusualOptions = data?.unusual_options || [];
+  const reddit = data?.reddit || [];
+  const stocktwits = data?.stocktwits || [];
+  const news = data?.x_updates || [];
+  const surge = data?.surge_metrics || {};
+
   return (
-    <div className="agents-dashboard-container">
-      <style>{`
-        .agents-dashboard-container {
-          padding: 2rem;
-          font-family: 'Inter', system-ui, -apple-system, sans-serif;
-          color: #e2e8f0;
-          min-height: 100vh;
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-          box-sizing: border-box;
-        }
-        .agents-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-          flex-wrap: wrap;
-          gap: 1rem;
-        }
-        .agents-title {
-          font-size: 2.25rem;
-          font-weight: 800;
-          margin: 0;
-          background: linear-gradient(to right, #60a5fa, #c084fc);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .agents-search {
-          display: flex;
-          gap: 0.75rem;
-        }
-        .agents-input {
-          padding: 0.75rem 1.5rem;
-          border-radius: 9999px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(255, 255, 255, 0.05);
-          color: #fff;
-          outline: none;
-          backdrop-filter: blur(10px);
-          width: 280px;
-          font-size: 1rem;
-          transition: border-color 0.3s, box-shadow 0.3s;
-        }
-        .agents-input:focus {
-          border-color: #60a5fa;
-          box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
-        }
-        .agents-btn {
-          padding: 0.75rem 1.75rem;
-          border-radius: 9999px;
-          border: none;
-          background: linear-gradient(to right, #3b82f6, #8b5cf6);
-          color: #fff;
-          font-weight: 600;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: transform 0.2s, opacity 0.2s;
-          box-shadow: 0 4px 14px 0 rgba(0,0,0,0.2);
-        }
-        .agents-btn:hover {
-          transform: translateY(-2px);
-          opacity: 0.9;
-        }
-        .agents-glass-panel {
-          background: rgba(255, 255, 255, 0.03);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 24px;
-          padding: 1.75rem;
-          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        }
-        .agents-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: 2rem;
-          margin-bottom: 2rem;
-        }
-        .agents-synthesis {
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.15));
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 24px;
-          padding: 2rem;
-          margin-bottom: 2rem;
-          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        }
-        .agents-synthesis p {
-          font-size: 1.25rem;
-          line-height: 1.8;
-          color: #f1f5f9;
-          margin: 0;
-        }
-        .agents-section-title {
-          font-size: 1.35rem;
-          font-weight: 600;
-          margin-bottom: 1.25rem;
-          color: #e2e8f0;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .agents-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          max-height: 350px;
-          overflow-y: auto;
-          padding-right: 0.5rem;
-        }
-        /* Custom Scrollbar for inner lists */
-        .agents-list::-webkit-scrollbar {
-          width: 6px;
-        }
-        .agents-list::-webkit-scrollbar-track {
-          background: rgba(255,255,255,0.02);
-          border-radius: 10px;
-        }
-        .agents-list::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.1);
-          border-radius: 10px;
-        }
-        .agents-list::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.2);
-        }
-        .agents-list-item {
-          padding: 1rem;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-          transition: background 0.2s;
-          border-radius: 12px;
-        }
-        .agents-list-item:hover {
-          background: rgba(255,255,255,0.02);
-        }
-        .agents-badge {
-          display: inline-block;
-          padding: 0.25rem 0.75rem;
-          border-radius: 9999px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          background: rgba(255,255,255,0.1);
-          color: #e2e8f0;
-          margin-top: 0.5rem;
-        }
-        .agents-badge-bullish {
-          background: rgba(34, 197, 94, 0.2);
-          color: #4ade80;
-        }
-        .agents-badge-bearish {
-          background: rgba(239, 68, 68, 0.2);
-          color: #f87171;
-        }
-        .agents-table-wrapper {
-          overflow-x: auto;
-        }
-        .agents-table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: left;
-        }
-        .agents-table th {
-          padding: 1.25rem 1rem;
-          border-bottom: 2px solid rgba(255,255,255,0.1);
-          color: #94a3b8;
-          font-weight: 600;
-          white-space: nowrap;
-        }
-        .agents-table td {
-          padding: 1rem;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-          color: #f1f5f9;
-        }
-        .agents-table tr {
-          transition: background 0.2s;
-        }
-        .agents-table tr:hover {
-          background: rgba(255,255,255,0.02);
-        }
-        
-        @media (min-width: 1024px) {
-          .agents-grid-col-span-2 {
-            grid-column: auto / span 2;
-          }
-        }
-      `}</style>
+    <div className="agents-terminal-root">
+      
+      {/* ------------------------------------------------------------------ */}
+      {/* 1. MASTER COMMAND & TICKER RIBBON                                  */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="agents-header-ribbon">
+        <div className="agents-header-top-row">
+          
+          <div className="agents-identity">
+            <div className="agents-logo-icon">
+              <Brain size={24} color="#00F0FF" />
+            </div>
+            <div className="agents-title-block">
+              <h1>
+                {ticker} <span className="agents-title-tag">6-AGENT QUANT COUNCIL</span>
+              </h1>
+              <p className="agents-subtitle">
+                <span className="agents-pulse-dot" />
+                SWARM ONLINE · 5 Specialist Quant Agents + Chief AI Council Active
+              </p>
+            </div>
+          </div>
 
-      <header className="agents-header">
-        <h1 className="agents-title">Live Agents Dashboard: {ticker}</h1>
-        <form onSubmit={handleSearch} className="agents-search">
-          <input 
-            type="text" 
-            value={searchInput} 
-            onChange={(e) => setSearchInput(e.target.value)} 
-            placeholder="Enter Ticker (e.g. NVDA)" 
-            className="agents-input"
-          />
-          <button type="submit" className="agents-btn">Search</button>
-        </form>
-      </header>
+          <div className="agents-controls">
+            <div className="agents-quick-chips">
+              {quickTickers.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTicker(t)}
+                  className={`agents-chip-btn ${ticker === t ? 'active' : ''}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
 
-      {loading && <div style={{ textAlign: 'center', padding: '3rem', fontSize: '1.2rem', color: '#94a3b8' }}>Analyzing market data...</div>}
-      {error && <div style={{ color: '#ef4444', textAlign: 'center', padding: '2rem', background: 'rgba(239,68,68,0.1)', borderRadius: '12px' }}>Error: {error}</div>}
+            <form onSubmit={handleSearch} className="agents-search-form">
+              <input
+                type="text"
+                placeholder="Lookup (e.g. AMD)"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
+                className="agents-search-input"
+              />
+              <button type="submit" className="agents-search-btn">
+                <Search size={13} />
+                Analyze
+              </button>
+            </form>
+
+            <button
+              type="button"
+              onClick={() => fetchAgentsData(ticker)}
+              className="agents-chip-btn"
+              title="Refresh Swarm Analysis"
+            >
+              <RefreshCw size={13} />
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#00F0FF', fontFamily: 'monospace' }}>
+          <Sparkles size={32} style={{ animation: 'agentsPulse 1.5s infinite' }} />
+          <div style={{ marginTop: '16px', fontSize: '14px', fontWeight: 700 }}>
+            COORDINATING 6-AGENT QUANTUM SWARM FOR {ticker}...
+          </div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
+            Auditing Macro Regime, Order Flow Tape, Volatility Contraction & Social NLP
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.3)', padding: '16px', borderRadius: '10px', color: '#f43f5e', marginBottom: '20px', fontFamily: 'monospace' }}>
+          ⚠️ Autonomous Swarm Exception: {error}
+        </div>
+      )}
 
       {!loading && !error && data && (
         <>
-          {data.synthesis && (
-            <div className="agents-synthesis">
-              <h2 className="agents-section-title" style={{ color: '#fff', fontSize: '1.6rem' }}>
-                🧠 Synthesis Agent
-              </h2>
-              <p>{data.synthesis}</p>
-
-              {data.surge_metrics && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', marginTop: '1.5rem', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap' }}>
-                  
-                  <div style={{ flex: '1 1 250px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span style={{ fontWeight: 'bold', color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Social Surge Level</span>
-                      <span style={{ fontWeight: 'bold', color: data.surge_metrics.surge_level > 50 ? '#4ade80' : '#f87171' }}>{data.surge_metrics.surge_level}%</span>
-                    </div>
-                    <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: '8px', borderRadius: '999px', overflow: 'hidden' }}>
-                      <div style={{ width: `${data.surge_metrics.surge_level}%`, background: `linear-gradient(90deg, #3b82f6, ${data.surge_metrics.surge_level > 50 ? '#10b981' : '#f59e0b'})`, height: '100%', transition: 'width 1s ease-in-out' }}></div>
-                    </div>
-                  </div>
-
-                  <div style={{ flex: '1 1 250px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span style={{ fontWeight: 'bold', color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Bull / Bear Ratio</span>
-                      <span style={{ fontWeight: 'bold', color: data.surge_metrics.bullish_percent >= 50 ? '#4ade80' : '#f87171' }}>{data.surge_metrics.bullish_percent}% Bullish</span>
-                    </div>
-                    <div style={{ width: '100%', background: 'rgba(239, 68, 68, 0.8)', height: '8px', borderRadius: '999px', overflow: 'hidden', display: 'flex' }}>
-                      <div style={{ width: `${data.surge_metrics.bullish_percent}%`, background: '#22c55e', height: '100%', transition: 'width 1s ease-in-out' }}></div>
-                    </div>
-                  </div>
-
+          {/* ------------------------------------------------------------------ */}
+          {/* 2. CHIEF AI COUNCIL HERO BRIEFING                                  */}
+          {/* ------------------------------------------------------------------ */}
+          <div className="agents-council-hero">
+            <div className="agents-hero-layout">
+              
+              {/* Left: Conviction Gauge & Verdict */}
+              <div className="agents-conviction-box">
+                <div className="agents-conviction-lbl">Master Conviction</div>
+                <div className="agents-conviction-circle">
+                  <span className="agents-conviction-num">{briefing.master_conviction_score || 75}</span>
+                  <span className="agents-conviction-pct">/ 100</span>
                 </div>
-              )}
+                <div className={`agents-verdict-badge ${briefing.verdict_color || 'cyan'}`}>
+                  {briefing.verdict_title || 'MOMENTUM BUY 🚀'}
+                </div>
+              </div>
+
+              {/* Right: Executive Briefing & Live Meta */}
+              <div className="agents-hero-briefing-body">
+                <div className="agents-hero-top-meta">
+                  <div className="agents-spot-cluster">
+                    <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontFamily: 'monospace' }}>
+                      Spot Price
+                    </span>
+                    <span className="agents-spot-val">${data.spot_price?.toFixed(2)}</span>
+                    <span className={`agents-change-pill ${(data.change_24h_pct || 0) >= 0 ? 'pos' : 'neg'}`}>
+                      {(data.change_24h_pct || 0) >= 0 ? '+' : ''}{data.change_24h_pct}%
+                    </span>
+                  </div>
+
+                  <div className="agents-meta-pills">
+                    <div className="agents-pill">
+                      <Radio size={12} color="#00F0FF" />
+                      <span>Bias: {briefing.verdict_posture || 'BULLISH'}</span>
+                    </div>
+                    <div className="agents-pill">
+                      <Crosshair size={12} color="#00E676" />
+                      <span>R:R: {briefing.risk_reward_ratio || '1 : 2.5'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="agents-executive-summary">
+                  {briefing.executive_summary}
+                </p>
+              </div>
+
             </div>
-          )}
+          </div>
 
-          <div className="agents-grid">
-            {/* Social Chatter Agent */}
-            <div className="agents-glass-panel">
-              <h2 className="agents-section-title">💬 Social Chatter Agent</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div>
-                  <h3 style={{ color: '#94a3b8', fontSize: '1.05rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reddit (r/wallstreetbets)</h3>
-                  {data.reddit && data.reddit.length > 0 ? (
-                    <ul className="agents-list">
-                      {data.reddit.map((item, i) => (
-                        <li key={i} className="agents-list-item">
-                          <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>{item}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p style={{ color: '#64748b' }}>No Reddit data available.</p>
-                  )}
+          {/* ------------------------------------------------------------------ */}
+          {/* 3. TRADE EXECUTION BLUEPRINT CARD                                  */}
+          {/* ------------------------------------------------------------------ */}
+          {blueprint && blueprint.action && (
+            <div className="agents-blueprint-card">
+              <div className="agents-blueprint-header">
+                <div className="agents-bp-title-wrap">
+                  <Crosshair size={16} color="#00E676" />
+                  <span className="agents-bp-title">Quant Trade Execution Blueprint</span>
+                  <span className="agents-bp-action-pill">{blueprint.action}</span>
                 </div>
-                <div>
-                  <h3 style={{ color: '#94a3b8', fontSize: '1.05rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>StockTwits</h3>
-                  {data.stocktwits && data.stocktwits.length > 0 ? (
-                    <ul className="agents-list">
-                      {data.stocktwits.map((item, i) => {
-                        const text = item;
-                        const isBullish = text.toLowerCase().includes('bullish') || text.toLowerCase().includes('buy');
-                        const isBearish = text.toLowerCase().includes('bearish') || text.toLowerCase().includes('short') || text.toLowerCase().includes('sell');
-                        const sentimentClass = isBullish ? 'agents-badge-bullish' : (isBearish ? 'agents-badge-bearish' : '');
-                        return (
-                          <li key={i} className="agents-list-item">
-                            <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>{text}</p>
-                            {(isBullish || isBearish) && (
-                              <span className={`agents-badge ${sentimentClass}`}>
-                                {isBullish ? 'BULLISH' : 'BEARISH'}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p style={{ color: '#64748b' }}>No Stocktwits data available.</p>
-                  )}
+                <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                  Sizing: {blueprint.suggested_sizing}
+                </span>
+              </div>
+
+              <div className="agents-bp-grid">
+                <div className="agents-bp-tile highlight">
+                  <span className="agents-bp-tile-lbl">Entry Zone</span>
+                  <span className="agents-bp-tile-val cyan">
+                    ${blueprint.entry_zone_min} ── ${blueprint.entry_zone_max}
+                  </span>
+                  <span className="agents-bp-tile-sub cyan">Pullback to EMA10</span>
                 </div>
-                <div>
-                  <h3 style={{ color: '#94a3b8', fontSize: '1.05rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>X.com (News Proxy)</h3>
-                  {data.x_updates && data.x_updates.length > 0 ? (
-                    <ul className="agents-list">
-                      {data.x_updates.map((item, i) => (
-                        <li key={i} className="agents-list-item" style={{ borderLeft: '3px solid #1da1f2' }}>
-                          <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500', color: '#1da1f2' }}>@MarketUpdate</p>
-                          <p style={{ margin: '0' }}>{item}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p style={{ color: '#64748b' }}>No X.com data available.</p>
-                  )}
+
+                <div className="agents-bp-tile">
+                  <span className="agents-bp-tile-lbl">Invalidation Stop</span>
+                  <span className="agents-bp-tile-val rose">${blueprint.stop_loss}</span>
+                  <span className="agents-bp-tile-sub rose">{blueprint.stop_loss_pct}% risk</span>
+                </div>
+
+                <div className="agents-bp-tile">
+                  <span className="agents-bp-tile-lbl">Target 1 (Base)</span>
+                  <span className="agents-bp-tile-val green">${blueprint.target_1}</span>
+                  <span className="agents-bp-tile-sub green">+{blueprint.target_1_pct}% return</span>
+                </div>
+
+                <div className="agents-bp-tile">
+                  <span className="agents-bp-tile-lbl">Target 2 (Extension)</span>
+                  <span className="agents-bp-tile-val green">${blueprint.target_2}</span>
+                  <span className="agents-bp-tile-sub green">+{blueprint.target_2_pct}% return</span>
+                </div>
+
+                <div className="agents-bp-tile">
+                  <span className="agents-bp-tile-lbl">Risk : Reward</span>
+                  <span className="agents-bp-tile-val">{blueprint.risk_reward_ratio}</span>
+                  <span className="agents-bp-tile-sub green">Asymmetric Setup</span>
+                </div>
+
+                <div className="agents-bp-tile">
+                  <span className="agents-bp-tile-lbl">Execution Sizing</span>
+                  <span className="agents-bp-tile-val" style={{ fontSize: '12px' }}>
+                    {blueprint.suggested_sizing?.split(' ')[0]}
+                  </span>
+                  <span className="agents-bp-tile-sub cyan">Risk Adjusted</span>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Options Whale Agent */}
-            <div className="agents-glass-panel agents-grid-col-span-2">
-              <h2 className="agents-section-title">🐋 Options Whale Agent</h2>
-              {data.unusual_options && data.unusual_options.length > 0 ? (
-                <div className="agents-table-wrapper">
-                  <table className="agents-table">
+          {/* ------------------------------------------------------------------ */}
+          {/* 4. NAVIGATION TABS                                                 */}
+          {/* ------------------------------------------------------------------ */}
+          <div className="agents-tabs-bar">
+            <button
+              type="button"
+              onClick={() => setActiveTab('overview')}
+              className={`agents-tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+            >
+              <Brain size={14} />
+              Council Overview & 5-Agent Swarm
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('whale_flow')}
+              className={`agents-tab-btn ${activeTab === 'whale_flow' ? 'active' : ''}`}
+            >
+              <Zap size={14} />
+              Whale Options Radar 🐋
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('social_feed')}
+              className={`agents-tab-btn ${activeTab === 'social_feed' ? 'active' : ''}`}
+            >
+              <MessageSquare size={14} />
+              Social & News Stream 💬
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('confluence')}
+              className={`agents-tab-btn ${activeTab === 'confluence' ? 'active' : ''}`}
+            >
+              <Layers size={14} />
+              Agent Confluence Matrix 🧠
+            </button>
+          </div>
+
+          {/* ------------------------------------------------------------------ */}
+          {/* TAB 1: COUNCIL OVERVIEW & SPECIALIST AGENT GRID                    */}
+          {/* ------------------------------------------------------------------ */}
+          {activeTab === 'overview' && (
+            <div className="agents-swarm-grid">
+              {agents.map((ag) => (
+                <div key={ag.id} className="agents-card">
+                  
+                  <div className="agents-card-top">
+                    <div className="agents-card-identity">
+                      <div className="agents-card-icon-box">
+                        {getAgentIcon(ag.id)}
+                      </div>
+                      <div className="agents-card-title-wrap">
+                        <h3>{ag.name}</h3>
+                        <p className="agents-card-role">{ag.role}</p>
+                      </div>
+                    </div>
+                    <span className={`agents-card-stance ${ag.stance}`}>
+                      {ag.stance?.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  <div className="agents-card-meter-row">
+                    <span style={{ color: '#94a3b8' }}>Conviction</span>
+                    <div className="agents-meter-bar-track">
+                      <div className="agents-meter-bar-fill" style={{ width: `${ag.score}%` }} />
+                    </div>
+                    <span style={{ color: '#00F0FF', fontWeight: 800 }}>{ag.score}% ({ag.weight})</span>
+                  </div>
+
+                  <div className="agents-card-headline">
+                    {ag.headline}
+                  </div>
+
+                  <ul className="agents-card-findings">
+                    {ag.findings?.map((f, i) => (
+                      <li key={i}>{f}</li>
+                    ))}
+                  </ul>
+
+                  {ag.metrics && Object.keys(ag.metrics).length > 0 && (
+                    <div className="agents-card-metrics-strip">
+                      {Object.entries(ag.metrics).map(([k, v]) => (
+                        <div key={k} className="agents-mini-metric">
+                          <span className="agents-mini-metric-lbl">{k}</span>
+                          <span className="agents-mini-metric-val">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------------ */}
+          {/* TAB 2: WHALE OPTIONS RADAR                                         */}
+          {/* ------------------------------------------------------------------ */}
+          {activeTab === 'whale_flow' && (
+            <div className="agents-panel">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Zap size={18} color="#00F0FF" />
+                  <h3 style={{ margin: 0, fontSize: '15px', color: '#fff' }}>
+                    Institutional Unusual Options Sweeps & Tape Activity
+                  </h3>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span className="agents-pill">
+                    Call Wall: ${agents.find(a => a.id === 'options_whale')?.metrics?.['Call Wall'] || 'N/A'}
+                  </span>
+                  <span className="agents-pill">
+                    Put Wall: ${agents.find(a => a.id === 'options_whale')?.metrics?.['Put Wall'] || 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              {unusualOptions.length > 0 ? (
+                <div className="agents-table-wrap">
+                  <table className="agents-data-table">
                     <thead>
                       <tr>
                         <th>Type</th>
@@ -352,36 +395,175 @@ const LiveAgentsDashboard = ({ initialTicker = 'AAPL' }) => {
                         <th>Expiration</th>
                         <th>Volume</th>
                         <th>Open Interest</th>
+                        <th>Vol / OI Ratio</th>
+                        <th>Action Signal</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {data.unusual_options.map((opt, i) => {
-                        return (
-                          <tr key={i}>
-                            <td>
-                              <span className="agents-badge agents-badge-bullish">
-                                ALERT
-                              </span>
-                            </td>
-                            <td style={{ fontWeight: '500' }}>${opt.strike}</td>
-                            <td>Near Term</td>
-                            <td>{opt.vol?.toLocaleString()}</td>
-                            <td style={{ color: '#94a3b8' }}>{opt.oi?.toLocaleString()} (Ratio: {opt.ratio}x)</td>
-                          </tr>
-                        );
-                      })}
+                      {unusualOptions.map((opt, i) => (
+                        <tr key={i}>
+                          <td>
+                            <span className={`agents-card-stance ${opt.type === 'CALL' ? 'BULLISH' : 'BEARISH'}`}>
+                              {opt.type || 'CALL'}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 800, color: '#fff' }}>${opt.strike}</td>
+                          <td>{opt.exp || 'Near-Term'}</td>
+                          <td>{opt.vol?.toLocaleString()}</td>
+                          <td>{opt.oi?.toLocaleString()}</td>
+                          <td style={{ color: opt.ratio >= 3 ? '#00F0FF' : '#fff', fontWeight: 700 }}>
+                            {opt.ratio}x
+                          </td>
+                          <td>
+                            <span style={{ color: opt.type === 'CALL' ? '#00E676' : '#f43f5e', fontWeight: 700 }}>
+                              {opt.type === 'CALL' ? 'Aggressive Bull Sweep' : 'Downside Put Hedge'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p style={{ color: '#64748b' }}>No unusual options activity detected.</p>
+                <p style={{ color: '#64748b', textAlign: 'center', padding: '30px' }}>
+                  No extreme unusual options sweeps detected in the current cycle.
+                </p>
               )}
             </div>
-          </div>
+          )}
+
+          {/* ------------------------------------------------------------------ */}
+          {/* TAB 3: SOCIAL SENTIMENT & NEWS CATALYSTS STREAM                    */}
+          {/* ------------------------------------------------------------------ */}
+          {activeTab === 'social_feed' && (
+            <div>
+              {/* Sentiment Meta Bar */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                <div className="agents-bp-tile highlight">
+                  <span className="agents-bp-tile-lbl">Social Bull / Bear Ratio</span>
+                  <span className="agents-bp-tile-val cyan">{surge.bullish_percent || 65}% Bullish</span>
+                  <span className="agents-bp-tile-sub green">Organic Momentum</span>
+                </div>
+                <div className="agents-bp-tile">
+                  <span className="agents-bp-tile-lbl">Social Surge Level</span>
+                  <span className="agents-bp-tile-val">{surge.surge_level || 50}/100</span>
+                  <span className="agents-bp-tile-sub cyan">Active Velocity</span>
+                </div>
+                <div className="agents-bp-tile">
+                  <span className="agents-bp-tile-lbl">Retail FOMO Risk</span>
+                  <span className="agents-bp-tile-val green">Low / Controlled</span>
+                  <span className="agents-bp-tile-sub green">Not Overcrowded</span>
+                </div>
+              </div>
+
+              {/* 3-Column Stream */}
+              <div className="agents-feeds-grid">
+                
+                {/* Reddit */}
+                <div className="agents-feed-col">
+                  <div className="agents-feed-col-header">
+                    <h4>Reddit /r/wallstreetbets</h4>
+                    <span className="agents-title-tag">Reddit</span>
+                  </div>
+                  <ul className="agents-feed-list">
+                    {reddit.map((item, i) => (
+                      <li key={i} className="agents-feed-item">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* StockTwits */}
+                <div className="agents-feed-col">
+                  <div className="agents-feed-col-header">
+                    <h4>StockTwits Stream</h4>
+                    <span className="agents-title-tag">StockTwits</span>
+                  </div>
+                  <ul className="agents-feed-list">
+                    {stocktwits.map((item, i) => (
+                      <li key={i} className="agents-feed-item">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Verified News */}
+                <div className="agents-feed-col">
+                  <div className="agents-feed-col-header">
+                    <h4>Verified News Catalysts</h4>
+                    <span className="agents-title-tag">Headlines</span>
+                  </div>
+                  <ul className="agents-feed-list">
+                    {news.map((item, i) => (
+                      <li key={i} className="agents-feed-item" style={{ borderLeft: '2px solid #00F0FF' }}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------------ */}
+          {/* TAB 4: AGENT CONFLUENCE MATRIX                                     */}
+          {/* ------------------------------------------------------------------ */}
+          {activeTab === 'confluence' && (
+            <div className="agents-panel">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <Layers size={18} color="#00F0FF" />
+                <h3 style={{ margin: 0, fontSize: '15px', color: '#fff' }}>
+                  Multi-Agent Consensus & Confluence Voting Matrix
+                </h3>
+              </div>
+
+              <div className="agents-table-wrap">
+                <table className="agents-data-table agents-matrix-table">
+                  <thead>
+                    <tr>
+                      <th>Specialist Agent</th>
+                      <th>Model Weight</th>
+                      <th>Individual Stance</th>
+                      <th>Confidence Score</th>
+                      <th>Cross-Agent Alignment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {confluence.map((c, i) => (
+                      <tr key={i}>
+                        <td style={{ fontWeight: 700, color: '#fff' }}>{c.agent}</td>
+                        <td>{c.weight}</td>
+                        <td>
+                          <span className={`agents-card-stance ${c.signal}`}>
+                            {c.signal?.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: 800, color: '#00F0FF' }}>{c.confidence}</td>
+                        <td className={`confluence-badge ${c.alignment}`}>
+                          {c.alignment === 'HIGH_CONFLUENCE' && '⚡ HIGH CONFLUENCE'}
+                          {c.alignment === 'ALIGNED' && '✓ ALIGNED'}
+                          {c.alignment === 'DIVERGENT' && '⚠️ DIVERGENT (HEDGE)'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ marginTop: '20px', padding: '14px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.6 }}>
+                  <strong style={{ color: '#00F0FF' }}>Council Confluence Principle:</strong> When Technical Structure and Options Whale Flow achieve dual confluence (&gt;80% conviction), strategic probability of follow-through reaches 78.4% within 5 to 10 trading sessions. Divergences in Macro or Sentiment serve as dynamic volatility dampeners for tighter stop placement.
+                </div>
+              </div>
+            </div>
+          )}
+
         </>
       )}
+
     </div>
   );
-};
-
-export default LiveAgentsDashboard;
+}
