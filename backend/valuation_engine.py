@@ -257,8 +257,11 @@ def get_complete_valuation_package(ticker: str) -> Dict[str, Any]:
     t = yf.Ticker(ticker)
     info = getattr(t, 'info', {}) or {}
     
-    price = float(info.get("currentPrice") or info.get("previousClose") or 150.0)
-    shares = float(info.get("sharesOutstanding") or 1e9)
+    price = float(info.get("currentPrice") or info.get("previousClose") or 100.0)
+    shares = float(info.get("sharesOutstanding") or getattr(t.fast_info, 'shares', None) or 0)
+    if shares <= 0:
+        mcap_hint = float(info.get('marketCap') or getattr(t.fast_info, 'market_cap', 0) or 0)
+        shares = (mcap_hint / price) if mcap_hint > 0 and price > 0 else 50000000.0
     beta = float(info.get("beta") or 1.1)
     
     # Financial extraction
@@ -278,12 +281,30 @@ def get_complete_valuation_package(ticker: str) -> Dict[str, Any]:
                 return float(df.iloc[df.index.get_loc(k), 0])
         return default
 
-    cash = get_first(bs, ['Cash And Cash Equivalents', 'CashAndCashEquivalents', 'CashCashEquivalentsAndShortTermInvestments'], 1e10)
-    debt = get_first(bs, ['Total Debt', 'TotalDebt', 'LongTermDebt'], 2e10)
-    rev_ttm = get_first(inc, ['Total Revenue', 'TotalRevenue'], 5e10) * 4 # annualize
-    op_cf = get_first(cf, ['Operating Cash Flow', 'OperatingCashFlow'], 1.5e10) * 4
-    capex = abs(get_first(cf, ['Capital Expenditure', 'CapitalExpenditure'], 3e9)) * 4
-    fcf = max(1e9, op_cf - capex)
+    mkt_cap_est = price * shares
+    default_cash = float(info.get('totalCash') or getattr(t.fast_info, 'cash', 0) or (mkt_cap_est * 0.08))
+    default_debt = float(info.get('totalDebt') or getattr(t.fast_info, 'debt', 0) or (mkt_cap_est * 0.15))
+    default_rev = float(info.get('totalRevenue') or (mkt_cap_est * 0.70))
+
+    cash = get_first(bs, ['Cash And Cash Equivalents', 'CashAndCashEquivalents', 'CashCashEquivalentsAndShortTermInvestments'], default_cash)
+    debt = get_first(bs, ['Total Debt', 'TotalDebt', 'LongTermDebt'], default_debt)
+    
+    rev_raw = get_first(inc, ['Total Revenue', 'TotalRevenue', 'Operating Revenue'], default_rev / 4.0)
+    rev_ttm = rev_raw * 4.0 if rev_raw > 0 else default_rev
+
+    op_cf_raw = get_first(cf, ['Operating Cash Flow', 'OperatingCashFlow', 'Cash Flow From Continuing Operating Activities', 'Total Cash From Operating Activities'], 0.0)
+    capex_raw = abs(get_first(cf, ['Capital Expenditure', 'CapitalExpenditure', 'CapitalExpendituresReported', 'Purchase Of Property Plant And Equipment'], 0.0))
+
+    if op_cf_raw > 0:
+        op_cf = op_cf_raw * 4.0
+        capex = capex_raw * 4.0 if capex_raw > 0 else (op_cf * 0.20)
+        fcf = max(mkt_cap_est * 0.01, op_cf - capex)
+    else:
+        reported_fcf = info.get('freeCashflow')
+        if reported_fcf and reported_fcf > 0 and reported_fcf < mkt_cap_est * 0.40:
+            fcf = float(reported_fcf)
+        else:
+            fcf = max(mkt_cap_est * 0.035, rev_ttm * 0.045)
     
     wacc_data = ValuationEngine.calculate_wacc(
         stock_price=price,

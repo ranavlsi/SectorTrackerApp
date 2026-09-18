@@ -1,17 +1,72 @@
 {
-  "generated_at": "2026-09-13T20:00:54.945770",
-  "date_str": "Sunday, September 13, 2026",
+  "generated_at": "2026-09-17T20:36:58.042772",
+  "date_str": "Thursday, September 17, 2026",
   "market_regime": {
     "label": "RISK_OFF",
-    "score": 31.1,
+    "score": 22.2,
     "color": "#f43f5e",
     "guidance": "Defensive Sizing (0.75% - 1.0% per trade)"
   },
-  "total_setups": 21,
+  "total_setups": 23,
   "focus_list": [
     {
-      "ticker": "MTCH",
-      "current_price": 42.39,
+      "ticker": "NTR",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 99,
+      "conviction_rating": "99/100 A+ Institutional",
+      "confluence_count": 5,
+      "screeners": [
+        "Bearish Candlestick",
+        "Base Pullback Ma",
+        "Medium Base Breakout",
+        "Rs Divergence",
+        "Relative Strength Leader"
+      ],
+      "metrics": [
+        "**Bearish Candlestick**: Bearish Hikkake",
+        "**Base Pullback Ma**: Squat Support at 10-SMA ($79.11)",
+        "**Medium Base Breakout**: 6 Months | Coiled",
+        "**Rs Divergence**: RS New High | Price -4.4%"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 77.02,
+        "stop_loss_pct": NaN,
+        "target_primary": 86.62,
+        "target_primary_pct": NaN,
+        "target_secondary": 92.44,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $92.4 Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 63.9,
+        "vol_surge": 0.55,
+        "ema_10": 78.02,
+        "ema_21": 76.15,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.55x ADV).",
+          "Place tight structural invalidation stop at $77.02 (nan% max risk).",
+          "Scale out 50% at Target 1 ($86.62, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($92.44, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "TEAM",
+      "current_price": NaN,
       "playbook_id": "ma_pullback",
       "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
       "playbook_badge": "MA PULLBACK",
@@ -20,161 +75,164 @@
       "conviction_rating": "99/100 A+ Institutional",
       "confluence_count": 6,
       "screeners": [
-        "Bearish Candlestick",
-        "Vah Rejection",
-        "Vah Rejection Fixed",
-        "Base Pullback Ma",
-        "Long Base Breakout",
-        "Rs Divergence"
-      ],
-      "metrics": [
-        "**Bearish Candlestick**: Bearish Hikkake",
-        "**Vah Rejection**: Bouncing +1.8% off VAH $41.64",
-        "**Vah Rejection Fixed**: Bouncing +3.8% off Fixed VAH (Q3) $40.85",
-        "**Base Pullback Ma**: Squat Support at 10-SMA ($41.77)"
-      ],
-      "execution": {
-        "entry_range": [
-          42.05,
-          42.73
-        ],
-        "ideal_entry": 42.38999938964844,
-        "stop_loss": 41.15,
-        "stop_loss_pct": -2.9,
-        "target_primary": 45.73,
-        "target_primary_pct": 7.9,
-        "target_secondary": 48.95,
-        "target_secondary_pct": 15.5,
-        "risk_reward": "1:2.7",
-        "options_spec": "Buy $42.0 Call / Sell $49.0 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 59.6,
-        "vol_surge": 0.83,
-        "ema_10": 41.66,
-        "ema_21": 40.95,
-        "sma_50": 39.51,
-        "sma_200": 34.62,
-        "execution_checklist": [
-          "Verify price action inside $42.05 \u2500\u2500 $42.73 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.83x ADV).",
-          "Place tight structural invalidation stop at $41.15 (-2.9% max risk).",
-          "Scale out 50% at Target 1 ($45.73, +7.9%, 1:2.7 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($48.95, +15.5%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "OKE",
-      "current_price": 96.62,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 5,
-      "screeners": [
-        "Vah Rejection",
-        "Vah Rejection Fixed",
+        "Relative Strength",
+        "Fvg Sma Confluence",
         "Base Pullback Ma",
         "Zacks Rank 1",
-        "Rs Divergence"
+        "Rs Divergence",
+        "Bull Flag Pending"
       ],
       "metrics": [
-        "**Vah Rejection**: Bouncing +2.4% off VAH $94.31",
-        "**Vah Rejection Fixed**: Bouncing +1.6% off Fixed VAH (Q3) $95.10",
-        "**Base Pullback Ma**: Squat Support at 10-SMA ($95.93)",
-        "**Zacks Rank 1**: Score: 4 | PEG: 1.79"
+        "**Relative Strength**: +7.4% 5D | +10.1% 20D",
+        "**Fvg Sma Confluence**: FVG Support ($183.00-$187.01) + 10-day SMA Confluence",
+        "**Base Pullback Ma**: Squat Support at 10-SMA ($186.31)",
+        "**Zacks Rank 1**: Score: 4 | PEG: 1.98"
       ],
       "execution": {
         "entry_range": [
-          95.85,
-          97.39
+          NaN,
+          NaN
         ],
-        "ideal_entry": 96.62000274658203,
-        "stop_loss": 94.77,
-        "stop_loss_pct": -1.9,
-        "target_primary": 102.9,
-        "target_primary_pct": 6.5,
-        "target_secondary": 106.23,
-        "target_secondary_pct": 9.9,
-        "risk_reward": "1:3.4",
-        "options_spec": "Buy $95.8 Call / Sell $106.2 Call (MA PULLBACK Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": 184.34,
+        "stop_loss_pct": NaN,
+        "target_primary": 211.77,
+        "target_primary_pct": NaN,
+        "target_secondary": 230.59,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $230.6 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 63.4,
-        "vol_surge": 0.84,
-        "ema_10": 95.78,
-        "ema_21": 94.69,
-        "sma_50": 91.93,
-        "sma_200": 83.87,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 53.7,
+        "vol_surge": 0.7,
+        "ema_10": 185.34,
+        "ema_21": 176.35,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $95.85 \u2500\u2500 $97.39 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.84x ADV).",
-          "Place tight structural invalidation stop at $94.77 (-1.9% max risk).",
-          "Scale out 50% at Target 1 ($102.90, +6.5%, 1:3.4 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($106.23, +9.9%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.7x ADV).",
+          "Place tight structural invalidation stop at $184.34 (nan% max risk).",
+          "Scale out 50% at Target 1 ($211.77, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($230.59, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "ACVA",
-      "current_price": 10.41,
+      "ticker": "CF",
+      "current_price": NaN,
       "playbook_id": "ma_pullback",
       "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
       "playbook_badge": "MA PULLBACK",
       "playbook_color": "cyan",
       "conviction_score": 99,
       "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 5,
+      "confluence_count": 4,
       "screeners": [
-        "Relative Strength",
-        "Bearish Candlestick",
-        "Darvas Strong",
-        "Regression Channel Breakout",
-        "Qullamaggie Setup"
+        "Vah Rejection Fixed",
+        "Base Pullback Ma",
+        "Medium Base Breakout",
+        "Relative Strength Leader"
       ],
       "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +50.3% 5D | +27.9% 20D",
-        "**Bearish Candlestick**: Bearish Hikkake",
-        "**Darvas Strong**: Cleared $8.36 | Volume is 18.1x avg",
-        "**Regression Channel Breakout**: Bullish Breakout (+12.3%) from Ascending Channel"
+        "**Vah Rejection Fixed**: Bouncing +1.3% off Fixed VAH (Q3) $132.10",
+        "**Base Pullback Ma**: Squat Support at 20-SMA ($131.91)",
+        "**Medium Base Breakout**: 6 Months | Coiled",
+        "**RS Leader**: Score 88 | Pattern: cup"
       ],
       "execution": {
         "entry_range": [
-          10.33,
-          10.49
+          NaN,
+          NaN
         ],
-        "ideal_entry": 10.40999984741211,
-        "stop_loss": 10.05,
-        "stop_loss_pct": -3.5,
-        "target_primary": 11.81,
-        "target_primary_pct": 13.4,
-        "target_secondary": 13.74,
-        "target_secondary_pct": 32.0,
-        "risk_reward": "1:3.9",
-        "options_spec": "Buy $10.3 Call / Sell $13.7 Call (MA PULLBACK Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": 130.83,
+        "stop_loss_pct": NaN,
+        "target_primary": 148.72,
+        "target_primary_pct": NaN,
+        "target_secondary": 158.8,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $158.8 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 80.3,
-        "vol_surge": 11.97,
-        "ema_10": 7.72,
-        "ema_21": 7.52,
-        "sma_50": 7.49,
-        "sma_200": 6.7,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 58.1,
+        "vol_surge": 0.57,
+        "ema_10": 133.21,
+        "ema_21": 130.63,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $10.33 \u2500\u2500 $10.49 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 11.97x ADV).",
-          "Place tight structural invalidation stop at $10.05 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($11.81, +13.4%, 1:3.9 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($13.74, +32.0%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.57x ADV).",
+          "Place tight structural invalidation stop at $130.83 (nan% max risk).",
+          "Scale out 50% at Target 1 ($148.72, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($158.80, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "DK",
-      "current_price": 76.1,
+      "ticker": "EXEL",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 99,
+      "conviction_rating": "99/100 A+ Institutional",
+      "confluence_count": 6,
+      "screeners": [
+        "All Time High",
+        "Vah Rejection",
+        "Vah Rejection Fixed",
+        "Base Pullback Ma",
+        "Rs Divergence",
+        "Universal Takeout"
+      ],
+      "metrics": [
+        "**All Time High**: ATH: $59.72",
+        "**Vah Rejection**: Bouncing +2.6% off VAH $56.99",
+        "**Vah Rejection Fixed**: Bouncing +2.6% off Fixed VAH (Q3) $56.99",
+        "**Base Pullback Ma**: Squat Support at 10-SMA ($57.61)"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 56.2,
+        "stop_loss_pct": NaN,
+        "target_primary": 61.94,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 57.1,
+        "vol_surge": 0.83,
+        "ema_10": 56.87,
+        "ema_21": 56.28,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.83x ADV).",
+          "Place tight structural invalidation stop at $56.20 (nan% max risk).",
+          "Scale out 50% at Target 1 ($61.94, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "SMTC",
+      "current_price": NaN,
       "playbook_id": "fundamental_acceleration",
       "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
       "playbook_badge": "FUNDAMENTAL ACCELERATION",
@@ -186,97 +244,44 @@
         "Relative Strength",
         "Fresh 52W High",
         "All Time High",
-        "Post Earning Reaction",
+        "Bullish Candlestick",
         "Zacks Rank 1"
       ],
       "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +6.7% 5D | +18.1% 20D",
-        "**Fresh 52W High**: New High: $78.43",
-        "**All Time High**: ATH: $78.42",
-        "**Post Earning Reaction**: Gap Up +5.1%"
+        "**Relative Strength**: \ud83d\udd25 Fresh High | +6.8% 5D | +42.7% 20D",
+        "**Fresh 52W High**: New High: $182.13",
+        "**All Time High**: ATH: $182.13",
+        "**Bullish Candlestick**: Bullish 3 White Soldiers"
       ],
       "execution": {
         "entry_range": [
-          75.49,
-          76.71
+          NaN,
+          NaN
         ],
-        "ideal_entry": 76.0999984741211,
-        "stop_loss": 73.44,
-        "stop_loss_pct": -3.5,
-        "target_primary": 87.27,
-        "target_primary_pct": 14.7,
-        "target_secondary": 96.34,
-        "target_secondary_pct": 26.6,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $75.5 Call / Sell $96.3 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": 146.88,
+        "stop_loss_pct": NaN,
+        "target_primary": NaN,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 60.5,
-        "vol_surge": 1.47,
-        "ema_10": 73.55,
-        "ema_21": 70.98,
-        "sma_50": 65.29,
-        "sma_200": 45.39,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 62.7,
+        "vol_surge": 1.25,
+        "ema_10": 153.61,
+        "ema_21": 146.44,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $75.49 \u2500\u2500 $76.71 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.47x ADV).",
-          "Place tight structural invalidation stop at $73.44 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($87.27, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($96.34, +26.6%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "DELL",
-      "current_price": 567.29,
-      "playbook_id": "fundamental_acceleration",
-      "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
-      "playbook_badge": "FUNDAMENTAL ACCELERATION",
-      "playbook_color": "amber",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 5,
-      "screeners": [
-        "Relative Strength",
-        "Fresh 52W High",
-        "All Time High",
-        "Zacks Rank 1",
-        "Earnings Surge"
-      ],
-      "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +9.1% 5D | +17.4% 20D",
-        "**Fresh 52W High**: New High: $567.75",
-        "**All Time High**: ATH: $567.75",
-        "**Zacks Rank 1**: Score: 5 | PEG: 0.63"
-      ],
-      "execution": {
-        "entry_range": [
-          562.75,
-          571.83
-        ],
-        "ideal_entry": 567.2899780273438,
-        "stop_loss": 547.43,
-        "stop_loss_pct": -3.5,
-        "target_primary": 650.7,
-        "target_primary_pct": 14.7,
-        "target_secondary": 720.69,
-        "target_secondary_pct": 27.0,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $562.8 Call / Sell $720.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
-        "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 71.2,
-        "vol_surge": 1.63,
-        "ema_10": 511.37,
-        "ema_21": 487.27,
-        "sma_50": 448.73,
-        "sma_200": 261.15,
-        "execution_checklist": [
-          "Verify price action inside $562.75 \u2500\u2500 $571.83 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.63x ADV).",
-          "Place tight structural invalidation stop at $547.43 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($650.70, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($720.69, +27.0%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.25x ADV).",
+          "Place tight structural invalidation stop at $146.88 (nan% max risk).",
+          "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     }
@@ -288,61 +293,170 @@
       "description": "High Tight Flags, Volatility Contraction Patterns (VCP), and 52-Week ATH Pivots.",
       "setups": [
         {
-          "ticker": "HPQ",
-          "current_price": 35.48,
+          "ticker": "MPC",
+          "current_price": NaN,
           "playbook_id": "alpha_breakout",
           "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
           "playbook_badge": "ALPHA BREAKOUT",
           "playbook_color": "emerald",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 4,
+          "conviction_score": 95,
+          "conviction_rating": "95/100 A+ Institutional",
+          "confluence_count": 5,
           "screeners": [
             "Relative Strength",
             "Fresh 52W High",
+            "All Time High",
             "Bullish Candlestick",
             "Regression Channel Breakout"
           ],
           "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +9.5% 5D | +19.7% 20D",
-            "**Fresh 52W High**: New High: $36.23",
-            "**Bullish Candlestick**: Bullish 3 White Soldiers",
-            "**Regression Channel Breakout**: Bullish Breakout (+3.3%) from Ascending Channel"
+            "**Relative Strength**: \ud83d\udd25 Fresh High | +6.8% 5D | +17.8% 20D",
+            "**Fresh 52W High**: New High: $423.83",
+            "**All Time High**: ATH: $423.83",
+            "**Bullish Candlestick**: Bullish 3 White Soldiers"
           ],
           "execution": {
             "entry_range": [
-              35.2,
-              35.76
+              NaN,
+              NaN
             ],
-            "ideal_entry": 35.47999954223633,
-            "stop_loss": 34.24,
-            "stop_loss_pct": -3.5,
-            "target_primary": 40.69,
-            "target_primary_pct": 14.7,
-            "target_secondary": 45.99,
-            "target_secondary_pct": 29.6,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $35.2 Call / Sell $46.0 Call (ALPHA BREAKOUT Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": NaN,
+            "stop_loss_pct": NaN,
+            "target_primary": 455.25,
+            "target_primary_pct": NaN,
+            "target_secondary": 491.11,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $491.1 Call (ALPHA BREAKOUT Vertical)",
             "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 71.5,
-            "vol_surge": 1.69,
-            "ema_10": 32.12,
-            "ema_21": 30.8,
-            "sma_50": 27.8,
-            "sma_200": 22.54,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 89.1,
+            "vol_surge": 1.01,
+            "ema_10": 396.49,
+            "ema_21": 380.32,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $35.20 \u2500\u2500 $35.76 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.69x ADV).",
-              "Place tight structural invalidation stop at $34.24 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($40.69, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($45.99, +29.6%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.01x ADV).",
+              "Place tight structural invalidation stop at $nan (nan% max risk).",
+              "Scale out 50% at Target 1 ($455.25, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($491.11, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         },
         {
-          "ticker": "VLO",
-          "current_price": 390.42,
+          "ticker": "FRHC",
+          "current_price": NaN,
+          "playbook_id": "alpha_breakout",
+          "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
+          "playbook_badge": "ALPHA BREAKOUT",
+          "playbook_color": "emerald",
+          "conviction_score": 92,
+          "conviction_rating": "92/100 A+ Institutional",
+          "confluence_count": 3,
+          "screeners": [
+            "Weekly Cup Handle",
+            "Medium Base Breakout",
+            "Pending Breakout"
+          ],
+          "metrics": [
+            "**Weekly Cup Handle**: Weekly Cup & Handle",
+            "**Medium Base Breakout**: 12 Months | Coiled",
+            "**Pending Breakout**: Pending Breakout | V2 VCP Squeeze"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": NaN,
+            "stop_loss_pct": NaN,
+            "target_primary": 187.51,
+            "target_primary_pct": NaN,
+            "target_secondary": 198.83,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $198.8 Call (ALPHA BREAKOUT Vertical)",
+            "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 38.2,
+            "vol_surge": 0.53,
+            "ema_10": 164.36,
+            "ema_21": 163.42,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.53x ADV).",
+              "Place tight structural invalidation stop at $nan (nan% max risk).",
+              "Scale out 50% at Target 1 ($187.51, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($198.83, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "NTRA",
+          "current_price": NaN,
+          "playbook_id": "alpha_breakout",
+          "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
+          "playbook_badge": "ALPHA BREAKOUT",
+          "playbook_color": "emerald",
+          "conviction_score": 97,
+          "conviction_rating": "97/100 A+ Institutional",
+          "confluence_count": 5,
+          "screeners": [
+            "Relative Strength",
+            "Fresh 52W High",
+            "All Time High",
+            "Hve Volume",
+            "Universal Takeout"
+          ],
+          "metrics": [
+            "**Relative Strength**: \ud83d\udd25 Fresh High | +11.6% 5D | +12.8% 20D",
+            "**Fresh 52W High**: New High: $366.70",
+            "**All Time High**: ATH: $366.70",
+            "**Hve Volume**: Monthly High Volume (2.0x Avg)"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": NaN,
+            "stop_loss_pct": NaN,
+            "target_primary": 378.73,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (ALPHA BREAKOUT Vertical)",
+            "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 54.8,
+            "vol_surge": 1.67,
+            "ema_10": 335.59,
+            "ema_21": 326.98,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.67x ADV).",
+              "Place tight structural invalidation stop at $nan (nan% max risk).",
+              "Scale out 50% at Target 1 ($378.73, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "ILMN",
+          "current_price": NaN,
           "playbook_id": "alpha_breakout",
           "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
           "playbook_badge": "ALPHA BREAKOUT",
@@ -353,147 +467,44 @@
           "screeners": [
             "Relative Strength",
             "Fresh 52W High",
-            "All Time High",
-            "Regression Channel Breakout"
-          ],
-          "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +6.1% 5D | +16.1% 20D",
-            "**Fresh 52W High**: New High: $399.25",
-            "**All Time High**: ATH: $399.26",
-            "**Regression Channel Breakout**: Bullish Breakout (+0.8%) from Ascending Channel"
-          ],
-          "execution": {
-            "entry_range": [
-              387.3,
-              393.54
-            ],
-            "ideal_entry": 390.4200134277344,
-            "stop_loss": 381.11,
-            "stop_loss_pct": -2.4,
-            "target_primary": 429.52,
-            "target_primary_pct": 10.0,
-            "target_secondary": 463.52,
-            "target_secondary_pct": 18.7,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $387.3 Call / Sell $463.5 Call (ALPHA BREAKOUT Vertical)",
-            "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 80.4,
-            "vol_surge": 1.25,
-            "ema_10": 374.44,
-            "ema_21": 358.8,
-            "sma_50": 324.39,
-            "sma_200": 242.25,
-            "execution_checklist": [
-              "Verify price action inside $387.30 \u2500\u2500 $393.54 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.25x ADV).",
-              "Place tight structural invalidation stop at $381.11 (-2.4% max risk).",
-              "Scale out 50% at Target 1 ($429.52, +10.0%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($463.52, +18.7%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "QRVO",
-          "current_price": 116.65,
-          "playbook_id": "alpha_breakout",
-          "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
-          "playbook_badge": "ALPHA BREAKOUT",
-          "playbook_color": "emerald",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 4,
-          "screeners": [
-            "Relative Strength",
-            "Fresh 52W High",
             "Regression Channel Breakout",
             "Hve Volume"
           ],
           "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +14.3% 5D | +20.8% 20D",
-            "**Fresh 52W High**: New High: $120.52",
-            "**Regression Channel Breakout**: Bullish Breakout (+2.4%) from Ascending Channel",
+            "**Relative Strength**: \ud83d\udd25 Fresh High | +19.0% 5D | +14.9% 20D",
+            "**Fresh 52W High**: New High: $246.76",
+            "**Regression Channel Breakout**: Bullish Breakout (+1.8%) from Ascending Channel",
             "**Hve Volume**: Monthly High Volume (1.9x Avg)"
           ],
           "execution": {
             "entry_range": [
-              115.72,
-              117.58
+              NaN,
+              NaN
             ],
-            "ideal_entry": 116.6500015258789,
-            "stop_loss": 112.57,
-            "stop_loss_pct": -3.5,
-            "target_primary": 133.79,
-            "target_primary_pct": 14.7,
-            "target_secondary": 149.18,
-            "target_secondary_pct": 27.9,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $115.7 Call / Sell $149.2 Call (ALPHA BREAKOUT Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": NaN,
+            "stop_loss_pct": NaN,
+            "target_primary": 254.0,
+            "target_primary_pct": NaN,
+            "target_secondary": 271.99,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $272.0 Call (ALPHA BREAKOUT Vertical)",
             "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 89.2,
-            "vol_surge": 2.01,
-            "ema_10": 105.16,
-            "ema_21": 100.92,
-            "sma_50": 93.55,
-            "sma_200": 88.41,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 50.7,
+            "vol_surge": 1.71,
+            "ema_10": 215.06,
+            "ema_21": 211.67,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $115.72 \u2500\u2500 $117.58 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 2.01x ADV).",
-              "Place tight structural invalidation stop at $112.57 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($133.79, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($149.18, +27.9%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "GRDN",
-          "current_price": 43.64,
-          "playbook_id": "alpha_breakout",
-          "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
-          "playbook_badge": "ALPHA BREAKOUT",
-          "playbook_color": "emerald",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 3,
-          "screeners": [
-            "Relative Strength",
-            "Rs Divergence",
-            "Relative Strength Leader"
-          ],
-          "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +7.9% 5D | +15.3% 20D",
-            "**Rs Divergence**: RS New High | Price -7.2%",
-            "**RS Leader**: Score 95 | Pattern: cup"
-          ],
-          "execution": {
-            "entry_range": [
-              43.29,
-              43.99
-            ],
-            "ideal_entry": 43.63999938964844,
-            "stop_loss": 42.72,
-            "stop_loss_pct": -2.1,
-            "target_primary": 47.5,
-            "target_primary_pct": 8.8,
-            "target_secondary": 53.62,
-            "target_secondary_pct": 22.9,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $43.3 Call / Sell $53.6 Call (ALPHA BREAKOUT Vertical)",
-            "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 84.9,
-            "vol_surge": 2.12,
-            "ema_10": 41.39,
-            "ema_21": 40.29,
-            "sma_50": 39.99,
-            "sma_200": 36.08,
-            "execution_checklist": [
-              "Verify price action inside $43.29 \u2500\u2500 $43.99 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 2.12x ADV).",
-              "Place tight structural invalidation stop at $42.72 (-2.1% max risk).",
-              "Scale out 50% at Target 1 ($47.50, +8.8%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($53.62, +22.9%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.71x ADV).",
+              "Place tight structural invalidation stop at $nan (nan% max risk).",
+              "Scale out 50% at Target 1 ($254.00, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($271.99, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         }
@@ -501,12 +512,123 @@
     },
     "ma_pullback": {
       "name": "Moving Average Pullbacks & Cushions \ud83d\udee1\ufe0f",
-      "count": 10,
+      "count": 12,
       "description": "Mean-reversion support bounces off the 10-EMA, 21-EMA, and Anchored VWAP cushions.",
       "setups": [
         {
-          "ticker": "MTCH",
-          "current_price": 42.39,
+          "ticker": "PLTR",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 98,
+          "conviction_rating": "98/100 A+ Institutional",
+          "confluence_count": 6,
+          "screeners": [
+            "Chop Incubation Leaders",
+            "Vah Rejection",
+            "Poc Rejection Fixed",
+            "Weekly Cup Handle",
+            "Zacks Rank 1",
+            "Pending Breakout"
+          ],
+          "metrics": [
+            "**Chop Incubation Leaders**: Vol: 28.3M | Base: 218d (-15.1% to ATH) | VDU: 0.66x | 23-EMA",
+            "**Vah Rejection**: Bouncing +3.0% off VAH $171.15",
+            "**Poc Rejection Fixed**: Bouncing +1.3% off Fixed POC (Q3) $173.92",
+            "**Weekly Cup Handle**: Weekly Cup & Handle"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 168.43,
+            "stop_loss_pct": NaN,
+            "target_primary": 196.71,
+            "target_primary_pct": NaN,
+            "target_secondary": 208.62,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $208.6 Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 39.8,
+            "vol_surge": 0.81,
+            "ema_10": 172.82,
+            "ema_21": 171.4,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.81x ADV).",
+              "Place tight structural invalidation stop at $168.43 (nan% max risk).",
+              "Scale out 50% at Target 1 ($196.71, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($208.62, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "NTR",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 99,
+          "conviction_rating": "99/100 A+ Institutional",
+          "confluence_count": 5,
+          "screeners": [
+            "Bearish Candlestick",
+            "Base Pullback Ma",
+            "Medium Base Breakout",
+            "Rs Divergence",
+            "Relative Strength Leader"
+          ],
+          "metrics": [
+            "**Bearish Candlestick**: Bearish Hikkake",
+            "**Base Pullback Ma**: Squat Support at 10-SMA ($79.11)",
+            "**Medium Base Breakout**: 6 Months | Coiled",
+            "**Rs Divergence**: RS New High | Price -4.4%"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 77.02,
+            "stop_loss_pct": NaN,
+            "target_primary": 86.62,
+            "target_primary_pct": NaN,
+            "target_secondary": 92.44,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $92.4 Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 63.9,
+            "vol_surge": 0.55,
+            "ema_10": 78.02,
+            "ema_21": 76.15,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.55x ADV).",
+              "Place tight structural invalidation stop at $77.02 (nan% max risk).",
+              "Scale out 50% at Target 1 ($86.62, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($92.44, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "TEAM",
+          "current_price": NaN,
           "playbook_id": "ma_pullback",
           "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
           "playbook_badge": "MA PULLBACK",
@@ -515,525 +637,537 @@
           "conviction_rating": "99/100 A+ Institutional",
           "confluence_count": 6,
           "screeners": [
-            "Bearish Candlestick",
-            "Vah Rejection",
-            "Vah Rejection Fixed",
-            "Base Pullback Ma",
-            "Long Base Breakout",
-            "Rs Divergence"
-          ],
-          "metrics": [
-            "**Bearish Candlestick**: Bearish Hikkake",
-            "**Vah Rejection**: Bouncing +1.8% off VAH $41.64",
-            "**Vah Rejection Fixed**: Bouncing +3.8% off Fixed VAH (Q3) $40.85",
-            "**Base Pullback Ma**: Squat Support at 10-SMA ($41.77)"
-          ],
-          "execution": {
-            "entry_range": [
-              42.05,
-              42.73
-            ],
-            "ideal_entry": 42.38999938964844,
-            "stop_loss": 41.15,
-            "stop_loss_pct": -2.9,
-            "target_primary": 45.73,
-            "target_primary_pct": 7.9,
-            "target_secondary": 48.95,
-            "target_secondary_pct": 15.5,
-            "risk_reward": "1:2.7",
-            "options_spec": "Buy $42.0 Call / Sell $49.0 Call (MA PULLBACK Vertical)",
-            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 59.6,
-            "vol_surge": 0.83,
-            "ema_10": 41.66,
-            "ema_21": 40.95,
-            "sma_50": 39.51,
-            "sma_200": 34.62,
-            "execution_checklist": [
-              "Verify price action inside $42.05 \u2500\u2500 $42.73 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.83x ADV).",
-              "Place tight structural invalidation stop at $41.15 (-2.9% max risk).",
-              "Scale out 50% at Target 1 ($45.73, +7.9%, 1:2.7 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($48.95, +15.5%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "OKE",
-          "current_price": 96.62,
-          "playbook_id": "ma_pullback",
-          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-          "playbook_badge": "MA PULLBACK",
-          "playbook_color": "cyan",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 5,
-          "screeners": [
-            "Vah Rejection",
-            "Vah Rejection Fixed",
-            "Base Pullback Ma",
-            "Zacks Rank 1",
-            "Rs Divergence"
-          ],
-          "metrics": [
-            "**Vah Rejection**: Bouncing +2.4% off VAH $94.31",
-            "**Vah Rejection Fixed**: Bouncing +1.6% off Fixed VAH (Q3) $95.10",
-            "**Base Pullback Ma**: Squat Support at 10-SMA ($95.93)",
-            "**Zacks Rank 1**: Score: 4 | PEG: 1.79"
-          ],
-          "execution": {
-            "entry_range": [
-              95.85,
-              97.39
-            ],
-            "ideal_entry": 96.62000274658203,
-            "stop_loss": 94.77,
-            "stop_loss_pct": -1.9,
-            "target_primary": 102.9,
-            "target_primary_pct": 6.5,
-            "target_secondary": 106.23,
-            "target_secondary_pct": 9.9,
-            "risk_reward": "1:3.4",
-            "options_spec": "Buy $95.8 Call / Sell $106.2 Call (MA PULLBACK Vertical)",
-            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 63.4,
-            "vol_surge": 0.84,
-            "ema_10": 95.78,
-            "ema_21": 94.69,
-            "sma_50": 91.93,
-            "sma_200": 83.87,
-            "execution_checklist": [
-              "Verify price action inside $95.85 \u2500\u2500 $97.39 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.84x ADV).",
-              "Place tight structural invalidation stop at $94.77 (-1.9% max risk).",
-              "Scale out 50% at Target 1 ($102.90, +6.5%, 1:3.4 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($106.23, +9.9%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "ACVA",
-          "current_price": 10.41,
-          "playbook_id": "ma_pullback",
-          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-          "playbook_badge": "MA PULLBACK",
-          "playbook_color": "cyan",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 5,
-          "screeners": [
             "Relative Strength",
-            "Bearish Candlestick",
-            "Darvas Strong",
-            "Regression Channel Breakout",
-            "Qullamaggie Setup"
-          ],
-          "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +50.3% 5D | +27.9% 20D",
-            "**Bearish Candlestick**: Bearish Hikkake",
-            "**Darvas Strong**: Cleared $8.36 | Volume is 18.1x avg",
-            "**Regression Channel Breakout**: Bullish Breakout (+12.3%) from Ascending Channel"
-          ],
-          "execution": {
-            "entry_range": [
-              10.33,
-              10.49
-            ],
-            "ideal_entry": 10.40999984741211,
-            "stop_loss": 10.05,
-            "stop_loss_pct": -3.5,
-            "target_primary": 11.81,
-            "target_primary_pct": 13.4,
-            "target_secondary": 13.74,
-            "target_secondary_pct": 32.0,
-            "risk_reward": "1:3.9",
-            "options_spec": "Buy $10.3 Call / Sell $13.7 Call (MA PULLBACK Vertical)",
-            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 80.3,
-            "vol_surge": 11.97,
-            "ema_10": 7.72,
-            "ema_21": 7.52,
-            "sma_50": 7.49,
-            "sma_200": 6.7,
-            "execution_checklist": [
-              "Verify price action inside $10.33 \u2500\u2500 $10.49 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 11.97x ADV).",
-              "Place tight structural invalidation stop at $10.05 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($11.81, +13.4%, 1:3.9 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($13.74, +32.0%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "HPE",
-          "current_price": 62.09,
-          "playbook_id": "ma_pullback",
-          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-          "playbook_badge": "MA PULLBACK",
-          "playbook_color": "cyan",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 5,
-          "screeners": [
-            "Relative Strength",
-            "All Time High",
             "Fvg Sma Confluence",
-            "Zacks Rank 1",
-            "Rs Divergence"
-          ],
-          "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +20.3% 5D | +7.4% 20D",
-            "**All Time High**: ATH: $64.25",
-            "**Fvg Sma Confluence**: FVG Support ($54.64-$56.55) + 10-day SMA Confluence",
-            "**Zacks Rank 1**: Score: 5 | PEG: 0.47"
-          ],
-          "execution": {
-            "entry_range": [
-              61.59,
-              62.59
-            ],
-            "ideal_entry": 62.09000015258789,
-            "stop_loss": 59.92,
-            "stop_loss_pct": -3.5,
-            "target_primary": 67.91,
-            "target_primary_pct": 9.4,
-            "target_secondary": 76.13,
-            "target_secondary_pct": 22.6,
-            "risk_reward": "1:2.7",
-            "options_spec": "Buy $61.6 Call / Sell $76.1 Call (MA PULLBACK Vertical)",
-            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 63.7,
-            "vol_surge": 1.66,
-            "ema_10": 55.98,
-            "ema_21": 54.56,
-            "sma_50": 51.11,
-            "sma_200": 33.88,
-            "execution_checklist": [
-              "Verify price action inside $61.59 \u2500\u2500 $62.59 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.66x ADV).",
-              "Place tight structural invalidation stop at $59.92 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($67.91, +9.4%, 1:2.7 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($76.13, +22.6%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "CART",
-          "current_price": 48.73,
-          "playbook_id": "ma_pullback",
-          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-          "playbook_badge": "MA PULLBACK",
-          "playbook_color": "cyan",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 4,
-          "screeners": [
-            "Bearish Candlestick",
-            "Poc Rejection",
-            "Monthly Cup Handle",
-            "Medium Base Breakout"
-          ],
-          "metrics": [
-            "**Bearish Candlestick**: Bearish Hikkake",
-            "**Poc Rejection**: Bouncing +1.4% off POC $48.06",
-            "**Monthly Cup Handle**: Monthly Cup & Handle",
-            "**Medium Base Breakout**: 13 Months | Coiled"
-          ],
-          "execution": {
-            "entry_range": [
-              48.34,
-              49.12
-            ],
-            "ideal_entry": 48.72999954223633,
-            "stop_loss": 47.02,
-            "stop_loss_pct": -3.5,
-            "target_primary": 55.1,
-            "target_primary_pct": 13.1,
-            "target_secondary": 58.55,
-            "target_secondary_pct": 20.2,
-            "risk_reward": "1:3.7",
-            "options_spec": "Buy $48.3 Call / Sell $58.5 Call (MA PULLBACK Vertical)",
-            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 45.6,
-            "vol_surge": 0.85,
-            "ema_10": 49.11,
-            "ema_21": 49.21,
-            "sma_50": 47.93,
-            "sma_200": 42.49,
-            "execution_checklist": [
-              "Verify price action inside $48.34 \u2500\u2500 $49.12 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.85x ADV).",
-              "Place tight structural invalidation stop at $47.02 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($55.10, +13.1%, 1:3.7 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($58.55, +20.2%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "WAT",
-          "current_price": 408.34,
-          "playbook_id": "ma_pullback",
-          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-          "playbook_badge": "MA PULLBACK",
-          "playbook_color": "cyan",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 4,
-          "screeners": [
-            "Vah Rejection",
-            "Monthly Cup Handle",
-            "Zacks Rank 1",
-            "Rs Divergence"
-          ],
-          "metrics": [
-            "**Vah Rejection**: Bouncing +1.6% off VAH $401.92",
-            "**Monthly Cup Handle**: Monthly Cup & Handle",
-            "**Zacks Rank 1**: Score: 4 | PEG: 1.51",
-            "**Rs Divergence**: RS New High | Price -4.2%"
-          ],
-          "execution": {
-            "entry_range": [
-              405.07,
-              411.61
-            ],
-            "ideal_entry": 408.3399963378906,
-            "stop_loss": 394.05,
-            "stop_loss_pct": -3.5,
-            "target_primary": 442.64,
-            "target_primary_pct": 8.4,
-            "target_secondary": 468.36,
-            "target_secondary_pct": 14.7,
-            "risk_reward": "1:2.4",
-            "options_spec": "Buy $405.1 Call / Sell $468.4 Call (MA PULLBACK Vertical)",
-            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 47.9,
-            "vol_surge": 0.78,
-            "ema_10": 407.82,
-            "ema_21": 406.69,
-            "sma_50": 394.13,
-            "sma_200": 361.24,
-            "execution_checklist": [
-              "Verify price action inside $405.07 \u2500\u2500 $411.61 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.78x ADV).",
-              "Place tight structural invalidation stop at $394.05 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($442.64, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($468.36, +14.7%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "HOG",
-          "current_price": 27.87,
-          "playbook_id": "ma_pullback",
-          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-          "playbook_badge": "MA PULLBACK",
-          "playbook_color": "cyan",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 4,
-          "screeners": [
-            "Vah Rejection",
-            "Poc Rejection Fixed",
-            "Base Pullback Ma",
-            "Weekly Cup Handle"
-          ],
-          "metrics": [
-            "**Vah Rejection**: Bouncing +1.9% off VAH $27.35",
-            "**Poc Rejection Fixed**: Bouncing +0.7% off Fixed POC (Q3) $27.67",
-            "**Base Pullback Ma**: Squat Support at 10-SMA ($27.53)",
-            "**Weekly Cup Handle**: Weekly Cup & Handle"
-          ],
-          "execution": {
-            "entry_range": [
-              27.65,
-              28.09
-            ],
-            "ideal_entry": 27.8700008392334,
-            "stop_loss": 26.89,
-            "stop_loss_pct": -3.5,
-            "target_primary": 30.22,
-            "target_primary_pct": 8.4,
-            "target_secondary": 31.98,
-            "target_secondary_pct": 14.7,
-            "risk_reward": "1:2.4",
-            "options_spec": "Buy $27.6 Call / Sell $32.0 Call (MA PULLBACK Vertical)",
-            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 47.5,
-            "vol_surge": 0.89,
-            "ema_10": 27.47,
-            "ema_21": 27.33,
-            "sma_50": 26.6,
-            "sma_200": 22.91,
-            "execution_checklist": [
-              "Verify price action inside $27.65 \u2500\u2500 $28.09 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.89x ADV).",
-              "Place tight structural invalidation stop at $26.89 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($30.22, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($31.98, +14.7%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "GEN",
-          "current_price": 30.26,
-          "playbook_id": "ma_pullback",
-          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-          "playbook_badge": "MA PULLBACK",
-          "playbook_color": "cyan",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 4,
-          "screeners": [
-            "Vah Rejection Fixed",
-            "Base Pullback Ma",
-            "Monthly Cup Handle",
-            "Rs Divergence"
-          ],
-          "metrics": [
-            "**Vah Rejection Fixed**: Bouncing +2.8% off Fixed VAH (Q3) $29.44",
-            "**Base Pullback Ma**: Squat Support at 10-SMA ($30.45)",
-            "**Monthly Cup Handle**: Monthly Cup & Handle",
-            "**Rs Divergence**: RS New High | Price -4.4%"
-          ],
-          "execution": {
-            "entry_range": [
-              30.02,
-              30.5
-            ],
-            "ideal_entry": 30.260000228881836,
-            "stop_loss": 29.54,
-            "stop_loss_pct": -2.4,
-            "target_primary": 33.27,
-            "target_primary_pct": 9.9,
-            "target_secondary": 35.59,
-            "target_secondary_pct": 17.6,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $30.0 Call / Sell $35.6 Call (MA PULLBACK Vertical)",
-            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 60.3,
-            "vol_surge": 0.88,
-            "ema_10": 30.11,
-            "ema_21": 29.61,
-            "sma_50": 28.05,
-            "sma_200": 24.47,
-            "execution_checklist": [
-              "Verify price action inside $30.02 \u2500\u2500 $30.50 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.88x ADV).",
-              "Place tight structural invalidation stop at $29.54 (-2.4% max risk).",
-              "Scale out 50% at Target 1 ($33.27, +9.9%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($35.59, +17.6%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "SM",
-          "current_price": 38.1,
-          "playbook_id": "ma_pullback",
-          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-          "playbook_badge": "MA PULLBACK",
-          "playbook_color": "cyan",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 4,
-          "screeners": [
             "Base Pullback Ma",
             "Zacks Rank 1",
             "Rs Divergence",
             "Bull Flag Pending"
           ],
           "metrics": [
-            "**Base Pullback Ma**: Squat Support at 10-SMA ($37.62)",
-            "**Zacks Rank 1**: Score: 5 | PEG: 0.67",
-            "**Rs Divergence**: RS New High | Price -2.2%",
-            "**Bull Flag Pending**: Pending | Breakout > $38.94 (Score: 7.8)"
+            "**Relative Strength**: +7.4% 5D | +10.1% 20D",
+            "**Fvg Sma Confluence**: FVG Support ($183.00-$187.01) + 10-day SMA Confluence",
+            "**Base Pullback Ma**: Squat Support at 10-SMA ($186.31)",
+            "**Zacks Rank 1**: Score: 4 | PEG: 1.98"
           ],
           "execution": {
             "entry_range": [
-              37.8,
-              38.4
+              NaN,
+              NaN
             ],
-            "ideal_entry": 38.099998474121094,
-            "stop_loss": 37.31,
-            "stop_loss_pct": -2.1,
-            "target_primary": 41.1,
-            "target_primary_pct": 7.9,
-            "target_secondary": 44.28,
-            "target_secondary_pct": 16.2,
-            "risk_reward": "1:3.8",
-            "options_spec": "Buy $37.8 Call / Sell $44.3 Call (MA PULLBACK Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": 184.34,
+            "stop_loss_pct": NaN,
+            "target_primary": 211.77,
+            "target_primary_pct": NaN,
+            "target_secondary": 230.59,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $230.6 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 56.5,
-            "vol_surge": 0.99,
-            "ema_10": 37.4,
-            "ema_21": 36.2,
-            "sma_50": 32.86,
-            "sma_200": 26.81,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 53.7,
+            "vol_surge": 0.7,
+            "ema_10": 185.34,
+            "ema_21": 176.35,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $37.80 \u2500\u2500 $38.40 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.99x ADV).",
-              "Place tight structural invalidation stop at $37.31 (-2.1% max risk).",
-              "Scale out 50% at Target 1 ($41.10, +7.9%, 1:3.8 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($44.28, +16.2%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.7x ADV).",
+              "Place tight structural invalidation stop at $184.34 (nan% max risk).",
+              "Scale out 50% at Target 1 ($211.77, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($230.59, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         },
         {
-          "ticker": "YPF",
-          "current_price": 55.55,
+          "ticker": "CF",
+          "current_price": NaN,
           "playbook_id": "ma_pullback",
           "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
           "playbook_badge": "MA PULLBACK",
           "playbook_color": "cyan",
           "conviction_score": 99,
           "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 3,
+          "confluence_count": 4,
           "screeners": [
             "Vah Rejection Fixed",
-            "Zacks Rank 1",
+            "Base Pullback Ma",
+            "Medium Base Breakout",
             "Relative Strength Leader"
           ],
           "metrics": [
-            "**Vah Rejection Fixed**: Bouncing +4.5% off Fixed VAH (Q3) $53.18",
-            "**Zacks Rank 1**: Score: 5 | PEG: 0.1",
-            "**RS Leader**: Score 99 | Pattern: cup"
+            "**Vah Rejection Fixed**: Bouncing +1.3% off Fixed VAH (Q3) $132.10",
+            "**Base Pullback Ma**: Squat Support at 20-SMA ($131.91)",
+            "**Medium Base Breakout**: 6 Months | Coiled",
+            "**RS Leader**: Score 88 | Pattern: cup"
           ],
           "execution": {
             "entry_range": [
-              55.11,
-              55.99
+              NaN,
+              NaN
             ],
-            "ideal_entry": 55.54999923706055,
-            "stop_loss": 53.61,
-            "stop_loss_pct": -3.5,
-            "target_primary": 60.21,
-            "target_primary_pct": 8.4,
-            "target_secondary": 63.7,
-            "target_secondary_pct": 14.7,
-            "risk_reward": "1:2.4",
-            "options_spec": "Buy $55.1 Call / Sell $63.7 Call (MA PULLBACK Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": 130.83,
+            "stop_loss_pct": NaN,
+            "target_primary": 148.72,
+            "target_primary_pct": NaN,
+            "target_secondary": 158.8,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $158.8 Call (MA PULLBACK Vertical)",
             "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 69.0,
-            "vol_surge": 1.84,
-            "ema_10": 53.61,
-            "ema_21": 52.4,
-            "sma_50": 50.56,
-            "sma_200": 43.6,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 58.1,
+            "vol_surge": 0.57,
+            "ema_10": 133.21,
+            "ema_21": 130.63,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $55.11 \u2500\u2500 $55.99 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.84x ADV).",
-              "Place tight structural invalidation stop at $53.61 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($60.21, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($63.70, +14.7%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.57x ADV).",
+              "Place tight structural invalidation stop at $130.83 (nan% max risk).",
+              "Scale out 50% at Target 1 ($148.72, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($158.80, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "EXEL",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 99,
+          "conviction_rating": "99/100 A+ Institutional",
+          "confluence_count": 6,
+          "screeners": [
+            "All Time High",
+            "Vah Rejection",
+            "Vah Rejection Fixed",
+            "Base Pullback Ma",
+            "Rs Divergence",
+            "Universal Takeout"
+          ],
+          "metrics": [
+            "**All Time High**: ATH: $59.72",
+            "**Vah Rejection**: Bouncing +2.6% off VAH $56.99",
+            "**Vah Rejection Fixed**: Bouncing +2.6% off Fixed VAH (Q3) $56.99",
+            "**Base Pullback Ma**: Squat Support at 10-SMA ($57.61)"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 56.2,
+            "stop_loss_pct": NaN,
+            "target_primary": 61.94,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 57.1,
+            "vol_surge": 0.83,
+            "ema_10": 56.87,
+            "ema_21": 56.28,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.83x ADV).",
+              "Place tight structural invalidation stop at $56.20 (nan% max risk).",
+              "Scale out 50% at Target 1 ($61.94, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "A",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 95,
+          "conviction_rating": "95/100 A+ Institutional",
+          "confluence_count": 5,
+          "screeners": [
+            "Bullish Candlestick",
+            "Poc Rejection Fixed",
+            "Monthly Cup Handle",
+            "Rs Divergence",
+            "Earnings Surge"
+          ],
+          "metrics": [
+            "**Bullish Candlestick**: Bullish 3 White Soldiers",
+            "**Poc Rejection Fixed**: Bouncing +1.6% off Fixed POC (Q3) $153.87",
+            "**Monthly Cup Handle**: Monthly Cup & Handle",
+            "**Rs Divergence**: RS New High | Price -4.5%"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 149.1,
+            "stop_loss_pct": NaN,
+            "target_primary": 171.62,
+            "target_primary_pct": NaN,
+            "target_secondary": 182.88,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $182.9 Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 43.4,
+            "vol_surge": 1.09,
+            "ema_10": 149.42,
+            "ema_21": 149.16,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.09x ADV).",
+              "Place tight structural invalidation stop at $149.10 (nan% max risk).",
+              "Scale out 50% at Target 1 ($171.62, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($182.88, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "CRM",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 94,
+          "conviction_rating": "94/100 A+ Institutional",
+          "confluence_count": 4,
+          "screeners": [
+            "Chop Incubation Leaders",
+            "Base Pullback Ma",
+            "Post Earning Consolidation",
+            "Zacks Rank 1"
+          ],
+          "metrics": [
+            "**Chop Incubation Leaders**: Vol: 16.3M | Base: 180d (-9.8% to ATH) | VDU: 0.85x | 21-SMA",
+            "**Base Pullback Ma**: Squat Support at 20-SMA ($241.59)",
+            "**Post Earning Consolidation**: Holding Gap 14d",
+            "**Zacks Rank 1**: Score: 4 | PEG: 0.84"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 248.91,
+            "stop_loss_pct": NaN,
+            "target_primary": 292.53,
+            "target_primary_pct": NaN,
+            "target_secondary": 327.19,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $327.2 Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 48.8,
+            "vol_surge": 0.93,
+            "ema_10": 249.62,
+            "ema_21": 238.03,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.93x ADV).",
+              "Place tight structural invalidation stop at $248.91 (nan% max risk).",
+              "Scale out 50% at Target 1 ($292.53, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($327.19, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "PBR",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 92,
+          "conviction_rating": "92/100 A+ Institutional",
+          "confluence_count": 4,
+          "screeners": [
+            "Chop Incubation Leaders",
+            "Fvg Sma Confluence",
+            "Base Pullback Ma",
+            "Medium Base Breakout"
+          ],
+          "metrics": [
+            "**Chop Incubation Leaders**: Vol: 23.5M | Base: 94d (-5.8% to ATH) | VDU: 1.01x | 21-SMA",
+            "**Fvg Sma Confluence**: FVG Support ($20.45-$20.80) + 10-day SMA Confluence",
+            "**Base Pullback Ma**: Squat Support at 10-SMA ($20.97)",
+            "**Medium Base Breakout**: 5 Months | Coiled"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 20.73,
+            "stop_loss_pct": NaN,
+            "target_primary": 23.55,
+            "target_primary_pct": NaN,
+            "target_secondary": 25.77,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $25.8 Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 71.0,
+            "vol_surge": 0.54,
+            "ema_10": 20.78,
+            "ema_21": 19.97,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.54x ADV).",
+              "Place tight structural invalidation stop at $20.73 (nan% max risk).",
+              "Scale out 50% at Target 1 ($23.55, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($25.77, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "MTD",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 96,
+          "conviction_rating": "96/100 A+ Institutional",
+          "confluence_count": 4,
+          "screeners": [
+            "Bullish Candlestick",
+            "Poc Rejection",
+            "Poc Rejection Fixed",
+            "Relative Strength Leader"
+          ],
+          "metrics": [
+            "**Bullish Candlestick**: Bullish 3 White Soldiers",
+            "**Poc Rejection**: Bouncing +0.5% off POC $1403.53",
+            "**Poc Rejection Fixed**: Bouncing +0.5% off Fixed POC (Q3) $1403.44",
+            "**RS Leader**: Score 56 | Pattern: c_and_h"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 1328.44,
+            "stop_loss_pct": NaN,
+            "target_primary": 1511.04,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 44.3,
+            "vol_surge": 1.39,
+            "ema_10": 1335.07,
+            "ema_21": 1351.75,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.39x ADV).",
+              "Place tight structural invalidation stop at $1328.44 (nan% max risk).",
+              "Scale out 50% at Target 1 ($1511.04, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "YPF",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 97,
+          "conviction_rating": "97/100 A+ Institutional",
+          "confluence_count": 4,
+          "screeners": [
+            "Vah Rejection",
+            "Vah Rejection Fixed",
+            "Base Pullback Ma",
+            "Zacks Rank 1"
+          ],
+          "metrics": [
+            "**Vah Rejection**: Bouncing +1.7% off VAH $53.58",
+            "**Vah Rejection Fixed**: Bouncing +1.7% off Fixed VAH (Q3) $53.58",
+            "**Base Pullback Ma**: Squat Support at 10-SMA ($54.74)",
+            "**Zacks Rank 1**: Score: 4 | PEG: 0.1"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 54.13,
+            "stop_loss_pct": NaN,
+            "target_primary": 60.83,
+            "target_primary_pct": NaN,
+            "target_secondary": 65.06,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $65.1 Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 64.2,
+            "vol_surge": 0.63,
+            "ema_10": 54.72,
+            "ema_21": 53.33,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.63x ADV).",
+              "Place tight structural invalidation stop at $54.13 (nan% max risk).",
+              "Scale out 50% at Target 1 ($60.83, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($65.06, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "FNV",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 92,
+          "conviction_rating": "92/100 A+ Institutional",
+          "confluence_count": 4,
+          "screeners": [
+            "Vah Rejection",
+            "Poc Rejection Fixed",
+            "Rs Divergence",
+            "Relative Strength Leader"
+          ],
+          "metrics": [
+            "**Vah Rejection**: Bouncing +3.6% off VAH $257.45",
+            "**Poc Rejection Fixed**: Bouncing +0.3% off Fixed POC (Q3) $265.72",
+            "**Rs Divergence**: RS New High | Price -2.7%",
+            "**RS Leader**: Score 63 | Pattern: cup"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 255.07,
+            "stop_loss_pct": NaN,
+            "target_primary": 282.33,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 39.9,
+            "vol_surge": 0.45,
+            "ema_10": 262.24,
+            "ema_21": 257.76,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 0.45x ADV).",
+              "Place tight structural invalidation stop at $255.07 (nan% max risk).",
+              "Scale out 50% at Target 1 ($282.33, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "ADUS",
+          "current_price": NaN,
+          "playbook_id": "ma_pullback",
+          "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+          "playbook_badge": "MA PULLBACK",
+          "playbook_color": "cyan",
+          "conviction_score": 99,
+          "conviction_rating": "99/100 A+ Institutional",
+          "confluence_count": 4,
+          "screeners": [
+            "Poc Rejection",
+            "Poc Rejection Fixed",
+            "Weekly Cup Handle",
+            "Medium Base Breakout"
+          ],
+          "metrics": [
+            "**Poc Rejection**: Bouncing +0.6% off POC $117.35",
+            "**Poc Rejection Fixed**: Bouncing +0.6% off Fixed POC (Q3) $117.31",
+            "**Weekly Cup Handle**: Weekly Cup & Handle",
+            "**Medium Base Breakout**: 10 Months | Coiled"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": 115.48,
+            "stop_loss_pct": NaN,
+            "target_primary": 126.29,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+            "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 51.7,
+            "vol_surge": 1.06,
+            "ema_10": 117.77,
+            "ema_21": 117.62,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.06x ADV).",
+              "Place tight structural invalidation stop at $115.48 (nan% max risk).",
+              "Scale out 50% at Target 1 ($126.29, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         }
@@ -1041,59 +1175,168 @@
     },
     "squeeze_gamma": {
       "name": "Short Squeeze & Gamma Runners \ud83d\udd25",
-      "count": 1,
+      "count": 3,
       "description": "Elevated short interest and dealer short gamma acceleration setups.",
       "setups": [
         {
-          "ticker": "SMCI",
-          "current_price": 40.1,
+          "ticker": "FSLR",
+          "current_price": NaN,
           "playbook_id": "squeeze_gamma",
           "playbook_name": "Short Squeeze & Gamma Runner \ud83d\udd25",
           "playbook_badge": "SQUEEZE / GAMMA",
           "playbook_color": "purple",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
+          "conviction_score": 91,
+          "conviction_rating": "91/100 A+ Institutional",
+          "confluence_count": 4,
+          "screeners": [
+            "Bullish Candlestick",
+            "Val Rejection",
+            "Val Rejection Fixed",
+            "Gamma Squeeze Setup"
+          ],
+          "metrics": [
+            "**Bullish Candlestick**: Bullish Harami (Inside Bar)",
+            "**Val Rejection**: Bouncing +1.9% off $197.43",
+            "**Val Rejection Fixed**: Bouncing +1.9% off $197.43 (Q3)",
+            "**Gamma Squeeze Setup**: Gamma Squeeze Setup"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": NaN,
+            "stop_loss_pct": NaN,
+            "target_primary": 250.03,
+            "target_primary_pct": NaN,
+            "target_secondary": 271.28,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $271.3 Call (SQUEEZE / GAMMA Vertical)",
+            "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 35.1,
+            "vol_surge": 1.34,
+            "ema_10": 203.68,
+            "ema_21": 208.04,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.34x ADV).",
+              "Place tight structural invalidation stop at $nan (nan% max risk).",
+              "Scale out 50% at Target 1 ($250.03, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($271.28, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "SMCI",
+          "current_price": NaN,
+          "playbook_id": "squeeze_gamma",
+          "playbook_name": "Short Squeeze & Gamma Runner \ud83d\udd25",
+          "playbook_badge": "SQUEEZE / GAMMA",
+          "playbook_color": "purple",
+          "conviction_score": 93,
+          "conviction_rating": "93/100 A+ Institutional",
           "confluence_count": 4,
           "screeners": [
             "Fvg Sma Confluence",
-            "Qullamaggie Setup",
+            "Hve Volume",
             "Rs Divergence",
             "Gamma Squeeze Setup"
           ],
           "metrics": [
             "**Fvg Sma Confluence**: FVG Support ($38.22-$39.66) + 10-day SMA Confluence",
-            "**Qullamaggie Setup**: Pending Breakout | ADR: 5.6 | SMA: 10-Day",
-            "**Rs Divergence**: RS New High | Price -5.2%",
+            "**Hve Volume**: Monthly High Volume (1.3x Avg)",
+            "**Rs Divergence**: RS New High | Price -4.6%",
             "**Gamma Squeeze Setup**: Gamma Squeeze Setup"
           ],
           "execution": {
             "entry_range": [
-              39.78,
-              40.42
+              NaN,
+              NaN
             ],
-            "ideal_entry": 40.099998474121094,
-            "stop_loss": 38.7,
-            "stop_loss_pct": -3.5,
-            "target_primary": 45.98,
-            "target_primary_pct": 14.7,
-            "target_secondary": 51.86,
-            "target_secondary_pct": 29.3,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $39.8 Call / Sell $51.9 Call (SQUEEZE / GAMMA Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": NaN,
+            "stop_loss_pct": NaN,
+            "target_primary": 47.16,
+            "target_primary_pct": NaN,
+            "target_secondary": 51.59,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $51.6 Call (SQUEEZE / GAMMA Vertical)",
             "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 57.6,
-            "vol_surge": 1.16,
-            "ema_10": 38.43,
-            "ema_21": 37.13,
-            "sma_50": 32.52,
-            "sma_200": 31.49,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 45.3,
+            "vol_surge": 1.64,
+            "ema_10": 37.52,
+            "ema_21": 36.95,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $39.78 \u2500\u2500 $40.42 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.16x ADV).",
-              "Place tight structural invalidation stop at $38.70 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($45.98, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($51.86, +29.3%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.64x ADV).",
+              "Place tight structural invalidation stop at $nan (nan% max risk).",
+              "Scale out 50% at Target 1 ($47.16, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($51.59, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+            ]
+          }
+        },
+        {
+          "ticker": "ARM",
+          "current_price": NaN,
+          "playbook_id": "squeeze_gamma",
+          "playbook_name": "Short Squeeze & Gamma Runner \ud83d\udd25",
+          "playbook_badge": "SQUEEZE / GAMMA",
+          "playbook_color": "purple",
+          "conviction_score": 92,
+          "conviction_rating": "92/100 A+ Institutional",
+          "confluence_count": 4,
+          "screeners": [
+            "Fvg Sma Confluence",
+            "Hve Volume",
+            "Qullamaggie Setup",
+            "Gamma Squeeze Setup"
+          ],
+          "metrics": [
+            "**Fvg Sma Confluence**: FVG Support ($255.69-$261.49) + 50-day SMA Confluence",
+            "**Hve Volume**: Monthly High Volume (1.3x Avg)",
+            "**Qullamaggie Setup**: Triggered | ADR: 4.8 | SMA: Episodic Pivot",
+            "**Gamma Squeeze Setup**: Gamma Squeeze Setup"
+          ],
+          "execution": {
+            "entry_range": [
+              NaN,
+              NaN
+            ],
+            "ideal_entry": NaN,
+            "stop_loss": NaN,
+            "stop_loss_pct": NaN,
+            "target_primary": 306.87,
+            "target_primary_pct": NaN,
+            "target_secondary": 338.94,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $338.9 Call (SQUEEZE / GAMMA Vertical)",
+            "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
+            "stage": "Consolidation / Stage 3",
+            "rsi": 44.7,
+            "vol_surge": 1.57,
+            "ema_10": 248.63,
+            "ema_21": 251.8,
+            "sma_50": NaN,
+            "sma_200": NaN,
+            "execution_checklist": [
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.57x ADV).",
+              "Place tight structural invalidation stop at $nan (nan% max risk).",
+              "Scale out 50% at Target 1 ($306.87, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($338.94, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         }
@@ -1101,66 +1344,67 @@
     },
     "fundamental_acceleration": {
       "name": "Fundamental Accelerators & PEAD \ud83d\udcc8",
-      "count": 6,
+      "count": 4,
       "description": "Zacks Rank #1, triple-digit revenue inflections, and post-earnings drift winners.",
       "setups": [
         {
-          "ticker": "DK",
-          "current_price": 76.1,
+          "ticker": "PSX",
+          "current_price": NaN,
           "playbook_id": "fundamental_acceleration",
           "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
           "playbook_badge": "FUNDAMENTAL ACCELERATION",
           "playbook_color": "amber",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
+          "conviction_score": 98,
+          "conviction_rating": "98/100 A+ Institutional",
           "confluence_count": 5,
           "screeners": [
             "Relative Strength",
             "Fresh 52W High",
             "All Time High",
-            "Post Earning Reaction",
+            "Regression Channel Breakout",
             "Zacks Rank 1"
           ],
           "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +6.7% 5D | +18.1% 20D",
-            "**Fresh 52W High**: New High: $78.43",
-            "**All Time High**: ATH: $78.42",
-            "**Post Earning Reaction**: Gap Up +5.1%"
+            "**Relative Strength**: \ud83d\udd25 Fresh High | +5.9% 5D | +14.3% 20D",
+            "**Fresh 52W High**: New High: $274.21",
+            "**All Time High**: ATH: $274.21",
+            "**Regression Channel Breakout**: Bullish Breakout (+0.1%) from Ascending Channel"
           ],
           "execution": {
             "entry_range": [
-              75.49,
-              76.71
+              NaN,
+              NaN
             ],
-            "ideal_entry": 76.0999984741211,
-            "stop_loss": 73.44,
-            "stop_loss_pct": -3.5,
-            "target_primary": 87.27,
-            "target_primary_pct": 14.7,
-            "target_secondary": 96.34,
-            "target_secondary_pct": 26.6,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $75.5 Call / Sell $96.3 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": 257.27,
+            "stop_loss_pct": NaN,
+            "target_primary": NaN,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 60.5,
-            "vol_surge": 1.47,
-            "ema_10": 73.55,
-            "ema_21": 70.98,
-            "sma_50": 65.29,
-            "sma_200": 45.39,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 83.0,
+            "vol_surge": 1.3,
+            "ema_10": 258.11,
+            "ema_21": 249.42,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $75.49 \u2500\u2500 $76.71 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.47x ADV).",
-              "Place tight structural invalidation stop at $73.44 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($87.27, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($96.34, +26.6%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.3x ADV).",
+              "Place tight structural invalidation stop at $257.27 (nan% max risk).",
+              "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         },
         {
-          "ticker": "DELL",
-          "current_price": 567.29,
+          "ticker": "SMTC",
+          "current_price": NaN,
           "playbook_id": "fundamental_acceleration",
           "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
           "playbook_badge": "FUNDAMENTAL ACCELERATION",
@@ -1172,210 +1416,110 @@
             "Relative Strength",
             "Fresh 52W High",
             "All Time High",
-            "Zacks Rank 1",
-            "Earnings Surge"
+            "Bullish Candlestick",
+            "Zacks Rank 1"
           ],
           "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +9.1% 5D | +17.4% 20D",
-            "**Fresh 52W High**: New High: $567.75",
-            "**All Time High**: ATH: $567.75",
-            "**Zacks Rank 1**: Score: 5 | PEG: 0.63"
+            "**Relative Strength**: \ud83d\udd25 Fresh High | +6.8% 5D | +42.7% 20D",
+            "**Fresh 52W High**: New High: $182.13",
+            "**All Time High**: ATH: $182.13",
+            "**Bullish Candlestick**: Bullish 3 White Soldiers"
           ],
           "execution": {
             "entry_range": [
-              562.75,
-              571.83
+              NaN,
+              NaN
             ],
-            "ideal_entry": 567.2899780273438,
-            "stop_loss": 547.43,
-            "stop_loss_pct": -3.5,
-            "target_primary": 650.7,
-            "target_primary_pct": 14.7,
-            "target_secondary": 720.69,
-            "target_secondary_pct": 27.0,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $562.8 Call / Sell $720.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": 146.88,
+            "stop_loss_pct": NaN,
+            "target_primary": NaN,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 71.2,
-            "vol_surge": 1.63,
-            "ema_10": 511.37,
-            "ema_21": 487.27,
-            "sma_50": 448.73,
-            "sma_200": 261.15,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 62.7,
+            "vol_surge": 1.25,
+            "ema_10": 153.61,
+            "ema_21": 146.44,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $562.75 \u2500\u2500 $571.83 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.63x ADV).",
-              "Place tight structural invalidation stop at $547.43 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($650.70, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($720.69, +27.0%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.25x ADV).",
+              "Place tight structural invalidation stop at $146.88 (nan% max risk).",
+              "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         },
         {
-          "ticker": "MEOH",
-          "current_price": 62.9,
+          "ticker": "WAT",
+          "current_price": NaN,
           "playbook_id": "fundamental_acceleration",
           "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
           "playbook_badge": "FUNDAMENTAL ACCELERATION",
           "playbook_color": "amber",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
+          "conviction_score": 95,
+          "conviction_rating": "95/100 A+ Institutional",
           "confluence_count": 4,
           "screeners": [
-            "Relative Strength",
-            "Hve Volume",
-            "Weekly Cup Handle",
-            "Zacks Rank 1"
-          ],
-          "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +7.9% 5D | +13.8% 20D",
-            "**Hve Volume**: Monthly High Volume (1.3x Avg)",
-            "**Weekly Cup Handle**: Weekly Cup & Handle",
-            "**Zacks Rank 1**: Score: 5 | PEG: 0.2"
-          ],
-          "execution": {
-            "entry_range": [
-              62.4,
-              63.4
-            ],
-            "ideal_entry": 62.900001525878906,
-            "stop_loss": 60.7,
-            "stop_loss_pct": -3.5,
-            "target_primary": 68.85,
-            "target_primary_pct": 9.5,
-            "target_secondary": 73.53,
-            "target_secondary_pct": 16.9,
-            "risk_reward": "1:2.7",
-            "options_spec": "Buy $62.4 Call / Sell $73.5 Call (FUNDAMENTAL ACCELERATION Vertical)",
-            "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 59.9,
-            "vol_surge": 1.73,
-            "ema_10": 60.68,
-            "ema_21": 59.06,
-            "sma_50": 55.35,
-            "sma_200": 52.46,
-            "execution_checklist": [
-              "Verify price action inside $62.40 \u2500\u2500 $63.40 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.73x ADV).",
-              "Place tight structural invalidation stop at $60.70 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($68.85, +9.5%, 1:2.7 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($73.53, +16.9%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "BG",
-          "current_price": 122.41,
-          "playbook_id": "fundamental_acceleration",
-          "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
-          "playbook_badge": "FUNDAMENTAL ACCELERATION",
-          "playbook_color": "amber",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 3,
-          "screeners": [
-            "Early Stage 2",
-            "Zacks Rank 1",
-            "Relative Strength Leader"
-          ],
-          "metrics": [
-            "**Early Stage 2**: Crossed 200 SMA ($114.78)",
-            "**Zacks Rank 1**: Score: 4 | PEG: 1.37",
-            "**RS Leader**: Score 89 | Pattern: cup"
-          ],
-          "execution": {
-            "entry_range": [
-              121.43,
-              123.39
-            ],
-            "ideal_entry": 122.41000366210938,
-            "stop_loss": 120.94,
-            "stop_loss_pct": -1.2,
-            "target_primary": 128.58,
-            "target_primary_pct": 5.0,
-            "target_secondary": 144.56,
-            "target_secondary_pct": 18.1,
-            "risk_reward": "1:4.2",
-            "options_spec": "Buy $121.4 Call / Sell $144.6 Call (FUNDAMENTAL ACCELERATION Vertical)",
-            "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 64.5,
-            "vol_surge": 0.78,
-            "ema_10": 120.74,
-            "ema_21": 117.96,
-            "sma_50": 114.44,
-            "sma_200": 113.55,
-            "execution_checklist": [
-              "Verify price action inside $121.43 \u2500\u2500 $123.39 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.78x ADV).",
-              "Place tight structural invalidation stop at $120.94 (-1.2% max risk).",
-              "Scale out 50% at Target 1 ($128.58, +5.0%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($144.56, +18.1%, 1:4.5 R:R) using 15m trailing stop."
-            ]
-          }
-        },
-        {
-          "ticker": "LPLA",
-          "current_price": 353.78,
-          "playbook_id": "fundamental_acceleration",
-          "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
-          "playbook_badge": "FUNDAMENTAL ACCELERATION",
-          "playbook_color": "amber",
-          "conviction_score": 99,
-          "conviction_rating": "99/100 A+ Institutional",
-          "confluence_count": 3,
-          "screeners": [
-            "Weekly Cup Handle",
+            "Fresh 52W High",
+            "All Time High",
             "Monthly Cup Handle",
             "Zacks Rank 1"
           ],
           "metrics": [
-            "**Weekly Cup Handle**: Weekly Cup & Handle",
+            "**Fresh 52W High**: New High: $431.77",
+            "**All Time High**: ATH: $431.77",
             "**Monthly Cup Handle**: Monthly Cup & Handle",
-            "**Zacks Rank 1**: Score: 5 | PEG: 0.45"
+            "**Zacks Rank 1**: Score: 4 | PEG: 1.56"
           ],
           "execution": {
             "entry_range": [
-              350.95,
-              356.61
+              NaN,
+              NaN
             ],
-            "ideal_entry": 353.7799987792969,
-            "stop_loss": 343.64,
-            "stop_loss_pct": -2.9,
-            "target_primary": 390.42,
-            "target_primary_pct": 10.4,
-            "target_secondary": 408.67,
-            "target_secondary_pct": 15.5,
-            "risk_reward": "1:3.6",
-            "options_spec": "Buy $350.9 Call / Sell $408.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": 410.82,
+            "stop_loss_pct": NaN,
+            "target_primary": NaN,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 43.5,
-            "vol_surge": 0.77,
-            "ema_10": 355.3,
-            "ema_21": 356.33,
-            "sma_50": 345.83,
-            "sma_200": 330.3,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 47.7,
+            "vol_surge": 1.09,
+            "ema_10": 411.43,
+            "ema_21": 408.89,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $350.95 \u2500\u2500 $356.61 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 0.77x ADV).",
-              "Place tight structural invalidation stop at $343.64 (-2.9% max risk).",
-              "Scale out 50% at Target 1 ($390.42, +10.4%, 1:3.6 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($408.67, +15.5%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.09x ADV).",
+              "Place tight structural invalidation stop at $410.82 (nan% max risk).",
+              "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         },
         {
-          "ticker": "CLMT",
-          "current_price": 56.8,
+          "ticker": "DK",
+          "current_price": NaN,
           "playbook_id": "fundamental_acceleration",
           "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
           "playbook_badge": "FUNDAMENTAL ACCELERATION",
           "playbook_color": "amber",
-          "conviction_score": 96,
-          "conviction_rating": "96/100 A+ Institutional",
+          "conviction_score": 90,
+          "conviction_rating": "90/100 A+ Institutional",
           "confluence_count": 4,
           "screeners": [
             "Relative Strength",
@@ -1384,39 +1528,40 @@
             "Zacks Rank 1"
           ],
           "metrics": [
-            "**Relative Strength**: \ud83d\udd25 Fresh High | +7.7% 5D | +20.9% 20D",
-            "**Fresh 52W High**: New High: $58.40",
-            "**All Time High**: ATH: $58.39",
-            "**Zacks Rank 1**: Score: 5 | PEG: 0.65"
+            "**Relative Strength**: \ud83d\udd25 Fresh High | +7.4% 5D | +27.3% 20D",
+            "**Fresh 52W High**: New High: $82.00",
+            "**All Time High**: ATH: $82.00",
+            "**Zacks Rank 1**: Score: 5 | PEG: 0.38"
           ],
           "execution": {
             "entry_range": [
-              56.35,
-              57.25
+              NaN,
+              NaN
             ],
-            "ideal_entry": 56.79999923706055,
-            "stop_loss": 54.81,
-            "stop_loss_pct": -3.5,
-            "target_primary": 63.02,
-            "target_primary_pct": 11.0,
-            "target_secondary": 67.9,
-            "target_secondary_pct": 19.5,
-            "risk_reward": "1:3.1",
-            "options_spec": "Buy $56.4 Call / Sell $67.9 Call (FUNDAMENTAL ACCELERATION Vertical)",
+            "ideal_entry": NaN,
+            "stop_loss": 74.01,
+            "stop_loss_pct": NaN,
+            "target_primary": NaN,
+            "target_primary_pct": NaN,
+            "target_secondary": NaN,
+            "target_secondary_pct": NaN,
+            "risk_reward": "1:nan",
+            "risk_reward_t2": "1:nan",
+            "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
             "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-            "stage": "Stage 2 (Advancing)",
-            "rsi": 73.6,
-            "vol_surge": 1.13,
-            "ema_10": 53.55,
-            "ema_21": 50.81,
-            "sma_50": 45.32,
-            "sma_200": 32.38,
+            "stage": "Consolidation / Stage 3",
+            "rsi": 71.6,
+            "vol_surge": 1.01,
+            "ema_10": 75.37,
+            "ema_21": 72.58,
+            "sma_50": NaN,
+            "sma_200": NaN,
             "execution_checklist": [
-              "Verify price action inside $56.35 \u2500\u2500 $57.25 accumulation corridor.",
-              "Ensure volume confirmation (current volume ratio 1.13x ADV).",
-              "Place tight structural invalidation stop at $54.81 (-3.5% max risk).",
-              "Scale out 50% at Target 1 ($63.02, +11.0%, 1:3.1 R:R) and ratchet stop to Breakeven.",
-              "Trail remaining 50% toward Target 2 ($67.90, +19.5%, 1:4.5 R:R) using 15m trailing stop."
+              "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+              "Ensure volume confirmation (current volume ratio 1.01x ADV).",
+              "Place tight structural invalidation stop at $74.01 (nan% max risk).",
+              "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+              "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
             ]
           }
         }
@@ -1425,8 +1570,63 @@
   },
   "all_setups": [
     {
-      "ticker": "MTCH",
-      "current_price": 42.39,
+      "ticker": "NTR",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 99,
+      "conviction_rating": "99/100 A+ Institutional",
+      "confluence_count": 5,
+      "screeners": [
+        "Bearish Candlestick",
+        "Base Pullback Ma",
+        "Medium Base Breakout",
+        "Rs Divergence",
+        "Relative Strength Leader"
+      ],
+      "metrics": [
+        "**Bearish Candlestick**: Bearish Hikkake",
+        "**Base Pullback Ma**: Squat Support at 10-SMA ($79.11)",
+        "**Medium Base Breakout**: 6 Months | Coiled",
+        "**Rs Divergence**: RS New High | Price -4.4%"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 77.02,
+        "stop_loss_pct": NaN,
+        "target_primary": 86.62,
+        "target_primary_pct": NaN,
+        "target_secondary": 92.44,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $92.4 Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 63.9,
+        "vol_surge": 0.55,
+        "ema_10": 78.02,
+        "ema_21": 76.15,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.55x ADV).",
+          "Place tight structural invalidation stop at $77.02 (nan% max risk).",
+          "Scale out 50% at Target 1 ($86.62, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($92.44, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "TEAM",
+      "current_price": NaN,
       "playbook_id": "ma_pullback",
       "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
       "playbook_badge": "MA PULLBACK",
@@ -1435,1004 +1635,493 @@
       "conviction_rating": "99/100 A+ Institutional",
       "confluence_count": 6,
       "screeners": [
-        "Bearish Candlestick",
-        "Vah Rejection",
-        "Vah Rejection Fixed",
-        "Base Pullback Ma",
-        "Long Base Breakout",
-        "Rs Divergence"
-      ],
-      "metrics": [
-        "**Bearish Candlestick**: Bearish Hikkake",
-        "**Vah Rejection**: Bouncing +1.8% off VAH $41.64",
-        "**Vah Rejection Fixed**: Bouncing +3.8% off Fixed VAH (Q3) $40.85",
-        "**Base Pullback Ma**: Squat Support at 10-SMA ($41.77)"
-      ],
-      "execution": {
-        "entry_range": [
-          42.05,
-          42.73
-        ],
-        "ideal_entry": 42.38999938964844,
-        "stop_loss": 41.15,
-        "stop_loss_pct": -2.9,
-        "target_primary": 45.73,
-        "target_primary_pct": 7.9,
-        "target_secondary": 48.95,
-        "target_secondary_pct": 15.5,
-        "risk_reward": "1:2.7",
-        "options_spec": "Buy $42.0 Call / Sell $49.0 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 59.6,
-        "vol_surge": 0.83,
-        "ema_10": 41.66,
-        "ema_21": 40.95,
-        "sma_50": 39.51,
-        "sma_200": 34.62,
-        "execution_checklist": [
-          "Verify price action inside $42.05 \u2500\u2500 $42.73 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.83x ADV).",
-          "Place tight structural invalidation stop at $41.15 (-2.9% max risk).",
-          "Scale out 50% at Target 1 ($45.73, +7.9%, 1:2.7 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($48.95, +15.5%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "OKE",
-      "current_price": 96.62,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 5,
-      "screeners": [
-        "Vah Rejection",
-        "Vah Rejection Fixed",
-        "Base Pullback Ma",
-        "Zacks Rank 1",
-        "Rs Divergence"
-      ],
-      "metrics": [
-        "**Vah Rejection**: Bouncing +2.4% off VAH $94.31",
-        "**Vah Rejection Fixed**: Bouncing +1.6% off Fixed VAH (Q3) $95.10",
-        "**Base Pullback Ma**: Squat Support at 10-SMA ($95.93)",
-        "**Zacks Rank 1**: Score: 4 | PEG: 1.79"
-      ],
-      "execution": {
-        "entry_range": [
-          95.85,
-          97.39
-        ],
-        "ideal_entry": 96.62000274658203,
-        "stop_loss": 94.77,
-        "stop_loss_pct": -1.9,
-        "target_primary": 102.9,
-        "target_primary_pct": 6.5,
-        "target_secondary": 106.23,
-        "target_secondary_pct": 9.9,
-        "risk_reward": "1:3.4",
-        "options_spec": "Buy $95.8 Call / Sell $106.2 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 63.4,
-        "vol_surge": 0.84,
-        "ema_10": 95.78,
-        "ema_21": 94.69,
-        "sma_50": 91.93,
-        "sma_200": 83.87,
-        "execution_checklist": [
-          "Verify price action inside $95.85 \u2500\u2500 $97.39 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.84x ADV).",
-          "Place tight structural invalidation stop at $94.77 (-1.9% max risk).",
-          "Scale out 50% at Target 1 ($102.90, +6.5%, 1:3.4 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($106.23, +9.9%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "ACVA",
-      "current_price": 10.41,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 5,
-      "screeners": [
         "Relative Strength",
-        "Bearish Candlestick",
-        "Darvas Strong",
-        "Regression Channel Breakout",
-        "Qullamaggie Setup"
-      ],
-      "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +50.3% 5D | +27.9% 20D",
-        "**Bearish Candlestick**: Bearish Hikkake",
-        "**Darvas Strong**: Cleared $8.36 | Volume is 18.1x avg",
-        "**Regression Channel Breakout**: Bullish Breakout (+12.3%) from Ascending Channel"
-      ],
-      "execution": {
-        "entry_range": [
-          10.33,
-          10.49
-        ],
-        "ideal_entry": 10.40999984741211,
-        "stop_loss": 10.05,
-        "stop_loss_pct": -3.5,
-        "target_primary": 11.81,
-        "target_primary_pct": 13.4,
-        "target_secondary": 13.74,
-        "target_secondary_pct": 32.0,
-        "risk_reward": "1:3.9",
-        "options_spec": "Buy $10.3 Call / Sell $13.7 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 80.3,
-        "vol_surge": 11.97,
-        "ema_10": 7.72,
-        "ema_21": 7.52,
-        "sma_50": 7.49,
-        "sma_200": 6.7,
-        "execution_checklist": [
-          "Verify price action inside $10.33 \u2500\u2500 $10.49 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 11.97x ADV).",
-          "Place tight structural invalidation stop at $10.05 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($11.81, +13.4%, 1:3.9 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($13.74, +32.0%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "DK",
-      "current_price": 76.1,
-      "playbook_id": "fundamental_acceleration",
-      "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
-      "playbook_badge": "FUNDAMENTAL ACCELERATION",
-      "playbook_color": "amber",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 5,
-      "screeners": [
-        "Relative Strength",
-        "Fresh 52W High",
-        "All Time High",
-        "Post Earning Reaction",
-        "Zacks Rank 1"
-      ],
-      "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +6.7% 5D | +18.1% 20D",
-        "**Fresh 52W High**: New High: $78.43",
-        "**All Time High**: ATH: $78.42",
-        "**Post Earning Reaction**: Gap Up +5.1%"
-      ],
-      "execution": {
-        "entry_range": [
-          75.49,
-          76.71
-        ],
-        "ideal_entry": 76.0999984741211,
-        "stop_loss": 73.44,
-        "stop_loss_pct": -3.5,
-        "target_primary": 87.27,
-        "target_primary_pct": 14.7,
-        "target_secondary": 96.34,
-        "target_secondary_pct": 26.6,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $75.5 Call / Sell $96.3 Call (FUNDAMENTAL ACCELERATION Vertical)",
-        "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 60.5,
-        "vol_surge": 1.47,
-        "ema_10": 73.55,
-        "ema_21": 70.98,
-        "sma_50": 65.29,
-        "sma_200": 45.39,
-        "execution_checklist": [
-          "Verify price action inside $75.49 \u2500\u2500 $76.71 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.47x ADV).",
-          "Place tight structural invalidation stop at $73.44 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($87.27, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($96.34, +26.6%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "DELL",
-      "current_price": 567.29,
-      "playbook_id": "fundamental_acceleration",
-      "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
-      "playbook_badge": "FUNDAMENTAL ACCELERATION",
-      "playbook_color": "amber",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 5,
-      "screeners": [
-        "Relative Strength",
-        "Fresh 52W High",
-        "All Time High",
-        "Zacks Rank 1",
-        "Earnings Surge"
-      ],
-      "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +9.1% 5D | +17.4% 20D",
-        "**Fresh 52W High**: New High: $567.75",
-        "**All Time High**: ATH: $567.75",
-        "**Zacks Rank 1**: Score: 5 | PEG: 0.63"
-      ],
-      "execution": {
-        "entry_range": [
-          562.75,
-          571.83
-        ],
-        "ideal_entry": 567.2899780273438,
-        "stop_loss": 547.43,
-        "stop_loss_pct": -3.5,
-        "target_primary": 650.7,
-        "target_primary_pct": 14.7,
-        "target_secondary": 720.69,
-        "target_secondary_pct": 27.0,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $562.8 Call / Sell $720.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
-        "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 71.2,
-        "vol_surge": 1.63,
-        "ema_10": 511.37,
-        "ema_21": 487.27,
-        "sma_50": 448.73,
-        "sma_200": 261.15,
-        "execution_checklist": [
-          "Verify price action inside $562.75 \u2500\u2500 $571.83 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.63x ADV).",
-          "Place tight structural invalidation stop at $547.43 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($650.70, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($720.69, +27.0%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "HPE",
-      "current_price": 62.09,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 5,
-      "screeners": [
-        "Relative Strength",
-        "All Time High",
         "Fvg Sma Confluence",
-        "Zacks Rank 1",
-        "Rs Divergence"
-      ],
-      "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +20.3% 5D | +7.4% 20D",
-        "**All Time High**: ATH: $64.25",
-        "**Fvg Sma Confluence**: FVG Support ($54.64-$56.55) + 10-day SMA Confluence",
-        "**Zacks Rank 1**: Score: 5 | PEG: 0.47"
-      ],
-      "execution": {
-        "entry_range": [
-          61.59,
-          62.59
-        ],
-        "ideal_entry": 62.09000015258789,
-        "stop_loss": 59.92,
-        "stop_loss_pct": -3.5,
-        "target_primary": 67.91,
-        "target_primary_pct": 9.4,
-        "target_secondary": 76.13,
-        "target_secondary_pct": 22.6,
-        "risk_reward": "1:2.7",
-        "options_spec": "Buy $61.6 Call / Sell $76.1 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 63.7,
-        "vol_surge": 1.66,
-        "ema_10": 55.98,
-        "ema_21": 54.56,
-        "sma_50": 51.11,
-        "sma_200": 33.88,
-        "execution_checklist": [
-          "Verify price action inside $61.59 \u2500\u2500 $62.59 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.66x ADV).",
-          "Place tight structural invalidation stop at $59.92 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($67.91, +9.4%, 1:2.7 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($76.13, +22.6%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "MEOH",
-      "current_price": 62.9,
-      "playbook_id": "fundamental_acceleration",
-      "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
-      "playbook_badge": "FUNDAMENTAL ACCELERATION",
-      "playbook_color": "amber",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 4,
-      "screeners": [
-        "Relative Strength",
-        "Hve Volume",
-        "Weekly Cup Handle",
-        "Zacks Rank 1"
-      ],
-      "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +7.9% 5D | +13.8% 20D",
-        "**Hve Volume**: Monthly High Volume (1.3x Avg)",
-        "**Weekly Cup Handle**: Weekly Cup & Handle",
-        "**Zacks Rank 1**: Score: 5 | PEG: 0.2"
-      ],
-      "execution": {
-        "entry_range": [
-          62.4,
-          63.4
-        ],
-        "ideal_entry": 62.900001525878906,
-        "stop_loss": 60.7,
-        "stop_loss_pct": -3.5,
-        "target_primary": 68.85,
-        "target_primary_pct": 9.5,
-        "target_secondary": 73.53,
-        "target_secondary_pct": 16.9,
-        "risk_reward": "1:2.7",
-        "options_spec": "Buy $62.4 Call / Sell $73.5 Call (FUNDAMENTAL ACCELERATION Vertical)",
-        "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 59.9,
-        "vol_surge": 1.73,
-        "ema_10": 60.68,
-        "ema_21": 59.06,
-        "sma_50": 55.35,
-        "sma_200": 52.46,
-        "execution_checklist": [
-          "Verify price action inside $62.40 \u2500\u2500 $63.40 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.73x ADV).",
-          "Place tight structural invalidation stop at $60.70 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($68.85, +9.5%, 1:2.7 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($73.53, +16.9%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "CART",
-      "current_price": 48.73,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 4,
-      "screeners": [
-        "Bearish Candlestick",
-        "Poc Rejection",
-        "Monthly Cup Handle",
-        "Medium Base Breakout"
-      ],
-      "metrics": [
-        "**Bearish Candlestick**: Bearish Hikkake",
-        "**Poc Rejection**: Bouncing +1.4% off POC $48.06",
-        "**Monthly Cup Handle**: Monthly Cup & Handle",
-        "**Medium Base Breakout**: 13 Months | Coiled"
-      ],
-      "execution": {
-        "entry_range": [
-          48.34,
-          49.12
-        ],
-        "ideal_entry": 48.72999954223633,
-        "stop_loss": 47.02,
-        "stop_loss_pct": -3.5,
-        "target_primary": 55.1,
-        "target_primary_pct": 13.1,
-        "target_secondary": 58.55,
-        "target_secondary_pct": 20.2,
-        "risk_reward": "1:3.7",
-        "options_spec": "Buy $48.3 Call / Sell $58.5 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 45.6,
-        "vol_surge": 0.85,
-        "ema_10": 49.11,
-        "ema_21": 49.21,
-        "sma_50": 47.93,
-        "sma_200": 42.49,
-        "execution_checklist": [
-          "Verify price action inside $48.34 \u2500\u2500 $49.12 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.85x ADV).",
-          "Place tight structural invalidation stop at $47.02 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($55.10, +13.1%, 1:3.7 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($58.55, +20.2%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "WAT",
-      "current_price": 408.34,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 4,
-      "screeners": [
-        "Vah Rejection",
-        "Monthly Cup Handle",
-        "Zacks Rank 1",
-        "Rs Divergence"
-      ],
-      "metrics": [
-        "**Vah Rejection**: Bouncing +1.6% off VAH $401.92",
-        "**Monthly Cup Handle**: Monthly Cup & Handle",
-        "**Zacks Rank 1**: Score: 4 | PEG: 1.51",
-        "**Rs Divergence**: RS New High | Price -4.2%"
-      ],
-      "execution": {
-        "entry_range": [
-          405.07,
-          411.61
-        ],
-        "ideal_entry": 408.3399963378906,
-        "stop_loss": 394.05,
-        "stop_loss_pct": -3.5,
-        "target_primary": 442.64,
-        "target_primary_pct": 8.4,
-        "target_secondary": 468.36,
-        "target_secondary_pct": 14.7,
-        "risk_reward": "1:2.4",
-        "options_spec": "Buy $405.1 Call / Sell $468.4 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 47.9,
-        "vol_surge": 0.78,
-        "ema_10": 407.82,
-        "ema_21": 406.69,
-        "sma_50": 394.13,
-        "sma_200": 361.24,
-        "execution_checklist": [
-          "Verify price action inside $405.07 \u2500\u2500 $411.61 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.78x ADV).",
-          "Place tight structural invalidation stop at $394.05 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($442.64, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($468.36, +14.7%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "HOG",
-      "current_price": 27.87,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 4,
-      "screeners": [
-        "Vah Rejection",
-        "Poc Rejection Fixed",
-        "Base Pullback Ma",
-        "Weekly Cup Handle"
-      ],
-      "metrics": [
-        "**Vah Rejection**: Bouncing +1.9% off VAH $27.35",
-        "**Poc Rejection Fixed**: Bouncing +0.7% off Fixed POC (Q3) $27.67",
-        "**Base Pullback Ma**: Squat Support at 10-SMA ($27.53)",
-        "**Weekly Cup Handle**: Weekly Cup & Handle"
-      ],
-      "execution": {
-        "entry_range": [
-          27.65,
-          28.09
-        ],
-        "ideal_entry": 27.8700008392334,
-        "stop_loss": 26.89,
-        "stop_loss_pct": -3.5,
-        "target_primary": 30.22,
-        "target_primary_pct": 8.4,
-        "target_secondary": 31.98,
-        "target_secondary_pct": 14.7,
-        "risk_reward": "1:2.4",
-        "options_spec": "Buy $27.6 Call / Sell $32.0 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 47.5,
-        "vol_surge": 0.89,
-        "ema_10": 27.47,
-        "ema_21": 27.33,
-        "sma_50": 26.6,
-        "sma_200": 22.91,
-        "execution_checklist": [
-          "Verify price action inside $27.65 \u2500\u2500 $28.09 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.89x ADV).",
-          "Place tight structural invalidation stop at $26.89 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($30.22, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($31.98, +14.7%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "GEN",
-      "current_price": 30.26,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 4,
-      "screeners": [
-        "Vah Rejection Fixed",
-        "Base Pullback Ma",
-        "Monthly Cup Handle",
-        "Rs Divergence"
-      ],
-      "metrics": [
-        "**Vah Rejection Fixed**: Bouncing +2.8% off Fixed VAH (Q3) $29.44",
-        "**Base Pullback Ma**: Squat Support at 10-SMA ($30.45)",
-        "**Monthly Cup Handle**: Monthly Cup & Handle",
-        "**Rs Divergence**: RS New High | Price -4.4%"
-      ],
-      "execution": {
-        "entry_range": [
-          30.02,
-          30.5
-        ],
-        "ideal_entry": 30.260000228881836,
-        "stop_loss": 29.54,
-        "stop_loss_pct": -2.4,
-        "target_primary": 33.27,
-        "target_primary_pct": 9.9,
-        "target_secondary": 35.59,
-        "target_secondary_pct": 17.6,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $30.0 Call / Sell $35.6 Call (MA PULLBACK Vertical)",
-        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 60.3,
-        "vol_surge": 0.88,
-        "ema_10": 30.11,
-        "ema_21": 29.61,
-        "sma_50": 28.05,
-        "sma_200": 24.47,
-        "execution_checklist": [
-          "Verify price action inside $30.02 \u2500\u2500 $30.50 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.88x ADV).",
-          "Place tight structural invalidation stop at $29.54 (-2.4% max risk).",
-          "Scale out 50% at Target 1 ($33.27, +9.9%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($35.59, +17.6%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "SM",
-      "current_price": 38.1,
-      "playbook_id": "ma_pullback",
-      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
-      "playbook_badge": "MA PULLBACK",
-      "playbook_color": "cyan",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 4,
-      "screeners": [
         "Base Pullback Ma",
         "Zacks Rank 1",
         "Rs Divergence",
         "Bull Flag Pending"
       ],
       "metrics": [
-        "**Base Pullback Ma**: Squat Support at 10-SMA ($37.62)",
-        "**Zacks Rank 1**: Score: 5 | PEG: 0.67",
-        "**Rs Divergence**: RS New High | Price -2.2%",
-        "**Bull Flag Pending**: Pending | Breakout > $38.94 (Score: 7.8)"
+        "**Relative Strength**: +7.4% 5D | +10.1% 20D",
+        "**Fvg Sma Confluence**: FVG Support ($183.00-$187.01) + 10-day SMA Confluence",
+        "**Base Pullback Ma**: Squat Support at 10-SMA ($186.31)",
+        "**Zacks Rank 1**: Score: 4 | PEG: 1.98"
       ],
       "execution": {
         "entry_range": [
-          37.8,
-          38.4
+          NaN,
+          NaN
         ],
-        "ideal_entry": 38.099998474121094,
-        "stop_loss": 37.31,
-        "stop_loss_pct": -2.1,
-        "target_primary": 41.1,
-        "target_primary_pct": 7.9,
-        "target_secondary": 44.28,
-        "target_secondary_pct": 16.2,
-        "risk_reward": "1:3.8",
-        "options_spec": "Buy $37.8 Call / Sell $44.3 Call (MA PULLBACK Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": 184.34,
+        "stop_loss_pct": NaN,
+        "target_primary": 211.77,
+        "target_primary_pct": NaN,
+        "target_secondary": 230.59,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $230.6 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 56.5,
-        "vol_surge": 0.99,
-        "ema_10": 37.4,
-        "ema_21": 36.2,
-        "sma_50": 32.86,
-        "sma_200": 26.81,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 53.7,
+        "vol_surge": 0.7,
+        "ema_10": 185.34,
+        "ema_21": 176.35,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $37.80 \u2500\u2500 $38.40 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.99x ADV).",
-          "Place tight structural invalidation stop at $37.31 (-2.1% max risk).",
-          "Scale out 50% at Target 1 ($41.10, +7.9%, 1:3.8 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($44.28, +16.2%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.7x ADV).",
+          "Place tight structural invalidation stop at $184.34 (nan% max risk).",
+          "Scale out 50% at Target 1 ($211.77, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($230.59, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "BG",
-      "current_price": 122.41,
-      "playbook_id": "fundamental_acceleration",
-      "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
-      "playbook_badge": "FUNDAMENTAL ACCELERATION",
-      "playbook_color": "amber",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 3,
-      "screeners": [
-        "Early Stage 2",
-        "Zacks Rank 1",
-        "Relative Strength Leader"
-      ],
-      "metrics": [
-        "**Early Stage 2**: Crossed 200 SMA ($114.78)",
-        "**Zacks Rank 1**: Score: 4 | PEG: 1.37",
-        "**RS Leader**: Score 89 | Pattern: cup"
-      ],
-      "execution": {
-        "entry_range": [
-          121.43,
-          123.39
-        ],
-        "ideal_entry": 122.41000366210938,
-        "stop_loss": 120.94,
-        "stop_loss_pct": -1.2,
-        "target_primary": 128.58,
-        "target_primary_pct": 5.0,
-        "target_secondary": 144.56,
-        "target_secondary_pct": 18.1,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $121.4 Call / Sell $144.6 Call (FUNDAMENTAL ACCELERATION Vertical)",
-        "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 64.5,
-        "vol_surge": 0.78,
-        "ema_10": 120.74,
-        "ema_21": 117.96,
-        "sma_50": 114.44,
-        "sma_200": 113.55,
-        "execution_checklist": [
-          "Verify price action inside $121.43 \u2500\u2500 $123.39 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.78x ADV).",
-          "Place tight structural invalidation stop at $120.94 (-1.2% max risk).",
-          "Scale out 50% at Target 1 ($128.58, +5.0%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($144.56, +18.1%, 1:4.5 R:R) using 15m trailing stop."
-        ]
-      }
-    },
-    {
-      "ticker": "YPF",
-      "current_price": 55.55,
+      "ticker": "CF",
+      "current_price": NaN,
       "playbook_id": "ma_pullback",
       "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
       "playbook_badge": "MA PULLBACK",
       "playbook_color": "cyan",
       "conviction_score": 99,
       "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 3,
+      "confluence_count": 4,
       "screeners": [
         "Vah Rejection Fixed",
-        "Zacks Rank 1",
+        "Base Pullback Ma",
+        "Medium Base Breakout",
         "Relative Strength Leader"
       ],
       "metrics": [
-        "**Vah Rejection Fixed**: Bouncing +4.5% off Fixed VAH (Q3) $53.18",
-        "**Zacks Rank 1**: Score: 5 | PEG: 0.1",
-        "**RS Leader**: Score 99 | Pattern: cup"
+        "**Vah Rejection Fixed**: Bouncing +1.3% off Fixed VAH (Q3) $132.10",
+        "**Base Pullback Ma**: Squat Support at 20-SMA ($131.91)",
+        "**Medium Base Breakout**: 6 Months | Coiled",
+        "**RS Leader**: Score 88 | Pattern: cup"
       ],
       "execution": {
         "entry_range": [
-          55.11,
-          55.99
+          NaN,
+          NaN
         ],
-        "ideal_entry": 55.54999923706055,
-        "stop_loss": 53.61,
-        "stop_loss_pct": -3.5,
-        "target_primary": 60.21,
-        "target_primary_pct": 8.4,
-        "target_secondary": 63.7,
-        "target_secondary_pct": 14.7,
-        "risk_reward": "1:2.4",
-        "options_spec": "Buy $55.1 Call / Sell $63.7 Call (MA PULLBACK Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": 130.83,
+        "stop_loss_pct": NaN,
+        "target_primary": 148.72,
+        "target_primary_pct": NaN,
+        "target_secondary": 158.8,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $158.8 Call (MA PULLBACK Vertical)",
         "strategy_name": "Bull Put Credit Spread or ATM Long Call",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 69.0,
-        "vol_surge": 1.84,
-        "ema_10": 53.61,
-        "ema_21": 52.4,
-        "sma_50": 50.56,
-        "sma_200": 43.6,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 58.1,
+        "vol_surge": 0.57,
+        "ema_10": 133.21,
+        "ema_21": 130.63,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $55.11 \u2500\u2500 $55.99 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.84x ADV).",
-          "Place tight structural invalidation stop at $53.61 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($60.21, +8.4%, 1:2.4 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($63.70, +14.7%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.57x ADV).",
+          "Place tight structural invalidation stop at $130.83 (nan% max risk).",
+          "Scale out 50% at Target 1 ($148.72, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($158.80, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "LPLA",
-      "current_price": 353.78,
+      "ticker": "EXEL",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 99,
+      "conviction_rating": "99/100 A+ Institutional",
+      "confluence_count": 6,
+      "screeners": [
+        "All Time High",
+        "Vah Rejection",
+        "Vah Rejection Fixed",
+        "Base Pullback Ma",
+        "Rs Divergence",
+        "Universal Takeout"
+      ],
+      "metrics": [
+        "**All Time High**: ATH: $59.72",
+        "**Vah Rejection**: Bouncing +2.6% off VAH $56.99",
+        "**Vah Rejection Fixed**: Bouncing +2.6% off Fixed VAH (Q3) $56.99",
+        "**Base Pullback Ma**: Squat Support at 10-SMA ($57.61)"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 56.2,
+        "stop_loss_pct": NaN,
+        "target_primary": 61.94,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 57.1,
+        "vol_surge": 0.83,
+        "ema_10": 56.87,
+        "ema_21": 56.28,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.83x ADV).",
+          "Place tight structural invalidation stop at $56.20 (nan% max risk).",
+          "Scale out 50% at Target 1 ($61.94, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "SMTC",
+      "current_price": NaN,
       "playbook_id": "fundamental_acceleration",
       "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
       "playbook_badge": "FUNDAMENTAL ACCELERATION",
       "playbook_color": "amber",
       "conviction_score": 99,
       "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 3,
+      "confluence_count": 5,
       "screeners": [
-        "Weekly Cup Handle",
-        "Monthly Cup Handle",
+        "Relative Strength",
+        "Fresh 52W High",
+        "All Time High",
+        "Bullish Candlestick",
         "Zacks Rank 1"
       ],
       "metrics": [
-        "**Weekly Cup Handle**: Weekly Cup & Handle",
-        "**Monthly Cup Handle**: Monthly Cup & Handle",
-        "**Zacks Rank 1**: Score: 5 | PEG: 0.45"
+        "**Relative Strength**: \ud83d\udd25 Fresh High | +6.8% 5D | +42.7% 20D",
+        "**Fresh 52W High**: New High: $182.13",
+        "**All Time High**: ATH: $182.13",
+        "**Bullish Candlestick**: Bullish 3 White Soldiers"
       ],
       "execution": {
         "entry_range": [
-          350.95,
-          356.61
+          NaN,
+          NaN
         ],
-        "ideal_entry": 353.7799987792969,
-        "stop_loss": 343.64,
-        "stop_loss_pct": -2.9,
-        "target_primary": 390.42,
-        "target_primary_pct": 10.4,
-        "target_secondary": 408.67,
-        "target_secondary_pct": 15.5,
-        "risk_reward": "1:3.6",
-        "options_spec": "Buy $350.9 Call / Sell $408.7 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": 146.88,
+        "stop_loss_pct": NaN,
+        "target_primary": NaN,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 43.5,
-        "vol_surge": 0.77,
-        "ema_10": 355.3,
-        "ema_21": 356.33,
-        "sma_50": 345.83,
-        "sma_200": 330.3,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 62.7,
+        "vol_surge": 1.25,
+        "ema_10": 153.61,
+        "ema_21": 146.44,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $350.95 \u2500\u2500 $356.61 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 0.77x ADV).",
-          "Place tight structural invalidation stop at $343.64 (-2.9% max risk).",
-          "Scale out 50% at Target 1 ($390.42, +10.4%, 1:3.6 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($408.67, +15.5%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.25x ADV).",
+          "Place tight structural invalidation stop at $146.88 (nan% max risk).",
+          "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "HPQ",
-      "current_price": 35.48,
-      "playbook_id": "alpha_breakout",
-      "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
-      "playbook_badge": "ALPHA BREAKOUT",
-      "playbook_color": "emerald",
+      "ticker": "ADUS",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
       "conviction_score": 99,
       "conviction_rating": "99/100 A+ Institutional",
       "confluence_count": 4,
       "screeners": [
-        "Relative Strength",
-        "Fresh 52W High",
-        "Bullish Candlestick",
-        "Regression Channel Breakout"
+        "Poc Rejection",
+        "Poc Rejection Fixed",
+        "Weekly Cup Handle",
+        "Medium Base Breakout"
       ],
       "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +9.5% 5D | +19.7% 20D",
-        "**Fresh 52W High**: New High: $36.23",
-        "**Bullish Candlestick**: Bullish 3 White Soldiers",
-        "**Regression Channel Breakout**: Bullish Breakout (+3.3%) from Ascending Channel"
+        "**Poc Rejection**: Bouncing +0.6% off POC $117.35",
+        "**Poc Rejection Fixed**: Bouncing +0.6% off Fixed POC (Q3) $117.31",
+        "**Weekly Cup Handle**: Weekly Cup & Handle",
+        "**Medium Base Breakout**: 10 Months | Coiled"
       ],
       "execution": {
         "entry_range": [
-          35.2,
-          35.76
+          NaN,
+          NaN
         ],
-        "ideal_entry": 35.47999954223633,
-        "stop_loss": 34.24,
-        "stop_loss_pct": -3.5,
-        "target_primary": 40.69,
-        "target_primary_pct": 14.7,
-        "target_secondary": 45.99,
-        "target_secondary_pct": 29.6,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $35.2 Call / Sell $46.0 Call (ALPHA BREAKOUT Vertical)",
-        "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 71.5,
-        "vol_surge": 1.69,
-        "ema_10": 32.12,
-        "ema_21": 30.8,
-        "sma_50": 27.8,
-        "sma_200": 22.54,
+        "ideal_entry": NaN,
+        "stop_loss": 115.48,
+        "stop_loss_pct": NaN,
+        "target_primary": 126.29,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 51.7,
+        "vol_surge": 1.06,
+        "ema_10": 117.77,
+        "ema_21": 117.62,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $35.20 \u2500\u2500 $35.76 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.69x ADV).",
-          "Place tight structural invalidation stop at $34.24 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($40.69, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($45.99, +29.6%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.06x ADV).",
+          "Place tight structural invalidation stop at $115.48 (nan% max risk).",
+          "Scale out 50% at Target 1 ($126.29, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "QRVO",
-      "current_price": 116.65,
-      "playbook_id": "alpha_breakout",
-      "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
-      "playbook_badge": "ALPHA BREAKOUT",
-      "playbook_color": "emerald",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 4,
+      "ticker": "PLTR",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 98,
+      "conviction_rating": "98/100 A+ Institutional",
+      "confluence_count": 6,
+      "screeners": [
+        "Chop Incubation Leaders",
+        "Vah Rejection",
+        "Poc Rejection Fixed",
+        "Weekly Cup Handle",
+        "Zacks Rank 1",
+        "Pending Breakout"
+      ],
+      "metrics": [
+        "**Chop Incubation Leaders**: Vol: 28.3M | Base: 218d (-15.1% to ATH) | VDU: 0.66x | 23-EMA",
+        "**Vah Rejection**: Bouncing +3.0% off VAH $171.15",
+        "**Poc Rejection Fixed**: Bouncing +1.3% off Fixed POC (Q3) $173.92",
+        "**Weekly Cup Handle**: Weekly Cup & Handle"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 168.43,
+        "stop_loss_pct": NaN,
+        "target_primary": 196.71,
+        "target_primary_pct": NaN,
+        "target_secondary": 208.62,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $208.6 Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 39.8,
+        "vol_surge": 0.81,
+        "ema_10": 172.82,
+        "ema_21": 171.4,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.81x ADV).",
+          "Place tight structural invalidation stop at $168.43 (nan% max risk).",
+          "Scale out 50% at Target 1 ($196.71, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($208.62, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "PSX",
+      "current_price": NaN,
+      "playbook_id": "fundamental_acceleration",
+      "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
+      "playbook_badge": "FUNDAMENTAL ACCELERATION",
+      "playbook_color": "amber",
+      "conviction_score": 98,
+      "conviction_rating": "98/100 A+ Institutional",
+      "confluence_count": 5,
       "screeners": [
         "Relative Strength",
         "Fresh 52W High",
+        "All Time High",
         "Regression Channel Breakout",
-        "Hve Volume"
+        "Zacks Rank 1"
       ],
       "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +14.3% 5D | +20.8% 20D",
-        "**Fresh 52W High**: New High: $120.52",
-        "**Regression Channel Breakout**: Bullish Breakout (+2.4%) from Ascending Channel",
-        "**Hve Volume**: Monthly High Volume (1.9x Avg)"
+        "**Relative Strength**: \ud83d\udd25 Fresh High | +5.9% 5D | +14.3% 20D",
+        "**Fresh 52W High**: New High: $274.21",
+        "**All Time High**: ATH: $274.21",
+        "**Regression Channel Breakout**: Bullish Breakout (+0.1%) from Ascending Channel"
       ],
       "execution": {
         "entry_range": [
-          115.72,
-          117.58
+          NaN,
+          NaN
         ],
-        "ideal_entry": 116.6500015258789,
-        "stop_loss": 112.57,
-        "stop_loss_pct": -3.5,
-        "target_primary": 133.79,
-        "target_primary_pct": 14.7,
-        "target_secondary": 149.18,
-        "target_secondary_pct": 27.9,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $115.7 Call / Sell $149.2 Call (ALPHA BREAKOUT Vertical)",
-        "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 89.2,
-        "vol_surge": 2.01,
-        "ema_10": 105.16,
-        "ema_21": 100.92,
-        "sma_50": 93.55,
-        "sma_200": 88.41,
+        "ideal_entry": NaN,
+        "stop_loss": 257.27,
+        "stop_loss_pct": NaN,
+        "target_primary": NaN,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 83.0,
+        "vol_surge": 1.3,
+        "ema_10": 258.11,
+        "ema_21": 249.42,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $115.72 \u2500\u2500 $117.58 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 2.01x ADV).",
-          "Place tight structural invalidation stop at $112.57 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($133.79, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($149.18, +27.9%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.3x ADV).",
+          "Place tight structural invalidation stop at $257.27 (nan% max risk).",
+          "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "SMCI",
-      "current_price": 40.1,
-      "playbook_id": "squeeze_gamma",
-      "playbook_name": "Short Squeeze & Gamma Runner \ud83d\udd25",
-      "playbook_badge": "SQUEEZE / GAMMA",
-      "playbook_color": "purple",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
+      "ticker": "YPF",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 97,
+      "conviction_rating": "97/100 A+ Institutional",
       "confluence_count": 4,
       "screeners": [
-        "Fvg Sma Confluence",
-        "Qullamaggie Setup",
-        "Rs Divergence",
-        "Gamma Squeeze Setup"
+        "Vah Rejection",
+        "Vah Rejection Fixed",
+        "Base Pullback Ma",
+        "Zacks Rank 1"
       ],
       "metrics": [
-        "**Fvg Sma Confluence**: FVG Support ($38.22-$39.66) + 10-day SMA Confluence",
-        "**Qullamaggie Setup**: Pending Breakout | ADR: 5.6 | SMA: 10-Day",
-        "**Rs Divergence**: RS New High | Price -5.2%",
-        "**Gamma Squeeze Setup**: Gamma Squeeze Setup"
+        "**Vah Rejection**: Bouncing +1.7% off VAH $53.58",
+        "**Vah Rejection Fixed**: Bouncing +1.7% off Fixed VAH (Q3) $53.58",
+        "**Base Pullback Ma**: Squat Support at 10-SMA ($54.74)",
+        "**Zacks Rank 1**: Score: 4 | PEG: 0.1"
       ],
       "execution": {
         "entry_range": [
-          39.78,
-          40.42
+          NaN,
+          NaN
         ],
-        "ideal_entry": 40.099998474121094,
-        "stop_loss": 38.7,
-        "stop_loss_pct": -3.5,
-        "target_primary": 45.98,
-        "target_primary_pct": 14.7,
-        "target_secondary": 51.86,
-        "target_secondary_pct": 29.3,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $39.8 Call / Sell $51.9 Call (SQUEEZE / GAMMA Vertical)",
-        "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 57.6,
-        "vol_surge": 1.16,
-        "ema_10": 38.43,
-        "ema_21": 37.13,
-        "sma_50": 32.52,
-        "sma_200": 31.49,
+        "ideal_entry": NaN,
+        "stop_loss": 54.13,
+        "stop_loss_pct": NaN,
+        "target_primary": 60.83,
+        "target_primary_pct": NaN,
+        "target_secondary": 65.06,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $65.1 Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 64.2,
+        "vol_surge": 0.63,
+        "ema_10": 54.72,
+        "ema_21": 53.33,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $39.78 \u2500\u2500 $40.42 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.16x ADV).",
-          "Place tight structural invalidation stop at $38.70 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($45.98, +14.7%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($51.86, +29.3%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.63x ADV).",
+          "Place tight structural invalidation stop at $54.13 (nan% max risk).",
+          "Scale out 50% at Target 1 ($60.83, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($65.06, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "GRDN",
-      "current_price": 43.64,
+      "ticker": "NTRA",
+      "current_price": NaN,
       "playbook_id": "alpha_breakout",
       "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
       "playbook_badge": "ALPHA BREAKOUT",
       "playbook_color": "emerald",
-      "conviction_score": 99,
-      "conviction_rating": "99/100 A+ Institutional",
-      "confluence_count": 3,
+      "conviction_score": 97,
+      "conviction_rating": "97/100 A+ Institutional",
+      "confluence_count": 5,
       "screeners": [
         "Relative Strength",
-        "Rs Divergence",
-        "Relative Strength Leader"
+        "Fresh 52W High",
+        "All Time High",
+        "Hve Volume",
+        "Universal Takeout"
       ],
       "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +7.9% 5D | +15.3% 20D",
-        "**Rs Divergence**: RS New High | Price -7.2%",
-        "**RS Leader**: Score 95 | Pattern: cup"
+        "**Relative Strength**: \ud83d\udd25 Fresh High | +11.6% 5D | +12.8% 20D",
+        "**Fresh 52W High**: New High: $366.70",
+        "**All Time High**: ATH: $366.70",
+        "**Hve Volume**: Monthly High Volume (2.0x Avg)"
       ],
       "execution": {
         "entry_range": [
-          43.29,
-          43.99
+          NaN,
+          NaN
         ],
-        "ideal_entry": 43.63999938964844,
-        "stop_loss": 42.72,
-        "stop_loss_pct": -2.1,
-        "target_primary": 47.5,
-        "target_primary_pct": 8.8,
-        "target_secondary": 53.62,
-        "target_secondary_pct": 22.9,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $43.3 Call / Sell $53.6 Call (ALPHA BREAKOUT Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": NaN,
+        "stop_loss_pct": NaN,
+        "target_primary": 378.73,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (ALPHA BREAKOUT Vertical)",
         "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 84.9,
-        "vol_surge": 2.12,
-        "ema_10": 41.39,
-        "ema_21": 40.29,
-        "sma_50": 39.99,
-        "sma_200": 36.08,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 54.8,
+        "vol_surge": 1.67,
+        "ema_10": 335.59,
+        "ema_21": 326.98,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $43.29 \u2500\u2500 $43.99 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 2.12x ADV).",
-          "Place tight structural invalidation stop at $42.72 (-2.1% max risk).",
-          "Scale out 50% at Target 1 ($47.50, +8.8%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($53.62, +22.9%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.67x ADV).",
+          "Place tight structural invalidation stop at $nan (nan% max risk).",
+          "Scale out 50% at Target 1 ($378.73, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "VLO",
-      "current_price": 390.42,
+      "ticker": "ILMN",
+      "current_price": NaN,
       "playbook_id": "alpha_breakout",
       "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
       "playbook_badge": "ALPHA BREAKOUT",
@@ -2443,55 +2132,650 @@
       "screeners": [
         "Relative Strength",
         "Fresh 52W High",
-        "All Time High",
-        "Regression Channel Breakout"
+        "Regression Channel Breakout",
+        "Hve Volume"
       ],
       "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +6.1% 5D | +16.1% 20D",
-        "**Fresh 52W High**: New High: $399.25",
-        "**All Time High**: ATH: $399.26",
-        "**Regression Channel Breakout**: Bullish Breakout (+0.8%) from Ascending Channel"
+        "**Relative Strength**: \ud83d\udd25 Fresh High | +19.0% 5D | +14.9% 20D",
+        "**Fresh 52W High**: New High: $246.76",
+        "**Regression Channel Breakout**: Bullish Breakout (+1.8%) from Ascending Channel",
+        "**Hve Volume**: Monthly High Volume (1.9x Avg)"
       ],
       "execution": {
         "entry_range": [
-          387.3,
-          393.54
+          NaN,
+          NaN
         ],
-        "ideal_entry": 390.4200134277344,
-        "stop_loss": 381.11,
-        "stop_loss_pct": -2.4,
-        "target_primary": 429.52,
-        "target_primary_pct": 10.0,
-        "target_secondary": 463.52,
-        "target_secondary_pct": 18.7,
-        "risk_reward": "1:4.2",
-        "options_spec": "Buy $387.3 Call / Sell $463.5 Call (ALPHA BREAKOUT Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": NaN,
+        "stop_loss_pct": NaN,
+        "target_primary": 254.0,
+        "target_primary_pct": NaN,
+        "target_secondary": 271.99,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $272.0 Call (ALPHA BREAKOUT Vertical)",
         "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 80.4,
-        "vol_surge": 1.25,
-        "ema_10": 374.44,
-        "ema_21": 358.8,
-        "sma_50": 324.39,
-        "sma_200": 242.25,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 50.7,
+        "vol_surge": 1.71,
+        "ema_10": 215.06,
+        "ema_21": 211.67,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $387.30 \u2500\u2500 $393.54 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.25x ADV).",
-          "Place tight structural invalidation stop at $381.11 (-2.4% max risk).",
-          "Scale out 50% at Target 1 ($429.52, +10.0%, 1:4.2 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($463.52, +18.7%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.71x ADV).",
+          "Place tight structural invalidation stop at $nan (nan% max risk).",
+          "Scale out 50% at Target 1 ($254.00, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($271.99, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     },
     {
-      "ticker": "CLMT",
-      "current_price": 56.8,
+      "ticker": "MTD",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 96,
+      "conviction_rating": "96/100 A+ Institutional",
+      "confluence_count": 4,
+      "screeners": [
+        "Bullish Candlestick",
+        "Poc Rejection",
+        "Poc Rejection Fixed",
+        "Relative Strength Leader"
+      ],
+      "metrics": [
+        "**Bullish Candlestick**: Bullish 3 White Soldiers",
+        "**Poc Rejection**: Bouncing +0.5% off POC $1403.53",
+        "**Poc Rejection Fixed**: Bouncing +0.5% off Fixed POC (Q3) $1403.44",
+        "**RS Leader**: Score 56 | Pattern: c_and_h"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 1328.44,
+        "stop_loss_pct": NaN,
+        "target_primary": 1511.04,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 44.3,
+        "vol_surge": 1.39,
+        "ema_10": 1335.07,
+        "ema_21": 1351.75,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.39x ADV).",
+          "Place tight structural invalidation stop at $1328.44 (nan% max risk).",
+          "Scale out 50% at Target 1 ($1511.04, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "MPC",
+      "current_price": NaN,
+      "playbook_id": "alpha_breakout",
+      "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
+      "playbook_badge": "ALPHA BREAKOUT",
+      "playbook_color": "emerald",
+      "conviction_score": 95,
+      "conviction_rating": "95/100 A+ Institutional",
+      "confluence_count": 5,
+      "screeners": [
+        "Relative Strength",
+        "Fresh 52W High",
+        "All Time High",
+        "Bullish Candlestick",
+        "Regression Channel Breakout"
+      ],
+      "metrics": [
+        "**Relative Strength**: \ud83d\udd25 Fresh High | +6.8% 5D | +17.8% 20D",
+        "**Fresh 52W High**: New High: $423.83",
+        "**All Time High**: ATH: $423.83",
+        "**Bullish Candlestick**: Bullish 3 White Soldiers"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": NaN,
+        "stop_loss_pct": NaN,
+        "target_primary": 455.25,
+        "target_primary_pct": NaN,
+        "target_secondary": 491.11,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $491.1 Call (ALPHA BREAKOUT Vertical)",
+        "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 89.1,
+        "vol_surge": 1.01,
+        "ema_10": 396.49,
+        "ema_21": 380.32,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.01x ADV).",
+          "Place tight structural invalidation stop at $nan (nan% max risk).",
+          "Scale out 50% at Target 1 ($455.25, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($491.11, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "A",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 95,
+      "conviction_rating": "95/100 A+ Institutional",
+      "confluence_count": 5,
+      "screeners": [
+        "Bullish Candlestick",
+        "Poc Rejection Fixed",
+        "Monthly Cup Handle",
+        "Rs Divergence",
+        "Earnings Surge"
+      ],
+      "metrics": [
+        "**Bullish Candlestick**: Bullish 3 White Soldiers",
+        "**Poc Rejection Fixed**: Bouncing +1.6% off Fixed POC (Q3) $153.87",
+        "**Monthly Cup Handle**: Monthly Cup & Handle",
+        "**Rs Divergence**: RS New High | Price -4.5%"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 149.1,
+        "stop_loss_pct": NaN,
+        "target_primary": 171.62,
+        "target_primary_pct": NaN,
+        "target_secondary": 182.88,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $182.9 Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 43.4,
+        "vol_surge": 1.09,
+        "ema_10": 149.42,
+        "ema_21": 149.16,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.09x ADV).",
+          "Place tight structural invalidation stop at $149.10 (nan% max risk).",
+          "Scale out 50% at Target 1 ($171.62, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($182.88, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "WAT",
+      "current_price": NaN,
       "playbook_id": "fundamental_acceleration",
       "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
       "playbook_badge": "FUNDAMENTAL ACCELERATION",
       "playbook_color": "amber",
-      "conviction_score": 96,
-      "conviction_rating": "96/100 A+ Institutional",
+      "conviction_score": 95,
+      "conviction_rating": "95/100 A+ Institutional",
+      "confluence_count": 4,
+      "screeners": [
+        "Fresh 52W High",
+        "All Time High",
+        "Monthly Cup Handle",
+        "Zacks Rank 1"
+      ],
+      "metrics": [
+        "**Fresh 52W High**: New High: $431.77",
+        "**All Time High**: ATH: $431.77",
+        "**Monthly Cup Handle**: Monthly Cup & Handle",
+        "**Zacks Rank 1**: Score: 4 | PEG: 1.56"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 410.82,
+        "stop_loss_pct": NaN,
+        "target_primary": NaN,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 47.7,
+        "vol_surge": 1.09,
+        "ema_10": 411.43,
+        "ema_21": 408.89,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.09x ADV).",
+          "Place tight structural invalidation stop at $410.82 (nan% max risk).",
+          "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "CRM",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 94,
+      "conviction_rating": "94/100 A+ Institutional",
+      "confluence_count": 4,
+      "screeners": [
+        "Chop Incubation Leaders",
+        "Base Pullback Ma",
+        "Post Earning Consolidation",
+        "Zacks Rank 1"
+      ],
+      "metrics": [
+        "**Chop Incubation Leaders**: Vol: 16.3M | Base: 180d (-9.8% to ATH) | VDU: 0.85x | 21-SMA",
+        "**Base Pullback Ma**: Squat Support at 20-SMA ($241.59)",
+        "**Post Earning Consolidation**: Holding Gap 14d",
+        "**Zacks Rank 1**: Score: 4 | PEG: 0.84"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 248.91,
+        "stop_loss_pct": NaN,
+        "target_primary": 292.53,
+        "target_primary_pct": NaN,
+        "target_secondary": 327.19,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $327.2 Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 48.8,
+        "vol_surge": 0.93,
+        "ema_10": 249.62,
+        "ema_21": 238.03,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.93x ADV).",
+          "Place tight structural invalidation stop at $248.91 (nan% max risk).",
+          "Scale out 50% at Target 1 ($292.53, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($327.19, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "SMCI",
+      "current_price": NaN,
+      "playbook_id": "squeeze_gamma",
+      "playbook_name": "Short Squeeze & Gamma Runner \ud83d\udd25",
+      "playbook_badge": "SQUEEZE / GAMMA",
+      "playbook_color": "purple",
+      "conviction_score": 93,
+      "conviction_rating": "93/100 A+ Institutional",
+      "confluence_count": 4,
+      "screeners": [
+        "Fvg Sma Confluence",
+        "Hve Volume",
+        "Rs Divergence",
+        "Gamma Squeeze Setup"
+      ],
+      "metrics": [
+        "**Fvg Sma Confluence**: FVG Support ($38.22-$39.66) + 10-day SMA Confluence",
+        "**Hve Volume**: Monthly High Volume (1.3x Avg)",
+        "**Rs Divergence**: RS New High | Price -4.6%",
+        "**Gamma Squeeze Setup**: Gamma Squeeze Setup"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": NaN,
+        "stop_loss_pct": NaN,
+        "target_primary": 47.16,
+        "target_primary_pct": NaN,
+        "target_secondary": 51.59,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $51.6 Call (SQUEEZE / GAMMA Vertical)",
+        "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 45.3,
+        "vol_surge": 1.64,
+        "ema_10": 37.52,
+        "ema_21": 36.95,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.64x ADV).",
+          "Place tight structural invalidation stop at $nan (nan% max risk).",
+          "Scale out 50% at Target 1 ($47.16, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($51.59, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "PBR",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 92,
+      "conviction_rating": "92/100 A+ Institutional",
+      "confluence_count": 4,
+      "screeners": [
+        "Chop Incubation Leaders",
+        "Fvg Sma Confluence",
+        "Base Pullback Ma",
+        "Medium Base Breakout"
+      ],
+      "metrics": [
+        "**Chop Incubation Leaders**: Vol: 23.5M | Base: 94d (-5.8% to ATH) | VDU: 1.01x | 21-SMA",
+        "**Fvg Sma Confluence**: FVG Support ($20.45-$20.80) + 10-day SMA Confluence",
+        "**Base Pullback Ma**: Squat Support at 10-SMA ($20.97)",
+        "**Medium Base Breakout**: 5 Months | Coiled"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 20.73,
+        "stop_loss_pct": NaN,
+        "target_primary": 23.55,
+        "target_primary_pct": NaN,
+        "target_secondary": 25.77,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $25.8 Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 71.0,
+        "vol_surge": 0.54,
+        "ema_10": 20.78,
+        "ema_21": 19.97,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.54x ADV).",
+          "Place tight structural invalidation stop at $20.73 (nan% max risk).",
+          "Scale out 50% at Target 1 ($23.55, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($25.77, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "FNV",
+      "current_price": NaN,
+      "playbook_id": "ma_pullback",
+      "playbook_name": "Moving Average Cushion & Pullback \ud83d\udee1\ufe0f",
+      "playbook_badge": "MA PULLBACK",
+      "playbook_color": "cyan",
+      "conviction_score": 92,
+      "conviction_rating": "92/100 A+ Institutional",
+      "confluence_count": 4,
+      "screeners": [
+        "Vah Rejection",
+        "Poc Rejection Fixed",
+        "Rs Divergence",
+        "Relative Strength Leader"
+      ],
+      "metrics": [
+        "**Vah Rejection**: Bouncing +3.6% off VAH $257.45",
+        "**Poc Rejection Fixed**: Bouncing +0.3% off Fixed POC (Q3) $265.72",
+        "**Rs Divergence**: RS New High | Price -2.7%",
+        "**RS Leader**: Score 63 | Pattern: cup"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": 255.07,
+        "stop_loss_pct": NaN,
+        "target_primary": 282.33,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (MA PULLBACK Vertical)",
+        "strategy_name": "Bull Put Credit Spread or ATM Long Call",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 39.9,
+        "vol_surge": 0.45,
+        "ema_10": 262.24,
+        "ema_21": 257.76,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.45x ADV).",
+          "Place tight structural invalidation stop at $255.07 (nan% max risk).",
+          "Scale out 50% at Target 1 ($282.33, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "FRHC",
+      "current_price": NaN,
+      "playbook_id": "alpha_breakout",
+      "playbook_name": "Alpha Breakout & Volatility Contraction \ud83d\ude80",
+      "playbook_badge": "ALPHA BREAKOUT",
+      "playbook_color": "emerald",
+      "conviction_score": 92,
+      "conviction_rating": "92/100 A+ Institutional",
+      "confluence_count": 3,
+      "screeners": [
+        "Weekly Cup Handle",
+        "Medium Base Breakout",
+        "Pending Breakout"
+      ],
+      "metrics": [
+        "**Weekly Cup Handle**: Weekly Cup & Handle",
+        "**Medium Base Breakout**: 12 Months | Coiled",
+        "**Pending Breakout**: Pending Breakout | V2 VCP Squeeze"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": NaN,
+        "stop_loss_pct": NaN,
+        "target_primary": 187.51,
+        "target_primary_pct": NaN,
+        "target_secondary": 198.83,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $198.8 Call (ALPHA BREAKOUT Vertical)",
+        "strategy_name": "Bull Call Vertical Spread or Equity Breakout",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 38.2,
+        "vol_surge": 0.53,
+        "ema_10": 164.36,
+        "ema_21": 163.42,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 0.53x ADV).",
+          "Place tight structural invalidation stop at $nan (nan% max risk).",
+          "Scale out 50% at Target 1 ($187.51, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($198.83, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "ARM",
+      "current_price": NaN,
+      "playbook_id": "squeeze_gamma",
+      "playbook_name": "Short Squeeze & Gamma Runner \ud83d\udd25",
+      "playbook_badge": "SQUEEZE / GAMMA",
+      "playbook_color": "purple",
+      "conviction_score": 92,
+      "conviction_rating": "92/100 A+ Institutional",
+      "confluence_count": 4,
+      "screeners": [
+        "Fvg Sma Confluence",
+        "Hve Volume",
+        "Qullamaggie Setup",
+        "Gamma Squeeze Setup"
+      ],
+      "metrics": [
+        "**Fvg Sma Confluence**: FVG Support ($255.69-$261.49) + 50-day SMA Confluence",
+        "**Hve Volume**: Monthly High Volume (1.3x Avg)",
+        "**Qullamaggie Setup**: Triggered | ADR: 4.8 | SMA: Episodic Pivot",
+        "**Gamma Squeeze Setup**: Gamma Squeeze Setup"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": NaN,
+        "stop_loss_pct": NaN,
+        "target_primary": 306.87,
+        "target_primary_pct": NaN,
+        "target_secondary": 338.94,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $338.9 Call (SQUEEZE / GAMMA Vertical)",
+        "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 44.7,
+        "vol_surge": 1.57,
+        "ema_10": 248.63,
+        "ema_21": 251.8,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.57x ADV).",
+          "Place tight structural invalidation stop at $nan (nan% max risk).",
+          "Scale out 50% at Target 1 ($306.87, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($338.94, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "FSLR",
+      "current_price": NaN,
+      "playbook_id": "squeeze_gamma",
+      "playbook_name": "Short Squeeze & Gamma Runner \ud83d\udd25",
+      "playbook_badge": "SQUEEZE / GAMMA",
+      "playbook_color": "purple",
+      "conviction_score": 91,
+      "conviction_rating": "91/100 A+ Institutional",
+      "confluence_count": 4,
+      "screeners": [
+        "Bullish Candlestick",
+        "Val Rejection",
+        "Val Rejection Fixed",
+        "Gamma Squeeze Setup"
+      ],
+      "metrics": [
+        "**Bullish Candlestick**: Bullish Harami (Inside Bar)",
+        "**Val Rejection**: Bouncing +1.9% off $197.43",
+        "**Val Rejection Fixed**: Bouncing +1.9% off $197.43 (Q3)",
+        "**Gamma Squeeze Setup**: Gamma Squeeze Setup"
+      ],
+      "execution": {
+        "entry_range": [
+          NaN,
+          NaN
+        ],
+        "ideal_entry": NaN,
+        "stop_loss": NaN,
+        "stop_loss_pct": NaN,
+        "target_primary": 250.03,
+        "target_primary_pct": NaN,
+        "target_secondary": 271.28,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $271.3 Call (SQUEEZE / GAMMA Vertical)",
+        "strategy_name": "Long Call Outright or Bull Call Debit Vertical",
+        "stage": "Consolidation / Stage 3",
+        "rsi": 35.1,
+        "vol_surge": 1.34,
+        "ema_10": 203.68,
+        "ema_21": 208.04,
+        "sma_50": NaN,
+        "sma_200": NaN,
+        "execution_checklist": [
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.34x ADV).",
+          "Place tight structural invalidation stop at $nan (nan% max risk).",
+          "Scale out 50% at Target 1 ($250.03, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($271.28, +nan%, 1:nan Asymmetry) using 15m trailing stop."
+        ]
+      }
+    },
+    {
+      "ticker": "DK",
+      "current_price": NaN,
+      "playbook_id": "fundamental_acceleration",
+      "playbook_name": "Fundamental Momentum & Earnings Acceleration \ud83d\udcc8",
+      "playbook_badge": "FUNDAMENTAL ACCELERATION",
+      "playbook_color": "amber",
+      "conviction_score": 90,
+      "conviction_rating": "90/100 A+ Institutional",
       "confluence_count": 4,
       "screeners": [
         "Relative Strength",
@@ -2500,39 +2784,40 @@
         "Zacks Rank 1"
       ],
       "metrics": [
-        "**Relative Strength**: \ud83d\udd25 Fresh High | +7.7% 5D | +20.9% 20D",
-        "**Fresh 52W High**: New High: $58.40",
-        "**All Time High**: ATH: $58.39",
-        "**Zacks Rank 1**: Score: 5 | PEG: 0.65"
+        "**Relative Strength**: \ud83d\udd25 Fresh High | +7.4% 5D | +27.3% 20D",
+        "**Fresh 52W High**: New High: $82.00",
+        "**All Time High**: ATH: $82.00",
+        "**Zacks Rank 1**: Score: 5 | PEG: 0.38"
       ],
       "execution": {
         "entry_range": [
-          56.35,
-          57.25
+          NaN,
+          NaN
         ],
-        "ideal_entry": 56.79999923706055,
-        "stop_loss": 54.81,
-        "stop_loss_pct": -3.5,
-        "target_primary": 63.02,
-        "target_primary_pct": 11.0,
-        "target_secondary": 67.9,
-        "target_secondary_pct": 19.5,
-        "risk_reward": "1:3.1",
-        "options_spec": "Buy $56.4 Call / Sell $67.9 Call (FUNDAMENTAL ACCELERATION Vertical)",
+        "ideal_entry": NaN,
+        "stop_loss": 74.01,
+        "stop_loss_pct": NaN,
+        "target_primary": NaN,
+        "target_primary_pct": NaN,
+        "target_secondary": NaN,
+        "target_secondary_pct": NaN,
+        "risk_reward": "1:nan",
+        "risk_reward_t2": "1:nan",
+        "options_spec": "Buy $nan Call / Sell $nan Call (FUNDAMENTAL ACCELERATION Vertical)",
         "strategy_name": "Bull Call Debit Spread or Diagonal Calendar",
-        "stage": "Stage 2 (Advancing)",
-        "rsi": 73.6,
-        "vol_surge": 1.13,
-        "ema_10": 53.55,
-        "ema_21": 50.81,
-        "sma_50": 45.32,
-        "sma_200": 32.38,
+        "stage": "Consolidation / Stage 3",
+        "rsi": 71.6,
+        "vol_surge": 1.01,
+        "ema_10": 75.37,
+        "ema_21": 72.58,
+        "sma_50": NaN,
+        "sma_200": NaN,
         "execution_checklist": [
-          "Verify price action inside $56.35 \u2500\u2500 $57.25 accumulation corridor.",
-          "Ensure volume confirmation (current volume ratio 1.13x ADV).",
-          "Place tight structural invalidation stop at $54.81 (-3.5% max risk).",
-          "Scale out 50% at Target 1 ($63.02, +11.0%, 1:3.1 R:R) and ratchet stop to Breakeven.",
-          "Trail remaining 50% toward Target 2 ($67.90, +19.5%, 1:4.5 R:R) using 15m trailing stop."
+          "Verify price action inside $nan \u2500\u2500 $nan accumulation corridor.",
+          "Ensure volume confirmation (current volume ratio 1.01x ADV).",
+          "Place tight structural invalidation stop at $74.01 (nan% max risk).",
+          "Scale out 50% at Target 1 ($nan, +nan%, 1:nan Asymmetry) and ratchet stop to Breakeven.",
+          "Trail remaining 50% toward Target 2 ($nan, +nan%, 1:nan Asymmetry) using 15m trailing stop."
         ]
       }
     }

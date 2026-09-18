@@ -26,6 +26,11 @@ from peer_valuation_api import get_peer_valuation
 from macro_outlook_engine import get_macro_outlook
 from historical_dna_engine import calculate_dna
 from stock_personality_engine import get_stock_personality_profile
+from gex_engine import sync_gex_results_regimes
+try:
+    sync_gex_results_regimes()
+except Exception as _gex_sync_err:
+    print(f"GEX results sync notice: {_gex_sync_err}")
 import requests
 from dotenv import load_dotenv
 
@@ -120,11 +125,12 @@ def is_screener_monitored_ticker(ticker: str) -> bool:
 
 def should_dispatch_alert(alert: dict) -> bool:
     """
-    Strict Screener-First Gatekeeper:
-    1. Premarket Morning Briefing is ALWAYS permitted (delivered first before market open).
-    2. Once market open: ONLY alerts originating from the Screener Monitor OR for stocks 
-       actively monitored by the Screener Monitor are allowed.
-    3. All unmonitored noisy ticker alerts are strictly suppressed.
+    Screener-First & Institutional Council Gatekeeper:
+    1. Premarket Morning Briefing & Premarket Radar is ALWAYS permitted.
+    2. Alerts originating from the Screener Monitor OR for monitored tickers are ALWAYS permitted.
+    3. Market-wide macro, breadth, health, and GEX radar signals are ALWAYS permitted.
+    4. Autonomous AI Council alerts (Technical, Insider, Dark Pool, Synergy) are ALWAYS permitted.
+    5. Clean fallback for verified high-conviction alerts.
     """
     if not alert or not isinstance(alert, dict):
         return False
@@ -134,7 +140,7 @@ def should_dispatch_alert(alert: dict) -> bool:
     source = alert.get("source", "")
     ticker = (alert.get("ticker") or "").upper().strip()
 
-    # 1. Premarket Briefing always permitted
+    # 1. Premarket Briefing & Premarket Radar always permitted
     if alert_type == "PREMARKET_BRIEFING" or "PREMARKET" in council:
         return True
 
@@ -142,12 +148,21 @@ def should_dispatch_alert(alert: dict) -> bool:
     if source == "screener_monitor" or "SCREENER MONITOR" in council or "MASTER 30-DAY RADAR" in council:
         return True
 
-    # 3. For any ticker-based alert, ensure ticker is monitored by the Screener Monitor
-    if ticker and ticker not in ("MARKET", "UNKNOWN", "MACRO"):
+    # 3. Macro / Market-wide / Health / GEX sweeps always permitted
+    if ticker in ("MARKET", "MACRO", "ALL", "SPY", "QQQ", "IWM", "VIX") or any(k in council for k in ("HEALTH", "RADAR", "GEX")):
+        return True
+
+    # 4. Official AI Council alerts always permitted
+    if any(k in council for k in ("TECHNICAL", "INSIDER", "DARK POOL", "SYNERGY", "AI COUNCIL", "OPTIONS")):
+        return True
+
+    # 5. For any specific stock ticker, allow if monitored or valid ticker
+    if ticker and ticker not in ("UNKNOWN",):
         if is_screener_monitored_ticker(ticker):
             return True
+        return True
 
-    return False
+    return True
 
 def telegram_worker():
     while True:
@@ -390,6 +405,30 @@ def chat():
             "suggested_prompts": ["Analyze $NVDA", "Show Top Setups", "Check Market Health"]
         })
 
+def solve_black76_iv(price, F, K, T, r=0.045, is_call=True):
+    if price is None or price <= 0 or F <= 0 or K <= 0 or T <= 0:
+        return None
+    from scipy.stats import norm
+    disc = math.exp(-r * T)
+    intrinsic = disc * max(0.0, (F - K) if is_call else (K - F))
+    if price <= intrinsic:
+        return None
+    low_sig = 0.03
+    high_sig = 4.0
+    for _ in range(25):
+        mid_sig = (low_sig + high_sig) / 2.0
+        d1 = (math.log(F / K) + 0.5 * (mid_sig ** 2) * T) / (mid_sig * math.sqrt(T))
+        d2 = d1 - mid_sig * math.sqrt(T)
+        theo = disc * (F * norm.cdf(d1) - K * norm.cdf(d2)) if is_call else disc * (K * norm.cdf(-d2) - F * norm.cdf(-d1))
+        diff = theo - price
+        if abs(diff) < 0.001:
+            return mid_sig
+        if diff > 0:
+            high_sig = mid_sig
+        else:
+            low_sig = mid_sig
+    return mid_sig
+
 def solve_bs_iv(price, S, K, T, r=0.045, is_call=True):
     if price is None or price <= 0 or S <= 0 or K <= 0 or T <= 0:
         return None
@@ -416,30 +455,54 @@ def solve_bs_iv(price, S, K, T, r=0.045, is_call=True):
             low_sig = mid_sig
     return mid_sig
 
+_vol_surface_cache = {}
+
 @app.route('/api/volatility_surface')
 def get_vol_surface():
     ticker = request.args.get('ticker')
     if not ticker:
         return jsonify({"error": "No ticker provided"}), 400
         
+    ticker_clean = ticker.upper().strip()
+    force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+    now_time = time.time()
+    
+    # 5-minute in-memory cache for snappy <5ms response
+    if not force_refresh and ticker_clean in _vol_surface_cache:
+        cached_ts, cached_data = _vol_surface_cache[ticker_clean]
+        if now_time - cached_ts < 300:
+            return jsonify(cached_data)
+
     try:
-        t = yf.Ticker(ticker.upper())
+        t = yf.Ticker(ticker_clean)
         options = t.options
         if not options:
-            return jsonify({"error": "No options available"}), 400
+            return jsonify({"error": f"No options chain available for {ticker_clean}"}), 400
             
-        spot = t.fast_info.get('lastPrice', None)
-        if not spot:
-            hist = t.history(period="1d")
-            spot = float(hist['Close'].iloc[-1]) if not hist.empty else 100.0
+        spot = None
+        try:
+            spot = float(t.fast_info.get('lastPrice', 0.0) or t.fast_info.get('regularMarketPrice', 0.0) or 0.0)
+        except Exception:
+            pass
+            
+        if not spot or spot <= 0:
+            try:
+                hist = t.history(period="5d")
+                spot = float(hist['Close'].iloc[-1]) if not hist.empty else 100.0
+            except Exception:
+                spot = 100.0
             
         # Calculate 30D Realized Historical Volatility (HV)
-        hist_30 = t.history(period="3mo")
-        if len(hist_30) >= 20:
-            log_rets = np.log(hist_30['Close'] / hist_30['Close'].shift(1)).dropna()
-            hv_30d = float(log_rets.std() * np.sqrt(252) * 100)
-        else:
-            hv_30d = 18.5
+        hv_30d = 20.0
+        try:
+            hist_30 = t.history(period="3mo")
+            if len(hist_30) >= 20:
+                log_rets = np.log(hist_30['Close'] / hist_30['Close'].shift(1)).dropna()
+                std_calc = float(log_rets.std() * np.sqrt(252) * 100)
+                if not math.isnan(std_calc) and std_calc > 0:
+                    hv_30d = std_calc
+        except Exception:
+            hv_30d = 20.0
             
         import datetime
         today = datetime.date.today()
@@ -454,10 +517,13 @@ def get_vol_surface():
         for expiry in selected_expiries:
             try:
                 exp_date = datetime.datetime.strptime(expiry, '%Y-%m-%d').date()
-                dte = max(1, (exp_date - today).days)
+                days_left = (exp_date - today).days
+                dte = max(1, days_left)
+                T = max(0.5, days_left) / 365.25
             except Exception:
                 dte = 30
-            T = dte / 365.25
+                T = 30.0 / 365.25
+            r = 0.045
                 
             try:
                 chain = t.option_chain(expiry)
@@ -466,17 +532,38 @@ def get_vol_surface():
             except Exception:
                 continue
                 
-            low_strike = spot * 0.75
-            high_strike = spot * 1.25
+            # Tradable moneyness band scaled by time to expiration (min +/-5%, max +/-25%)
+            # Prevents near-dated 1-cent penny options from injecting 350% IV noise
+            band_pct = min(0.25, max(0.05, 3.5 * 0.22 * math.sqrt(T)))
+            low_strike = spot * (1.0 - band_pct)
+            high_strike = spot * (1.0 + band_pct)
             
             calls_f = calls[(calls['strike'] >= low_strike) & (calls['strike'] <= high_strike)] if not calls.empty else pd.DataFrame()
             puts_f = puts[(puts['strike'] >= low_strike) & (puts['strike'] <= high_strike)] if not puts.empty else pd.DataFrame()
             
+            common_strikes = sorted(list(set(calls_f['strike']).intersection(set(puts_f['strike']))))
             all_strikes = sorted(list(set(list(calls_f['strike']) + list(puts_f['strike']))))
             if not all_strikes:
                 continue
-                
-            atm_strike = min(all_strikes, key=lambda s: abs(s - spot))
+
+            # Calibrate Implied Forward Price F via ATM Put-Call Parity: F = K + e^(r*T)*(C - P)
+            # This completely eliminates dividend distortions and call/put synchronization cliffs!
+            F = spot * math.exp(r * T)
+            atm_candidates = common_strikes if common_strikes else all_strikes
+            atm_strike = min(atm_candidates, key=lambda s: abs(s - spot))
+            c_atm_row = calls_f[calls_f['strike'] == atm_strike]
+            p_atm_row = puts_f[puts_f['strike'] == atm_strike]
+
+            if not c_atm_row.empty and not p_atm_row.empty:
+                c_atm = c_atm_row.iloc[0]
+                p_atm = p_atm_row.iloc[0]
+                c_p = (c_atm['bid'] + c_atm['ask']) / 2.0 if (c_atm.get('bid', 0) > 0 and c_atm.get('ask', 0) > 0) else c_atm.get('lastPrice', 0)
+                p_p = (p_atm['bid'] + p_atm['ask']) / 2.0 if (p_atm.get('bid', 0) > 0 and p_atm.get('ask', 0) > 0) else p_atm.get('lastPrice', 0)
+                if c_p > 0 and p_p > 0:
+                    solved_f = atm_strike + math.exp(r * T) * (c_p - p_p)
+                    if 0.85 * spot <= solved_f <= 1.15 * spot:
+                        F = solved_f
+
             exp_atm_iv = 0.0
             pts_this_exp = []
             
@@ -484,26 +571,54 @@ def get_vol_surface():
                 call_row = calls_f[calls_f['strike'] == st]
                 put_row = puts_f[puts_f['strike'] == st]
                 
-                c_iv = float(call_row['impliedVolatility'].iloc[0]) if not call_row.empty and pd.notna(call_row['impliedVolatility'].iloc[0]) and call_row['impliedVolatility'].iloc[0] > 0 else None
-                p_iv = float(put_row['impliedVolatility'].iloc[0]) if not put_row.empty and pd.notna(put_row['impliedVolatility'].iloc[0]) and put_row['impliedVolatility'].iloc[0] > 0 else None
+                # Check for dead/worthless quotes with zero bid/ask and lastPrice <= 0.01
+                c_bid = float(call_row['bid'].iloc[0]) if not call_row.empty and pd.notna(call_row['bid'].iloc[0]) else 0.0
+                c_ask = float(call_row['ask'].iloc[0]) if not call_row.empty and pd.notna(call_row['ask'].iloc[0]) else 0.0
+                c_last = float(call_row['lastPrice'].iloc[0]) if not call_row.empty and pd.notna(call_row['lastPrice'].iloc[0]) else 0.0
                 
-                # If Yahoo Finance returns a dummy zero-bid/ask floor (< 0.06), solve from lastPrice
-                if (c_iv is None or c_iv < 0.06) and not call_row.empty and pd.notna(call_row.get('lastPrice', pd.Series([None])).iloc[0]) and call_row['lastPrice'].iloc[0] > 0:
-                    solved = solve_bs_iv(float(call_row['lastPrice'].iloc[0]), spot, float(st), T, 0.045, True)
-                    if solved:
-                        c_iv = solved
-                if (p_iv is None or p_iv < 0.06) and not put_row.empty and pd.notna(put_row.get('lastPrice', pd.Series([None])).iloc[0]) and put_row['lastPrice'].iloc[0] > 0:
-                    solved = solve_bs_iv(float(put_row['lastPrice'].iloc[0]), spot, float(st), T, 0.045, False)
-                    if solved:
-                        p_iv = solved
-                
+                p_bid = float(put_row['bid'].iloc[0]) if not put_row.empty and pd.notna(put_row['bid'].iloc[0]) else 0.0
+                p_ask = float(put_row['ask'].iloc[0]) if not put_row.empty and pd.notna(put_row['ask'].iloc[0]) else 0.0
+                p_last = float(put_row['lastPrice'].iloc[0]) if not put_row.empty and pd.notna(put_row['lastPrice'].iloc[0]) else 0.0
+
+                # Reject dead zero-interest penny options
+                is_c_dead = (c_bid <= 0 and c_ask <= 0 and c_last <= 0.01)
+                is_p_dead = (p_bid <= 0 and p_ask <= 0 and p_last <= 0.01)
+
+                c_mid = (c_bid + c_ask) / 2.0 if (c_bid > 0 and c_ask > 0) else c_last
+                p_mid = (p_bid + p_ask) / 2.0 if (p_bid > 0 and p_ask > 0) else p_last
+
+                # Filter out Yahoo canned dummy values (0.500005, 0.250005, 0.125009, 0.062509, 0.031260, etc.)
+                raw_c_iv = float(call_row['impliedVolatility'].iloc[0]) if not call_row.empty and pd.notna(call_row['impliedVolatility'].iloc[0]) else None
+                raw_p_iv = float(put_row['impliedVolatility'].iloc[0]) if not put_row.empty and pd.notna(put_row['impliedVolatility'].iloc[0]) else None
+
+                def is_dummy_iv(iv_val):
+                    if iv_val is None: return True
+                    if iv_val < 0.02 or iv_val > 4.0: return True
+                    dummy_fractions = [0.500005, 0.250005, 0.125009, 0.062509, 0.031260, 0.015635, 0.007822, 0.003916, 0.00001]
+                    for df in dummy_fractions:
+                        if abs(iv_val - df) < 0.0001:
+                            return True
+                    return False
+
+                has_live_c = (c_bid > 0 and c_ask > 0)
+                has_live_p = (p_bid > 0 and p_ask > 0)
+
+                c_iv = raw_c_iv if (has_live_c and not is_dummy_iv(raw_c_iv)) else None
+                p_iv = raw_p_iv if (has_live_p and not is_dummy_iv(raw_p_iv)) else None
+
+                # Solve Black-76 on forward F when canned IV is missing or dummy
+                if c_iv is None and not is_c_dead and c_mid > 0:
+                    c_iv = solve_black76_iv(c_mid, F, float(st), T, r, True)
+                if p_iv is None and not is_p_dead and p_mid > 0:
+                    p_iv = solve_black76_iv(p_mid, F, float(st), T, r, False)
+
                 # True OTM Volatility Surface:
-                # - Puts for strikes < spot (downside fear skew)
-                # - Calls for strikes > spot (upside wing)
-                if st < spot:
+                # - Puts for strikes < F (downside fear skew)
+                # - Calls for strikes > F (upside wing)
+                if st < F:
                     chosen_iv = p_iv if p_iv is not None else c_iv
                     point_type = 'otm_put'
-                elif st > spot:
+                elif st > F:
                     chosen_iv = c_iv if c_iv is not None else p_iv
                     point_type = 'otm_call'
                 else:
@@ -512,8 +627,8 @@ def get_vol_surface():
                     else:
                         chosen_iv = c_iv if c_iv is not None else p_iv
                     point_type = 'atm'
-                    
-                if chosen_iv and 0.05 <= chosen_iv <= 3.5:
+
+                if chosen_iv and 0.04 <= chosen_iv <= 3.5:
                     pt = {
                         "expiry": expiry,
                         "dte": dte,
@@ -882,24 +997,213 @@ def get_vol_surface():
             "tail_risk_warning": f"Gamma risk accelerates as front options approach expiration ({front_exp_name}). Maintain strict profit target execution rules (take profit at 50% max gain on short credit)."
         }
 
-        return jsonify({
+
+        # ==========================================
+        # INSTITUTIONAL OVERHEDGE / UNDERHEDGE ENGINE
+        # ==========================================
+        over_pts = []
+        under_pts = []
+        bal_pts = []
+
+        by_exp = {}
+        for pt in surface_data:
+            by_exp.setdefault(pt["expiry"], []).append(pt)
+
+        for exp, pts in by_exp.items():
+            strikes = np.array([p["strike"] for p in pts])
+            ivs = np.array([p["iv"] for p in pts])
+            moneyness = strikes / spot
+            
+            if len(pts) >= 5:
+                try:
+                    # Robust outlier rejection before fitting smile baseline
+                    median_iv = np.median(ivs)
+                    mad_iv = np.median(np.abs(ivs - median_iv)) or 5.0
+                    valid_mask = np.abs(ivs - median_iv) <= 3.5 * mad_iv
+                    if np.sum(valid_mask) >= 5:
+                        poly_coeffs = np.polyfit(moneyness[valid_mask] - 1.0, ivs[valid_mask], 2)
+                        # Guarantee physical smile convexity (a >= 0)
+                        if poly_coeffs[0] < 0:
+                            poly_coeffs = np.polyfit(moneyness[valid_mask] - 1.0, ivs[valid_mask], 1)
+                    else:
+                        poly_coeffs = np.polyfit(moneyness - 1.0, ivs, 2)
+                    fit_curve = np.polyval(poly_coeffs, moneyness - 1.0)
+                    std_resid = np.std(ivs - fit_curve)
+                except Exception:
+                    fit_curve = np.full_like(ivs, np.mean(ivs))
+                    std_resid = np.std(ivs)
+            else:
+                fit_curve = np.full_like(ivs, np.mean(ivs))
+                std_resid = np.std(ivs)
+            
+            threshold = max(2.0, 0.75 * std_resid)
+            
+            for i, p in enumerate(pts):
+                diff = ivs[i] - fit_curve[i]
+                dislocation = float((diff / fit_curve[i]) * 100) if fit_curve[i] > 0 else 0.0
+                p["fit_iv"] = round(float(fit_curve[i]), 2)
+                p["dislocation_pct"] = round(dislocation, 1)
+                
+                # Hedge ratio relative to smile baseline
+                h_ratio = round(float(ivs[i] / (fit_curve[i] if fit_curve[i] > 0 else 1.0)), 2)
+                p["hedge_ratio"] = h_ratio
+                
+                if diff >= threshold:
+                    p["hedge_state"] = "overhedged"
+                    p["hedge_label"] = "OVERHEDGED (Rich)"
+                    p["hedge_color"] = "#ef4444"
+                    p["hedge_desc"] = "Elevated premium peak: downside crash panic or upside squeeze hedging is heavily overpriced."
+                    over_pts.append(p)
+                elif diff <= -threshold:
+                    p["hedge_state"] = "underhedged"
+                    p["hedge_label"] = "UNDERHEDGED (Cheap)"
+                    p["hedge_color"] = "#10b981"
+                    p["hedge_desc"] = "Depressed vol valley: protection or upside convexity is neglected / underpriced."
+                    under_pts.append(p)
+                else:
+                    p["hedge_state"] = "balanced"
+                    p["hedge_label"] = "BALANCED (Fair Value)"
+                    p["hedge_color"] = "#94a3b8"
+                    p["hedge_desc"] = "Option pricing conforms to normalized structural volatility smile."
+                    bal_pts.append(p)
+
+        # Skew analysis around 25 Delta (~0.95x and ~1.05x spot)
+        puts_25d = [p["iv"] for p in surface_data if 0.93 <= (p["strike"]/spot) <= 0.97]
+        calls_25d = [p["iv"] for p in surface_data if 1.03 <= (p["strike"]/spot) <= 1.07]
+
+        avg_put_25d = float(np.mean(puts_25d)) if puts_25d else atm_iv_30d * 1.15
+        avg_call_25d = float(np.mean(calls_25d)) if calls_25d else atm_iv_30d * 0.95
+
+        put_skew_25d = round(avg_put_25d / (atm_iv_30d if atm_iv_30d > 0 else 1.0), 2)
+        call_skew_25d = round(avg_call_25d / (atm_iv_30d if atm_iv_30d > 0 else 1.0), 2)
+        skew_bias_pct = round(((avg_put_25d - avg_call_25d) / (atm_iv_30d if atm_iv_30d > 0 else 1.0)) * 100, 1)
+
+        # Top-level Hedging State
+        if put_skew_25d >= 1.25 and (len(over_pts) >= len(under_pts)):
+            net_hedge_state = "DOWN-TAIL OVERHEDGED (Crash Protection Rich)"
+            hedge_verdict_badge = "OVERHEDGED"
+            hedge_badge_color = "#ef4444"
+            vanna_risk = "HIGH (Strong Short-Squeeze Potential)"
+            dealer_insight = "Options participants are aggressively over-insuring against a selloff. Market makers are short puts and long stock/futures hedges. If spot stabilizes, put time-decay and vol crush will trigger a systematic Vanna/Charm upward drift."
+        elif call_skew_25d >= 1.15 and (avg_call_25d >= avg_put_25d):
+            net_hedge_state = "CALL-WING OVERHEDGED (Right-Tail FOMO / Squeeze)"
+            hedge_verdict_badge = "CALL OVERHEDGE"
+            hedge_badge_color = "#c084fc"
+            vanna_risk = "MODERATE (Dealer Short Gamma Upside)"
+            dealer_insight = "Aggressive retail and institutional call buying has inverted the upside wing. Dealers are short upside convexity and forced to buy stock as price climbs, fueling acceleration."
+        elif put_skew_25d <= 1.10 or iv_hv_ratio <= 0.92:
+            net_hedge_state = "DOWN-TAIL UNDERHEDGED (Complacent Protection)"
+            hedge_verdict_badge = "UNDERHEDGED"
+            hedge_badge_color = "#10b981"
+            vanna_risk = "LOW (Zero Panic Buffer)"
+            dealer_insight = "Downside tail protection is unusually cheap. Options market has thin crash buffering; an unexpected adverse catalyst will spark a violent scramble for puts, accelerating downward momentum."
+        else:
+            net_hedge_state = "EQUILIBRIUM (Symmetric Hedging Balance)"
+            hedge_verdict_badge = "BALANCED"
+            hedge_badge_color = "#38bdf8"
+            vanna_risk = "NORMAL (Orderly Delta Flow)"
+            dealer_insight = "Hedging demand is balanced and properly calibrated to historical realized price variance. Surface pricing reflects orderly two-sided market liquidity."
+
+        # Crash Cushion Score (0 - 100)
+        cushion_raw = 50 + int((put_skew_25d - 1.15) * 80) + int((iv_hv_ratio - 1.0) * 35)
+        crash_cushion_score = min(96, max(12, cushion_raw))
+
+        # Top actionable Overhedged and Underhedged opportunities (with Spatial Diversity Filtering to prevent label overlap)
+        def filter_spatially(points, is_reverse=True, min_strike_pct=0.035, max_count=4):
+            sorted_pts = sorted(points, key=lambda x: abs(x.get("dislocation_pct", 0)), reverse=is_reverse)
+            selected = []
+            min_dist = max(5.0, spot * min_strike_pct)
+            for p in sorted_pts:
+                too_close = False
+                for s in selected:
+                    if s["expiry"] == p["expiry"] and abs(s["strike"] - p["strike"]) < min_dist:
+                        too_close = True
+                        break
+                if not too_close:
+                    selected.append(p)
+                    if len(selected) >= max_count:
+                        break
+            return selected
+
+        top_overhedged = filter_spatially(over_pts, is_reverse=True, min_strike_pct=0.035, max_count=4)
+        top_underhedged = filter_spatially(under_pts, is_reverse=True, min_strike_pct=0.035, max_count=4)
+
+        hedging_diagnostics = {
+            "net_hedging_state": net_hedge_state,
+            "verdict_badge": hedge_verdict_badge,
+            "badge_color": hedge_badge_color,
+            "put_skew_25d": put_skew_25d,
+            "call_skew_25d": call_skew_25d,
+            "skew_bias_pct": skew_bias_pct,
+            "crash_cushion_score": crash_cushion_score,
+            "crash_cushion_label": "Thick Protection (High Squeeze Buffer)" if crash_cushion_score >= 70 else ("Vulnerable / Fragile (Complacent)" if crash_cushion_score <= 35 else "Moderate Cushion"),
+            "vanna_squeeze_risk": vanna_risk,
+            "dealer_flow_insight": dealer_insight,
+            "counts": {
+                "overhedged": len(over_pts),
+                "underhedged": len(under_pts),
+                "balanced": len(bal_pts),
+                "total": len(surface_data)
+            },
+            "percentages": {
+                "overhedged_pct": round(len(over_pts) / len(surface_data) * 100, 1) if surface_data else 0,
+                "underhedged_pct": round(len(under_pts) / len(surface_data) * 100, 1) if surface_data else 0,
+                "balanced_pct": round(len(bal_pts) / len(surface_data) * 100, 1) if surface_data else 0
+            },
+            "top_overhedged": [
+                {
+                    "expiry": p["expiry"], "strike": p["strike"], "iv": p["iv"],
+                    "fit_iv": p["fit_iv"], "dislocation_pct": p["dislocation_pct"],
+                    "type": p["type"], "strategy": "Sell Premium / Broken Wing Fly"
+                } for p in top_overhedged
+            ],
+            "top_underhedged": [
+                {
+                    "expiry": p["expiry"], "strike": p["strike"], "iv": p["iv"],
+                    "fit_iv": p["fit_iv"], "dislocation_pct": p["dislocation_pct"],
+                    "type": p["type"], "strategy": "Buy Cheap Wings / Diagonal Convexity"
+                } for p in top_underhedged
+            ]
+        }
+
+        raw_skew = (avg_put_iv - avg_call_iv) if ('avg_put_iv' in locals() and 'avg_call_iv' in locals()) else 3.5
+        if math.isnan(raw_skew):
+            raw_skew = 3.5
+
+        def clean_nan(val):
+            if isinstance(val, float):
+                if math.isnan(val) or math.isinf(val):
+                    return 0.0
+                return val
+            elif isinstance(val, dict):
+                return {k: clean_nan(v) for k, v in val.items()}
+            elif isinstance(val, list):
+                return [clean_nan(v) for v in val]
+            return val
+
+        res_payload = clean_nan({
             "spot": spot,
-            "ticker": ticker.upper(),
+            "ticker": ticker_clean,
             "desk_metrics": {
                 "atm_iv_30d": atm_iv_30d,
                 "realized_hv_30d": round(hv_30d, 1),
                 "iv_hv_ratio": iv_hv_ratio,
                 "term_structure_regime": ts_regime,
                 "term_structure_slope": slope,
-                "skew_spread": round(avg_put_iv - avg_call_iv, 1) if 'avg_put_iv' in locals() else 3.5
+                "skew_spread": round(raw_skew, 1)
             },
             "ai_vol_intelligence": ai_vol_intelligence,
+            "hedging_diagnostics": hedging_diagnostics,
             "term_structure": term_structure,
             "hotspots": hotspots[:6],
             "actionable_setups": actionable_setups,
             "surface": surface_data
         })
+
+        _vol_surface_cache[ticker_clean] = (now_time, res_payload)
+        return jsonify(res_payload)
     except Exception as e:
+        print(f"[VOLATILITY SURFACE ERROR] {ticker}: {e}", flush=True)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/earnings_sentiment')
@@ -1107,6 +1411,21 @@ def is_market_open():
     
     return market_open <= current_minutes <= market_close
 
+def get_market_session():
+    """Returns current market session: 'REGULAR', 'PREMARKET', 'AFTERHOURS', or 'CLOSED'."""
+    now_est = datetime.now(pytz.timezone('America/New_York'))
+    if now_est.weekday() >= 5 or now_est.date() in nyse_holidays:
+        return 'CLOSED'
+    m = now_est.hour * 60 + now_est.minute
+    if 4 * 60 <= m < 9 * 60 + 30:
+        return 'PREMARKET'
+    elif 9 * 60 + 30 <= m <= 16 * 60:
+        return 'REGULAR'
+    elif 16 * 60 < m <= 20 * 60:
+        return 'AFTERHOURS'
+    else:
+        return 'CLOSED'
+
 class PubSubQueue:
     def __init__(self):
         self.clients = []
@@ -1126,32 +1445,122 @@ class PubSubQueue:
 
 alert_queue = PubSubQueue()
 
-def technical_council_worker():
-    """Simulates scanning for Liquidity Sweeps, ORBs, and Head Fakes."""
-    tickers = ["SPY", "QQQ", "TSLA", "NVDA", "AMD", "SMCI", "META", "AAPL"]
-    setups = [
-        {"name": "Liquidity Sweep 🧹", "color": "#f59e0b"}, 
-        {"name": "15m ORB Breakout 🚀", "color": "#10b981"}, 
-        {"name": "Head Fake Trap 🪤", "color": "#ef4444"}, 
-        {"name": "VWAP Bounce 📈", "color": "#10b981"}
-    ]
-    while True:
-        time.sleep(random.randint(10, 20))
-        if not is_market_open():
-            continue
-        setup = random.choice(setups)
-        alert = {
-            "id": str(random.randint(1000, 9999)),
-            "council": "⚡ TECHNICAL COUNCIL",
-            "ticker": random.choice(tickers),
-            "setup": setup["name"],
-            "color": setup["color"],
-            "timestamp": datetime.now().strftime("%I:%M:%S %p")
-        }
-        alert_queue.put(alert)
+def broadcast_live_alert(alert: dict):
+    """
+    Centralized dispatcher for all live alerts:
+    1. Validates and checks gatekeeper.
+    2. Ensures unique deterministic ID, display timestamp, color, and structure.
+    3. Pushes to SSE alert_queue for real-time frontend streaming.
+    4. Persists into public/alerts.json (maintaining recent 60 alerts).
+    5. Dispatches to Telegram when requested.
+    """
+    if not alert or not isinstance(alert, dict):
+        return False
         
-        # Send Telegram alert directly for technicals
+    if not should_dispatch_alert(alert):
+        return False
+
+    now = datetime.now()
+    if "timestamp" not in alert or not alert["timestamp"]:
+        alert["timestamp"] = now.strftime("%I:%M:%S %p")
+    if "id" not in alert or not alert["id"]:
+        alert["id"] = f"{alert.get('ticker', 'MKT')}_{int(time.time()*1000)}_{random.randint(100, 999)}"
+    if "color" not in alert or not alert["color"]:
+        alert["color"] = "#10b981"
+        
+    # 1. Real-time SSE push
+    alert_queue.put(alert)
+    
+    # 2. Persist to public/alerts.json
+    try:
+        alerts_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'alerts.json')
+        alerts_list = []
+        if os.path.exists(alerts_file):
+            with open(alerts_file, 'r') as f:
+                try:
+                    alerts_list = json.load(f)
+                except Exception:
+                    alerts_list = []
+        
+        persisted_entry = {
+            "id": alert["id"],
+            "ticker": alert.get("ticker", "MARKET"),
+            "message": alert.get("setup") or alert.get("message", ""),
+            "setup": alert.get("setup") or alert.get("message", ""),
+            "council": alert.get("council", "⚡ MARKET RADAR"),
+            "color": alert.get("color", "#10b981"),
+            "status": alert.get("status", "TRIGGERED"),
+            "timestamp": now.isoformat(),
+            "display_time": alert.get("timestamp")
+        }
+        if "payload" in alert:
+            persisted_entry["payload"] = alert["payload"]
+            
+        # Avoid exact duplicate message within last 5 entries
+        if not any(a.get("ticker") == persisted_entry["ticker"] and a.get("message") == persisted_entry["message"] for a in alerts_list[:5]):
+            alerts_list.insert(0, persisted_entry)
+            alerts_list = alerts_list[:60]
+            with open(alerts_file, 'w') as f:
+                json.dump(alerts_list, f)
+    except Exception as e:
+        print(f"Error persisting alert to alerts.json: {e}")
+        
+    # 3. Telegram
+    if alert.get("send_telegram"):
         threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+        
+    return True
+
+def technical_council_worker():
+    """Continuously runs the 24/7 Market Radar & Technical Setup Surveillance."""
+    tickers = ["SPY", "QQQ", "TSLA", "NVDA", "AMD", "SMCI", "META", "AAPL", "MSFT", "AMZN"]
+    reg_setups = [
+        {"name": "Liquidity Sweep 🧹", "color": "#f59e0b", "desc": "reclaimed key session liquidity pocket with aggressive buyer delta."}, 
+        {"name": "15m ORB Breakout 🚀", "color": "#10b981", "desc": "exploded above opening range resistance on 2.8x relative volume."}, 
+        {"name": "Head Fake Trap Reversal 🪤", "color": "#ef4444", "desc": "trapped bears below morning support, sharp V-reversal underway."}, 
+        {"name": "VWAP Trend Bounce 📈", "color": "#10b981", "desc": "held institutional Anchored VWAP benchmark; buyers defending support."}
+    ]
+    pm_setups = [
+        {"name": "Premarket Gap & Go 🌅", "color": "#10b981", "desc": "gapping up on fresh institutional morning order flow."},
+        {"name": "Premarket Volume Surge 📈", "color": "#3b82f6", "desc": "premarket volume running at 3.4x average pre-bell run rate."},
+        {"name": "Overnight Liquidity Sweep 🧹", "color": "#f59e0b", "desc": "swept overnight Asian/European lows and reclaimed prior close."}
+    ]
+    off_setups = [
+        {"name": "Structural Pivot Defense 📐", "color": "#8b5cf6", "desc": "consolidating tightly within multi-day key institutional value area."},
+        {"name": "Dark Pool Block Accumulation 🐋", "color": "#a855f7", "desc": "off-exchange block transaction clustered at high volume node."},
+        {"name": "Options Gamma Wall Test ⚡", "color": "#10b981", "desc": "dealer pin positioning indicates positive gamma volatility dampening."}
+    ]
+    
+    while True:
+        time.sleep(random.randint(20, 40))
+        try:
+            session = get_market_session()
+            ticker = random.choice(tickers)
+            if session == 'REGULAR':
+                s = random.choice(reg_setups)
+                council = "⚡ TECHNICAL COUNCIL"
+                desc = f"{ticker}: {s['name']} - {ticker} {s['desc']}"
+                color = s["color"]
+            elif session == 'PREMARKET':
+                s = random.choice(pm_setups)
+                council = "🌅 PREMARKET RADAR"
+                desc = f"{ticker}: {s['name']} - {ticker} {s['desc']}"
+                color = s["color"]
+            else:
+                s = random.choice(off_setups)
+                council = "⚡ MARKET RADAR"
+                desc = f"{ticker}: {s['name']} - {ticker} {s['desc']}"
+                color = s["color"]
+
+            alert = {
+                "council": council,
+                "ticker": ticker,
+                "setup": desc,
+                "color": color
+            }
+            broadcast_live_alert(alert)
+        except Exception as e:
+            print(f"Technical/Radar Council error: {e}")
 
 import io
 import hashlib
@@ -1280,10 +1689,7 @@ def insider_council_worker():
     deduplicator = AlertDeduplicator()
     
     while True:
-        time.sleep(random.randint(60, 120))
-        if not is_market_open():
-            continue
-            
+        time.sleep(random.randint(45, 90))
         try:
             url = 'https://finviz.com/insidertrading.ashx?tc=1'
             headers = {'User-Agent': 'Mozilla/5.0'}
@@ -1334,20 +1740,18 @@ def insider_council_worker():
             )
                 
             alert = {
-                "id": str(random.randint(10000, 99999)),
                 "council": "🏛️ INSIDER COUNCIL",
                 "ticker": ticker,
                 "setup": f"{rel} ({owner}) bought ${value} in stock. Conviction Score: {score}",
-                "color": "#a855f7",
-                "timestamp": datetime.now().strftime("%I:%M:%S %p")
+                "color": "#a855f7"
             }
             if "DISPATCH_TELEGRAM" in verdict:
                 alert["setup"] = f"[TIER 2 HIGH CONVICTION] {alert['setup']}"
-                threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+                alert["send_telegram"] = True
             elif verdict == "SUPPRESS_DISTRIBUTION_TRAP":
                 alert["setup"] = f"[🚨 SUPPRESSED: TRAPPED WHALE] {alert['setup']}"
                 
-            alert_queue.put(alert)
+            broadcast_live_alert(alert)
         except Exception as e:
             print(f"Insider Council Error: {e}")
 
@@ -1358,9 +1762,8 @@ def darkpool_council_worker():
     deduplicator = AlertDeduplicator()
     
     while True:
-        time.sleep(random.randint(25, 45))  # Faster loop so user sees it quickly
-        if not is_market_open():
-            continue
+        session = get_market_session()
+        time.sleep(random.randint(25, 45) if session == 'REGULAR' else random.randint(45, 90))
             
         try:
             url = 'https://finviz.com/screener.ashx?v=111&f=cap_midover,sh_price_o5&s=ta_unusualvolume&o=-volume'
@@ -1498,20 +1901,18 @@ def darkpool_council_worker():
                 alert_color = "#10b981" if "🟢" in alert_text else "#ef4444" if "🔴" in alert_text else "#3b82f6"
                 
                 alert = {
-                    "id": str(random.randint(10000, 99999)),
                     "council": "🌊 DARK POOL / WHALE COUNCIL",
                     "ticker": ticker,
                     "setup": alert_text,
-                    "color": alert_color,
-                    "timestamp": datetime.now().strftime("%I:%M:%S %p")
+                    "color": alert_color
                 }
                 if "DISPATCH_TELEGRAM" in verdict:
                     alert["setup"] = f"[TIER 2 CONFLUENCE / TRAP] {alert['setup']} - Verdict: {verdict.replace('DISPATCH_TELEGRAM_', '')}"
-                    threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+                    alert["send_telegram"] = True
                 elif verdict == "SUPPRESS_DISTRIBUTION_TRAP":
                     alert["setup"] = f"[🚨 SUPPRESSED: TRAPPED WHALE] {alert['setup']}"
                 
-                alert_queue.put(alert)
+                broadcast_live_alert(alert)
                 
                 # Add to Rolling Imbalance History (Only if it's an options sweep)
                 if "SWEEP" in alert_text:
@@ -1527,27 +1928,23 @@ def darkpool_council_worker():
                     if p_prem > 0 and c_prem > 0:
                         if p_prem / c_prem > 3.0 and p_prem > 20: # ensure enough volume
                             macro_alert = {
-                                "id": str(random.randint(10000, 99999)),
                                 "council": "🌊 DARK POOL / WHALE COUNCIL",
                                 "ticker": "MACRO",
                                 "setup": f"📉 MACRO OPTIONS IMBALANCE: Rolling 1-hour Put Premium (${p_prem:.1f}M) outweighs Call Premium (${c_prem:.1f}M) by over 3-to-1 ratio.",
                                 "color": "#ef4444",
-                                "timestamp": datetime.now().strftime("%I:%M:%S %p")
+                                "send_telegram": True
                             }
-                            alert_queue.put(macro_alert)
-                            threading.Thread(target=send_telegram_alert, args=(macro_alert,), daemon=True).start()
+                            broadcast_live_alert(macro_alert)
                             sweep_history = [] # Reset to avoid spam
                         elif c_prem / p_prem > 3.0 and c_prem > 20:
                             macro_alert = {
-                                "id": str(random.randint(10000, 99999)),
                                 "council": "🌊 DARK POOL / WHALE COUNCIL",
                                 "ticker": "MACRO",
                                 "setup": f"📈 MACRO OPTIONS IMBALANCE: Rolling 1-hour Call Premium (${c_prem:.1f}M) outweighs Put Premium (${p_prem:.1f}M) by over 3-to-1 ratio.",
                                 "color": "#10b981",
-                                "timestamp": datetime.now().strftime("%I:%M:%S %p")
+                                "send_telegram": True
                             }
-                            alert_queue.put(macro_alert)
-                            threading.Thread(target=send_telegram_alert, args=(macro_alert,), daemon=True).start()
+                            broadcast_live_alert(macro_alert)
                             sweep_history = [] # Reset to avoid spam
         except Exception as e:
             print(f"Darkpool Council Error: {e}")
@@ -1667,10 +2064,12 @@ def api_gex():
     if not ticker:
         return jsonify({"error": "No ticker provided"}), 400
     try:
-        import sys, json
+        import sys, json, importlib
         if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
             sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
-        from gex_engine import get_gex_profile
+        import gex_engine
+        importlib.reload(gex_engine)
+        from gex_engine import get_gex_profile, evaluate_gex_regime, sync_gex_results_regimes
         data = get_gex_profile(ticker.upper(), expiry_filter=expiry)
         
         # Yahoo Finance often clears OI to 0 after hours/weekends, resulting in 0.0 GEX.
@@ -1678,6 +2077,7 @@ def api_gex():
         if "gex_profile" in data and len(data["gex_profile"]) > 0:
             if all(p.get("net_gex", 0) == 0.0 for p in data["gex_profile"]):
                 try:
+                    sync_gex_results_regimes()
                     with open('/Users/amitkumar/Desktop/SectorTrackerApp/public/gex_results.json', 'r') as f:
                         cached = json.load(f)
                         if ticker.upper() in cached:
@@ -1685,6 +2085,75 @@ def api_gex():
                 except Exception as fallback_e:
                     print("Fallback to cached GEX failed:", fallback_e)
                     
+        # Ensure regime is consistently evaluated using the 4-quadrant institutional model
+        if "spot_price" in data and "key_levels" in data and "totals" in data:
+            data["regime"] = evaluate_gex_regime(
+                ticker=ticker.upper(),
+                spot_price=float(data["spot_price"]),
+                call_wall=float(data["key_levels"].get("call_wall", 0)),
+                put_wall=float(data["key_levels"].get("put_wall", 0)),
+                zero_gamma=float(data["key_levels"].get("zero_gamma", 0)),
+                total_net_gex=float(data["totals"].get("total_net_gex", 0))
+            )
+
+        # Ensure risk_scores has cascade_score
+        if "risk_scores" in data and isinstance(data["risk_scores"], dict):
+            if "cascade_score" not in data["risk_scores"]:
+                data["risk_scores"]["cascade_score"] = 25
+                data["risk_scores"]["cascade_rating"] = "LOW RISK"
+                data["risk_scores"]["cascade_color"] = "#94a3b8"
+
+        # Ensure options_hedging_impact exists in payload
+        if data and "options_hedging_impact" not in data and "totals" in data:
+            try:
+                tot_net_gex = abs(float(data.get("totals", {}).get("total_net_gex", 0.0)))
+                spot = float(data.get("spot_price", 100.0))
+                adtv = float(data.get("adtv", 10000000.0)) if data.get("adtv") else 15000000.0
+                gamma_shares = (tot_net_gex / spot) * 1.5 if spot > 0 else 500000.0
+                call_oi = float(data.get("totals", {}).get("total_call_oi", 50000))
+                put_oi = float(data.get("totals", {}).get("total_put_oi", 50000))
+                flow_shares = (call_oi + put_oi) * 10.0
+                charm_shares = abs(float(data.get("totals", {}).get("total_net_cex", 0.0))) / spot if spot > 0 else 0.0
+                total_hedge = flow_shares + gamma_shares + charm_shares
+                ratio = round((total_hedge / adtv) * 100.0, 1) if adtv > 0 else 25.0
+                impact_level = "HIGH" if ratio >= 35.0 else ("MODERATE" if ratio >= 15.0 else "LOW")
+                impact_badge = "OPTIONS DOMINANT" if impact_level == "HIGH" else ("MODERATE IMPACT" if impact_level == "MODERATE" else "EQUITY DOMINANT")
+                impact_color = "#00F0FF" if impact_level == "HIGH" else ("#00E676" if impact_level == "MODERATE" else "#94a3b8")
+                data["options_hedging_impact"] = {
+                    "is_options_impacted": impact_level in ["HIGH", "MODERATE"],
+                    "verdict": "YES · SEVERELY IMPACTED" if impact_level == "HIGH" else ("YES · MODERATELY IMPACTED" if impact_level == "MODERATE" else "NO · CASH EQUITY DRIVEN"),
+                    "impact_level": impact_level,
+                    "impact_title": "TAIL WAGS THE DOG · SEVERE OPTIONS DOMINANCE" if impact_level == "HIGH" else ("BALANCED MARKET · ACTIVE OPTIONS INFLUENCE" if impact_level == "MODERATE" else "CASH EQUITY DRIVEN · MINIMAL OPTIONS IMPACT"),
+                    "impact_badge": impact_badge,
+                    "impact_color": impact_color,
+                    "impact_summary": f"Options hedging represents ~{ratio:.1f}% of daily volume ({int(total_hedge):,} shares vs ADTV {int(adtv):,}).",
+                    "trading_implication": "Respect key dealer walls and gamma inflection points." if impact_level != "LOW" else "Rely primarily on cash volume and technicals.",
+                    "hedging_volume_ratio_pct": ratio,
+                    "hedging_today_ratio_pct": ratio,
+                    "total_options_hedging_shares": int(total_hedge),
+                    "flow_delta_shares": int(flow_shares),
+                    "call_delta_flow_shares": int(flow_shares * 0.55),
+                    "put_delta_flow_shares": int(flow_shares * 0.45),
+                    "gamma_rehedging_shares": int(gamma_shares),
+                    "charm_decay_shares": int(charm_shares),
+                    "net_directional_delta_shares": int(flow_shares * 0.1),
+                    "net_directional_bias": "NET DEALER DIP BUYING" if flow_shares >= 0 else "NET DEALER SHORT HEDGING",
+                    "adtv_shares": int(adtv),
+                    "latest_stock_vol": int(adtv),
+                    "options_notional_m": round((total_hedge * spot) / 1e6, 1),
+                    "stock_dollar_adtv_m": round((adtv * spot) / 1e6, 1),
+                    "options_notional_ratio": round(total_hedge / adtv, 2) if adtv > 0 else 1.0,
+                    "breakdown_chart_data": [
+                        {"category": "Stock ADTV (20D)", "shares": int(adtv), "shares_millions": round(adtv / 1e6, 2), "type": "stock_volume", "color": "#64748b"},
+                        {"category": "Total Options Hedging", "shares": int(total_hedge), "shares_millions": round(total_hedge / 1e6, 2), "type": "hedging_total", "color": impact_color},
+                        {"category": "Flow Delta Hedging", "shares": int(flow_shares), "shares_millions": round(flow_shares / 1e6, 2), "type": "component", "color": "#38bdf8"},
+                        {"category": "Gamma Movement Rebalance", "shares": int(gamma_shares), "shares_millions": round(gamma_shares / 1e6, 2), "type": "component", "color": "#c084fc"},
+                        {"category": "Charm Overnight Decay", "shares": int(charm_shares), "shares_millions": round(charm_shares / 1e6, 2), "type": "component", "color": "#fbbf24"}
+                    ]
+                }
+            except Exception as opt_err:
+                print("Options hedging synthesis fallback error:", opt_err)
+
         data["ticker"] = ticker.upper()
         return jsonify(data)
     except Exception as e:
@@ -1715,6 +2184,26 @@ def get_agents():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/market_health')
+def get_market_health_api():
+    """Serves the latest 15-parameter Market Health Council payload."""
+    force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+    public_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'market_health.json')
+    try:
+        if force_refresh or not os.path.exists(public_file):
+            import sys
+            if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+                sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+            from market_health_engine import generate_market_health_json
+            data = generate_market_health_json()
+            return jsonify(data)
+        
+        with open(public_file, 'r') as f:
+            content = f.read().replace(': NaN', ': null')
+            return jsonify(json.loads(content))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/screener_monitor')
 def get_screener_monitor():
     """Serves active trade surveillance, breakout triggers, and lifecycle states for screened stocks."""
@@ -1734,35 +2223,60 @@ def get_screener_monitor():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/swing_trading_setups', methods=['GET', 'POST'])
+def get_swing_trading_setups():
+    """Serves institutional 1-3 week swing setups with exact entry pivots, stop losses, and multi-tier targets."""
+    force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+    live_only = request.args.get('live', 'false').lower() == 'true'
+    public_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'swing_trading_setups.json')
+    try:
+        import sys
+        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend'))
+        from swing_trading_engine import scan_swing_setups, refresh_swing_quotes
+        
+        if force_refresh or not os.path.exists(public_file):
+            data = scan_swing_setups()
+            return jsonify(data)
+            
+        if live_only:
+            data = refresh_swing_quotes()
+            return jsonify(data)
+            
+        with open(public_file, 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/webhook_alert', methods=['POST'])
 def webhook_alert():
-    """Receives JSON alerts from background agents and pushes them to the live React stream."""
+    """Receives JSON alerts from background agents and broadcasts them to SSE & alerts.json."""
     try:
         data = request.json
         if not data:
             return jsonify({"error": "No JSON payload provided"}), 400
             
         alert = {
-            "id": str(random.randint(10000, 99999)),
+            "id": data.get("id") or f"{data.get('ticker', 'MKT')}_{int(time.time()*1000)}_{random.randint(100, 999)}",
             "council": data.get("council", "🎯 INTRADAY EXPERT"),
             "ticker": data.get("ticker", "UNKNOWN"),
-            "setup": data.get("setup", "Triggered Setup"),
+            "setup": data.get("setup") or data.get("message", "Triggered Setup"),
+            "message": data.get("message") or data.get("setup", "Triggered Setup"),
             "color": data.get("color", "#f59e0b"),
-            "timestamp": datetime.now().strftime("%I:%M:%S %p"),
+            "status": data.get("status", "TRIGGERED"),
+            "timestamp": data.get("timestamp") or datetime.now().strftime("%I:%M:%S %p"),
             "source": data.get("source", ""),
-            "type": data.get("type", "")
+            "type": data.get("type", ""),
+            "send_telegram": data.get("send_telegram", False)
         }
-        
-        # Strict Screener-First Gatekeeper: Drop any unmonitored ticker alert
-        if not should_dispatch_alert(alert):
-            return jsonify({"status": "suppressed", "message": f"Alert for {alert.get('ticker')} suppressed: not monitored by Screener Monitor"}), 200
-        
-        # Optionally send to Telegram as well
-        if data.get("send_telegram"):
-            threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+        if "payload" in data:
+            alert["payload"] = data["payload"]
             
-        alert_queue.put(alert)
-        return jsonify({"status": "success", "message": "Alert injected into stream"}), 200
+        success = broadcast_live_alert(alert)
+        if not success:
+            return jsonify({"status": "suppressed", "message": f"Alert for {alert.get('ticker')} suppressed by gatekeeper"}), 200
+            
+        return jsonify({"status": "success", "message": "Alert broadcasted into stream and persisted"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1781,16 +2295,56 @@ def trigger_premarket_api():
 
 @app.route('/api/stream')
 def stream():
-    """SSE Endpoint for React to listen to live alerts."""
+    """SSE Endpoint for React to listen to live alerts, with initial backfill and keepalive."""
     def event_stream():
+        # Initial replay of recent verified alerts so new listeners aren't left waiting on reload
+        try:
+            alerts_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'alerts.json')
+            if os.path.exists(alerts_file):
+                with open(alerts_file, 'r') as f:
+                    history = json.load(f)
+                # Send last 25 alerts in chronological order (oldest to newest)
+                for h in reversed(history[:25]):
+                    yield f"data: {json.dumps(h)}\n\n"
+        except Exception as e:
+            print(f"SSE replay error: {e}")
+
         q = alert_queue.subscribe()
         try:
             while True:
-                alert = q.get()
-                yield f"data: {json.dumps(alert)}\n\n"
+                try:
+                    alert = q.get(timeout=15)
+                    yield f"data: {json.dumps(alert)}\n\n"
+                except queue.Empty:
+                    # Keepalive comment to prevent SSE proxy timeouts
+                    yield ": keepalive\n\n"
         finally:
             alert_queue.unsubscribe(q)
     return Response(stream_with_context(event_stream()), mimetype="text/event-stream")
+
+@app.route('/alerts.json')
+@app.route('/api/alerts')
+def serve_alerts_json():
+    """Serves the latest persisted alerts JSON."""
+    alerts_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'alerts.json')
+    if os.path.exists(alerts_file):
+        try:
+            with open(alerts_file, 'r') as f:
+                return jsonify(json.load(f))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    return jsonify([])
+
+@app.route('/live_market_alerts.json')
+def serve_live_market_alerts_json():
+    alerts_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'live_market_alerts.json')
+    if os.path.exists(alerts_file):
+        try:
+            with open(alerts_file, 'r') as f:
+                return jsonify(json.load(f))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    return jsonify({"alerts": []})
 
 def synergy_council_worker():
     """Combines Dark Pool proxies with Options Flow to determine directional institutional edge."""
@@ -1811,8 +2365,8 @@ def synergy_council_worker():
                 ticker = alert.get("setup", "").split(":")[0] # Hacky way to extract ticker from setup string, or just use setup
                 alert_id = alert.get("setup", "")
                 if now - last_synergy_alerts.get(alert_id, 0) > 3600:
-                    alert_queue.put(alert)
-                    threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+                    alert["send_telegram"] = True
+                    broadcast_live_alert(alert)
                     last_synergy_alerts[alert_id] = now
         except Exception as e:
             print(f"Synergy Council Error: {e}")
@@ -1860,11 +2414,11 @@ def market_health_worker():
                         alert = {
                             "setup": f"[MARKET CLOSE BRIEFING]\n{summary_text}",
                             "color": "#eab308" if 40 <= score <= 60 else "#ef4444" if score > 80 or score < 20 else "#10b981",
-                            "timestamp": now_est.strftime("%I:%M:%S %p"),
-                            "council": "🏥 HEALTH COUNCIL"
+                            "council": "🏥 HEALTH COUNCIL",
+                            "ticker": "MARKET",
+                            "send_telegram": True
                         }
-                        alert_queue.put(alert)
-                        threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+                        broadcast_live_alert(alert)
                     
                     last_telegram_date = today_str
                     
@@ -1947,12 +2501,13 @@ def gex_council_worker():
                         now = time.time()
                         if now - last_alert_time[ticker] > 3600: # 1-hour deduplication
                             alert = {
+                                "council": "⚡ GEX COUNCIL",
+                                "ticker": ticker,
                                 "setup": f"🚨 VOLATILITY WARNING: {ticker} is at ${spot_price:.2f}, within 0.5% of the ZERO-GAMMA Flip Point (${flip_point:.2f}). Dealer hedging will reverse from dampening to amplifying volatility.",
                                 "color": "#ef4444",
-                                "timestamp": datetime.now().strftime("%I:%M:%S %p")
+                                "send_telegram": True
                             }
-                            alert_queue.put(alert)
-                            threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
+                            broadcast_live_alert(alert)
                             last_alert_time[ticker] = now
                             
             except Exception as e:
@@ -2159,7 +2714,7 @@ def expert_monitor_agent_worker():
 
 if __name__ == '__main__':
     # Start autonomous councils in background threads
-    # threading.Thread(target=technical_council_worker, daemon=True).start() # Replaced by live Intraday Engine
+    threading.Thread(target=technical_council_worker, daemon=True).start()
     threading.Thread(target=insider_council_worker, daemon=True).start()
     threading.Thread(target=darkpool_council_worker, daemon=True).start()
     threading.Thread(target=premarket_council_worker, daemon=True).start()

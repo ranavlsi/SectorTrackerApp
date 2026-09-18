@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import os
 import sys
+from datetime import datetime
 
 # Ensure backend directory is in path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -40,94 +41,196 @@ def calculate_dcf_fair_value(ticker: str) -> dict:
     
     # 1. Compute True TTM Free Cash Flow from Statements
     fcf_ttm = None
+    fcf_source = "Quarterly Statements (TTM)"
+    
+    ocf_keys = [
+        'Operating Cash Flow', 'OperatingCashFlow',
+        'Cash Flow From Continuing Operating Activities',
+        'CashFlowFromContinuingOperatingActivities',
+        'Total Cash From Operating Activities'
+    ]
+    capex_keys = [
+        'Capital Expenditure', 'CapitalExpenditure',
+        'CapitalExpendituresReported',
+        'Purchase Of Property Plant And Equipment', 'PurchaseOfPPE',
+        'Payments For Property And Equipment'
+    ]
+    
     try:
-        qcf = t.quarterly_cashflow
+        qcf = getattr(t, 'quarterly_cashflow', None)
+        if qcf is None or (hasattr(qcf, 'empty') and qcf.empty):
+            qcf = t.get_cash_flow(freq="quarterly")
+            
         if qcf is not None and not qcf.empty:
             ocf_row = None
             capex_row = None
-            for n in ['Operating Cash Flow', 'OperatingCashFlow']:
+            for n in ocf_keys:
                 if n in qcf.index:
                     ocf_row = qcf.loc[n].dropna()
                     break
-            for n in ['Capital Expenditure', 'CapitalExpenditure']:
+            for n in capex_keys:
                 if n in qcf.index:
                     capex_row = qcf.loc[n].dropna()
                     break
                     
             if ocf_row is not None and len(ocf_row) >= 4:
                 ocf_4q = float(ocf_row.iloc[:4].sum())
-                capex_4q = float(capex_row.iloc[:4].sum()) if capex_row is not None and len(capex_row) >= 4 else -(ocf_4q * 0.18)
-                fcf_ttm = ocf_4q + capex_4q
+                capex_4q = float(capex_row.iloc[:4].sum()) if capex_row is not None and len(capex_row) >= 4 else -(abs(ocf_4q) * 0.18)
+                calc_fcf = ocf_4q + (capex_4q if capex_4q < 0 else -capex_4q)
+                if calc_fcf > 0:
+                    fcf_ttm = calc_fcf
     except Exception:
         pass
         
     if fcf_ttm is None or fcf_ttm <= 0:
         try:
-            acf = t.cashflow
+            acf = getattr(t, 'cashflow', None)
+            if acf is None or (hasattr(acf, 'empty') and acf.empty):
+                acf = t.get_cash_flow(freq="yearly")
+                
             if acf is not None and not acf.empty:
-                ocf_row = acf.loc['Operating Cash Flow'].dropna() if 'Operating Cash Flow' in acf.index else None
-                capex_row = acf.loc['Capital Expenditure'].dropna() if 'Capital Expenditure' in acf.index else None
+                ocf_row = None
+                capex_row = None
+                for n in ocf_keys:
+                    if n in acf.index:
+                        ocf_row = acf.loc[n].dropna()
+                        break
+                for n in capex_keys:
+                    if n in acf.index:
+                        capex_row = acf.loc[n].dropna()
+                        break
+                        
                 if ocf_row is not None and len(ocf_row) > 0:
                     ocf_ann = float(ocf_row.iloc[0])
-                    capex_ann = float(capex_row.iloc[0]) if capex_row is not None and len(capex_row) > 0 else -(ocf_ann * 0.18)
-                    fcf_ttm = ocf_ann + capex_ann
+                    capex_ann = float(capex_row.iloc[0]) if capex_row is not None and len(capex_row) > 0 else -(abs(ocf_ann) * 0.18)
+                    calc_fcf = ocf_ann + (capex_ann if capex_ann < 0 else -capex_ann)
+                    if calc_fcf > 0:
+                        fcf_ttm = calc_fcf
+                        fcf_source = "Annual Statements (LTM)"
         except Exception:
             pass
             
+    # Proportional fallbacks scaled to company size - NEVER an arbitrary 1e9 ($1 Billion) placeholder
+    mkt_cap = float(info.get('marketCap') or (current_price * (shares or 1)))
+    total_rev = float(info.get('totalRevenue') or 0.0)
+    sector = str(info.get('sector') or '').lower()
+    industry = str(info.get('industry') or '').lower()
+    
     if fcf_ttm is None or fcf_ttm <= 0:
-        net_inc = info.get('netIncomeToCommon') or 0
-        if net_inc > 0:
-            fcf_ttm = float(net_inc * 0.95)
+        reported_fcf = info.get('freeCashflow')
+        if reported_fcf and reported_fcf > 0 and (mkt_cap <= 0 or reported_fcf < mkt_cap * 0.35):
+            fcf_ttm = float(reported_fcf)
+            fcf_source = "Reported Free Cash Flow"
         else:
-            fcf_ttm = float(info.get('freeCashflow') or 1e9)
+            op_cf = info.get('operatingCashflow')
+            if op_cf and op_cf > 0 and (mkt_cap <= 0 or op_cf < mkt_cap * 0.40):
+                fcf_ttm = float(op_cf * 0.78)
+                fcf_source = "Estimated from Operating Cash Flow"
+            else:
+                net_inc = info.get('netIncomeToCommon') or 0
+                if net_inc > 0 and (mkt_cap <= 0 or net_inc < mkt_cap * 0.35):
+                    fcf_ttm = float(net_inc * 0.88)
+                    fcf_source = "Estimated from Net Income"
+                elif total_rev > 0:
+                    if any(s in sector or s in industry for s in ['energy', 'materials', 'refin', 'utilities']):
+                        fcf_margin = 0.038
+                    elif any(s in sector or s in industry for s in ['technology', 'software', 'healthcare']):
+                        fcf_margin = 0.095
+                    else:
+                        fcf_margin = 0.052
+                    fcf_ttm = total_rev * fcf_margin
+                    fcf_source = f"Normalized Revenue Margin ({fcf_margin*100:.1f}%)"
+                else:
+                    fcf_ttm = max(1000000.0, mkt_cap * 0.045)
+                    fcf_source = "Normalized Market Cap Yield (4.5%)"
 
     # 2. Normalized 5-Year CAGR Growth
     growth = info.get('earningsGrowth') or info.get('revenueGrowth')
     if growth is None:
-        growth = 0.10
+        growth = 0.08
     else:
         growth = float(growth)
         
-    if growth > 0.40:
-        growth_5y = min(0.30, growth * 0.5)
-    elif growth < 0.03:
-        growth_5y = 0.08
+    if growth > 0.35:
+        growth_5y = min(0.25, growth * 0.45)
+    elif growth < 0.02:
+        growth_5y = 0.05
     else:
-        growth_5y = max(0.06, min(growth, 0.25))
+        growth_5y = max(0.04, min(growth, 0.20))
 
     # 3. Blume-Adjusted WACC
-    rfr = 0.042
-    erp = 0.055
+    rfr = 0.0425
+    erp = 0.0525
     raw_beta = float(info.get('beta') or 1.1)
     adj_beta = (2.0 / 3.0) * raw_beta + (1.0 / 3.0) * 1.0
     cost_of_equity = rfr + adj_beta * erp
-    cost_of_debt = 0.05 * (1 - 0.21)
+    cost_of_debt = 0.0525 * (1 - 0.21)
     
-    mkt_cap = info.get('marketCap') or (current_price * (shares or 1))
-    equity_weight = mkt_cap / (mkt_cap + max(0, total_debt)) if (mkt_cap + total_debt) > 0 else 0.9
+    equity_weight = mkt_cap / (mkt_cap + max(0, total_debt)) if (mkt_cap + total_debt) > 0 else 0.85
     debt_weight = 1.0 - equity_weight
     wacc = equity_weight * cost_of_equity + debt_weight * cost_of_debt
-    wacc = max(0.075, min(wacc, 0.115))
+    wacc = max(0.070, min(wacc, 0.125))
 
-    # 4. Two-Stage DCF with Exit Multiple Blend
+    # 4. Sector-Tailored Terminal Multiples & Perpetual Growth
+    if any(s in sector or s in industry for s in ['energy', 'oil', 'gas', 'refin', 'petroleum', 'coal']):
+        exit_mult = 8.0 if growth_5y > 0.08 else 6.5
+        terminal_growth = 0.015
+    elif any(s in sector or s in industry for s in ['basic materials', 'metal', 'mining', 'chemical', 'steel']):
+        exit_mult = 9.0 if growth_5y > 0.08 else 7.5
+        terminal_growth = 0.018
+    elif any(s in sector or s in industry for s in ['utilities', 'electric utility', 'gas utility']):
+        exit_mult = 12.0 if growth_5y > 0.06 else 10.5
+        terminal_growth = 0.020
+    elif any(s in sector or s in industry for s in ['financial', 'bank', 'insurance']):
+        exit_mult = 11.5 if growth_5y > 0.08 else 9.5
+        terminal_growth = 0.020
+    elif any(s in sector or s in industry for s in ['industrial', 'aerospace', 'machinery', 'transport']):
+        exit_mult = 14.5 if growth_5y > 0.10 else 12.0
+        terminal_growth = 0.022
+    elif any(s in sector or s in industry for s in ['consumer defensive', 'staples', 'food', 'beverage']):
+        exit_mult = 16.5 if growth_5y > 0.08 else 14.0
+        terminal_growth = 0.020
+    elif any(s in sector or s in industry for s in ['consumer cyclical', 'discretionary', 'retail', 'auto']):
+        exit_mult = 16.0 if growth_5y > 0.10 else 13.0
+        terminal_growth = 0.022
+    elif any(s in sector or s in industry for s in ['technology', 'software', 'semiconductor', 'hardware']):
+        exit_mult = 22.0 if growth_5y > 0.12 else 18.0
+        terminal_growth = 0.025
+    elif any(s in sector or s in industry for s in ['communication', 'telecom', 'media']):
+        exit_mult = 16.0 if growth_5y > 0.10 else 13.0
+        terminal_growth = 0.022
+    elif any(s in sector or s in industry for s in ['healthcare', 'biotech', 'pharma', 'medical']):
+        exit_mult = 19.5 if growth_5y > 0.10 else 15.5
+        terminal_growth = 0.025
+    else:
+        exit_mult = 16.0 if growth_5y > 0.10 else 13.5
+        terminal_growth = 0.022
+
+    # 5. Two-Stage DCF Projections
     pv_fcfs = 0.0
     proj_fcf = fcf_ttm
     for yr in range(1, 6):
         proj_fcf *= (1 + growth_5y)
         pv_fcfs += proj_fcf / ((1 + wacc) ** yr)
         
-    terminal_growth = 0.025
-    tv_gordon = (proj_fcf * (1 + terminal_growth)) / (wacc - terminal_growth)
-    exit_mult = 22.0 if growth_5y > 0.12 else 18.0
+    denom = max(0.02, wacc - terminal_growth)
+    tv_gordon = (proj_fcf * (1 + terminal_growth)) / denom
     tv_exit = proj_fcf * exit_mult
     
-    terminal_val = 0.5 * tv_gordon + 0.5 * tv_exit
+    terminal_val = 0.40 * tv_gordon + 0.60 * tv_exit
     pv_tv = terminal_val / ((1 + wacc) ** 5)
     
     enterprise_val = pv_fcfs + pv_tv
     equity_val = enterprise_val + float(total_cash) - float(total_debt)
     
-    fair_value = equity_val / float(shares) if shares and shares > 0 else current_price
+    calculated_fair_val = equity_val / float(shares) if shares and shares > 0 else current_price
+    
+    # Institutional Sanity Bounds:
+    # A DCF model for a public stock without massive structural collapse/takeover
+    # should stay within economic sanity boundaries relative to market pricing.
+    min_bound = current_price * 0.35
+    max_bound = current_price * 2.20
+    fair_value = max(min_bound, min(calculated_fair_val, max_bound))
     fair_value = round(max(0.0, fair_value), 2)
     current_price = round(current_price, 2)
     
@@ -142,8 +245,11 @@ def calculate_dcf_fair_value(ticker: str) -> dict:
         'valuation_status': status,
         'discount_pct': discount_pct,
         'fcf_ttm': round(fcf_ttm, 2),
+        'fcf_source': fcf_source,
         'wacc': round(wacc, 4),
-        'growth_5y': round(growth_5y, 4)
+        'growth_5y': round(growth_5y, 4),
+        'exit_mult': exit_mult,
+        'sector': sector or "General"
     }
 def get_fundamental_history(ticker):
     """
@@ -151,6 +257,7 @@ def get_fundamental_history(ticker):
     """
     try:
         t = yf.Ticker(ticker)
+        info = getattr(t, 'info', None) or {}
         
         # We need Income Statement, Balance Sheet, and Cash Flow (Quarterly)
         # yfinance `.quarterly_financials` sometimes returns ~4 quarters. 
@@ -226,7 +333,9 @@ def get_fundamental_history(ticker):
                 "net_margin": net_margin,
                 "eps": eps,
                 "fcf": fcf,
-                "debt_to_equity": debt_to_equity
+                "debt_to_equity": debt_to_equity,
+                "capex": abs(capex),
+                "operating_cash_flow": op_cf
             })
 
         # Extract Annual History (5-Year Multi-Year Engine)
@@ -266,6 +375,189 @@ def get_fundamental_history(ticker):
                 annual_history.sort(key=lambda x: x["period"])
         except Exception as e:
             print(f"Error extracting annual history: {e}")
+
+        # Wall Street Consensus Forecasts Engine (Quarterly & Annual Future Estimates)
+        quarterly_forecast = []
+        annual_forecast = []
+        try:
+            shares = info.get("sharesOutstanding") or 1e9
+            rev_growth = info.get("revenueGrowth") or 0.12
+            earnings_growth = info.get("earningsGrowth") or 0.15
+            fwd_eps = info.get("forwardEps")
+            
+            # Historical baselines for ratios
+            last_q = history[-1] if history else {}
+            last_a = annual_history[-1] if annual_history else {}
+            
+            base_rev = last_a.get("revenue") or (last_q.get("revenue", 1e10) * 4)
+            base_ni = last_a.get("net_income") or (last_q.get("net_income", 2e9) * 4)
+            base_gm = last_a.get("gross_margin") or last_q.get("gross_margin") or 50.0
+            base_om = last_a.get("operating_margin") or last_q.get("operating_margin") or 25.0
+            base_nm = last_a.get("net_margin") or last_q.get("net_margin") or 20.0
+            base_eps = last_a.get("eps") or last_q.get("eps") or 2.0
+            
+            fcf_conversion = (last_a.get("fcf", 0) / base_ni) if base_ni > 0 and last_a.get("fcf", 0) > 0 else 0.95
+            fcf_conversion = max(0.7, min(1.3, fcf_conversion))
+            capex_ratio = (last_a.get("capex", 0) / base_rev) if base_rev > 0 and last_a.get("capex", 0) > 0 else 0.05
+            capex_ratio = max(0.02, min(0.20, capex_ratio))
+
+            rev_est = getattr(t, 'revenue_estimate', None)
+            eps_est = getattr(t, 'earnings_estimate', None)
+
+            # 1. ANNUAL PROJECTIONS (FY+1E, FY+2E)
+            last_yr_str = str(last_a.get("period", datetime.now().year))
+            try:
+                base_yr = int(last_yr_str)
+            except Exception:
+                base_yr = datetime.now().year
+
+            # FY+1E (0y or extrapolated)
+            if rev_est is not None and '0y' in rev_est.index and pd.notna(rev_est.loc['0y', 'avg']):
+                fy1_rev = float(rev_est.loc['0y', 'avg'])
+            else:
+                fy1_rev = base_rev * (1 + rev_growth)
+
+            if eps_est is not None and '0y' in eps_est.index and pd.notna(eps_est.loc['0y', 'avg']):
+                fy1_eps = float(eps_est.loc['0y', 'avg'])
+            elif fwd_eps:
+                fy1_eps = float(fwd_eps)
+            else:
+                fy1_eps = base_eps * (1 + earnings_growth)
+
+            fy1_ni = (fy1_eps * shares) if shares > 0 else (fy1_rev * (base_nm / 100))
+            fy1_gm = round(min(95.0, base_gm + 0.3), 1)
+            fy1_om = round(min(80.0, base_om + 0.5), 1)
+            fy1_nm = round((fy1_ni / fy1_rev * 100) if fy1_rev > 0 else base_nm, 1)
+            fy1_fcf = fy1_ni * fcf_conversion
+            fy1_capex = fy1_rev * capex_ratio
+            fy1_ocf = fy1_fcf + fy1_capex
+
+            # FY+2E (+1y or extrapolated)
+            if rev_est is not None and '+1y' in rev_est.index and pd.notna(rev_est.loc['+1y', 'avg']):
+                fy2_rev = float(rev_est.loc['+1y', 'avg'])
+            else:
+                fy2_rev = fy1_rev * (1 + rev_growth * 0.85)
+
+            if eps_est is not None and '+1y' in eps_est.index and pd.notna(eps_est.loc['+1y', 'avg']):
+                fy2_eps = float(eps_est.loc['+1y', 'avg'])
+            else:
+                fy2_eps = fy1_eps * (1 + earnings_growth * 0.85)
+
+            fy2_ni = (fy2_eps * shares) if shares > 0 else (fy2_rev * (base_nm / 100))
+            fy2_gm = round(min(95.0, fy1_gm + 0.2), 1)
+            fy2_om = round(min(80.0, fy1_om + 0.4), 1)
+            fy2_nm = round((fy2_ni / fy2_rev * 100) if fy2_rev > 0 else base_nm, 1)
+            fy2_fcf = fy2_ni * fcf_conversion
+            fy2_capex = fy2_rev * capex_ratio
+            fy2_ocf = fy2_fcf + fy2_capex
+
+            annual_forecast = [
+                {
+                    "period": f"{base_yr + 1}E",
+                    "revenue": fy1_rev,
+                    "net_income": fy1_ni,
+                    "gross_margin": fy1_gm,
+                    "operating_margin": fy1_om,
+                    "net_margin": fy1_nm,
+                    "eps": round(fy1_eps, 2),
+                    "fcf": fy1_fcf,
+                    "capex": fy1_capex,
+                    "operating_cash_flow": fy1_ocf,
+                    "is_forecast": True
+                },
+                {
+                    "period": f"{base_yr + 2}E",
+                    "revenue": fy2_rev,
+                    "net_income": fy2_ni,
+                    "gross_margin": fy2_gm,
+                    "operating_margin": fy2_om,
+                    "net_margin": fy2_nm,
+                    "eps": round(fy2_eps, 2),
+                    "fcf": fy2_fcf,
+                    "capex": fy2_capex,
+                    "operating_cash_flow": fy2_ocf,
+                    "is_forecast": True
+                }
+            ]
+
+            # 2. QUARTERLY PROJECTIONS (Q+1E, Q+2E)
+            last_q_rev = last_q.get("revenue") or (base_rev / 4)
+            last_q_ni = last_q.get("net_income") or (base_ni / 4)
+            last_q_eps = last_q.get("eps") or (base_eps / 4)
+
+            # Q+1E (0q or extrapolated)
+            if rev_est is not None and '0q' in rev_est.index and pd.notna(rev_est.loc['0q', 'avg']):
+                q1_rev = float(rev_est.loc['0q', 'avg'])
+            else:
+                q1_rev = last_q_rev * (1 + rev_growth / 4)
+
+            if eps_est is not None and '0q' in eps_est.index and pd.notna(eps_est.loc['0q', 'avg']):
+                q1_eps = float(eps_est.loc['0q', 'avg'])
+            else:
+                q1_eps = last_q_eps * (1 + earnings_growth / 4)
+
+            q1_ni = (q1_eps * shares) if shares > 0 else (q1_rev * (base_nm / 100))
+            q1_gm = round(min(95.0, base_gm + 0.2), 1)
+            q1_om = round(min(80.0, base_om + 0.3), 1)
+            q1_nm = round((q1_ni / q1_rev * 100) if q1_rev > 0 else base_nm, 1)
+            q1_fcf = q1_ni * fcf_conversion
+            q1_capex = q1_rev * capex_ratio
+            q1_ocf = q1_fcf + q1_capex
+
+            # Q+2E (+1q or extrapolated)
+            if rev_est is not None and '+1q' in rev_est.index and pd.notna(rev_est.loc['+1q', 'avg']):
+                q2_rev = float(rev_est.loc['+1q', 'avg'])
+            else:
+                q2_rev = q1_rev * (1 + rev_growth / 4)
+
+            if eps_est is not None and '+1q' in eps_est.index and pd.notna(eps_est.loc['+1q', 'avg']):
+                q2_eps = float(eps_est.loc['+1q', 'avg'])
+            else:
+                q2_eps = q1_eps * (1 + earnings_growth / 4)
+
+            q2_ni = (q2_eps * shares) if shares > 0 else (q2_rev * (base_nm / 100))
+            q2_gm = round(min(95.0, q1_gm + 0.2), 1)
+            q2_om = round(min(80.0, q1_om + 0.3), 1)
+            q2_nm = round((q2_ni / q2_rev * 100) if q2_rev > 0 else base_nm, 1)
+            q2_fcf = q2_ni * fcf_conversion
+            q2_capex = q2_rev * capex_ratio
+            q2_ocf = q2_fcf + q2_capex
+
+            quarterly_forecast = [
+                {
+                    "quarter": "Q+1E",
+                    "revenue": q1_rev,
+                    "net_income": q1_ni,
+                    "gross_margin": q1_gm,
+                    "operating_margin": q1_om,
+                    "net_margin": q1_nm,
+                    "eps": round(q1_eps, 2),
+                    "fcf": q1_fcf,
+                    "capex": q1_capex,
+                    "operating_cash_flow": q1_ocf,
+                    "is_forecast": True
+                },
+                {
+                    "quarter": "Q+2E",
+                    "revenue": q2_rev,
+                    "net_income": q2_ni,
+                    "gross_margin": q2_gm,
+                    "operating_margin": q2_om,
+                    "net_margin": q2_nm,
+                    "eps": round(q2_eps, 2),
+                    "fcf": q2_fcf,
+                    "capex": q2_capex,
+                    "operating_cash_flow": q2_ocf,
+                    "is_forecast": True
+                }
+            ]
+        except Exception as e:
+            print(f"Error computing forecasts for {ticker}: {e}")
+
+        forecasts = {
+            "quarterly": quarterly_forecast,
+            "annual": annual_forecast
+        }
             
         # Fundamental Buy/Sell Logic
         recommendation = "Hold"
@@ -470,6 +762,7 @@ def get_fundamental_history(ticker):
             "logo_url": logo_url,
             "history": history,
             "annual_history": annual_history,
+            "forecasts": forecasts,
             "acceleration_metrics": acceleration_metrics,
             "recommendation": recommendation,
             "score": score,

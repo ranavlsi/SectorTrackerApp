@@ -10,20 +10,33 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def get_all_tickers():
-    url = "ftp://ftp.nasdaqtrader.com/symboldirectory/nasdaqtraded.txt"
+    # 1. First attempt modern HTTPS endpoint
+    url = "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqtraded.txt"
     try:
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req) as response:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=10) as response:
             data = response.read().decode('utf-8')
         df = pd.read_csv(io.StringIO(data), sep='|')
         df = df[df['Test Issue'] == 'N']
         tickers = df['Symbol'].dropna().tolist()
         tickers = [t for t in tickers if isinstance(t, str) and len(t) > 0]
         tickers = [t.replace('$', '-').replace('.', '-') for t in tickers]
-        return tickers
+        if tickers:
+            return tickers
     except Exception as e:
-        print(f"Error fetching tickers: {e}")
-        return []
+        print(f"HTTPS ticker fetch failed: {e}. Falling back to DuckDB Lakehouse...")
+
+    # 2. Resilient fallback to local Lakehouse parquet
+    try:
+        import duckdb
+        lh = '/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/daily_ohlcv.parquet'
+        if os.path.exists(lh):
+            con = duckdb.connect()
+            tickers = con.query(f"SELECT DISTINCT Ticker FROM read_parquet('{lh}')").df()['Ticker'].tolist()
+            return tickers
+    except Exception as e:
+        print(f"Lakehouse ticker fetch error: {e}")
+    return []
 
 def check_fundamentals(ticker):
     """Fetches quarterly income statement to check for EPS and Sales acceleration (YoY)."""

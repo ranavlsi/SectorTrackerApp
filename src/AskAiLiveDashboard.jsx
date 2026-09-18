@@ -83,9 +83,45 @@ export default function AskAiLiveDashboard({
     }
   }, []);
 
-  const handleSend = async (queryText = null) => {
+  const handlePersonaChange = (newPersona) => {
+    setPersona(newPersona);
+    if (newPersona === 'options') {
+      setQuickPrompts([
+        `⚡ Major Call & Put Walls for $${activeTicker}`,
+        `🧲 Zero Gamma Flip & Dealer Pin on $${activeTicker}`,
+        `📌 OpEx Max Pain & Expected Move for $${activeTicker}`,
+        `🌊 Institutional GEX Cascade Risk for $${activeTicker}`
+      ]);
+    } else if (newPersona === 'fundamental') {
+      setQuickPrompts([
+        `📊 DCF Fair Value & Margin of Safety for $${activeTicker}`,
+        `🛡️ Piotroski Solvency & Debt Health for $${activeTicker}`,
+        `💰 Free Cash Flow & Operating Margins on $${activeTicker}`,
+        `📈 Compare $${activeTicker} vs Industry Peers`
+      ]);
+    } else if (newPersona === 'macro') {
+      setQuickPrompts([
+        "🌐 Current Market Health & Macro Regime",
+        "📈 McClellan Oscillator & Breadth Health",
+        "📉 10-Year Treasury Yields & Tech Impact",
+        "🛡️ Defensive Sector Rotation Status"
+      ]);
+    } else if (newPersona === 'quant') {
+      setQuickPrompts([
+        `🎯 High-probability breakout entries for $${activeTicker}`,
+        `📉 Moving Average pullback cushions for $${activeTicker}`,
+        `🛑 Strictly bounded invalidation stops for $${activeTicker}`,
+        "🚀 Top High-Conviction AI Playbook Setups"
+      ]);
+    } else {
+      setQuickPrompts(INITIAL_SUGGESTIONS);
+    }
+  };
+
+  const handleSend = async (queryText = null, personaOverride = null) => {
     const textToSend = typeof queryText === 'string' ? queryText : inputVal;
     if (!textToSend || !textToSend.trim() || isLoading) return;
+    const currentPersona = personaOverride || persona;
 
     const userMsg = {
       id: Date.now().toString(),
@@ -105,7 +141,7 @@ export default function AskAiLiveDashboard({
         body: JSON.stringify({
           prompt: textToSend.trim(),
           ticker: activeTicker || 'SPY',
-          persona: persona,
+          persona: currentPersona,
           context: { activeTicker }
         })
       });
@@ -246,7 +282,7 @@ export default function AskAiLiveDashboard({
                 borderColor: persona === p.id ? p.color : 'transparent',
                 color: persona === p.id ? '#fff' : '#94a3b8'
               }}
-              onClick={() => setPersona(p.id)}
+              onClick={() => handlePersonaChange(p.id)}
               title={p.desc}
             >
               <span className="persona-dot" style={{ backgroundColor: p.color }}></span>
@@ -385,19 +421,201 @@ export default function AskAiLiveDashboard({
                           <button
                             type="button"
                             className="card-action-btn"
-                            onClick={() => handleSend(`Show me gamma profile and option walls for $${card.ticker}`)}
+                            onClick={() => {
+                              handlePersonaChange('options');
+                              handleSend(`Show me gamma profile and option walls for $${card.ticker}`, 'options');
+                            }}
                           >
                             <Zap size={13} /> Gamma Walls
                           </button>
                           <button
                             type="button"
                             className="card-action-btn"
-                            onClick={() => handleSend(`Check fundamental health and valuation for $${card.ticker}`)}
+                            onClick={() => {
+                              handlePersonaChange('fundamental');
+                              handleSend(`Check fundamental health and valuation for $${card.ticker}`, 'fundamental');
+                            }}
                           >
                             <TrendingUp size={13} /> Fundamentals
                           </button>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Interactive Fundamental Intelligence Card */}
+                  {card && card.type === 'fundamental_card' && (
+                    <div className="ai-execution-card">
+                      <div className="card-top-strip">
+                        <div className="card-title-group">
+                          <span className="card-ticker">${card.ticker}</span>
+                          <span className="card-price">${card.price}</span>
+                          <span className="card-playbook-pill">{card.valuation_status}</span>
+                        </div>
+                        <div className="card-conviction-pill">
+                          ★ Piotroski {card.piotroski_score}/9
+                        </div>
+                      </div>
+
+                      <div className="card-tiles-grid">
+                        <div className="card-tile">
+                          <span className="tile-lbl">Fair Value (DCF)</span>
+                          <span className="tile-val emerald">${card.fair_value} ({card.margin_of_safety >= 0 ? `+${card.margin_of_safety}%` : `${card.margin_of_safety}%`})</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">P/E · Fwd P/E</span>
+                          <span className="tile-val cyan">
+                            {card.pe_ratio ? `${card.pe_ratio}x` : 'N/A'} · {card.fwd_pe ? `${card.fwd_pe}x` : 'N/A'}
+                          </span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Operating Margin</span>
+                          <span className="tile-val green">{card.operating_margin ? `${card.operating_margin}%` : 'N/A'}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Revenue Growth</span>
+                          <span className="tile-val purple">{card.revenue_growth ? `${card.revenue_growth}% YoY` : 'N/A'}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Free Cash Flow</span>
+                          <span className="tile-val amber">{card.fcf} ({card.fcf_yield})</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Analyst Target</span>
+                          <span className="tile-val emerald">
+                            {card.analyst_target ? `$${card.analyst_target} (${card.analyst_rec})` : 'N/A'}
+                          </span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Cash / Debt</span>
+                          <span className="tile-val white">{card.cash} / {card.debt}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Market Cap</span>
+                          <span className="tile-val white">{card.market_cap}</span>
+                        </div>
+                      </div>
+
+                      <div className="card-actions-strip">
+                        {onTickerSelect && (
+                          <button
+                            type="button"
+                            className="card-action-btn primary"
+                            onClick={() => onTickerSelect(card.ticker)}
+                          >
+                            <Search size={13} /> Deep Chart ${card.ticker}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => {
+                            handlePersonaChange('options');
+                            handleSend(`Show me gamma profile and option walls for $${card.ticker}`, 'options');
+                          }}
+                        >
+                          <Zap size={13} /> Gamma Walls
+                        </button>
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => {
+                            handlePersonaChange('quant');
+                            handleSend(`Show me institutional trade setup for $${card.ticker}`, 'quant');
+                          }}
+                        >
+                          <TrendingUp size={13} /> Trade Setup
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Interactive Options GEX Profile Card */}
+                  {card && card.type === 'gex_card' && (
+                    <div className="ai-execution-card">
+                      <div className="card-top-strip">
+                        <div className="card-title-group">
+                          <span className="card-ticker">${card.ticker}</span>
+                          <span className="card-price">${typeof card.price === 'number' ? card.price.toFixed(2) : card.price}</span>
+                          <span className="card-playbook-pill">{card.regime}</span>
+                        </div>
+                        <div className="card-conviction-pill">
+                          ⚡ {card.squeeze_risk}
+                        </div>
+                      </div>
+
+                      <div className="card-tiles-grid">
+                        <div className="card-tile">
+                          <span className="tile-lbl">Call Wall (Resistance)</span>
+                          <span className="tile-val emerald">${typeof card.call_wall === 'number' ? card.call_wall.toFixed(2) : card.call_wall}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Put Wall (Major Floor)</span>
+                          <span className="tile-val rose">${typeof card.put_wall === 'number' ? card.put_wall.toFixed(2) : card.put_wall}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Zero Gamma Flip</span>
+                          <span className="tile-val amber">${typeof card.zero_gamma === 'number' ? card.zero_gamma.toFixed(2) : card.zero_gamma}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Max Pain (OpEx Pin)</span>
+                          <span className="tile-val purple">${typeof card.max_pain === 'number' ? card.max_pain.toFixed(2) : card.max_pain}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Net Gamma (GEX)</span>
+                          <span className="tile-val cyan">{card.net_gex}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">Put/Call Ratio</span>
+                          <span className="tile-val white">{typeof card.pc_ratio === 'number' ? card.pc_ratio.toFixed(2) : card.pc_ratio}</span>
+                        </div>
+
+                        <div className="card-tile">
+                          <span className="tile-lbl">1-Day Expected Move</span>
+                          <span className="tile-val amber">
+                            ±${typeof card.expected_move_1d === 'number' ? card.expected_move_1d.toFixed(2) : (card.expected_move_1d || '0.00')} 
+                            {card.expected_move_pct ? ` (±${typeof card.expected_move_pct === 'number' ? card.expected_move_pct.toFixed(2) : card.expected_move_pct}%)` : ''}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="card-actions-strip">
+                        {onTickerSelect && (
+                          <button
+                            type="button"
+                            className="card-action-btn primary"
+                            onClick={() => onTickerSelect(card.ticker)}
+                          >
+                            <Search size={13} /> Deep Chart ${card.ticker}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => handleSend(`Check fundamental health and valuation for $${card.ticker}`)}
+                        >
+                          <TrendingUp size={13} /> Fundamentals
+                        </button>
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => handleSend(`Generate institutional playbook for $${card.ticker}`)}
+                        >
+                          <Zap size={13} /> Playbook
+                        </button>
+                      </div>
                     </div>
                   )}
 

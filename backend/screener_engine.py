@@ -272,6 +272,7 @@ def run_screener(custom_universe=None):
     
     # We will collect highly-trending candidates here and check their fundamentals in bulk at the end
     zacks_candidates = []
+    earnings_candidates = []
     
     dollar_vol_dict = {}
     
@@ -360,16 +361,10 @@ def run_screener(custom_universe=None):
                     display_status = "Pending Breakout" if actual_status == "PENDING" else actual_status.title()
                     results["qullamaggie_setup"].append({"ticker": ticker, "metric": f"{display_status} | ADR: {qm_res['adr']} | SMA: {qm_res['sma_support']}"})
             
-            # Earnings Surprise & Revisions Scanner
-            earn_res = evaluate_earnings_surprise(ticker)
-            if earn_res:
-                up_rev = earn_res.get('upgrades_30d', 0)
-                score = earn_res.get('score', 0)
-                eps = earn_res.get('eps_surprise_pct', 0)
-                results["earnings_surge"].append({
-                    "ticker": ticker,
-                    "metric": f"PEDP Score: {score}/100 | EPS: +{eps}% | Upgrades: {up_rev}"
-                })
+            # Collect candidates for post-scan Earnings Surprise & Revisions sweep
+            if curr_c >= 10.0 and vol.iloc[-20:].mean() >= 350000 and (ticker in UNIVERSE or (curr_c * vol.iloc[-1] >= 25000000)):
+                if len(earnings_candidates) < 60:
+                    earnings_candidates.append(ticker)
         except Exception as e:
             pass
 
@@ -1041,6 +1036,29 @@ def run_screener(custom_universe=None):
                         results["zacks_rank_1"].append({"ticker": t, "metric": f"Score: {score} | PEG: {safe_peg}", "score": score})
     except Exception as e:
         print(f"Failed to scan zacks candidates: {e}")
+
+    # -----------------------------------
+    # POST-SCAN EARNINGS SURPRISE SWEEP
+    # -----------------------------------
+    try:
+        print(f"Post-Scan: Evaluating Post-Earnings Drift for {len(earnings_candidates)} momentum candidates...")
+        for t in earnings_candidates:
+            try:
+                earn_res = evaluate_earnings_surprise(t)
+                if earn_res:
+                    up_rev = earn_res.get('upgrades_30d', 0)
+                    score = earn_res.get('score', 0)
+                    eps = earn_res.get('eps_surprise_pct', 0)
+                    results["earnings_surge"].append({
+                        "ticker": t,
+                        "metric": f"PEDP Score: {score}/100 | EPS: +{eps}% | Upgrades: {up_rev}",
+                        "score": score
+                    })
+            except Exception:
+                pass
+        print(f"Added {len(results['earnings_surge'])} Post-Earnings Drift candidates.")
+    except Exception as e:
+        print(f"Failed to scan earnings surprise candidates: {e}")
 
     # -----------------------------------
     # O'NEIL NEXT-LEG CHOP INCUBATION LEADERS

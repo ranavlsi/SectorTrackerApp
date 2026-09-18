@@ -1,3 +1,87 @@
+## 🌋 Volume Climax Consolidation Scanner - September 17, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### SWKS
+- **Current Price:** $91.32
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.5x avg | MCap: $13.7B | AvgVol: 6.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 17, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### SWKS
+- **Current Price:** $91.32
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.5x avg | MCap: $13.7B | AvgVol: 6.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 17, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### SWKS
+- **Current Price:** $91.32
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.5x avg | MCap: $13.7B | AvgVol: 6.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 17, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### SWKS
+- **Current Price:** $91.32
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.5x avg | MCap: $13.7B | AvgVol: 6.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 17, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### SWKS
+- **Current Price:** $91.32
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.5x avg | MCap: $13.7B | AvgVol: 6.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 17, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 16, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### SWKS
+- **Current Price:** $85.59
+- **Climax Date:** 2026-08-31 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 3.5x avg | MCap: $12.9B | AvgVol: 6.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 15, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 14, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### PURR
+- **Current Price:** $11.85
+- **Climax Date:** 2026-08-19 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 5.2x avg | MCap: $2.3B | AvgVol: 16.2M
+
+---
+
 ## 🌋 Volume Climax Consolidation Scanner - September 11, 2026
 Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
 

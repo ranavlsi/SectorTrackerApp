@@ -836,3 +836,327 @@
 .agents-matrix-table .DIVERGENT {
   color: #f43f5e;
 }
+
+/* --------------------------------------------------------------------------
+   9. HEADER DISPATCH BUTTON & REGIME PILL
+   -------------------------------------------------------------------------- */
+.agents-dispatch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 240, 255, 0.12) !important;
+  color: #00F0FF !important;
+  border: 1px solid rgba(0, 240, 255, 0.35) !important;
+  transition: all 0.2s ease;
+}
+
+.agents-dispatch-btn:hover {
+  background: rgba(0, 240, 255, 0.22) !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+}
+
+.agents-dispatch-btn.success {
+  background: rgba(0, 230, 118, 0.15) !important;
+  color: #00E676 !important;
+  border-color: rgba(0, 230, 118, 0.4) !important;
+  box-shadow: 0 0 14px rgba(0, 230, 118, 0.3);
+}
+
+.agents-pill.highlight-purple {
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+}
+
+/* --------------------------------------------------------------------------
+   10. CHIEF SKEPTIC DISSENTER VECTOR BANNER
+   -------------------------------------------------------------------------- */
+.agents-skeptic-banner {
+  margin-top: 14px;
+  background: rgba(244, 63, 94, 0.06);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  border-left: 3px solid #f43f5e;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agents-skeptic-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agents-skeptic-icon {
+  color: #f43f5e;
+  flex-shrink: 0;
+}
+
+.agents-skeptic-title {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fb7185;
+}
+
+.agents-skeptic-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+/* --------------------------------------------------------------------------
+   11. MULTI-TIER INVALIDATION STRIP (BLUEPRINT)
+   -------------------------------------------------------------------------- */
+.agents-inval-strip {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.agents-inval-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.agents-inval-item strong {
+  color: #f1f5f9;
+}
+
+/* --------------------------------------------------------------------------
+   12. COLLAPSIBLE QUANT TELEMETRY & MATH DRAWER (AGENT CARDS)
+   -------------------------------------------------------------------------- */
+.agents-card-telemetry-section {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+
+.agents-telemetry-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 6px 4px;
+  transition: color 0.2s ease;
+}
+
+.agents-telemetry-toggle-btn:hover {
+  color: #00F0FF;
+}
+
+.agents-telemetry-drawer {
+  margin-top: 8px;
+  background: rgba(6, 9, 16, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px;
+  animation: agentsFadeIn 0.2s ease-out;
+}
+
+@keyframes agentsFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.agents-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.agents-telemetry-chip {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agents-telemetry-lbl {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.agents-telemetry-val {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #00F0FF;
+}
+
+/* --------------------------------------------------------------------------
+   13. 5-PILLAR CONFLUENCE GEOMETRY RADAR (SPIDER CHART)
+   -------------------------------------------------------------------------- */
+.agents-radar-container {
+  background: rgba(10, 15, 26, 0.7);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.agents-radar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.agents-radar-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+.agents-radar-badge {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 240, 255, 0.1);
+  color: #00F0FF;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+}
+
+.agents-radar-content-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.agents-radar-svg-wrap {
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  justify-content: center;
+}
+
+.agents-radar-svg {
+  width: 100%;
+  height: auto;
+  max-height: 270px;
+  overflow: visible;
+}
+
+.agents-radar-legend-col {
+  flex: 1;
+  min-width: 240px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agents-radar-stat-box {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.agents-radar-stat-lbl {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.agents-radar-stat-val {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.agents-radar-stat-val.cyan {
+  color: #00F0FF;
+}
+
+.agents-radar-stat-sub {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.agents-radar-axes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agents-radar-axis-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.agents-radar-axis-name {
+  width: 90px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.agents-radar-mini-bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.agents-radar-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00F0FF, #00E676);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.agents-radar-axis-score {
+  width: 38px;
+  text-align: right;
+  color: #f1f5f9;
+  font-weight: 700;
+}
+

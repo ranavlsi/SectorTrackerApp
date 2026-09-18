@@ -1163,3 +1163,765 @@
   justify-content: space-between;
   align-items: center;
 }
+
+/* ------------------------------------------------------------------------- */
+/* VOLATILITY AIR POCKET RADAR & TRADER DIRECTIVES                            */
+/* ------------------------------------------------------------------------- */
+.vol-airpocket-deck {
+  margin-top: 14px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vol-airpocket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.vol-airpocket-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vol-airpocket-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #00F0FF;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.vol-airpocket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.vol-airpocket-card {
+  background: rgba(10, 14, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.vol-airpocket-card:hover {
+  border-color: rgba(0, 240, 255, 0.5);
+  box-shadow: 0 4px 16px rgba(0, 240, 255, 0.12);
+}
+
+.vol-airpocket-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.vol-airpocket-coords {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.vol-airpocket-coords .sub {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 400;
+  margin-top: 2px;
+  display: block;
+}
+
+.vol-airpocket-discount-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #00E676;
+  background: rgba(0, 230, 118, 0.12);
+  border: 1px solid rgba(0, 230, 118, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.vol-airpocket-playbook {
+  background: rgba(5, 8, 16, 0.6);
+  border-radius: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid #00F0FF;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.vol-airpocket-playbook strong {
+  color: #00F0FF;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.vol-airpocket-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.vol-airpocket-btn {
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: #00F0FF;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vol-airpocket-btn:hover {
+  background: rgba(0, 240, 255, 0.25);
+  border-color: #00F0FF;
+}
+
+.vol-airpocket-btn.trade {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #00E676;
+}
+
+.vol-airpocket-btn.trade:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #00E676;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 3D SURFACE & HEATMAP COLOR & BACKGROUND CONTROLS                           */
+/* ------------------------------------------------------------------------- */
+.vol-customizer-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vol-customizer-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 4px 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.vol-customizer-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vol-customizer-select {
+  background: transparent;
+  border: none;
+  color: #00F0FF;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+  padding: 2px 2px;
+}
+
+.vol-customizer-select option {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* CAMERA PRESETS & TURNTABLE CONTROLS                                       */
+/* ------------------------------------------------------------------------- */
+.vol-camera-pills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 3px 6px;
+}
+
+.vol-camera-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vol-camera-btn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vol-camera-btn.active {
+  color: #00F0FF;
+  background: rgba(0, 240, 255, 0.15);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.vol-rotate-btn {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vol-rotate-btn:hover {
+  background: rgba(168, 85, 247, 0.2);
+}
+
+.vol-rotate-btn.active {
+  background: rgba(168, 85, 247, 0.3);
+  border-color: #a855f7;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+}
+
+/* ------------------------------------------------------------------------- */
+/* AXIS & FILTER TOGGLE PILLS                                                */
+/* ------------------------------------------------------------------------- */
+.vol-toggle-pill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.vol-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vol-toggle-btn:hover {
+  color: #f1f5f9;
+}
+
+.vol-toggle-btn.active {
+  background: rgba(0, 240, 255, 0.18);
+  color: #00F0FF;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+}
+
+/* ------------------------------------------------------------------------- */
+/* SNAPSHOT EXPORT BUTTON                                                    */
+/* ------------------------------------------------------------------------- */
+.vol-snapshot-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vol-snapshot-btn:hover {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.35);
+  color: #00F0FF;
+}
+
+/* ------------------------------------------------------------------------- */
+/* SYNCHRONIZED ROW HIGHLIGHT IN TRADE SETUPS TABLE                          */
+/* ------------------------------------------------------------------------- */
+.vol-highlighted-row {
+  animation: pulseHighlightRow 2s infinite ease-in-out;
+  background: rgba(0, 240, 255, 0.08) !important;
+  border-left: 3px solid #00F0FF !important;
+}
+
+@keyframes pulseHighlightRow {
+  0%, 100% {
+    box-shadow: inset 0 0 14px rgba(0, 240, 255, 0.1);
+  }
+  50% {
+    box-shadow: inset 0 0 24px rgba(0, 240, 255, 0.25);
+  }
+}
+
+/* ==========================================================================
+   INSTITUTIONAL OVERHEDGE / UNDERHEDGE RADAR CARD
+   ========================================================================== */
+
+.vol-hedging-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(8, 12, 22, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hedging-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.hedging-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hedging-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hedging-main-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hedging-state-badge {
+  font-size: 11px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hedging-subtitle {
+  margin: 3px 0 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hedging-quick-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hedging-stat-chip {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hedging-stat-chip .lbl {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.hedging-stat-chip .val {
+  font-weight: 800;
+}
+
+/* Spectrum Bar */
+.hedging-spectrum-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.spectrum-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.spec-lbl-green { color: #34d399; font-weight: 700; }
+.spec-lbl-slate { color: #94a3b8; font-weight: 600; }
+.spec-lbl-red { color: #f87171; font-weight: 700; }
+
+.hedging-bar-track {
+  height: 8px;
+  background: #1e293b;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  width: 100%;
+}
+
+.bar-segment {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.bar-underhedged {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.bar-balanced {
+  background: #334155;
+}
+
+.bar-overhedged {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+/* Dealer Insight Box */
+.hedging-dealer-insight {
+  background: rgba(6, 182, 212, 0.05);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.dealer-insight-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #00F0FF;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 4px;
+}
+
+.dealer-insight-text {
+  margin: 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+/* Strike Targets Grid */
+.hedging-targets-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 860px) {
+  .hedging-targets-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hedging-target-col {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.col-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 6px;
+}
+
+.col-tag {
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.col-tag.red-tag {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.col-tag.green-tag {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.col-sub {
+  font-size: 10px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.target-cards-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.target-micro-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tmc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+.tmc-strike {
+  color: #ffffff;
+}
+
+.tmc-exp {
+  color: #64748b;
+  font-size: 9px;
+}
+
+.tmc-edge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f87171;
+}
+
+.tmc-edge.green-edge {
+  color: #34d399;
+}
+
+.tmc-strat {
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+/* Trader Educational & Tactical Guide Box */
+.hedging-guide-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hedging-guide-toggle-btn:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10b981;
+  color: #6ee7b7;
+}
+
+.hedging-trader-guide-box {
+  background: linear-gradient(135deg, rgba(6, 15, 25, 0.95), rgba(4, 20, 18, 0.95));
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(16, 185, 129, 0.15);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.guide-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.guide-tag.green {
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  letter-spacing: 0.04em;
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .guide-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.guide-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide-card.highlight {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.guide-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-card-icon {
+  font-size: 16px;
+}
+
+.guide-card-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f1f5f9;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.guide-card-desc {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.guide-card-desc strong {
+  color: #34d399;
+}
+
+.guide-card-bullets {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide-card-bullets strong {
+  color: #00F0FF;
+}

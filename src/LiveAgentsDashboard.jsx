@@ -4,7 +4,7 @@ import {
   Brain, Zap, Globe, TrendingUp, TrendingDown, ShieldCheck,
   Activity, Search, RefreshCw, Layers, Crosshair, Sparkles,
   ArrowUpRight, ArrowDownRight, Shield, AlertTriangle, MessageSquare,
-  Radio, CheckCircle2, ChevronRight
+  Radio, CheckCircle2, ChevronRight, ChevronDown, ChevronUp, Clock, Send
 } from 'lucide-react';
 
 export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
@@ -14,6 +14,9 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchSuccess, setDispatchSuccess] = useState(false);
+  const [expandedTelemetry, setExpandedTelemetry] = useState({});
 
   const quickTickers = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMD', 'SMCI'];
 
@@ -51,6 +54,36 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
     setSearchInput('');
   };
 
+  const toggleTelemetry = (id) => {
+    setExpandedTelemetry(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const handleDispatchTelegram = async () => {
+    if (!data) return;
+    setDispatching(true);
+    try {
+      await fetch('/api/webhook_alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticker,
+          source: 'Chief AI Council',
+          message: data.synthesis || `AI Council Alert for ${ticker}`,
+          priority: 'HIGH'
+        })
+      });
+      setDispatchSuccess(true);
+      setTimeout(() => setDispatchSuccess(false), 3500);
+    } catch (err) {
+      console.error('Dispatch error:', err);
+    } finally {
+      setDispatching(false);
+    }
+  };
+
   const getAgentIcon = (id) => {
     switch (id) {
       case 'macro': return <Globe size={18} />;
@@ -71,6 +104,153 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
   const stocktwits = data?.stocktwits || [];
   const news = data?.x_updates || [];
   const surge = data?.surge_metrics || {};
+
+  const renderConfluenceRadar = () => {
+    const radarData = data?.radar_data && data.radar_data.length === 5 ? data.radar_data : [
+      { axis: 'Technical', score: 85, weight: '30%' },
+      { axis: 'Whale Flow', score: 80, weight: '25%' },
+      { axis: 'Macro', score: 65, weight: '15%' },
+      { axis: 'Fundamentals', score: 75, weight: '15%' },
+      { axis: 'Sentiment', score: 70, weight: '15%' }
+    ];
+
+    const cx = 175;
+    const cy = 135;
+    const R = 85;
+    const numAxes = radarData.length;
+
+    const getPolygonPoints = (radiusRatio) => {
+      return radarData.map((_, i) => {
+        const angle = -Math.PI / 2 + (i * 2 * Math.PI) / numAxes;
+        const x = cx + R * radiusRatio * Math.cos(angle);
+        const y = cy + R * radiusRatio * Math.sin(angle);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+    };
+
+    const dataPoints = radarData.map((d, i) => {
+      const ratio = Math.max(Math.min((d.score || 50) / 100, 1), 0.1);
+      const angle = -Math.PI / 2 + (i * 2 * Math.PI) / numAxes;
+      const x = cx + R * ratio * Math.cos(angle);
+      const y = cy + R * ratio * Math.sin(angle);
+      return { x, y, score: d.score, axis: d.axis, weight: d.weight };
+    });
+
+    const dataPolygonString = dataPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+    return (
+      <div className="agents-radar-container">
+        <div className="agents-radar-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Layers size={14} color="#00F0FF" />
+            <span className="agents-radar-title">5-Pillar Confluence Geometry Radar</span>
+          </div>
+          <span className="agents-radar-badge">Dynamic Multi-Factor Pentagon</span>
+        </div>
+
+        <div className="agents-radar-content-row">
+          <div className="agents-radar-svg-wrap">
+            <svg viewBox="0 0 350 270" className="agents-radar-svg">
+              <defs>
+                <linearGradient id="polyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#00F0FF" stopOpacity="0.4" />
+                  <stop offset="50%" stopColor="#a855f7" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#00E676" stopOpacity="0.35" />
+                </linearGradient>
+              </defs>
+
+              {/* Concentric Pentagonal Grid Web */}
+              {[0.25, 0.5, 0.75, 1.0].map((ring, idx) => (
+                <polygon
+                  key={idx}
+                  points={getPolygonPoints(ring)}
+                  fill={idx === 3 ? 'rgba(15, 23, 42, 0.4)' : 'none'}
+                  stroke="rgba(255, 255, 255, 0.08)"
+                  strokeWidth={idx === 3 ? '1.5' : '1'}
+                  strokeDasharray={idx === 3 ? 'none' : '3,3'}
+                />
+              ))}
+
+              {/* Radial Axis Lines */}
+              {radarData.map((_, i) => {
+                const angle = -Math.PI / 2 + (i * 2 * Math.PI) / numAxes;
+                const x = cx + R * Math.cos(angle);
+                const y = cy + R * Math.sin(angle);
+                return (
+                  <line
+                    key={i}
+                    x1={cx}
+                    y1={cy}
+                    x2={x}
+                    y2={y}
+                    stroke="rgba(255, 255, 255, 0.15)"
+                    strokeWidth="1"
+                  />
+                );
+              })}
+
+              {/* Shaded Multi-Agent Data Polygon */}
+              <polygon
+                points={dataPolygonString}
+                fill="url(#polyGradient)"
+                stroke="#00F0FF"
+                strokeWidth="2.5"
+                style={{ filter: 'drop-shadow(0 0 8px rgba(0, 240, 255, 0.4))' }}
+              />
+
+              {/* Apex Nodes and Axis Labels */}
+              {dataPoints.map((p, i) => {
+                const angle = -Math.PI / 2 + (i * 2 * Math.PI) / numAxes;
+                const labelDist = R + 22;
+                const lx = cx + labelDist * Math.cos(angle);
+                const ly = cy + labelDist * Math.sin(angle) + 4;
+                return (
+                  <g key={i}>
+                    <circle cx={p.x} cy={p.y} r="4.5" fill="#00E676" stroke="#060910" strokeWidth="2" />
+                    <text
+                      x={lx}
+                      y={ly}
+                      textAnchor="middle"
+                      fill="#e2e8f0"
+                      fontSize="10"
+                      fontFamily="monospace"
+                      fontWeight="700"
+                    >
+                      {p.axis} ({p.score}%)
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          <div className="agents-radar-legend-col">
+            <div className="agents-radar-stat-box">
+              <span className="agents-radar-stat-lbl">Swarm Consensus</span>
+              <span className="agents-radar-stat-val cyan">
+                {briefing.master_conviction_score || 75}%
+              </span>
+              <span className="agents-radar-stat-sub">
+                {briefing.verdict_title || 'Momentum Alignment'}
+              </span>
+            </div>
+
+            <div className="agents-radar-axes-list">
+              {radarData.map((d, i) => (
+                <div key={i} className="agents-radar-axis-row">
+                  <span className="agents-radar-axis-name">{d.axis}</span>
+                  <div className="agents-radar-mini-bar">
+                    <div className="agents-radar-mini-fill" style={{ width: `${d.score}%` }} />
+                  </div>
+                  <span className="agents-radar-axis-score">{d.score}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="agents-terminal-root">
@@ -131,6 +311,17 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
               title="Refresh Swarm Analysis"
             >
               <RefreshCw size={13} />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDispatchTelegram}
+              disabled={dispatching}
+              className={`agents-chip-btn agents-dispatch-btn ${dispatchSuccess ? 'success' : ''}`}
+              title="Dispatch Trade Blueprint & Alert to Telegram"
+            >
+              <Radio size={13} className={dispatching ? 'animate-pulse' : ''} />
+              <span>{dispatchSuccess ? 'Dispatched ✓' : (dispatching ? 'Sending...' : 'Dispatch Alert')}</span>
             </button>
           </div>
 
@@ -197,12 +388,31 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
                       <Crosshair size={12} color="#00E676" />
                       <span>R:R: {briefing.risk_reward_ratio || '1 : 2.5'}</span>
                     </div>
+                    {briefing.weights_rationale && (
+                      <div className="agents-pill highlight-purple" title={briefing.weights_rationale}>
+                        <Shield size={12} color="#c084fc" />
+                        <span>Regime: {briefing.weights_rationale.split(':')[0]}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <p className="agents-executive-summary">
                   {briefing.executive_summary}
                 </p>
+
+                {/* Chief Skeptic Dissenter Vector (Devil's Advocate) */}
+                {briefing.chief_skeptic && (
+                  <div className="agents-skeptic-banner">
+                    <div className="agents-skeptic-header">
+                      <AlertTriangle size={14} className="agents-skeptic-icon" />
+                      <span className="agents-skeptic-title">Chief Skeptic Vector · Devil's Advocate</span>
+                    </div>
+                    <p className="agents-skeptic-text">
+                      {briefing.chief_skeptic}
+                    </p>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -230,7 +440,7 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
                   <span className="agents-bp-tile-val cyan">
                     ${blueprint.entry_zone_min} ── ${blueprint.entry_zone_max}
                   </span>
-                  <span className="agents-bp-tile-sub cyan">Pullback to EMA10</span>
+                  <span className="agents-bp-tile-sub cyan">Pullback to EMA10 / AVWAP</span>
                 </div>
 
                 <div className="agents-bp-tile">
@@ -265,6 +475,24 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
                   <span className="agents-bp-tile-sub cyan">Risk Adjusted</span>
                 </div>
               </div>
+
+              {/* Multi-Tier Invalidation Directives */}
+              {(blueprint.time_invalidation || blueprint.volume_invalidation) && (
+                <div className="agents-inval-strip">
+                  {blueprint.time_invalidation && (
+                    <div className="agents-inval-item">
+                      <Clock size={13} color="#00F0FF" />
+                      <span><strong>Time Invalidation:</strong> {blueprint.time_invalidation}</span>
+                    </div>
+                  )}
+                  {blueprint.volume_invalidation && (
+                    <div className="agents-inval-item">
+                      <Activity size={13} color="#f43f5e" />
+                      <span><strong>Volume Stop:</strong> {blueprint.volume_invalidation}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -355,6 +583,34 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
                           <span className="agents-mini-metric-val">{v}</span>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Expandable Deep Telemetry & Math Drawer */}
+                  {ag.telemetry && Object.keys(ag.telemetry).length > 0 && (
+                    <div className="agents-card-telemetry-section">
+                      <button
+                        type="button"
+                        onClick={() => toggleTelemetry(ag.id)}
+                        className="agents-telemetry-toggle-btn"
+                        title="Toggle raw calculated quant formulas and telemetry"
+                      >
+                        <span>Quant Telemetry & Math</span>
+                        {expandedTelemetry[ag.id] ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      </button>
+
+                      {expandedTelemetry[ag.id] && (
+                        <div className="agents-telemetry-drawer">
+                          <div className="agents-telemetry-grid">
+                            {Object.entries(ag.telemetry).map(([tk, tv]) => (
+                              <div key={tk} className="agents-telemetry-chip">
+                                <span className="agents-telemetry-lbl">{tk}</span>
+                                <span className="agents-telemetry-val">{tv}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -513,12 +769,20 @@ export default function LiveAgentsDashboard({ initialTicker = 'NVDA' }) {
           {/* ------------------------------------------------------------------ */}
           {activeTab === 'confluence' && (
             <div className="agents-panel">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <Layers size={18} color="#00F0FF" />
-                <h3 style={{ margin: 0, fontSize: '15px', color: '#fff' }}>
-                  Multi-Agent Consensus & Confluence Voting Matrix
-                </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Layers size={18} color="#00F0FF" />
+                  <h3 style={{ margin: 0, fontSize: '15px', color: '#fff' }}>
+                    Multi-Agent Consensus & Confluence Voting Matrix
+                  </h3>
+                </div>
+                <div className="agents-pill">
+                  <span>Swarm Convergence: {briefing.master_conviction_score || 75}% Conviction</span>
+                </div>
               </div>
+
+              {/* 5-Pillar Confluence Geometry Radar Spider Chart */}
+              {renderConfluenceRadar()}
 
               <div className="agents-table-wrap">
                 <table className="agents-data-table agents-matrix-table">

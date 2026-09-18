@@ -23,6 +23,7 @@ import SeasonalityRadarDashboard from './SeasonalityRadarDashboard';
 import MacroMatrixDashboard from './MacroMatrixDashboard';
 import AiPlaybookDashboard from './AiPlaybookDashboard';
 import AskAiLiveDashboard from './AskAiLiveDashboard';
+import SwingTradingSystem from './SwingTradingSystem';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -182,7 +183,32 @@ const ScreenerPill = ({ item, rank, onClick }) => {
 function App() {
   const [data, setData] = useState(null)
   const [screenerData, setScreenerData] = useState(null)
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      return tabParam || hash || 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      if (hash) setActiveTab(hash);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const setTabWithHash = (tab) => {
+    try {
+      window.location.hash = tab;
+    } catch (e) {}
+    setActiveTab(tab);
+  };
   const [timeframe, setTimeframe] = useState('daily')
   const [hiddenLines, setHiddenLines] = useState({})
   
@@ -205,11 +231,81 @@ function App() {
   const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false)
   const [chartMode, setChartMode] = useState('advanced') // Default to advanced with drawing tools
   
-  // Live Agent Chat State
+  // Live Agent Chat & Real-Time Alert Stream State
   const [chatHistory, setChatHistory] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [agentPersona, setAgentPersona] = useState('quant') // quant, options, macro
   const [isChatLoading, setIsChatLoading] = useState(false)
+  const [streamStatus, setStreamStatus] = useState('connecting') // 'live' | 'connecting' | 'polling'
+  const [lastSyncTime, setLastSyncTime] = useState('')
+  const [isRefreshingAlerts, setIsRefreshingAlerts] = useState(false)
+
+  const formatAlertMessage = (alert) => {
+    if (!alert) return null;
+    const ticker = alert.ticker || 'MARKET';
+    const status = alert.status || 'TRIGGERED';
+    const color = alert.color || (status in { "TRIGGERED": 1, "TARGET_HIT": 1, "TARGET_2_HIT": 1 } ? "#00E676" : status === "STOPPED_OUT" ? "#f43f5e" : "#10b981");
+    
+    let timeStr = alert.display_time || '';
+    if (!timeStr && alert.timestamp) {
+      try {
+        const dt = new Date(alert.timestamp);
+        if (!isNaN(dt.getTime())) {
+          timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } else {
+          timeStr = alert.timestamp;
+        }
+      } catch (e) {
+        timeStr = alert.timestamp;
+      }
+    }
+    if (!timeStr) timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    let rawText = alert.setup || alert.message || '';
+    if (!rawText) {
+      rawText = `[LIVE ALERT] ${ticker}: ${status} - ${timeStr}`;
+    }
+
+    const id = alert.id || `${ticker}_${alert.timestamp || timeStr}_${rawText.slice(0, 25)}`;
+
+    let council = alert.council;
+    if (!council) {
+      if (rawText.includes('SCREENER MONITOR')) council = '🎯 SCREENER MONITOR';
+      else if (rawText.includes('PREMARKET')) council = '🌅 PREMARKET RADAR';
+      else if (rawText.includes('AI COUNCIL')) council = '🏛️ AI COUNCIL';
+      else if (rawText.includes('DARK POOL')) council = '🌊 DARK POOL';
+      else if (rawText.includes('TECHNICAL')) council = '⚡ TECHNICAL COUNCIL';
+      else council = '⚡ MARKET RADAR';
+    }
+
+    return {
+      id,
+      role: 'agent',
+      isBroadcast: true,
+      council,
+      text: rawText,
+      timeStr,
+      color,
+      ticker,
+      payload: alert.payload,
+      timestamp: alert.timestamp
+    };
+  };
+
+  const mergeAlerts = (prevList, incomingList) => {
+    const existingKeys = new Set(prevList.map(m => m.id || `${m.ticker}_${(m.text || '').slice(0, 40)}`));
+    const newItems = [];
+    for (const item of incomingList) {
+      if (!item) continue;
+      const key = item.id || `${item.ticker}_${(item.text || '').slice(0, 40)}`;
+      if (!existingKeys.has(key)) {
+        existingKeys.add(key);
+        newItems.push(item);
+      }
+    }
+    if (newItems.length === 0) return prevList;
+    return [...newItems, ...prevList].slice(0, 60);
+  };
   
   // Intraday State
   const [intradayData, setIntradayData] = useState(null)
@@ -271,9 +367,24 @@ function App() {
         .catch(err => console.error("Error loading screener data:", err))
         
       fetch('/market_health.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => setMarketHealth(data))
-        .catch(err => console.error("Error loading market health data:", err))
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.text();
+        })
+        .then(text => {
+          const sanitized = text.replace(/:\s*NaN\b/g, ': null').replace(/:\s*undefined\b/g, ': null');
+          const data = JSON.parse(sanitized);
+          setMarketHealth(data);
+        })
+        .catch(err => {
+          console.warn("Retrying market health from API fallback...", err);
+          fetch('/api/market_health')
+            .then(r => r.json())
+            .then(data => {
+              if (data && !data.error) setMarketHealth(data);
+            })
+            .catch(apiErr => console.error("Error loading market health data:", apiErr));
+        })
 
       fetch('/weekly_playbook.json?t=' + new Date().getTime())
         .then(res => res.json())
@@ -309,40 +420,50 @@ function App() {
         .then(res => res.json())
         .then(json => setIntradayData(json.results || []))
         .catch(err => console.error("Error loading intraday data:", err))
+      fetch('/alerts.json?t=' + Date.now())
+        .then(res => res.json())
+        .then(alerts => {
+          if (Array.isArray(alerts) && alerts.length > 0) {
+            const formatted = alerts.map(formatAlertMessage).filter(Boolean);
+            setChatHistory(prev => mergeAlerts(prev, formatted));
+            setLastSyncTime(new Date().toLocaleTimeString());
+          }
+        })
+        .catch(err => console.debug("Initial alerts history load skipped:", err));
     };
 
     fetchAllData();
     // Auto-refresh main dashboard data every 1 minute
     const dataInterval = setInterval(fetchAllData, 60000);
       
-    // Live Agent Slack-Channel Integration
+    // Live Agent SSE Streaming Integration
     const eventSource = new EventSource('/api/stream');
+    eventSource.onopen = () => {
+      setStreamStatus('live');
+    };
     eventSource.onmessage = (event) => {
       try {
+        if (!event.data || !event.data.trim()) return;
         const alert = JSON.parse(event.data);
-        const slackMessage = {
-          role: 'agent',
-          isBroadcast: true,
-          council: alert.council,
-          text: alert.council.includes('PREMARKET') ? `[MORNING BRIEFING] ${alert.setup} - ${alert.timestamp}` : `[LIVE ALERT] ${alert.ticker}: ${alert.setup} - ${alert.timestamp}`,
-          color: alert.color,
-          ticker: alert.ticker,
-          payload: alert.payload
-        };
-        // Append the live broadcast to the global chat history
-        setChatHistory(prev => [...prev, slackMessage]);
-        
-        // Push Intraday Engine live breakouts directly to the global banner
-        if (alert.council && alert.council.includes('INTRADAY')) {
-          setGlobalLiveAlerts(prev => {
-            const newBannerAlert = { ticker: alert.ticker, msg: alert.setup };
-            // Prepend new alert and keep max 10
-            return [newBannerAlert, ...prev].slice(0, 10);
-          });
+        const slackMessage = formatAlertMessage(alert);
+        if (slackMessage) {
+          setChatHistory(prev => mergeAlerts(prev, [slackMessage]));
+          setLastSyncTime(new Date().toLocaleTimeString());
+          
+          // Push live breakouts to global banner
+          if (alert.council && (alert.council.includes('INTRADAY') || alert.council.includes('SCREENER') || alert.council.includes('RADAR'))) {
+            setGlobalLiveAlerts(prev => {
+              const newBannerAlert = { ticker: alert.ticker, msg: alert.setup || alert.message };
+              return [newBannerAlert, ...prev].slice(0, 10);
+            });
+          }
         }
       } catch (err) {
-        console.error("SSE Parse Error", err);
+        // Keepalive comments or minor parse errors ignored
       }
+    };
+    eventSource.onerror = () => {
+      setStreamStatus('polling');
     };
     
     return () => {
@@ -351,24 +472,36 @@ function App() {
     };
   }, [])
   
-  // Global Alert Polling
+  // Global Alert Polling Fallback
   useEffect(() => {
     const pollAlerts = async () => {
       try {
-        const res = await fetch('/live_market_alerts.json?t=' + new Date().getTime());
+        const res = await fetch('/live_market_alerts.json?t=' + Date.now());
         if (res.ok) {
           const json = await res.json();
           setGlobalLiveAlerts(prev => {
-            // Preserve the SSE injected alerts (they have a 'msg' property)
             const sseAlerts = prev.filter(a => a.msg !== undefined);
             const polledAlerts = json.alerts || [];
             return [...sseAlerts, ...polledAlerts].slice(0, 15);
           });
         }
       } catch (err) {}
+
+      // Keep Live Market Updates sidebar continuously synced from alerts.json
+      try {
+        const aRes = await fetch('/alerts.json?t=' + Date.now());
+        if (aRes.ok) {
+          const alerts = await aRes.json();
+          if (Array.isArray(alerts) && alerts.length > 0) {
+            const formatted = alerts.slice(0, 30).map(formatAlertMessage).filter(Boolean);
+            setChatHistory(prev => mergeAlerts(prev, formatted));
+            setLastSyncTime(new Date().toLocaleTimeString());
+          }
+        }
+      } catch (err) {}
     };
     pollAlerts();
-    const interval = setInterval(pollAlerts, 10000);
+    const interval = setInterval(pollAlerts, 8000);
     return () => clearInterval(interval);
   }, [])
 
@@ -777,6 +910,18 @@ function App() {
           </button>
           <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
           <button className={activeTab === 'screenermonitor' ? 'tab-active' : ''} onClick={() => setActiveTab('screenermonitor')}><Target size={18} /> Screener Monitor 🎯</button>
+          <button 
+            className={activeTab === 'swingsystem' ? 'tab-active' : ''} 
+            onClick={() => setActiveTab('swingsystem')}
+            style={{
+              background: activeTab === 'swingsystem' ? undefined : 'rgba(0, 242, 254, 0.08)',
+              borderLeft: activeTab === 'swingsystem' ? undefined : '3px solid #00f2fe',
+              color: activeTab === 'swingsystem' ? undefined : '#00f2fe',
+              fontWeight: 700
+            }}
+          >
+            <Target size={18} color="#00f2fe" /> 1-3W Swing System 🎯
+          </button>
           <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
           <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
           <button className={activeTab === 'playbook' ? 'tab-active' : ''} onClick={() => setActiveTab('playbook')}><BookOpen size={18} /> Weekly Playbook</button>
@@ -987,6 +1132,16 @@ function App() {
 
       {activeTab === 'screenermonitor' && (
         <ScreenerMonitorDashboard onTickerClick={fetchTickerData} />
+      )}
+
+      {activeTab === 'swingsystem' && (
+        <SwingTradingSystem 
+          onSelectTicker={fetchTickerData} 
+          onOpenFundamentals={(ticker) => {
+            setSearchQuery(ticker);
+            setActiveTab('deepfundamentals');
+          }}
+        />
       )}
 
       {activeTab === 'rslinescanner' && (
@@ -2573,40 +2728,99 @@ function App() {
         
         {/* Live Agent / Sweeps Feed - ALWAYS VISIBLE */}
         <div className="neo-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '1rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
-            <h3 style={{ margin: 0, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
-              <Radio size={18} className="pulse" /> Live Market Updates
-            </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem' }}>
+                <Radio size={16} className={streamStatus === 'live' ? 'pulse' : ''} /> Live Market Updates
+              </h3>
+              <span style={{
+                fontSize: '0.62rem',
+                fontWeight: 'bold',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                background: streamStatus === 'live' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                color: streamStatus === 'live' ? '#10b981' : '#eab308',
+                border: `1px solid ${streamStatus === 'live' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(234, 179, 8, 0.4)'}`,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                textTransform: 'uppercase'
+              }}>
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: streamStatus === 'live' ? '#10b981' : '#eab308', display: 'inline-block' }} />
+                {streamStatus === 'live' ? 'LIVE' : 'SYNCED'}
+              </span>
+              {chatHistory.filter(m => m.isBroadcast).length > 0 && (
+                <span style={{ fontSize: '0.7rem', background: 'rgba(255, 255, 255, 0.08)', color: '#94a3b8', padding: '1px 6px', borderRadius: '8px' }}>
+                  {chatHistory.filter(m => m.isBroadcast).length}
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {lastSyncTime && (
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontFamily: 'monospace' }}>
+                  {lastSyncTime}
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setIsRefreshingAlerts(true);
+                  fetch('/alerts.json?t=' + Date.now())
+                    .then(r => r.json())
+                    .then(alerts => {
+                      if (Array.isArray(alerts)) {
+                        const formatted = alerts.slice(0, 30).map(formatAlertMessage).filter(Boolean);
+                        setChatHistory(prev => mergeAlerts(prev, formatted));
+                        setLastSyncTime(new Date().toLocaleTimeString());
+                      }
+                    })
+                    .finally(() => setTimeout(() => setIsRefreshingAlerts(false), 500));
+                }}
+                title="Sync latest live alerts"
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '3px', display: 'flex', alignItems: 'center' }}
+              >
+                <RefreshCw size={13} style={{ transform: isRefreshingAlerts ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }} />
+              </button>
+            </div>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '5px' }}>
             {chatHistory.filter(m => m.isBroadcast).length === 0 && (
               <div style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' }}>
                 <Activity size={32} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
-                <p style={{ margin: 0 }}>Waiting for live agent broadcasts...</p>
+                <p style={{ margin: 0 }}>Connecting to live market radar feed...</p>
               </div>
             )}
             
             {chatHistory.filter(m => m.isBroadcast).map((msg, idx) => (
-              <div key={idx} style={{ alignSelf: 'flex-start', background: `rgba(${msg.color === '#10b981' ? '16, 185, 129' : msg.color === '#ef4444' ? '239, 68, 68' : '139, 92, 246'}, 0.1)`, border: `1px solid ${msg.color}`, padding: '8px 12px', borderRadius: '8px', width: '100%' }}>
-                <div style={{ margin: 0, fontSize: '0.85rem', color: '#e2e8f0', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
-                  <strong style={{ color: msg.color, display: 'block', marginBottom: '4px', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                    {msg.council}
+              <div key={msg.id || idx} style={{ alignSelf: 'flex-start', background: 'rgba(15, 23, 42, 0.65)', border: `1px solid ${msg.color || '#3b82f6'}`, padding: '10px 12px', borderRadius: '8px', width: '100%', boxSizing: 'border-box', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <strong style={{ color: msg.color, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '700' }}>
+                    {msg.council || '⚡ MARKET RADAR'}
                   </strong>
-                  <ReactMarkdown>{msg.text.replace(/\*/g, '**')}</ReactMarkdown>
+                  {msg.timeStr && (
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'monospace' }}>
+                      {msg.timeStr}
+                    </span>
+                  )}
                 </div>
+                
+                <div style={{ margin: 0, fontSize: '0.82rem', color: '#e2e8f0', lineHeight: '1.45', whiteSpace: 'pre-wrap' }}>
+                  <ReactMarkdown>{(msg.text || '').replace(/\*/g, '**')}</ReactMarkdown>
+                </div>
+                
                 {msg.payload ? (
                   <button 
                     onClick={() => { setBriefingData(msg.payload); setActiveTab('briefing'); }}
-                    style={{ marginTop: '8px', padding: '6px 12px', background: '#DFFF00', color: '#000', border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', width: '100%', justifyContent: 'center' }}
+                    style={{ marginTop: '8px', padding: '6px 12px', background: '#DFFF00', color: '#000', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', width: '100%', justifyContent: 'center' }}
                   >
-                    <Maximize size={14} /> Expand Morning Briefing
+                    <Maximize size={13} /> Expand Morning Briefing
                   </button>
                 ) : (
-                  msg.ticker && msg.ticker !== 'BRIEFING' && (
+                  msg.ticker && !['MARKET', 'MACRO', 'UNKNOWN', 'BRIEFING'].includes(msg.ticker) && (
                     <button 
                       onClick={() => fetchTickerData(msg.ticker)}
-                      style={{ marginTop: '8px', padding: '4px 12px', background: 'transparent', color: msg.color, border: `1px solid ${msg.color}`, borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}
+                      style={{ marginTop: '8px', padding: '4px 10px', background: 'rgba(255,255,255,0.05)', color: msg.color, border: `1px solid ${msg.color}`, borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}
                     >
                       <Search size={12} /> Analyze {msg.ticker}
                     </button>

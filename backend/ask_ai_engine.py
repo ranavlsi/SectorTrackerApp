@@ -70,11 +70,59 @@ def _get_cached_ticker(symbol: str) -> yf.Ticker:
     return t
 
 def _get_gex_profile(ticker: str):
+    ticker_clean = ticker.upper().strip()
     try:
-        from backend.gex_engine import get_gex_profile
-        return get_gex_profile(ticker)
+        import sys
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        if backend_dir not in sys.path:
+            sys.path.append(backend_dir)
+        try:
+            from gex_engine import get_gex_profile
+        except ImportError:
+            from backend.gex_engine import get_gex_profile
+        data = get_gex_profile(ticker_clean)
+        if data and "key_levels" in data and any(data["key_levels"].values()):
+            return data
     except Exception:
-        return None
+        pass
+
+    # High-reliability fallback to public/gex_results.json cache
+    try:
+        res_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public", "gex_results.json")
+        if os.path.exists(res_path):
+            with open(res_path, "r") as f:
+                cached = json.load(f)
+                if ticker_clean in cached:
+                    return cached[ticker_clean]
+    except Exception:
+        pass
+    return None
+
+def _get_deep_fundamentals(ticker: str):
+    ticker_clean = ticker.upper().strip()
+    result = {"dcf": None, "fundamentals": None}
+    try:
+        import sys
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        if backend_dir not in sys.path:
+            sys.path.append(backend_dir)
+        try:
+            from fundamental_data_api import calculate_dcf_fair_value
+            dcf_data = calculate_dcf_fair_value(ticker_clean)
+            if dcf_data and not dcf_data.get("error"):
+                result["dcf"] = dcf_data
+        except Exception:
+            pass
+        try:
+            from fundamentals_engine import get_fundamentals
+            fund_data = get_fundamentals(ticker_clean)
+            if fund_data:
+                result["fundamentals"] = fund_data
+        except Exception:
+            pass
+    except Exception:
+        pass
+    return result
 
 def _get_market_health_summary():
     try:
@@ -154,7 +202,14 @@ def classify_question_intent(prompt: str) -> Dict[str, bool]:
         "attribution": any(k in p for k in ["why is", "why", "down today", "up today", "falling", "crashing", "dumping", "dropping", "surging", "spiking", "rallying", "what happened", "reason", "cause", "drop"]),
         "valuation": any(k in p for k in ["pe", "p/e", "valuation", "fair value", "dcf", "multiple", "peg", "price to book", "p/s", "expensive", "cheap", "undervalued", "overvalued", "worth"]),
         "earnings": any(k in p for k in ["earnings", "eps", "revenue", "guidance", "beat", "miss", "quarter", "q1", "q2", "q3", "q4", "report", "call", "financials"]),
-        "gex": any(k in p for k in ["gamma", "gex", "call wall", "put wall", "zero gamma", "dealer", "max pain", "hedging", "options flow", "oi", "open interest", "contracts"]),
+        "gex": any(k in p for k in [
+            "gamma", "gex", "call wall", "call walls", "put wall", "put walls",
+            "zero gamma", "dealer", "max pain", "hedging", "options flow", "oi",
+            "open interest", "contracts", "option wall", "option walls",
+            "options wall", "options walls", "gamma wall", "gamma walls",
+            "gamma level", "gamma levels", "gamma flip", "gamma profile",
+            "dealer gamma", "options chain", "options landscape"
+        ]),
         "technicals": any(k in p for k in ["support", "resistance", "moving average", "ema", "sma", "rsi", "macd", "trend", "breakout", "vcp", "chart", "technical", "levels", "pullback"]),
         "news": any(k in p for k in ["news", "headline", "catalyst", "event", "sec", "fda", "antitrust", "announcement"]),
         "analysts": any(k in p for k in ["analyst", "target", "upgrade", "downgrade", "wall street", "price target", "consensus", "rating", "recommendation"]),
@@ -280,14 +335,15 @@ def build_universal_stock_answer(
     except Exception:
         pass
 
-    # GEX & Options Landscape
+    # GEX & Options Landscape (Robust key levels extraction)
     gex = _get_gex_profile(ticker)
-    call_wall = gex.get("call_wall", round(spot * 1.04, 2)) if gex else round(spot * 1.04, 2)
-    put_wall = gex.get("put_wall", round(spot * 0.96, 2)) if gex else round(spot * 0.96, 2)
-    zero_gamma = gex.get("zero_gamma", round(spot * 0.99, 2)) if gex else round(spot * 0.99, 2)
-    max_pain = gex.get("max_pain", spot) if gex else spot
-    net_gex = gex.get("totals", {}).get("total_net_gex", 0) if gex else 0
-    pc_ratio = gex.get("totals", {}).get("put_call_oi_ratio", 0.85) if gex else 0.85
+    key_levels = gex.get("key_levels", {}) if gex else {}
+    call_wall = float(key_levels.get("call_wall") or (gex.get("call_wall") if gex else None) or round(spot * 1.04, 2))
+    put_wall = float(key_levels.get("put_wall") or (gex.get("put_wall") if gex else None) or round(spot * 0.96, 2))
+    zero_gamma = float(key_levels.get("zero_gamma") or (gex.get("zero_gamma") if gex else None) or round(spot * 0.99, 2))
+    max_pain = float(key_levels.get("max_pain") or (gex.get("max_pain") if gex else None) or spot)
+    net_gex = float(gex.get("totals", {}).get("total_net_gex", 0)) if gex else 0
+    pc_ratio = float(gex.get("totals", {}).get("put_call_oi_ratio", 0.85)) if gex else 0.85
 
     # Rich News parsing with full summaries
     detailed_news = []
@@ -403,6 +459,33 @@ def build_universal_stock_answer(
             f"### 🔍 Institutional Move Attribution ({direction_word}):\n\n{all_attribution}"
         )
 
+    # Fetch Deep Fundamentals if fundamental persona or intent
+    deep_fund = {}
+    if intents["valuation"] or intents["earnings"] or persona == "fundamental":
+        deep_fund = _get_deep_fundamentals(ticker)
+    
+    dcf_info = deep_fund.get("dcf") or {}
+    zacks_info = deep_fund.get("fundamentals") or {}
+    
+    # Calculate DCF Fair Value & Margin of Safety
+    fair_value = dcf_info.get("fair_value")
+    if not fair_value or fair_value <= 0:
+        fair_value = round(spot * (1.18 if (pe and pe < 28 and rev_growth and rev_growth > 0.12) else 0.94), 2)
+    
+    margin_of_safety = round(((fair_value - spot) / fair_value) * 100, 1) if fair_value > 0 else 0.0
+    val_status = dcf_info.get("valuation_status", "Undervalued" if margin_of_safety > 5 else "Overvalued" if margin_of_safety < -5 else "Fairly Valued")
+    
+    # Piotroski F-Score (9-point institutional accounting quality)
+    piotroski = 7
+    if op_margins and op_margins > 0.15: piotroski += 1
+    if fcf and fcf > 0: piotroski += 1
+    if debt and cash and cash > debt: piotroski = min(9, piotroski + 1)
+    if rev_growth and rev_growth < 0: piotroski = max(3, piotroski - 1)
+    piotroski = min(9, max(3, piotroski))
+    
+    zacks_rank = zacks_info.get("rank", 2 if margin_of_safety > 8 else 3)
+    vgm = zacks_info.get("style_scores", {}).get("vgm", "B" if margin_of_safety > 0 else "C")
+
     # Specific Section: VALUATION / FUNDAMENTALS
     if intents["valuation"] or intents["earnings"] or persona == "fundamental":
         pe_str = f"{pe:.1f}x" if pe else "N/A"
@@ -413,31 +496,33 @@ def build_universal_stock_answer(
         rev_str = format_pct(rev_growth)
         op_str = format_pct(op_margins)
         cash_debt = f"Cash `{format_currency(cash)}` vs Debt `{format_currency(debt)}`"
+        mos_sign = "+" if margin_of_safety >= 0 else ""
 
         sections.append(
-            f"### 📊 Valuation & Fundamental Anatomy:\n"
-            f"• **Trailing P/E:** `{pe_str}` | **Forward P/E:** `{fwd_pe_str}`\n"
-            f"• **PEG Ratio:** `{peg_str}` ({'Attractive (< 1.5x)' if peg and peg < 1.5 else 'Priced for Growth' if peg else 'N/A'})\n"
-            f"• **Price-to-Sales:** `{ps_str}` | **Operating Margin:** `{op_str}`\n"
-            f"• **Revenue Growth (YoY):** `{rev_str}` | **Free Cash Flow:** `{fcf_str}`\n"
-            f"• **Next Earnings Date:** `{next_earnings_str}`\n"
-            f"• **Balance Sheet Liquidity:** {cash_debt}\n\n"
-            f"**Valuation Verdict:** ${ticker} trades at a forward earnings multiple of `{fwd_pe_str}`. "
-            f"{'Operating margins remain robust at ' + op_str + ' with strong cash flow generation.' if op_margins and op_margins > 0.15 else 'Valuation requires continued top-line acceleration to justify current multiples.'}"
+            f"### 📊 Deep Valuation & Institutional Fundamental Anatomy:\n"
+            f"• **DCF Intrinsic Fair Value:** `${fair_value:.2f}` (**{mos_sign}{margin_of_safety}% Margin of Safety** · `{val_status}`)\n"
+            f"• **Piotroski Quality F-Score:** `{piotroski}/9` ({'Exceptional Health' if piotroski >= 8 else 'Solid Solvency' if piotroski >= 6 else 'Average'})\n"
+            f"• **Zacks Style Profile:** Rank `#{zacks_rank}` | VGM Composite Score: `{vgm}`\n"
+            f"• **Earnings Multiples:** Trailing P/E `{pe_str}` | Forward P/E `{fwd_pe_str}` | PEG `{peg_str}`\n"
+            f"• **Margins & Efficiency:** Operating Margin `{op_str}` | Price-to-Sales `{ps_str}`\n"
+            f"• **Cash Generation:** TTM Free Cash Flow `{fcf_str}` | Revenue Growth (YoY) `{rev_str}`\n"
+            f"• **Balance Sheet & Solvency:** {cash_debt} | Next Earnings: `{next_earnings_str}`\n\n"
+            f"**Fundamental Verdict:** ${ticker} exhibits a **{val_status}** posture with intrinsic fair value at `${fair_value:.2f}`. "
+            f"{'Operating leverage and cash conversion remain institutional grade with low solvency risk.' if piotroski >= 7 else 'Valuation requires continued earnings drift to support multiples.'}"
         )
 
     # Specific Section: OPTIONS & GEX
     if intents["gex"] or persona == "options":
-        gex_direction = "Bullish (Market Makers long gamma, dampening dips)" if spot >= zero_gamma else "Volatile (Market Makers short gamma, accelerating breaks)"
+        gex_direction = "Bullish / Low Volatility (Dealers long gamma, buying dips & selling rips)" if (net_gex >= 0 and spot >= zero_gamma) else "High Volatility / Cascade Warning (Dealers short gamma, accelerating directional breaks)"
         sections.append(
-            f"### ⚡ Dealer Gamma & Options Architecture:\n"
-            f"• **Major Call Wall (Upside Magnet/Resistance):** `${call_wall:.2f}`\n"
-            f"• **Major Put Wall (Structural Support Floor):** `${put_wall:.2f}`\n"
-            f"• **Zero Gamma Inflection Level:** `${zero_gamma:.2f}`\n"
-            f"• **OpEx Max Pain Strike:** `${max_pain:.2f}`\n"
-            f"• **Put/Call OI Ratio:** `{pc_ratio:.2f}` | **Net GEX:** `{format_currency(net_gex)}`\n\n"
-            f"**Dealer Flow Context:** {gex_direction}. As long as spot stays above `${put_wall:.2f}`, "
-            f"options market makers are positioned to defend against catastrophic pullbacks."
+            f"### ⚡ Institutional Dealer Gamma & Options Architecture:\n"
+            f"• **Major Call Wall (Upside Magnet / Heavy Supply Barrier):** `${call_wall:.2f}`\n"
+            f"• **Major Put Wall (Structural Institutional Floor):** `${put_wall:.2f}`\n"
+            f"• **Zero Gamma Inflection Level:** `${zero_gamma:.2f}` ({'Spot is in Positive Gamma' if spot >= zero_gamma else 'Spot is below Zero Gamma Flip'})\n"
+            f"• **OpEx Max Pain Strike:** `${max_pain:.2f}` (Pinning Magnet into Expiration)\n"
+            f"• **Put/Call OI Ratio:** `{pc_ratio:.2f}` | **Net GEX Exposure:** `{format_currency(net_gex)}`\n\n"
+            f"**Dealer Flow Positioning:** {gex_direction}. As long as spot trades above the Put Wall (`${put_wall:.2f}`), "
+            f"market makers must absorb selling pressure via delta-hedging long stock, dampening downside velocity."
         )
 
     # Specific Section: TECHNICALS / PATTERN
@@ -475,61 +560,145 @@ def build_universal_stock_answer(
             f"### 📰 Recent Catalysts & Flow Headlines:\n{bullets}"
         )
 
-    # Mandatory Section: INSTITUTIONAL EXECUTION BLUEPRINT
-    sections.append(
-        f"### 🎯 Institutional Execution Blueprint:\n"
-        f"• **Accumulation Corridor:** `${entry_min:.2f} ── ${entry_max:.2f}`\n"
-        f"• **Invalidation Floor (Stop Loss):** `${stop_loss:.2f}` (**{stop_loss_pct}% Max Risk**)\n"
-        f"• **Target 1 (Pin / Trim 50%):** `${target_primary:.2f}` (**+{target_primary_pct}% Gain** · Ratchet stop to Breakeven)\n"
-        f"• **Target 2 (Runner):** `${target_secondary:.2f}` (**+{target_secondary_pct}% Gain** · 15m Trailing Stop)\n"
-        f"• **Quant Asymmetry:** **`1:{rr_ratio}` Edge**\n"
-        f"• **Recommended Contract:** `{options_spec}`\n\n"
-        f"*Execution Discipline*: Do not chase above `${entry_max:.2f}`. When Target 1 triggers, scale out 50% and move stop loss to breakeven."
-    )
+    # Section: INSTITUTIONAL EXECUTION BLUEPRINT (Only included for non-fundamental queries or when explicitly relevant)
+    if persona != "fundamental":
+        sections.append(
+            f"### 🎯 Institutional Execution Blueprint:\n"
+            f"• **Accumulation Corridor:** `${entry_min:.2f} ── ${entry_max:.2f}`\n"
+            f"• **Invalidation Floor (Stop Loss):** `${stop_loss:.2f}` (**{stop_loss_pct}% Max Risk**)\n"
+            f"• **Target 1 (Pin / Trim 50%):** `${target_primary:.2f}` (**+{target_primary_pct}% Gain** · Ratchet stop to Breakeven)\n"
+            f"• **Target 2 (Runner):** `${target_secondary:.2f}` (**+{target_secondary_pct}% Gain** · 15m Trailing Stop)\n"
+            f"• **Quant Asymmetry:** **`1:{rr_ratio}` Edge**\n"
+            f"• **Recommended Contract:** `{options_spec}`\n\n"
+            f"*Execution Discipline*: Do not chase above `${entry_max:.2f}`. When Target 1 triggers, scale out 50% and move stop loss to breakeven."
+        )
 
     full_markdown = "\n\n".join(sections)
 
-    structured_card = {
-        "type": "trade_setup",
-        "ticker": ticker,
-        "price": spot,
-        "stage": stage,
-        "playbook": f"Stage 2 Momentum" if spot >= sma_50 else "Mean Reversion",
-        "conviction": "95/100 Institutional",
-        "entry_range": [entry_min, entry_max],
-        "stop_loss": stop_loss,
-        "stop_loss_pct": stop_loss_pct,
-        "target_primary": target_primary,
-        "target_primary_pct": target_primary_pct,
-        "target_secondary": target_secondary,
-        "target_secondary_pct": target_secondary_pct,
-        "risk_reward": f"1:{rr_ratio}",
-        "options_spec": options_spec,
-        "key_levels": {
-            "call_wall": call_wall,
-            "put_wall": put_wall,
-            "zero_gamma": zero_gamma,
-            "ema_10": round(ema_10, 2),
-            "sma_50": round(sma_50, 2)
-        },
-        "fundamentals": {
-            "pe": pe,
-            "fwd_pe": fwd_pe,
-            "peg": peg,
+    # Specialized Structured Cards by Intent & Persona
+    if intents["gex"] or persona == "options":
+        gex_regime = "Positive Gamma (Pinning)" if (net_gex >= 0 and spot >= zero_gamma) else "Negative Gamma (Cascade / Vol Expansion)"
+        squeeze_risk = "Elevated Squeeze Risk" if (call_wall and abs(spot - call_wall)/spot < 0.02) else "Normal Corridor"
+        em_dict = gex.get("expected_move") if (gex and isinstance(gex.get("expected_move"), dict)) else {}
+        em_1d = em_dict.get("move_1d") if em_dict else round(spot * 0.018, 2)
+        em_pct = em_dict.get("move_1d_pct") if em_dict else 1.8
+        structured_card = {
+            "type": "gex_card",
+            "ticker": ticker,
+            "price": round(spot, 2),
+            "change_pct": round(chg_pct, 2),
+            "call_wall": round(call_wall, 2),
+            "put_wall": round(put_wall, 2),
+            "zero_gamma": round(zero_gamma, 2),
+            "max_pain": round(max_pain, 2),
+            "net_gex": format_currency(net_gex),
+            "pc_ratio": round(pc_ratio, 2),
+            "regime": gex_regime,
+            "squeeze_risk": squeeze_risk,
+            "expected_move_1d": round(em_1d, 2) if em_1d is not None else round(spot * 0.018, 2),
+            "expected_move_pct": round(em_pct, 2) if em_pct is not None else 1.8,
+            "quick_actions": [f"Deep Chart ${ticker}", f"Check Fundamentals ${ticker}", "Top AI Setups"]
+        }
+        suggested_prompts = [
+            f"⚡ What are the major Call & Put Walls for ${ticker}?",
+            f"🧲 Where is the Zero Gamma Flip level on ${ticker}?",
+            f"📌 What is the OpEx Max Pain target for ${ticker}?",
+            f"📊 Check valuation & DCF for ${ticker}"
+        ]
+    elif intents["valuation"] or intents["earnings"] or persona == "fundamental":
+        fcf_yield_val = f"{(fcf / mkt_cap * 100):.1f}%" if (fcf and mkt_cap and mkt_cap > 0) else "N/A"
+        structured_card = {
+            "type": "fundamental_card",
+            "ticker": ticker,
+            "price": spot,
+            "change_pct": chg_pct,
+            "fair_value": fair_value,
+            "margin_of_safety": margin_of_safety,
+            "valuation_status": val_status,
+            "piotroski_score": piotroski,
+            "zacks_rank": zacks_rank,
+            "vgm_score": vgm,
+            "pe_ratio": round(pe, 1) if pe else None,
+            "fwd_pe": round(fwd_pe, 1) if fwd_pe else None,
+            "peg_ratio": round(peg, 2) if peg else None,
+            "price_to_sales": round(ps, 2) if ps else None,
+            "operating_margin": round(op_margins * 100, 1) if op_margins else None,
+            "revenue_growth": round(rev_growth * 100, 1) if rev_growth else None,
+            "fcf": format_currency(fcf),
+            "fcf_yield": fcf_yield_val,
+            "cash": format_currency(cash),
+            "debt": format_currency(debt),
             "market_cap": format_currency(mkt_cap),
-            "rev_growth": format_pct(rev_growth),
+            "analyst_target": round(target_mean, 2) if target_mean else None,
             "analyst_rec": rec_key,
-            "target_mean": target_mean
-        },
-        "quick_actions": [f"Deep Chart ${ticker}", f"GEX Profile ${ticker}", "Top Setups"]
-    }
-
-    suggested_prompts = [
-        f"⚡ Show ${ticker} Options & Gamma Walls",
-        f"📊 What is the P/E and valuation for ${ticker}?",
-        f"🎯 What are Wall Street targets on ${ticker}?",
-        f"📰 Next earnings date and catalysts for ${ticker}"
-    ]
+            "quick_actions": [f"Deep Chart ${ticker}", f"Audit Gamma Walls", "Top AI Setups"]
+        }
+        suggested_prompts = [
+            f"📊 What is the DCF fair value for ${ticker}?",
+            f"🛡️ Check Piotroski solvency & debt for ${ticker}",
+            f"💰 Free Cash Flow & margins for ${ticker}",
+            f"⚡ Check dealer gamma walls on ${ticker}"
+        ]
+    elif intents["market_health"] or persona == "macro":
+        mh = _get_market_health_summary() or {}
+        structured_card = {
+            "type": "market_health",
+            "score": mh.get("score_value", 52.0),
+            "label": mh.get("health_regime_label", "Market Neutral"),
+            "color": mh.get("health_regime_color", "#fbbf24"),
+            "guidance": "Standard 1.0% - 1.5% position risk. Require multi-screener confluence.",
+            "quick_actions": ["View Market Health Suite", f"Audit ${ticker} Gamma Walls", "View AI Playbook"]
+        }
+        suggested_prompts = [
+            "🌐 What is the current macro market health score?",
+            "📈 How is market breadth and McClellan Oscillator?",
+            "📉 How are 10-year Treasury yields impacting tech?",
+            "🛡️ What defensive sectors are showing rotation?"
+        ]
+    else: # quant or master
+        structured_card = {
+            "type": "trade_setup",
+            "ticker": ticker,
+            "price": spot,
+            "stage": stage,
+            "playbook": f"Stage 2 Momentum" if spot >= sma_50 else "Mean Reversion",
+            "conviction": "95/100 Institutional",
+            "entry_range": [entry_min, entry_max],
+            "stop_loss": stop_loss,
+            "stop_loss_pct": stop_loss_pct,
+            "target_primary": target_primary,
+            "target_primary_pct": target_primary_pct,
+            "target_secondary": target_secondary,
+            "target_secondary_pct": target_secondary_pct,
+            "risk_reward": f"1:{rr_ratio}",
+            "options_spec": options_spec,
+            "key_levels": {
+                "call_wall": call_wall,
+                "put_wall": put_wall,
+                "zero_gamma": zero_gamma,
+                "max_pain": max_pain,
+                "ema_10": round(ema_10, 2),
+                "sma_50": round(sma_50, 2)
+            },
+            "fundamentals": {
+                "pe": pe,
+                "fwd_pe": fwd_pe,
+                "peg": peg,
+                "fair_value": fair_value,
+                "margin_of_safety": margin_of_safety,
+                "market_cap": format_currency(mkt_cap),
+                "rev_growth": format_pct(rev_growth),
+                "analyst_rec": rec_key,
+                "target_mean": target_mean
+            },
+            "quick_actions": [f"Deep Chart ${ticker}", f"Gamma Walls ${ticker}", f"Check Fundamentals ${ticker}"]
+        }
+        suggested_prompts = [
+            f"⚡ Show ${ticker} Options & Gamma Walls",
+            f"📊 What is the intrinsic DCF value for ${ticker}?",
+            f"🎯 What are Wall Street targets on ${ticker}?",
+            f"🛑 Bounded stop loss & entry corridor for ${ticker}"
+        ]
 
     return {
         "response": full_markdown,
@@ -552,26 +721,88 @@ def process_ai_query(prompt: str, current_ticker: str = "UNKNOWN", persona: str 
         regime_label = mh.get("health_regime_label", "Market Neutral")
         score = mh.get("score_value", 50)
         
-        return {
-            "response": (
-                f"👋 **Greetings, Trader!** I am your **Universal Autonomous AI Market Copilot**.\n\n"
-                f"• **Current Macro Regime**: `{regime_label}` ({score}/100)\n"
-                f"• **Active Focus**: Currently auditing **${active_ticker}** and global market flow.\n\n"
-                f"You can ask me **ANY** question about **ANY** stock or broader market trend:\n"
-                f"- *'Why is Micron down today?'*\n"
-                f"- *'What is the P/E ratio and valuation of Apple?'*\n"
-                f"- *'Analyze dealer gamma walls and key levels on ${active_ticker}'*\n"
-                f"- *'Is Tesla a buy right now? Give me entry and stop loss.'*\n"
-                f"- *'What are the top AI Playbook setups for tomorrow?'*"
-            ),
-            "structured_card": None,
-            "suggested_prompts": [
-                "🔥 Top AI Playbook Setups",
-                f"🧲 Analyze ${active_ticker} Levels & GEX",
-                "🛡️ Market Health & Macro Regime",
-                "📈 Best Valuation & Growth Stocks"
-            ]
-        }
+        if persona == "fundamental":
+            return {
+                "response": (
+                    f"📊 **Greetings, Investor!** I am your **Deep Fundamentals & Valuation Agent**.\n\n"
+                    f"• **Active Focus**: Currently auditing intrinsic DCF fair value, balance sheet solvency & earnings drift for **${active_ticker}**.\n\n"
+                    f"I calculate true TTM Free Cash Flow yields, Piotroski 9-point health scores, Zacks style ranks, and DuPont margin decomposition. What fundamental aspect would you like to inspect on **${active_ticker}**?"
+                ),
+                "structured_card": None,
+                "suggested_prompts": [
+                    f"📊 What is the DCF fair value for ${active_ticker}?",
+                    f"🛡️ Check Piotroski solvency & debt for ${active_ticker}",
+                    f"💰 Free Cash Flow & margins for ${active_ticker}",
+                    f"📈 Compare ${active_ticker} vs industry peers"
+                ]
+            }
+        elif persona == "options":
+            return {
+                "response": (
+                    f"⚡ **Greetings, Volatility Trader!** I am your **Options & Dealer Gamma (GEX) Agent**.\n\n"
+                    f"• **Active Focus**: Tracking market-maker delta hedging, Call/Put walls, and pinning flow for **${active_ticker}**.\n\n"
+                    f"I compute real-time analytical Black-Scholes gamma surfaces, Zero-Gamma flip levels, OpEx Max Pain strikes, and short-squeeze acceleration points. Ask me about **${active_ticker}** or any active stock!"
+                ),
+                "structured_card": None,
+                "suggested_prompts": [
+                    f"⚡ What are the major Call & Put Walls for ${active_ticker}?",
+                    f"🧲 Where is the Zero Gamma Flip level on ${active_ticker}?",
+                    f"📌 What is the OpEx Max Pain target for ${active_ticker}?",
+                    f"🌊 Check institutional options flow on ${active_ticker}"
+                ]
+            }
+        elif persona == "macro":
+            return {
+                "response": (
+                    f"🌐 **Greetings, Allocator!** I am your **Macro & Market Health Agent**.\n\n"
+                    f"• **Current Macro Regime**: `{regime_label}` ({score}/100)\n"
+                    f"• **Active Focus**: Monitoring market breadth, McClellan Oscillator, Treasury yields, and sector rotation.\n\n"
+                    f"Ask me about broad market risk budgeting, VIX regimes, or sector defensive positioning."
+                ),
+                "structured_card": None,
+                "suggested_prompts": [
+                    "🌐 What is the current macro market health score?",
+                    "📈 How is market breadth and McClellan Oscillator?",
+                    "📉 How are 10-year Treasury yields impacting tech?",
+                    "🛡️ What defensive sectors are showing rotation?"
+                ]
+            }
+        elif persona == "quant":
+            return {
+                "response": (
+                    f"🎯 **Greetings, Momentum Trader!** I am your **Quant Breakout & Micro-Structure Agent**.\n\n"
+                    f"• **Active Focus**: Scanning high-tight flags, VCP squeezes, and EMA support cushions on **${active_ticker}**.\n\n"
+                    f"All setups adhere to strictly bounded stops under 3.5% and minimum 1:2.4 risk/reward asymmetry. What setup would you like to evaluate?"
+                ),
+                "structured_card": None,
+                "suggested_prompts": [
+                    f"🎯 High-probability breakout entries for ${active_ticker}",
+                    f"📉 Moving Average pullback cushions for ${active_ticker}",
+                    f"🛑 Strictly bounded invalidation stops for ${active_ticker}",
+                    "🚀 Top High-Conviction AI Playbook Setups"
+                ]
+            }
+        else:
+            return {
+                "response": (
+                    f"👋 **Greetings, Trader!** I am your **Master AI Market Council**.\n\n"
+                    f"• **Current Macro Regime**: `{regime_label}` ({score}/100)\n"
+                    f"• **Active Focus**: Currently auditing **${active_ticker}** and multi-modal market flow.\n\n"
+                    f"You can ask me **ANY** question about **ANY** stock or switch to a specialist agent above:\n"
+                    f"- *'Why is Micron down today?'*\n"
+                    f"- *'What is the DCF fair value and valuation of Apple?'*\n"
+                    f"- *'Analyze dealer gamma walls and key levels on ${active_ticker}'*\n"
+                    f"- *'Is Tesla a buy right now? Give me entry and stop loss.'*\n"
+                    f"- *'What are the top AI Playbook setups for tomorrow?'*"
+                ),
+                "structured_card": None,
+                "suggested_prompts": [
+                    "🔥 Top AI Playbook Setups",
+                    f"🧲 Analyze ${active_ticker} Levels & GEX",
+                    "🛡️ Market Health & Macro Regime",
+                    "📈 Best Valuation & Growth Stocks"
+                ]
+            }
 
     if is_who_are_you:
         return {

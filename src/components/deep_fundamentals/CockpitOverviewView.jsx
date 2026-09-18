@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   ChevronRight,
   AlertCircle,
-  BarChart3
+  BarChart3,
+  FileText
 } from 'lucide-react';
 
 import {
@@ -47,6 +48,7 @@ import { calculateDCF, solveReverseDCF, generateSensitivityMatrix } from '../../
 export default function CockpitOverviewView({
   ticker: propTicker,
   fundamentals,
+  secFilings = null,
   onNavigateTab
 }) {
   if (!fundamentals) {
@@ -65,6 +67,7 @@ export default function CockpitOverviewView({
     industry = 'Equities',
     history = [],
     annual_history = [],
+    forecasts = {},
     profile = {},
     fair_value_data = {},
     dynamic_valuation = {},
@@ -374,6 +377,7 @@ export default function CockpitOverviewView({
       <FundamentalMetricChart
         quarterlyHistory={history}
         annualHistory={annual_history}
+        forecasts={forecasts}
         profile={profile}
       />
 
@@ -1170,6 +1174,91 @@ export default function CockpitOverviewView({
           </span>
         </div>
       </div>
+
+      {/* 4.5. REGULATORY & SEC EDGAR FILINGS DISCLOSURE BANNER */}
+      {secFilings && secFilings.filings && secFilings.filings.length > 0 && (
+        <div
+          style={{
+            background: '#12161F',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.06)'
+          }}
+          className="rounded-lg p-3.5 space-y-2.5"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/25">
+                <FileText size={14} />
+              </span>
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                Latest SEC EDGAR Disclosures & Regulatory Filings
+              </h4>
+              {secFilings.cik && (
+                <span className="text-[10px] font-mono text-slate-400 bg-[#0B0E14] px-1.5 py-0.5 rounded border border-white/[0.05]">
+                  CIK: {secFilings.cik}
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('peers_sec')}
+              className="text-xs font-mono text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 transition-all"
+            >
+              Explore All SEC Filings & Peers ↗
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            {secFilings.filings.slice(0, 3).map((filing, idx) => {
+              const is10K = filing.form.includes('10-K');
+              const is10Q = filing.form.includes('10-Q');
+              const badgeClass = is10K
+                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                : is10Q
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+
+              return (
+                <div
+                  key={idx}
+                  className="bg-[#0B0E14] p-2.5 rounded border border-white/[0.05] hover:border-white/[0.12] transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${badgeClass}`}>
+                        {filing.form}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {filing.date}
+                      </span>
+                    </div>
+                    <div className="text-xs text-white font-mono font-bold truncate">
+                      {filing.description || `Form ${filing.form}`}
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-sans line-clamp-2 mt-1">
+                      {filing.summary}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-white/[0.04]">
+                    <span className="text-[10px] font-mono text-slate-500 truncate">
+                      {filing.accession_no}
+                    </span>
+                    <a
+                      href={filing.viewer_url || filing.document_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-0.5"
+                    >
+                      SEC iXBRL ↗
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 5. KOYFIN-STYLE MULTI-PERIOD FINANCIAL STATEMENT GRID */}
       <KoyfinFinancialGrid

@@ -45,6 +45,8 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
   const [selectedTicker, setSelectedTicker] = useState(currentTicker || 'NVDA');
   const [inputTicker, setInputTicker] = useState('');
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'valuation' | 'earnings' | 'statements' | 'forensics' | 'capital' | 'moat' | 'peers_sec'
+  const [secFilter, setSecFilter] = useState('ALL'); // 'ALL' | '10-K' | '10-Q' | '8-K'
+  const [secSearchQuery, setSecSearchQuery] = useState('');
 
   const [data, setData] = useState({
     fundamentals: null,
@@ -142,7 +144,8 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
   const low52 = fundamentals?.profile?.fifty_two_week_low || (currentPrice * 0.75);
   const high52 = fundamentals?.profile?.fifty_two_week_high || (currentPrice * 1.25);
   const analystTargetMean = fundamentals?.profile?.analyst_target_mean || (currentPrice * 1.15);
-  const analystTargetHigh = fundamentals?.profile?.analyst_target_high || (fairValue * 1.20);
+  const rawAnalystHigh = fundamentals?.profile?.analyst_target_high;
+  const analystTargetHigh = rawAnalystHigh && rawAnalystHigh > 0 ? Number(rawAnalystHigh) : null;
   
   // 1. Ideal Entry Price: If undervalued, spot/minor dip; if at premium, anchor to intrinsic DCF fair value or conservative margin of safety
   const idealEntry = discountPct >= 0 
@@ -154,14 +157,22 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
   const accumUpper = +(idealEntry * 1.03).toFixed(2);
   
   // 3. Fundamental Invalidation / Capital Preservation Stop
-  // Grounded in worst-case downside (e.g., Bear Case DCF or 8-12% below ideal entry)
+  // Grounded in worst-case downside (e.g., Bear Case DCF or 8-15% below ideal entry)
   const intrinsicFloor = +(fairValue * 0.78).toFixed(2);
   const stopLoss = +(Math.min(idealEntry * 0.89, Math.max(low52 * 0.95, idealEntry * 0.84))).toFixed(2);
   const riskPerShare = +(idealEntry - stopLoss).toFixed(2);
   
   // 4. Intrinsic Profit Targets
-  const targetConservative = +(Math.max(currentPrice * 1.08, fairValue)).toFixed(2);
-  const targetBull = +(Math.max(fairValue * 1.25, analystTargetHigh)).toFixed(2);
+  // Target 1: Base DCF Fair Value (or conservative floor +8% if already priced at premium)
+  const targetConservative = +(fairValue > currentPrice 
+    ? fairValue 
+    : Math.max(currentPrice * 1.08, (fundamentals?.profile?.analyst_target_mean || currentPrice * 1.10))).toFixed(2);
+
+  // Target 2: Wall Street Consensus High if available; otherwise institutional Bull expansion multiple
+  const targetBull = +(analystTargetHigh && analystTargetHigh > currentPrice
+    ? analystTargetHigh
+    : Math.max(targetConservative * 1.15, Math.max(currentPrice * 1.25, fairValue * 1.18))).toFixed(2);
+
   const rewardPerShare = +(targetConservative - idealEntry).toFixed(2);
   const riskRewardRatio = riskPerShare > 0 ? (rewardPerShare / riskPerShare).toFixed(2) : '3.20';
   const upsidePct = (((targetConservative - idealEntry) / idealEntry) * 100).toFixed(1);
@@ -692,6 +703,7 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
             <CockpitOverviewView
               ticker={selectedTicker}
               fundamentals={fundamentals}
+              secFilings={secFilings}
               onNavigateTab={(tabId) => setActiveTab(tabId)}
             />
           )}
@@ -746,9 +758,203 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
             />
           )}
 
-          {/* TAB 7: PEERS, SEC FILINGS & MACRO OUTLOOK */}
+          {/* TAB 9: PEERS, SEC FILINGS & MACRO OUTLOOK */}
           {activeTab === 'peers_sec' && (
             <div className="space-y-6">
+              {/* 1. SEC FILINGS & DISCLOSURE EXPLORER */}
+              <div
+                style={{
+                  background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 14, 23, 0.95) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                }}
+                className="rounded-2xl p-5 space-y-4"
+              >
+                {/* Header & Meta Bar */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                        <FileText size={18} />
+                      </span>
+                      <h3 className="text-base font-mono font-bold text-white flex items-center gap-2">
+                        Official SEC EDGAR Filings & Disclosures
+                      </h3>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
+                        <CheckCircle2 size={11} /> SEC Verified Live
+                      </span>
+                      {secFilings?.cik && (
+                        <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-white/[0.08] text-[10px] font-mono">
+                          CIK: {secFilings.cik}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Direct access to audited 10-K Annual Reports, 10-Q Quarterlies, and 8-K Material Event statements with interactive SEC iXBRL viewers
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={secFilings?.sec_profile_url || `https://www.sec.gov/edgar/browse/?CIK=${selectedTicker}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181E2B] text-cyan-400 border border-cyan-500/30 text-xs font-mono font-bold hover:bg-cyan-500/10 transition-all shadow-sm"
+                    >
+                      <ExternalLink size={13} /> View on SEC.gov ↗
+                    </a>
+                  </div>
+                </div>
+
+                {/* Filter Toolbar & Search */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
+                  {/* Category Filter Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {[
+                      { id: 'ALL', label: 'All Filings' },
+                      { id: '10-K', label: '10-K (Annual)' },
+                      { id: '10-Q', label: '10-Q (Quarterly)' },
+                      { id: '8-K', label: '8-K (Events)' }
+                    ].map(tab => {
+                      const count = secFilings?.filings
+                        ? (tab.id === 'ALL'
+                            ? secFilings.filings.length
+                            : secFilings.filings.filter(f => f.form.includes(tab.id)).length)
+                        : 0;
+                      const isActive = secFilter === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setSecFilter(tab.id)}
+                          className={`px-3 py-1 rounded-md text-xs font-mono font-bold transition-all border ${
+                            isActive
+                              ? 'bg-purple-500/25 text-purple-200 border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.25)]'
+                              : 'bg-[#0B0E14] text-slate-400 border-white/[0.06] hover:text-white'
+                          }`}
+                        >
+                          {tab.label} {count > 0 && <span className="text-[10px] opacity-75 font-normal">({count})</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Search Filter Input */}
+                  <div className="relative w-full sm:w-64">
+                    <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Search disclosures, forms..."
+                      value={secSearchQuery}
+                      onChange={(e) => setSecSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1 bg-[#0B0E14] border border-white/[0.08] rounded-md text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Filings List Cards */}
+                {(() => {
+                  const allFilings = secFilings?.filings || [];
+                  const filtered = allFilings.filter(f => {
+                    const matchCategory = secFilter === 'ALL' || f.form.includes(secFilter);
+                    const matchQuery = !secSearchQuery || 
+                      f.form.toLowerCase().includes(secSearchQuery.toLowerCase()) ||
+                      (f.description && f.description.toLowerCase().includes(secSearchQuery.toLowerCase())) ||
+                      (f.summary && f.summary.toLowerCase().includes(secSearchQuery.toLowerCase())) ||
+                      (f.date && f.date.includes(secSearchQuery));
+                    return matchCategory && matchQuery;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="p-8 text-center font-mono text-xs text-slate-500 bg-[#0B0E14] rounded-lg border border-white/[0.06]">
+                        No SEC filings matching current filter criteria.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-2.5">
+                      {filtered.map((filing, idx) => {
+                        const is10K = filing.form.includes('10-K');
+                        const is10Q = filing.form.includes('10-Q');
+                        const is8K = filing.form.includes('8-K');
+
+                        const badgeClass = is10K
+                          ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                          : is10Q
+                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+
+                        return (
+                          <div
+                            key={filing.accession_no || idx}
+                            className="bg-[#0B0E14] p-4 rounded-xl border border-white/[0.06] hover:border-white/[0.14] transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                          >
+                            <div className="space-y-1.5 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={`px-2.5 py-0.5 rounded font-mono font-bold text-xs border ${badgeClass}`}>
+                                  {filing.form}
+                                </span>
+                                <span className="text-white font-mono text-xs font-bold">
+                                  {filing.description || `Form ${filing.form}`}
+                                </span>
+                                <span className="text-slate-500 font-mono text-[11px]">·</span>
+                                <span className="text-slate-400 font-mono text-xs">
+                                  Filed: <strong className="text-slate-200">{filing.date}</strong>
+                                </span>
+                                {filing.report_date && filing.report_date !== filing.date && (
+                                  <>
+                                    <span className="text-slate-500 font-mono text-[11px]">·</span>
+                                    <span className="text-slate-400 font-mono text-xs">
+                                      Period Ended: <strong className="text-slate-200">{filing.report_date}</strong>
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+
+                              <p className="text-xs text-slate-300 font-sans leading-relaxed">
+                                {filing.summary}
+                              </p>
+
+                              {filing.accession_no && (
+                                <div className="text-[10px] font-mono text-slate-500">
+                                  Accession No: {filing.accession_no}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {filing.viewer_url && (
+                                <a
+                                  href={filing.viewer_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold hover:bg-cyan-500/20 transition-all"
+                                >
+                                  <ExternalLink size={12} /> Interactive iXBRL ↗
+                                </a>
+                              )}
+                              {filing.document_url && (
+                                <a
+                                  href={filing.document_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded bg-slate-800 text-slate-300 border border-white/[0.08] text-xs font-mono hover:text-white hover:bg-slate-700 transition-all"
+                                >
+                                  <FileText size={12} /> Raw Doc ↗
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* 2. SECTOR PEER VALUATION MATRIX */}
               {peerValuation?.valuation && (
                 <div
                   style={{
@@ -792,6 +998,36 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. MACRO ECONOMIC CLIMATE & SECTOR SENSITIVITY */}
+              {macroOutlook?.outlook && (
+                <div
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 14, 23, 0.95) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                  }}
+                  className="rounded-2xl p-5 space-y-3"
+                >
+                  <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        <TrendingUp size={18} />
+                      </span>
+                      <h3 className="text-base font-mono font-bold text-white">
+                        Macro Economic Outlook & Sector Sensitivity ({macroOutlook.sector || 'General'})
+                      </h3>
+                    </div>
+                    <span className="text-xs font-mono text-slate-400">
+                      Industry: {macroOutlook.industry || 'Diversified'}
+                    </span>
+                  </div>
+
+                  <div className="bg-[#0B0E14] p-4 rounded-xl border border-white/[0.06] text-xs text-slate-300 font-sans leading-relaxed whitespace-pre-line">
+                    {macroOutlook.outlook}
                   </div>
                 </div>
               )}
