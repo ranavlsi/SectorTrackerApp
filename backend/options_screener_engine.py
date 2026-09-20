@@ -11,7 +11,22 @@ STATUS_PATH = os.path.join(DATA_DIR, 'options_dumper_status.json')
 
 _CACHE = {"timestamp": 0, "data": None}
 
-def calculate_flow_impact(spot_price, total_vol, call_vol_pct, vol_ratio, oi_chg_5d_pct, unusual_contracts=None, has_whale_sweep=False):
+def calculate_flow_impact(
+    spot_price,
+    total_vol,
+    call_vol_pct,
+    vol_ratio,
+    oi_chg_5d_pct,
+    unusual_contracts=None,
+    has_whale_sweep=False,
+    net_gex=0.0,
+    cascade_score=None,
+    squeeze_score=None,
+    pin_score=None,
+    zero_gamma=None,
+    call_wall=None,
+    put_wall=None
+):
     """
     Quantitative Option Flow Impact (OFI) Model:
     Evaluates the structural impact options order flow exerts on the underlying equity cash market.
@@ -23,7 +38,7 @@ def calculate_flow_impact(spot_price, total_vol, call_vol_pct, vol_ratio, oi_chg
        - Directional Delta Imbalance (0 - 30 pts)
        - Relative Volume Surge vs 20D Baseline (0 - 15 pts)
        - Whale Sweeps & Multi-Day OI Shock (0 - 15 pts)
-    5. Market Maker Microstructure Implication & Driver Vector
+    5. Market Maker Microstructure Implication & Driver Vector (Harmonized with Live Dealer Greeks)
     """
     if unusual_contracts is None:
         unusual_contracts = []
@@ -33,6 +48,12 @@ def calculate_flow_impact(spot_price, total_vol, call_vol_pct, vol_ratio, oi_chg
     call_pct = float(call_vol_pct if call_vol_pct is not None else 50.0)
     ratio = float(vol_ratio or 1.0)
     oi_chg = float(oi_chg_5d_pct or 0.0)
+    
+    # Normalize net_gex into millions for standardized thresholding
+    if abs(float(net_gex or 0.0)) > 10000:
+        net_gex_m = float(net_gex) / 1e6
+    else:
+        net_gex_m = float(net_gex or 0.0)
     
     notional_flow = round(vol * spot * 100.0, 2)
     call_vol = vol * (call_pct / 100.0)
@@ -81,15 +102,49 @@ def calculate_flow_impact(spot_price, total_vol, call_vol_pct, vol_ratio, oi_chg
         level = "NORMAL"
         badge = "Normal Flow"
         color = "#94a3b8"
+
+    # Microstructural Regime Classification
+    is_cascade_regime = (
+        (cascade_score is not None and cascade_score >= 65) or
+        (cascade_score is None and net_gex_m <= -0.2) or
+        (cascade_score is not None and cascade_score >= 50 and net_gex_m < -0.05 and (squeeze_score is None or squeeze_score < 40))
+    )
+    
+    is_squeeze_regime = (
+        (squeeze_score is not None and squeeze_score >= 60) or
+        (squeeze_score is None and net_gex_m >= 0.1 and call_pct >= 65.0) or
+        (squeeze_score is not None and squeeze_score >= 45 and net_gex_m >= 0.0 and (cascade_score is None or cascade_score < 50))
+    )
         
-    if call_pct >= 68.0 and total_score >= 45.0:
+    if call_pct >= 65.0 and total_score >= 45.0:
+        if is_cascade_regime:
+            driver = "SPECULATIVE_CALL_DIVERGENCE"
+            driver_label = "⚠️ Call Flow vs Bearish Cascade"
+            if cascade_score is not None:
+                implication = f"Elevated call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) is conflicting with a negative dealer gamma cascade (Cascade Risk {cascade_score}/100, Net GEX ${net_gex_m:+.2f}M). Speculative call delta is absorbed by dealer short hedging into weakness unless Zero Gamma (${zero_gamma or spot:.2f}) is reclaimed."
+            else:
+                implication = f"Elevated call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) is conflicting with negative dealer gamma (Net GEX ${net_gex_m:+.2f}M). Speculative call buying is facing structural dealer selling into weakness."
+        else:
+            driver = "CALL_GAMMA_SQUEEZE"
+            driver_label = "🚀 Call Gamma Squeeze Vector"
+            implication = f"Massive call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) with supportive dealer gamma forcing market makers into aggressive long share hedging"
+    elif call_pct <= 35.0 and total_score >= 45.0:
+        if is_cascade_regime or (cascade_score is not None and cascade_score >= 50) or net_gex_m < 0:
+            driver = "PUT_DELTA_CASCADE"
+            driver_label = "🛡️ Put Delta Cascade Vector"
+            implication = f"Heavy put dominance ({100-call_pct:.0f}% P, {imbalance_ratio}x ratio) reinforcing negative dealer gamma, accelerating protective underlying equity short hedging"
+        else:
+            driver = "PROTECTIVE_PUT_HEDGE"
+            driver_label = "🛡️ Institutional Put Hedge (Buffered)"
+            implication = f"Heavy put flow ({100-call_pct:.0f}% P, {imbalance_ratio}x ratio) represents institutional downside insurance; positive dealer gamma (${net_gex_m:+.2f}M) acts as a structural shock absorber"
+    elif is_cascade_regime and total_score >= 45.0:
+        driver = "NEGATIVE_GAMMA_CASCADE"
+        driver_label = "🌪️ Negative Gamma Cascade Vector"
+        implication = f"Dealers are short gamma (${net_gex_m:+.2f}M) in a high cascade risk regime ({cascade_score if cascade_score is not None else 'Elevated'}), accelerating directional selling pressure"
+    elif is_squeeze_regime and total_score >= 45.0:
         driver = "CALL_GAMMA_SQUEEZE"
         driver_label = "🚀 Call Gamma Squeeze Vector"
-        implication = f"Massive call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) forcing market makers into aggressive long share hedging"
-    elif call_pct <= 32.0 and total_score >= 45.0:
-        driver = "PUT_DELTA_CASCADE"
-        driver_label = "🛡️ Put Delta Cascade Vector"
-        implication = f"Heavy put dominance ({100-call_pct:.0f}% P, {imbalance_ratio}x ratio) forcing dealers into protective underlying equity short hedging"
+        implication = f"Spot is pressing Call Wall (${call_wall or spot:.2f}) with elevated squeeze score ({squeeze_score if squeeze_score is not None else 'Active'}), triggering forced dealer share buying"
     elif notional_flow >= 5e9:
         driver = "MEGA_NOTIONAL_ANCHOR"
         driver_label = "🏛️ Mega-Cap Notional Anchor"
@@ -331,7 +386,8 @@ def get_options_screener_summary(force_refresh=False):
             vol_ratio=vol_ratio,
             oi_chg_5d_pct=oi_chg_5d_pct,
             unusual_contracts=unusual_contracts,
-            has_whale_sweep=has_whale_sweep
+            has_whale_sweep=has_whale_sweep,
+            net_gex=today_row.get("net_gex", 0.0)
         )
 
         results.append({
@@ -923,9 +979,37 @@ def get_deep_options_analytics(ticker):
         "regime_desc": regime_desc
     }
 
-    # 7. Institutional AI Options Recommendation
+    # 7. Harmonized Options Flow Impact Calculation
+    flow_impact_data = calculate_flow_impact(
+        spot_price=spot_price,
+        total_vol=curr_total_vol,
+        call_vol_pct=(call_vol_tot / max(curr_total_vol, 1.0)) * 100.0,
+        vol_ratio=vol_ratio,
+        oi_chg_5d_pct=round(((call_oi_tot + put_oi_tot - history[ref_idx].get("total_oi", 1.0)) / max(history[ref_idx].get("total_oi", 1.0), 1.0)) * 100.0, 2) if (N >= 5 and history) else 0.0,
+        unusual_contracts=unusual_contracts,
+        has_whale_sweep=any(c.get("vol_oi_ratio", 0) >= 1.5 for c in unusual_contracts),
+        net_gex=net_gex,
+        cascade_score=cascade_score,
+        squeeze_score=squeeze_score,
+        pin_score=pin_score,
+        zero_gamma=zero_gamma,
+        call_wall=call_wall,
+        put_wall=put_wall
+    )
+
+    # 8. Institutional AI Options Recommendation
     trade_setup = gex_data.get("trade_setup")
     if trade_setup and trade_setup.get("strategy_name"):
+        base_tactic = trade_setup.get("execution_tactic") or (
+            f"Dealer positioning on {sym} shows key resistance at Call Wall (${call_wall}) and floor at Put Wall (${put_wall}). "
+            f"Given {gamma_trend['badge']} and {oi_trend['badge']}, institutional order flow favors {trade_setup.get('strategy_name')}."
+        )
+        if flow_impact_data.get("driver") == "SPECULATIVE_CALL_DIVERGENCE":
+            divergence_note = f" Regime Divergence Notice: Despite high intraday call volume ({flow_impact_data['call_vol_pct']}% Calls), aggregate dealer gamma is negative (${net_gex/1e6:+.2f}M) with elevated cascade risk ({cascade_score}/100). Dealer delta hedging into weakness absorbs speculative call demand unless Zero Gamma (${zero_gamma}) is reclaimed."
+            full_rationale = f"{base_tactic} {divergence_note}"
+        else:
+            full_rationale = base_tactic
+
         ai_recommendation = {
             "title": trade_setup.get("setup_name", "Quantitative Options Playbook"),
             "bias": trade_setup.get("bias", "TACTICAL OPPORTUNITY"),
@@ -940,10 +1024,7 @@ def get_deep_options_analytics(ticker):
             "expected_holding": trade_setup.get("expected_holding", "5 to 15 Trading Days"),
             "trigger_condition": trade_setup.get("trigger_condition"),
             "invalidation_condition": trade_setup.get("invalidation_condition"),
-            "microstructure_rationale": trade_setup.get("execution_tactic") or (
-                f"Dealer positioning on {sym} shows key resistance at Call Wall (${call_wall}) and floor at Put Wall (${put_wall}). "
-                f"Given {gamma_trend['badge']} and {oi_trend['badge']}, institutional order flow favors {trade_setup.get('strategy_name')}."
-            ),
+            "microstructure_rationale": full_rationale,
             "execution_checklist": trade_setup.get("execution_checklist", [])
         }
     else:
@@ -1076,15 +1157,7 @@ def get_deep_options_analytics(ticker):
         "term_structure_history": term_structure_history,
         "volatility_shift_summary": volatility_shift_summary,
         "unusual_contracts": unusual_contracts,
-        "flow_impact": calculate_flow_impact(
-            spot_price=spot_price,
-            total_vol=curr_total_vol,
-            call_vol_pct=(call_vol_tot / max(curr_total_vol, 1.0)) * 100.0,
-            vol_ratio=vol_ratio,
-            oi_chg_5d_pct=round(((call_oi_tot + put_oi_tot - history[ref_idx].get("total_oi", 1.0)) / max(history[ref_idx].get("total_oi", 1.0), 1.0)) * 100.0, 2) if (N >= 5 and history) else 0.0,
-            unusual_contracts=unusual_contracts,
-            has_whale_sweep=any(c.get("vol_oi_ratio", 0) >= 1.5 for c in unusual_contracts)
-        ),
+        "flow_impact": flow_impact_data,
         "ai_recommendation": ai_recommendation
     }
     _DEEP_ANALYTICS_CACHE[sym] = (payload, now)

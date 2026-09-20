@@ -1072,12 +1072,39 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 </div>
                                 <div className="impact-metric-box">
                                   <span className="imb-label">Flow Driver Vector</span>
-                                  <span className="imb-val highlight-small">{deepAnalytics.flow_impact.driver_label}</span>
+                                  <span 
+                                    className="imb-val highlight-small"
+                                    title={deepAnalytics.flow_impact.driver_label}
+                                    style={{
+                                      color: deepAnalytics.flow_impact.driver_label?.includes('⚠️') ? '#fbbf24' :
+                                             deepAnalytics.flow_impact.driver_label?.includes('🚀') ? '#10b981' :
+                                             deepAnalytics.flow_impact.driver_label?.includes('🛡️') ? '#38bdf8' :
+                                             deepAnalytics.flow_impact.driver_label?.includes('🌪️') ? '#f43f5e' : '#38bdf8'
+                                    }}
+                                  >
+                                    {deepAnalytics.flow_impact.driver_label}
+                                  </span>
                                 </div>
                               </div>
 
-                              <div className="impact-implication-note">
-                                <strong>Market Maker Microstructure Implication: </strong>
+                              <div 
+                                className="impact-implication-note"
+                                style={{
+                                  borderColor: deepAnalytics.flow_impact.driver_label?.includes('⚠️') ? '#fbbf24' :
+                                               deepAnalytics.flow_impact.driver_label?.includes('🌪️') ? '#f43f5e' :
+                                               deepAnalytics.flow_impact.driver_label?.includes('🚀') ? '#10b981' : '#f59e0b',
+                                  background: deepAnalytics.flow_impact.driver_label?.includes('⚠️') ? 'rgba(251, 191, 36, 0.08)' :
+                                              deepAnalytics.flow_impact.driver_label?.includes('🌪️') ? 'rgba(244, 63, 94, 0.08)' :
+                                              deepAnalytics.flow_impact.driver_label?.includes('🚀') ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)'
+                                }}
+                              >
+                                <strong style={{
+                                  color: deepAnalytics.flow_impact.driver_label?.includes('⚠️') ? '#fbbf24' :
+                                         deepAnalytics.flow_impact.driver_label?.includes('🌪️') ? '#f43f5e' :
+                                         deepAnalytics.flow_impact.driver_label?.includes('🚀') ? '#10b981' : '#fbbf24'
+                                }}>
+                                  Market Maker Microstructure Implication:&nbsp;
+                                </strong>
                                 <span>{deepAnalytics.flow_impact.implication}</span>
                               </div>
                             </div>
