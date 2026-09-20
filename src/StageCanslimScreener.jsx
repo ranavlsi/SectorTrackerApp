@@ -674,13 +674,17 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                         )}
                       </div>
 
-                      {/* Uncluttered VCP Wave Sequence Strip */}
+                      {/* Institutional Mark Minervini VCP Wave Sequence Strip */}
                       {showVcpWaves && activeStock.vcp_info?.waves_detail?.length > 0 && (
                         <div className="sc-vcp-sequence-bar">
                           <div className="sc-vcp-bar-header">
-                            <span className="sc-vcp-head-title">⚡ MARK MINERVINI VOLATILITY CONTRACTION (VCP) BREAKDOWN</span>
-                            <span className={`sc-vcp-status-tag ${activeStock.vcp_info.has_ascending_floor ? 'pass' : 'fail'}`}>
-                              {activeStock.vcp_info.has_ascending_floor ? '✓ Ascending Base Floor' : '⚠️ Descending Channel (Disqualified)'}
+                            <span className="sc-vcp-head-title">⚡ MARK MINERVINI VOLATILITY CONTRACTION (VCP) ENGINE</span>
+                            <span className={`sc-vcp-status-tag ${activeStock.vcp_info.is_vcp ? 'pass' : (activeStock.vcp_info.is_forming ? 'warning' : 'fail')}`}>
+                              {activeStock.vcp_info.is_vcp 
+                                ? `✓ Certified Minervini VCP (-${Math.round(activeStock.vcp_info.total_dampening_pct || 0)}% Vol Dampened)`
+                                : activeStock.vcp_info.is_forming
+                                  ? `⏳ Forming Base (${Math.round(activeStock.vcp_info.total_dampening_pct || 0)}% Dampened - Waiting for Tight Pivot)`
+                                  : `⚠️ Disqualified: ${activeStock.vcp_info.lower_low_breaches?.[0] || 'VCP Breach'}`}
                             </span>
                             <span className={`sc-vcp-vdu-tag ${activeStock.vcp_info.vdu_confirmed ? 'pass' : 'normal'}`}>
                               {activeStock.vcp_info.vdu_confirmed 
@@ -688,28 +692,66 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                                 : `${Math.round(activeStock.vcp_info.vdu_ratio * 100)}% 50-Day Vol`}
                             </span>
                           </div>
+
+                          {/* Minervini 5-Pillar Checklist Bar */}
+                          {activeStock.vcp_info.audit && (
+                            <div className="sc-vcp-checklist-bar">
+                              <span className={`sc-vcp-check-pill ${activeStock.vcp_info.audit.nested_inside_t1 ? 'pass' : 'fail'}`}>
+                                {activeStock.vcp_info.audit.nested_inside_t1 ? '✓ Inside T1 Master Envelope' : '✗ T1 Floor Breach'}
+                              </span>
+                              <span className={`sc-vcp-check-pill ${activeStock.vcp_info.audit.ascending_floors ? 'pass' : 'fail'}`}>
+                                {activeStock.vcp_info.audit.ascending_floors ? '✓ Ascending Higher Lows' : '✗ Lower Low Breach'}
+                              </span>
+                              <span className={`sc-vcp-check-pill ${activeStock.vcp_info.audit.volatility_dampened ? 'pass' : 'fail'}`}>
+                                {activeStock.vcp_info.audit.volatility_dampened ? `✓ Volatility Dampened (-${Math.round(activeStock.vcp_info.total_dampening_pct || 0)}%)` : '✗ Volatility Expanded'}
+                              </span>
+                              <span className={`sc-vcp-check-pill ${activeStock.vcp_info.audit.final_tightness_pass ? 'pass' : 'warning'}`}>
+                                {activeStock.vcp_info.audit.final_tightness_pass 
+                                  ? `✓ Tight Terminal Pivot (${activeStock.vcp_info.contraction_depths?.slice(-1)[0]}% ≤ 8.5%)` 
+                                  : `⏳ Wide Contraction (${activeStock.vcp_info.contraction_depths?.slice(-1)[0]}% > 8.5%)`}
+                              </span>
+                              <span className={`sc-vcp-check-pill ${activeStock.vcp_info.audit.vdu_confirmed ? 'pass' : 'normal'}`}>
+                                {activeStock.vcp_info.audit.vdu_confirmed ? '✓ Volume Dry-Up (VDU)' : '• 50d Volume Normal'}
+                              </span>
+                            </div>
+                          )}
+
                           <div className="sc-vcp-cards-row">
-                            {activeStock.vcp_info.waves_detail.map((w, idx) => (
-                              <div 
-                                key={idx} 
-                                className={`sc-vcp-chip ${hoveredWaveIdx === idx ? 'hovered' : ''} ${w.is_lower_low ? 'lower-low' : ''}`}
-                                onMouseEnter={() => setHoveredWaveIdx(idx)}
-                                onMouseLeave={() => setHoveredWaveIdx(null)}
-                                style={w.is_lower_low ? { borderColor: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' } : undefined}
-                              >
-                                <div className="sc-vcp-chip-top">
-                                  <span className="sc-vcp-wave-tag">{w.wave} CONTRACTION</span>
-                                  <span className="sc-vcp-wave-depth">-{w.depth_pct}%</span>
+                            {activeStock.vcp_info.waves_detail.map((w, idx) => {
+                              const isBreach = !w.is_nested || w.is_lower_low;
+                              return (
+                                <div 
+                                  key={idx} 
+                                  className={`sc-vcp-chip ${hoveredWaveIdx === idx ? 'hovered' : ''} ${isBreach ? 'lower-low' : ''}`}
+                                  onMouseEnter={() => setHoveredWaveIdx(idx)}
+                                  onMouseLeave={() => setHoveredWaveIdx(null)}
+                                  style={isBreach ? { borderColor: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' } : undefined}
+                                >
+                                  <div className="sc-vcp-chip-top">
+                                    <span className="sc-vcp-wave-tag">{w.wave} CONTRACTION</span>
+                                    <div className="sc-vcp-depth-badges">
+                                      <span className="sc-vcp-wave-depth">-{w.depth_pct}%</span>
+                                      {idx > 0 && w.dampening_ratio && (
+                                        <span className="sc-vcp-dampening-badge" title={`Contraction is ${Math.round(w.dampening_ratio * 100)}% of T${idx}`}>
+                                          {Math.round(w.dampening_ratio * 100)}% of T{idx}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="sc-vcp-chip-detail">
+                                    <span className="sc-vcp-chip-price">${w.peak_price?.toFixed(2)} ➔ ${w.trough_price?.toFixed(2)}</span>
+                                    <span className="sc-vcp-chip-dates">{w.peak_date?.slice(5)} to {w.trough_date?.slice(5)} ({w.days || 7}d)</span>
+                                    {!w.is_nested ? (
+                                      <span style={{ color: '#ef4444', fontSize: '0.62rem', fontWeight: 'bold' }}>⚠️ T1 Floor Breach</span>
+                                    ) : w.is_lower_low ? (
+                                      <span style={{ color: '#f87171', fontSize: '0.62rem', fontWeight: 'bold' }}>⚠️ Lower Low Breach</span>
+                                    ) : (
+                                      <span style={{ color: '#10b981', fontSize: '0.62rem', fontWeight: 'bold' }}>✓ Nested Higher Low</span>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="sc-vcp-chip-detail">
-                                  <span className="sc-vcp-chip-price">${w.peak_price?.toFixed(2)} ➔ ${w.trough_price?.toFixed(2)}</span>
-                                  <span className="sc-vcp-chip-dates">{w.peak_date?.slice(5)} to {w.trough_date?.slice(5)} ({w.days || 7}d)</span>
-                                  {w.is_lower_low && (
-                                    <span style={{ color: '#f87171', fontSize: '0.62rem', fontWeight: 'bold' }}>⚠️ Lower Low Breach</span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -1492,6 +1534,65 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
         {/* VCP Contraction Waves, Floor/Ceiling Envelopes & Staggered Badges */}
         {showVcpWaves && vcpWaves.length > 0 && (
           <g className="sc-vcp-svg-layer">
+            {/* Mark Minervini T1 Master Volatility Envelope Corridor */}
+            {vcp_info?.t1_envelope && (() => {
+              const t1CeilY = getY(vcp_info.t1_envelope.ceiling);
+              const t1FloorY = getY(vcp_info.t1_envelope.floor);
+              const xStart = vcpWaves[0]?.xPeak || padding.left;
+              const xEnd = width - padding.right;
+              const envHeight = Math.max(0, t1FloorY - t1CeilY);
+              return (
+                <g className="sc-vcp-envelope-layer">
+                  <rect
+                    x={xStart}
+                    y={t1CeilY}
+                    width={xEnd - xStart}
+                    height={envHeight}
+                    fill="rgba(168, 85, 247, 0.05)"
+                    stroke="none"
+                  />
+                  <line
+                    x1={xStart}
+                    y1={t1CeilY}
+                    x2={xEnd}
+                    y2={t1CeilY}
+                    stroke="#c084fc"
+                    strokeWidth="1.5"
+                    strokeDasharray="6 4"
+                    opacity="0.85"
+                  />
+                  <text
+                    x={xStart + 8}
+                    y={t1CeilY - 4}
+                    fill="#c084fc"
+                    fontSize="9.5"
+                    fontWeight="bold"
+                  >
+                    P1 Base Ceiling: ${vcp_info.t1_envelope.ceiling} ({vcp_info.t1_envelope.depth_pct}% Master Depth)
+                  </text>
+                  <line
+                    x1={xStart}
+                    y1={t1FloorY}
+                    x2={xEnd}
+                    y2={t1FloorY}
+                    stroke={vcp_info.has_ascending_floor ? "#f59e0b" : "#ef4444"}
+                    strokeWidth="1.5"
+                    strokeDasharray="6 4"
+                    opacity="0.85"
+                  />
+                  <text
+                    x={xStart + 8}
+                    y={t1FloorY + 12}
+                    fill={vcp_info.has_ascending_floor ? "#f59e0b" : "#ef4444"}
+                    fontSize="9.5"
+                    fontWeight="bold"
+                  >
+                    T1 Base Floor: ${vcp_info.t1_envelope.floor} {vcp_info.has_ascending_floor ? '(Nested Support)' : '(⚠️ Floor Breached)'}
+                  </text>
+                </g>
+              );
+            })()}
+
             {/* Shaded corridor between peak envelope and trough floor */}
             {vcpWaves.length >= 2 && (
               <polygon
@@ -1550,6 +1651,7 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
             {vcpWaves.map((w, i) => {
               const isFloorValid = vcp_info?.has_ascending_floor;
               const isHovered = hoveredWaveIdx === i;
+              const isBreach = !w.is_nested || w.is_lower_low;
               // Anti-congestion: Stagger badges vertically so adjacent waves never collide!
               const badgeX = w.xPeak;
               const badgeY = (i % 2 === 0) ? w.yPeak - 14 : w.yPeak - 30;
@@ -1568,7 +1670,7 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
                     y1={w.yPeak}
                     x2={w.xTrough}
                     y2={w.yTrough}
-                    stroke={isHovered ? "#38bdf8" : "#c084fc"}
+                    stroke={isHovered ? "#38bdf8" : (isBreach ? "#ef4444" : "#c084fc")}
                     strokeWidth={isHovered ? "3" : "2"}
                     strokeDasharray={isHovered ? "none" : "4 2"}
                     opacity={hoveredWaveIdx !== null ? (isHovered ? 1.0 : 0.4) : 0.85}
@@ -1588,8 +1690,8 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
                   <circle
                     cx={w.xTrough}
                     cy={w.yTrough}
-                    r={isHovered ? "5.5" : "3.5"}
-                    fill={w.is_lower_low ? "#ef4444" : (isFloorValid ? "#10b981" : "#f59e0b")}
+                    r={isHovered ? "6.0" : (isBreach ? "4.5" : "3.5")}
+                    fill={isBreach ? "#ef4444" : (isFloorValid ? "#10b981" : "#f59e0b")}
                     stroke="#ffffff"
                     strokeWidth="1.2"
                   />
@@ -1603,14 +1705,14 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
                       height="16"
                       rx="4"
                       fill="#0f172a"
-                      stroke={w.is_lower_low ? "#ef4444" : (isHovered ? "#38bdf8" : "#a855f7")}
+                      stroke={isBreach ? "#ef4444" : (isHovered ? "#38bdf8" : "#a855f7")}
                       strokeWidth={isHovered ? "1.8" : "1"}
                       opacity="0.95"
                     />
                     <text
                       x="0"
                       y="3.5"
-                      fill={w.is_lower_low ? "#f87171" : (isHovered ? "#38bdf8" : "#e9d5ff")}
+                      fill={isBreach ? "#f87171" : (isHovered ? "#38bdf8" : "#e9d5ff")}
                       fontSize="8.5"
                       fontWeight="bold"
                       textAnchor="middle"
@@ -1621,28 +1723,37 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
 
                   {/* Interactive Tooltip Card when Wave is Hovered */}
                   {isHovered && (
-                    <g transform={`translate(${Math.min(width - padding.right - 180, Math.max(padding.left, w.xPeak - 40))}, ${Math.max(padding.top, w.yPeak - 55)})`}>
+                    <g transform={`translate(${Math.min(width - padding.right - 200, Math.max(padding.left, w.xPeak - 40))}, ${Math.max(padding.top, w.yPeak - 65)})`}>
                       <rect
                         x="0"
                         y="0"
-                        width="180"
-                        height={w.is_lower_low ? 52 : 44}
+                        width="200"
+                        height={isBreach ? 64 : 50}
                         rx="6"
                         fill="#0f172a"
-                        stroke={w.is_lower_low ? "#ef4444" : "#38bdf8"}
+                        stroke={isBreach ? "#ef4444" : "#38bdf8"}
                         strokeWidth="1.5"
                       />
-                      <text x="8" y="16" fill={w.is_lower_low ? "#f87171" : "#38bdf8"} fontSize="10" fontWeight="bold">
+                      <text x="8" y="16" fill={isBreach ? "#f87171" : "#38bdf8"} fontSize="10" fontWeight="bold">
                         ⚡ {w.wave} Contraction: -{w.depth_pct}%
                       </text>
-                      <text x="8" y="32" fill="#e2e8f0" fontSize="9">
+                      <text x="8" y="30" fill="#e2e8f0" fontSize="9">
                         ${w.peak_price} ➔ ${w.trough_price} ({w.days || 7} days)
                       </text>
-                      {w.is_lower_low && (
-                        <text x="8" y="46" fill="#f87171" fontSize="8" fontWeight="bold">
-                          ⚠️ Under-cut Prior Low (Lower Low)
+                      {w.dampening_ratio && w.wave !== 'T1' && (
+                        <text x="8" y="44" fill="#38bdf8" fontSize="8.5">
+                          Halving Ratio: {Math.round(w.dampening_ratio * 100)}% of prior wave
                         </text>
                       )}
+                      {!w.is_nested ? (
+                        <text x="8" y="58" fill="#ef4444" fontSize="8.5" fontWeight="bold">
+                          ⚠️ T1 Floor Breach (${w.trough_price} &lt; ${vcp_info?.t1_envelope?.floor})
+                        </text>
+                      ) : w.is_lower_low ? (
+                        <text x="8" y="58" fill="#f87171" fontSize="8.5" fontWeight="bold">
+                          ⚠️ Under-cut Prior Low (Lower Low)
+                        </text>
+                      ) : null}
                     </g>
                   )}
                 </g>

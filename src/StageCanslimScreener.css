@@ -1687,10 +1687,62 @@
   color: #34d399;
 }
 
+.sc-vcp-status-tag.warning {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid #f59e0b;
+  color: #fbbf24;
+}
+
 .sc-vcp-status-tag.fail {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid #ef4444;
   color: #f87171;
+}
+
+/* Minervini 5-Pillar Checklist Strip */
+.sc-vcp-checklist-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(2, 6, 23, 0.5);
+  border-radius: 6px;
+  border: 1px dashed rgba(168, 85, 247, 0.25);
+}
+
+.sc-vcp-check-pill {
+  font-size: 0.63rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sc-vcp-check-pill.pass {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.sc-vcp-check-pill.warning {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.sc-vcp-check-pill.fail {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.sc-vcp-check-pill.normal {
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
 }
 
 .sc-vcp-vdu-tag {
@@ -1730,7 +1782,7 @@
   gap: 0.15rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 140px;
+  min-width: 150px;
 }
 
 .sc-vcp-chip:hover,
@@ -1746,6 +1798,22 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.sc-vcp-depth-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sc-vcp-dampening-badge {
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
 }
 
 .sc-vcp-wave-tag {

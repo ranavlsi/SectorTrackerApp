@@ -581,143 +581,338 @@ def detect_vcp_contractions(df_daily):
     if len(df_daily) < 60:
         return {
             "is_vcp": False,
+            "is_forming": False,
+            "has_ascending_floor": False,
             "contractions_count": 0,
             "contraction_depths": [],
+            "waves_detail": [],
+            "t1_envelope": None,
             "vdu_ratio": 1.0,
             "vdu_confirmed": False,
             "vcp_quality_score": 50,
+            "total_dampening_pct": 0.0,
+            "lower_low_breaches": [],
+            "audit": {
+                "trend_template_pass": False,
+                "nested_inside_t1": False,
+                "ascending_floors": False,
+                "volatility_dampened": False,
+                "atr_compressed": False,
+                "final_tightness_pass": False,
+                "vdu_confirmed": False,
+                "breaches": ["Insufficient history for VCP analysis"]
+            },
             "description": "Insufficient history for VCP analysis"
         }
 
-    lookback = min(len(df_daily), 90)
-    recent = df_daily.iloc[-lookback:].copy().reset_index(drop=True)
+    # Calculate 14-day ATR and 50-day average volume
+    high = df_daily['High']
+    low = df_daily['Low']
+    close = df_daily['Close']
+    tr1 = high - low
+    tr2 = (high - close.shift(1)).abs()
+    tr3 = (low - close.shift(1)).abs()
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    df = df_daily.copy()
+    df['ATR14'] = tr.rolling(14).mean()
+    df['Vol50'] = df['Volume'].rolling(50).mean()
+
+    # 1. Minervini Stage 2 / Trend Template Check:
+    # Price must be above SMA150, SMA150 >= SMA200, within 30% of 52w high, >= 25% off 52w low
+    sma50 = float(df['Close'].rolling(50).mean().iloc[-1])
+    sma150 = float(df['Close'].rolling(150).mean().iloc[-1]) if len(df) >= 150 else sma50 * 0.95
+    sma200 = float(df['Close'].rolling(200).mean().iloc[-1]) if len(df) >= 200 else sma150 * 0.95
+    curr_price = float(df['Close'].iloc[-1])
+    high_52w = float(df['High'].iloc[-250:].max()) if len(df) >= 250 else float(df['High'].max())
+    low_52w = float(df['Low'].iloc[-250:].min()) if len(df) >= 250 else float(df['Low'].min())
+
+    trend_template_pass = bool(
+        curr_price >= sma150 and
+        sma150 >= sma200 * 0.98 and
+        curr_price >= high_52w * 0.70 and
+        curr_price >= low_52w * 1.25
+    )
+
+    # 2. Base Anchor P1 Detection:
+    # Scan recent 25 to 100 bars for the dominant ceiling peak from which the base initiated
+    lookback = min(len(df), 90)
+    recent = df.iloc[-lookback:].copy().reset_index(drop=True)
     highs = recent['High'].values
     lows = recent['Low'].values
-    dates = recent['Date'].values
+    dates = [pd.to_datetime(d).strftime('%Y-%m-%d') for d in recent['Date']]
+    atrs = recent['ATR14'].values
+    vols = recent['Volume'].values
 
-    # Alternating Zigzag Swing Extractor (requires minimum 5.0% price reversal to filter noise)
-    min_reversal_pct = 5.0
-    swings = []
-    trend = None
-    cur_high, cur_high_idx = float(highs[0]), 0
-    cur_low, cur_low_idx = float(lows[0]), 0
-
-    for i in range(1, len(recent)):
+    best_p1_idx = None
+    max_h = 0.0
+    for i in range(0, len(recent) - 10):
         h = float(highs[i])
-        l = float(lows[i])
-        if trend is None:
-            if h >= cur_low * (1 + min_reversal_pct / 100):
-                trend = 'UP'
-                cur_high, cur_high_idx = h, i
-                swings.append(('TROUGH', cur_low_idx, cur_low, dates[cur_low_idx]))
-            elif l <= cur_high * (1 - min_reversal_pct / 100):
-                trend = 'DOWN'
-                cur_low, cur_low_idx = l, i
-                swings.append(('PEAK', cur_high_idx, cur_high, dates[cur_high_idx]))
-            else:
-                if h > cur_high:
-                    cur_high, cur_high_idx = h, i
-                if l < cur_low:
-                    cur_low, cur_low_idx = l, i
-        elif trend == 'UP':
-            if h > cur_high:
-                cur_high, cur_high_idx = h, i
-            elif l <= cur_high * (1 - min_reversal_pct / 100):
-                swings.append(('PEAK', cur_high_idx, cur_high, dates[cur_high_idx]))
-                trend = 'DOWN'
-                cur_low, cur_low_idx = l, i
-        elif trend == 'DOWN':
-            if l < cur_low:
-                cur_low, cur_low_idx = l, i
-            elif h >= cur_low * (1 + min_reversal_pct / 100):
-                swings.append(('TROUGH', cur_low_idx, cur_low, dates[cur_low_idx]))
-                trend = 'UP'
-                cur_high, cur_high_idx = h, i
+        sub_min = float(np.min(lows[i:min(len(recent), i + 25)]))
+        pullback = (h - sub_min) / h if h > 0 else 0
+        if pullback >= 0.07:  # minimum 7% correction to constitute a base high
+            if h > max_h:
+                max_h = h
+                best_p1_idx = i
 
-    # Extract distinct alternating Peak -> Trough contraction waves
-    contractions = []
+    if best_p1_idx is None:
+        best_p1_idx = int(np.argmax(highs[:-5]))
+
+    p1_idx = best_p1_idx
+    p1_price = round(float(highs[p1_idx]), 2)
+    p1_date = dates[p1_idx]
+
+    # 3. Extract alternating swings from P1 forward
+    sub_highs = highs[p1_idx:]
+    sub_lows = lows[p1_idx:]
+    sub_dates = dates[p1_idx:]
+    sub_atrs = atrs[p1_idx:]
+    sub_vols = vols[p1_idx:]
+
+    min_rev = 4.5  # 4.5% reversal threshold filters micro-noise while preserving genuine contractions
+    swings = [('PEAK', 0, p1_price, p1_date)]
+    trend = 'DOWN'
+    cur_l, cur_l_idx = float(sub_lows[0]), 0
+    cur_h, cur_h_idx = float(sub_highs[0]), 0
+
+    for i in range(1, len(sub_highs)):
+        h = float(sub_highs[i])
+        l = float(sub_lows[i])
+        if trend == 'DOWN':
+            if l < cur_l:
+                cur_l = l
+                cur_l_idx = i
+            elif h >= cur_l * (1 + min_rev / 100):
+                swings.append(('TROUGH', cur_l_idx, cur_l, sub_dates[cur_l_idx]))
+                trend = 'UP'
+                cur_h = h
+                cur_h_idx = i
+        elif trend == 'UP':
+            if h > cur_h:
+                cur_h = h
+                cur_h_idx = i
+            elif l <= cur_h * (1 - min_rev / 100):
+                swings.append(('PEAK', cur_h_idx, cur_h, sub_dates[cur_h_idx]))
+                trend = 'DOWN'
+                cur_l = l
+                cur_l_idx = i
+
+    if trend == 'DOWN' and (len(swings) == 0 or cur_l_idx != swings[-1][1]):
+        swings.append(('TROUGH', cur_l_idx, cur_l, sub_dates[cur_l_idx]))
+    elif trend == 'UP' and (len(swings) == 0 or cur_h_idx != swings[-1][1]):
+        swings.append(('PEAK', cur_h_idx, cur_h, sub_dates[cur_h_idx]))
+
+    # Pair alternating Peak -> Trough into Contractions
+    waves = []
     for k in range(len(swings) - 1):
         s1 = swings[k]
-        s2 = swings[k + 1]
+        s2 = swings[k+1]
         if s1[0] == 'PEAK' and s2[0] == 'TROUGH':
-            p_price = float(s1[2])
-            t_price = float(s2[2])
-            depth_pct = round(((p_price - t_price) / p_price) * 100, 1)
-            p_date_dt = pd.to_datetime(s1[3])
-            t_date_dt = pd.to_datetime(s2[3])
-            days_span = int((t_date_dt - p_date_dt).days)
-            contractions.append({
-                "wave": f"T{len(contractions) + 1}",
-                "depth_pct": float(depth_pct),
-                "peak_idx": int(s1[1]),
-                "t_idx": int(s2[1]),
-                "peak_date": p_date_dt.strftime('%Y-%m-%d'),
-                "trough_date": t_date_dt.strftime('%Y-%m-%d'),
-                "peak_price": round(float(p_price), 2),
-                "trough_price": round(float(t_price), 2),
-                "days": max(1, days_span)
+            peak_p = float(s1[2])
+            trough_p = float(s2[2])
+            depth = round(((peak_p - trough_p) / peak_p) * 100, 1)
+            p_sub_idx = s1[1]
+            t_sub_idx = s2[1]
+            p_glob_idx = p1_idx + p_sub_idx
+            t_glob_idx = p1_idx + t_sub_idx
+
+            wave_vols = sub_vols[p_sub_idx:t_sub_idx+1] if t_sub_idx >= p_sub_idx else [sub_vols[t_sub_idx]]
+            wave_atrs = sub_atrs[p_sub_idx:t_sub_idx+1] if t_sub_idx >= p_sub_idx else [sub_atrs[t_sub_idx]]
+            avg_vol = int(np.mean(wave_vols)) if len(wave_vols) > 0 else 0
+            avg_atr = float(np.mean(wave_atrs)) if len(wave_atrs) > 0 else 0.0
+
+            waves.append({
+                "wave": f"T{len(waves) + 1}",
+                "depth_pct": float(depth),
+                "peak_price": round(peak_p, 2),
+                "trough_price": round(trough_p, 2),
+                "peak_date": s1[3],
+                "trough_date": s2[3],
+                "peak_idx": int(p_glob_idx),
+                "t_idx": int(t_glob_idx),
+                "avg_vol": int(avg_vol),
+                "avg_atr": round(avg_atr, 2),
+                "days": max(1, t_sub_idx - p_sub_idx)
             })
 
-    recent_contractions = contractions[-4:] if len(contractions) >= 4 else contractions
+    # Limit to most recent 4 contractions if longer
+    if len(waves) > 4:
+        waves = waves[-4:]
+        for idx, w in enumerate(waves):
+            w["wave"] = f"T{idx + 1}"
+
+    if len(waves) == 0:
+        return {
+            "is_vcp": False,
+            "is_forming": False,
+            "has_ascending_floor": False,
+            "contractions_count": 0,
+            "contraction_depths": [],
+            "waves_detail": [],
+            "t1_envelope": None,
+            "vdu_ratio": 1.0,
+            "vdu_confirmed": False,
+            "vcp_quality_score": 30,
+            "total_dampening_pct": 0.0,
+            "lower_low_breaches": [],
+            "audit": {
+                "trend_template_pass": trend_template_pass,
+                "nested_inside_t1": False,
+                "ascending_floors": False,
+                "volatility_dampened": False,
+                "atr_compressed": False,
+                "final_tightness_pass": False,
+                "vdu_confirmed": False,
+                "breaches": ["No distinct base contractions identified"]
+            },
+            "description": "No defined base contractions found"
+        }
+
+    # 4. Master T1 Envelope (Ceiling and Floor Boundaries)
+    t1_wave = waves[0]
+    t1_floor = float(t1_wave["trough_price"])
+    t1_ceiling = float(t1_wave["peak_price"])
+    t1_depth = float(t1_wave["depth_pct"])
+
+    # 5. Audit Each Wave against Minervini Invariant Rules
     breaches = []
-    for idx, c in enumerate(recent_contractions):
-        c["wave"] = f"T{idx + 1}"
-        if idx > 0:
-            prev_trough = float(recent_contractions[idx-1]["trough_price"])
-            curr_trough = float(c["trough_price"])
-            if curr_trough < prev_trough:
-                c["is_lower_low"] = True
-                breaches.append(f"{c['wave']} (${curr_trough:.2f}) < T{idx} (${prev_trough:.2f})")
-            else:
-                c["is_lower_low"] = False
+    is_nested_all = True
+    ascending_floors = True
+    volatility_dampened = True
+
+    for idx, w in enumerate(waves):
+        if idx == 0:
+            w["dampening_ratio"] = 1.0
+            w["is_nested"] = True
+            w["is_higher_low"] = True
+            w["is_lower_low"] = False
         else:
-            c["is_lower_low"] = False
+            prev_w = waves[idx - 1]
+            prev_depth = float(prev_w["depth_pct"])
+            prev_trough = float(prev_w["trough_price"])
+            curr_depth = float(w["depth_pct"])
+            curr_trough = float(w["trough_price"])
+            curr_peak = float(w["peak_price"])
 
-    depths = [float(c["depth_pct"]) for c in recent_contractions]
-    troughs = [float(c["trough_price"]) for c in recent_contractions]
+            # Halving Dampening Ratio
+            ratio = round(curr_depth / prev_depth, 2) if prev_depth > 0 else 1.0
+            w["dampening_ratio"] = ratio
 
-    is_contracting = False
-    has_ascending_floor = bool(len(breaches) == 0)
-    lower_low_warning = bool(len(breaches) > 0)
+            # Dampening check: each wave must be tighter than prior wave (5% noise buffer)
+            if curr_depth > prev_depth * 1.05:
+                volatility_dampened = False
+                breaches.append(f"{w['wave']} expanded depth ({curr_depth}% > {prev_depth}%)")
 
-    if len(depths) >= 2:
-        is_contracting = all(depths[i] <= depths[i-1] * 1.15 for i in range(1, len(depths)))
+            # Floor Nesting: T_k must NOT breach below T1 floor!
+            if curr_trough < t1_floor * 0.995:
+                is_nested_all = False
+                w["is_nested"] = False
+                breaches.append(f"{w['wave']} floor breach (${curr_trough:.2f} < T1 Floor ${t1_floor:.2f})")
+            else:
+                w["is_nested"] = True
 
-    avg_vol_50 = float(df_daily['Volume'].iloc[-50:].mean()) if len(df_daily) >= 50 else float(df_daily['Volume'].mean())
-    recent_3d_vol = float(df_daily['Volume'].iloc[-3:].mean())
+            # Ascending Higher Lows: T_k >= T_{k-1}
+            if curr_trough < prev_trough * 0.995:
+                ascending_floors = False
+                w["is_higher_low"] = False
+                w["is_lower_low"] = True
+                breaches.append(f"{w['wave']} lower low (${curr_trough:.2f} < {prev_w['wave']} ${prev_trough:.2f})")
+            else:
+                w["is_higher_low"] = True
+                w["is_lower_low"] = False
+
+            # Ceiling Nesting: P_k <= P1 ceiling * 1.025
+            if curr_peak > t1_ceiling * 1.025:
+                is_nested_all = False
+                breaches.append(f"{w['wave']} broke ceiling (${curr_peak:.2f} > P1 Ceiling ${t1_ceiling:.2f})")
+
+    # 6. ATR Compression & Volume Dry-Up (VDU)
+    t1_atr = waves[0]["avg_atr"]
+    final_atr = waves[-1]["avg_atr"]
+    atr_compressed = bool(final_atr <= t1_atr * 1.05)
+
+    avg_vol_50 = float(df['Vol50'].iloc[-1]) if not np.isnan(df['Vol50'].iloc[-1]) else float(df['Volume'].mean())
+    recent_3d_vol = float(df['Volume'].iloc[-3:].mean())
     vdu_ratio = round(recent_3d_vol / avg_vol_50, 2) if avg_vol_50 > 0 else 1.0
-    vdu_confirmed = bool(vdu_ratio <= 0.65)
+    vdu_confirmed = bool(vdu_ratio <= 0.70)
 
-    vcp_score = 35
-    if is_contracting:
-        vcp_score += 25
-    if has_ascending_floor:
-        vcp_score += 25
-    if vdu_confirmed:
-        vcp_score += 15
-    vcp_score = min(100, vcp_score)
+    # 7. Terminal Tightness (Final Contraction <= 8.5%)
+    final_wave = waves[-1]
+    final_depth = float(final_wave["depth_pct"])
+    final_tightness_pass = bool(final_depth <= 8.5)
 
-    # Disqualify if price made any lower lows
-    is_vcp = bool(is_contracting and has_ascending_floor and len(depths) >= 2 and depths[-1] <= 12.0)
+    # 8. Overall Dampening %
+    total_dampening_pct = round((1.0 - (final_depth / t1_depth)) * 100, 1) if t1_depth > 0 else 0.0
 
-    depth_str = " -> ".join([f"{d}%" for d in depths]) if depths else "N/A"
-    if lower_low_warning:
-        desc = f"Lower Low Breach ({', '.join(breaches)}) - Disqualified from VCP"
+    # 9. Strict Minervini VCP Verdict
+    is_vcp = bool(
+        len(waves) >= 2 and
+        is_nested_all and
+        ascending_floors and
+        volatility_dampened and
+        final_tightness_pass and
+        trend_template_pass
+    )
+    is_forming = bool(
+        len(waves) >= 1 and
+        is_nested_all and
+        ascending_floors and
+        volatility_dampened and
+        not final_tightness_pass and
+        trend_template_pass
+    )
+
+    # Scoring: 100 pts max
+    score = 40
+    if is_nested_all: score += 15
+    if ascending_floors: score += 15
+    if volatility_dampened: score += 10
+    if atr_compressed: score += 5
+    if final_tightness_pass: score += 10
+    if vdu_confirmed: score += 5
+    score = min(100, score)
+
+    depths_str = " -> ".join([f"{w['depth_pct']}%" for w in waves])
+    if not trend_template_pass:
+        desc = f"Failed Stage 2 Trend Template - Disqualified from VCP"
+    elif len(breaches) > 0:
+        desc = f"VCP Disqualified: {', '.join(breaches[:2])}"
     elif is_vcp:
-        desc = f"{len(depths)}T Ascending VCP ({depth_str}) with {int(vdu_ratio*100)}% VDU"
+        desc = f"Certified Minervini {len(waves)}T VCP ({depths_str}, {total_dampening_pct}% dampened) with {int(vdu_ratio*100)}% VDU"
+    elif is_forming:
+        desc = f"Forming Base ({len(waves)}T: {depths_str}) - Waiting for Tight Terminal Wave (current {final_depth}% > 8%)"
     else:
-        desc = f"{len(depths)}-Wave Consolidation ({depth_str}) with {int(vdu_ratio*100)}% VDU" if depths else "Forming Initial Base"
+        desc = f"{len(waves)}T Consolidation ({depths_str})"
 
     return {
         "is_vcp": bool(is_vcp),
-        "has_ascending_floor": bool(has_ascending_floor),
+        "is_forming": bool(is_forming),
+        "has_ascending_floor": bool(ascending_floors),
         "lower_low_breaches": breaches,
-        "contractions_count": int(len(depths)),
-        "contraction_depths": [float(d) for d in depths],
-        "waves_detail": recent_contractions,
+        "t1_envelope": {
+            "ceiling": t1_ceiling,
+            "floor": t1_floor,
+            "depth_pct": t1_depth,
+            "peak_date": t1_wave["peak_date"],
+            "trough_date": t1_wave["trough_date"]
+        },
+        "contractions_count": int(len(waves)),
+        "contraction_depths": [w["depth_pct"] for w in waves],
+        "waves_detail": waves,
         "vdu_ratio": float(vdu_ratio),
         "vdu_confirmed": bool(vdu_confirmed),
-        "vcp_quality_score": int(vcp_score),
+        "vcp_quality_score": int(score),
+        "total_dampening_pct": float(total_dampening_pct),
+        "audit": {
+            "trend_template_pass": bool(trend_template_pass),
+            "nested_inside_t1": bool(is_nested_all),
+            "ascending_floors": bool(ascending_floors),
+            "volatility_dampened": bool(volatility_dampened),
+            "atr_compressed": bool(atr_compressed),
+            "final_tightness_pass": bool(final_tightness_pass),
+            "vdu_confirmed": bool(vdu_confirmed),
+            "dampening_pct": float(total_dampening_pct),
+            "breaches": breaches
+        },
         "description": desc
     }
 
