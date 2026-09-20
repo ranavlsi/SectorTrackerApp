@@ -3161,8 +3161,9 @@ def get_stage_canslim_stock_analysis_api():
     try:
         import sys
         backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
-        if backend_dir not in sys.path:
-            sys.path.insert(0, backend_dir)
+        import importlib
+        import stage_canslim_engine
+        importlib.reload(stage_canslim_engine)
         from stage_canslim_engine import get_detailed_stage_canslim
         data = get_detailed_stage_canslim(ticker.upper().strip())
         if 'error' in data:

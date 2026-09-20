@@ -41,6 +41,8 @@ export default function StageCanslimScreener() {
   const [chartTimeframe, setChartTimeframe] = useState('2Y'); // '1Y' | '2Y' | '5Y'
   const [simulatorAccount, setSimulatorAccount] = useState(100000);
   const [simulatorRiskPct, setSimulatorRiskPct] = useState(1.0);
+  const [showVcpWaves, setShowVcpWaves] = useState(true);
+  const [hoveredWaveIdx, setHoveredWaveIdx] = useState(null);
 
   // Fetch summary on load
   const loadData = async (force = false) => {
@@ -611,10 +613,18 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                           <span className="sc-legend-item"><span className="sc-legend-dot pivot-dot"></span> Base Pivot: ${activeStock.playbook?.pivot_buy_point}</span>
                           <span className="sc-legend-item"><span className="sc-legend-dot buyzone-dot"></span> 5% Buy Zone: [${activeStock.playbook?.buy_zone_min} - ${activeStock.playbook?.buy_zone_max}]</span>
                           <span className="sc-legend-item"><span className="sc-legend-dot pp-dot"></span> 🟣 Institutional Pocket Pivot</span>
+                          <span className="sc-legend-item"><span className="sc-legend-dot" style={{ background: '#a855f7' }}></span> ⚡ VCP Contraction Waves</span>
                         </div>
                         
                         <div className="sc-tf-selector">
                           <span className="sc-tf-label">Cycle Horizon:</span>
+                          <button 
+                            className={`sc-tf-btn ${chartTimeframe === '6M' ? 'active' : ''}`}
+                            onClick={() => setChartTimeframe('6M')}
+                            title="Zoom in on Base Consolidation and VCP Contractions"
+                          >
+                            6M (Base / VCP)
+                          </button>
                           <button 
                             className={`sc-tf-btn ${chartTimeframe === '1Y' ? 'active' : ''}`}
                             onClick={() => setChartTimeframe('1Y')}
@@ -633,6 +643,19 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                           >
                             5Y (Full Stage Cycle)
                           </button>
+
+                          <button 
+                            className={`sc-tf-btn ${showVcpWaves ? 'active' : ''}`}
+                            style={{ 
+                              borderColor: showVcpWaves ? '#a855f7' : undefined, 
+                              color: showVcpWaves ? '#c084fc' : undefined, 
+                              background: showVcpWaves ? 'rgba(168, 85, 247, 0.2)' : undefined 
+                            }}
+                            onClick={() => setShowVcpWaves(!showVcpWaves)}
+                            title="Toggle VCP Contraction Waves on Chart"
+                          >
+                            ⚡ VCP Waves: {showVcpWaves ? 'ON' : 'OFF'}
+                          </button>
                         </div>
 
                         {hoveredBar && (
@@ -650,16 +673,62 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                         )}
                       </div>
 
-                      {/* SVG Canvas with dynamic timeframe bars */}
+                      {/* Uncluttered VCP Wave Sequence Strip */}
+                      {showVcpWaves && activeStock.vcp_info?.waves_detail?.length > 0 && (
+                        <div className="sc-vcp-sequence-bar">
+                          <div className="sc-vcp-bar-header">
+                            <span className="sc-vcp-head-title">⚡ MARK MINERVINI VOLATILITY CONTRACTION (VCP) BREAKDOWN</span>
+                            <span className={`sc-vcp-status-tag ${activeStock.vcp_info.has_ascending_floor ? 'pass' : 'fail'}`}>
+                              {activeStock.vcp_info.has_ascending_floor ? '✓ Ascending Base Floor' : '⚠️ Descending Channel (Disqualified)'}
+                            </span>
+                            <span className={`sc-vcp-vdu-tag ${activeStock.vcp_info.vdu_confirmed ? 'pass' : 'normal'}`}>
+                              {activeStock.vcp_info.vdu_confirmed 
+                                ? `⚡ ${Math.round(activeStock.vcp_info.vdu_ratio * 100)}% Volume Dry-Up (VDU Confirmed)` 
+                                : `${Math.round(activeStock.vcp_info.vdu_ratio * 100)}% 50-Day Vol`}
+                            </span>
+                          </div>
+                          <div className="sc-vcp-cards-row">
+                            {activeStock.vcp_info.waves_detail.map((w, idx) => (
+                              <div 
+                                key={idx} 
+                                className={`sc-vcp-chip ${hoveredWaveIdx === idx ? 'hovered' : ''} ${w.is_lower_low ? 'lower-low' : ''}`}
+                                onMouseEnter={() => setHoveredWaveIdx(idx)}
+                                onMouseLeave={() => setHoveredWaveIdx(null)}
+                                style={w.is_lower_low ? { borderColor: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' } : undefined}
+                              >
+                                <div className="sc-vcp-chip-top">
+                                  <span className="sc-vcp-wave-tag">{w.wave} CONTRACTION</span>
+                                  <span className="sc-vcp-wave-depth">-{w.depth_pct}%</span>
+                                </div>
+                                <div className="sc-vcp-chip-detail">
+                                  <span className="sc-vcp-chip-price">${w.peak_price?.toFixed(2)} ➔ ${w.trough_price?.toFixed(2)}</span>
+                                  <span className="sc-vcp-chip-dates">{w.peak_date?.slice(5)} to {w.trough_date?.slice(5)} ({w.days || 7}d)</span>
+                                  {w.is_lower_low && (
+                                    <span style={{ color: '#f87171', fontSize: '0.62rem', fontWeight: 'bold' }}>⚠️ Lower Low Breach</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SVG Canvas with dynamic timeframe bars & VCP waves */}
                       <StageChartCanvas 
                         chartData={
-                          chartTimeframe === '1Y' 
-                            ? (activeStock.chart_data || []).slice(-52) 
-                            : chartTimeframe === '2Y' 
-                              ? (activeStock.chart_data || []).slice(-104) 
-                              : (activeStock.chart_data || [])
+                          chartTimeframe === '6M'
+                            ? (activeStock.chart_data || []).slice(-26)
+                            : chartTimeframe === '1Y' 
+                              ? (activeStock.chart_data || []).slice(-52) 
+                              : chartTimeframe === '2Y' 
+                                ? (activeStock.chart_data || []).slice(-104) 
+                                : (activeStock.chart_data || [])
                         } 
                         playbook={activeStock.playbook}
+                        vcp_info={activeStock.vcp_info}
+                        showVcpWaves={showVcpWaves}
+                        hoveredWaveIdx={hoveredWaveIdx}
+                        setHoveredWaveIdx={setHoveredWaveIdx}
                         onHover={setHoveredBar}
                       />
                     </div>
@@ -1114,8 +1183,8 @@ function intVal(num) {
   return Math.round(num || 0);
 }
 
-// Dual-Pane SVG Chart (Price Candlesticks + 10w/30w MAs + Pocket Pivots + Mansfield RS)
-function StageChartCanvas({ chartData, playbook, onHover }) {
+// Dual-Pane SVG Chart (Price Candlesticks + 10w/30w MAs + Pocket Pivots + Mansfield RS + VCP Waves)
+function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, hoveredWaveIdx, setHoveredWaveIdx, onHover }) {
   const containerRef = useRef(null);
   const [width, setWidth] = useState(900);
 
@@ -1168,6 +1237,42 @@ function StageChartCanvas({ chartData, playbook, onHover }) {
   const usableWidth = width - padding.left - padding.right;
   const barWidth = Math.max(1.8, Math.min(14, (usableWidth / Math.max(1, chartData.length)) * 0.75));
   const getX = (index) => padding.left + (index / Math.max(1, chartData.length - 1)) * usableWidth;
+
+  // Helper to map date string to nearest bar index
+  const findNearestBarIndex = (dateStr) => {
+    if (!dateStr || !chartData || chartData.length === 0) return -1;
+    const targetTime = new Date(dateStr).getTime();
+    let closestIdx = 0;
+    let minDiff = Infinity;
+    for (let i = 0; i < chartData.length; i++) {
+      const barTime = new Date(chartData[i].date).getTime();
+      const diff = Math.abs(barTime - targetTime);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = i;
+      }
+    }
+    return closestIdx;
+  };
+
+  // Calculate VCP Waves coordinates
+  const vcpWaves = useMemo(() => {
+    if (!vcp_info || !vcp_info.waves_detail || vcp_info.waves_detail.length === 0) return [];
+    return vcp_info.waves_detail.map((w) => {
+      const pIdx = findNearestBarIndex(w.peak_date);
+      const tIdx = findNearestBarIndex(w.trough_date);
+      if (pIdx === -1 || tIdx === -1) return null;
+      return {
+        ...w,
+        pIdx,
+        tIdx,
+        xPeak: getX(pIdx),
+        yPeak: getY(w.peak_price),
+        xTrough: getX(tIdx),
+        yTrough: getY(w.trough_price)
+      };
+    }).filter(Boolean);
+  }, [vcp_info, chartData, width]);
 
   // Build MA lines paths
   let ma10Path = '';
@@ -1276,6 +1381,168 @@ function StageChartCanvas({ chartData, playbook, onHover }) {
         )}
         {ma10Path && (
           <path d={ma10Path} fill="none" stroke="#00f2fe" strokeWidth="2" />
+        )}
+
+        {/* VCP Contraction Waves, Floor/Ceiling Envelopes & Staggered Badges */}
+        {showVcpWaves && vcpWaves.length > 0 && (
+          <g className="sc-vcp-svg-layer">
+            {/* Shaded corridor between peak envelope and trough floor */}
+            {vcpWaves.length >= 2 && (
+              <polygon
+                points={`
+                  ${vcpWaves.map(w => `${w.xPeak},${w.yPeak}`).join(' ')} 
+                  ${[...vcpWaves].reverse().map(w => `${w.xTrough},${w.yTrough}`).join(' ')}
+                `}
+                fill={vcp_info?.has_ascending_floor ? "rgba(168, 85, 247, 0.07)" : "rgba(239, 68, 68, 0.05)"}
+                stroke="none"
+              />
+            )}
+
+            {/* Ascending / Descending Floor Trendline connecting troughs */}
+            {vcpWaves.length >= 2 && (
+              <polyline
+                points={vcpWaves.map(w => `${w.xTrough},${w.yTrough}`).join(' ')}
+                fill="none"
+                stroke={vcp_info?.has_ascending_floor ? "#10b981" : "#ef4444"}
+                strokeWidth="2"
+                strokeDasharray="4 3"
+              />
+            )}
+
+            {/* Resistance Ceiling line connecting peaks */}
+            {vcpWaves.length >= 2 && (
+              <polyline
+                points={vcpWaves.map(w => `${w.xPeak},${w.yPeak}`).join(' ')}
+                fill="none"
+                stroke="#a855f7"
+                strokeWidth="1.8"
+                strokeDasharray="4 3"
+                opacity="0.8"
+              />
+            )}
+
+            {/* Rebound lines between Trough[i] and Peak[i+1] */}
+            {vcpWaves.map((w, i) => {
+              if (i >= vcpWaves.length - 1) return null;
+              const nextWave = vcpWaves[i + 1];
+              return (
+                <line
+                  key={`vcp-rebound-${i}`}
+                  x1={w.xTrough}
+                  y1={w.yTrough}
+                  x2={nextWave.xPeak}
+                  y2={nextWave.yPeak}
+                  stroke="#38bdf8"
+                  strokeWidth="1.2"
+                  strokeDasharray="3 3"
+                  opacity="0.45"
+                />
+              );
+            })}
+
+            {/* Individual Contraction Waves (Peak -> Trough) with Vertically Staggered Non-Overlapping Badges */}
+            {vcpWaves.map((w, i) => {
+              const isFloorValid = vcp_info?.has_ascending_floor;
+              const isHovered = hoveredWaveIdx === i;
+              // Anti-congestion: Stagger badges vertically so adjacent waves never collide!
+              const badgeX = w.xPeak;
+              const badgeY = (i % 2 === 0) ? w.yPeak - 14 : w.yPeak - 30;
+
+              return (
+                <g 
+                  key={`vcp-wave-${i}`} 
+                  className="sc-vcp-wave-node"
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => setHoveredWaveIdx && setHoveredWaveIdx(i)}
+                  onMouseLeave={() => setHoveredWaveIdx && setHoveredWaveIdx(null)}
+                >
+                  {/* Wave Contraction Line */}
+                  <line
+                    x1={w.xPeak}
+                    y1={w.yPeak}
+                    x2={w.xTrough}
+                    y2={w.yTrough}
+                    stroke={isHovered ? "#38bdf8" : "#c084fc"}
+                    strokeWidth={isHovered ? "3" : "2"}
+                    strokeDasharray={isHovered ? "none" : "4 2"}
+                    opacity={hoveredWaveIdx !== null ? (isHovered ? 1.0 : 0.4) : 0.85}
+                  />
+
+                  {/* Peak Marker Dot */}
+                  <circle 
+                    cx={w.xPeak} 
+                    cy={w.yPeak} 
+                    r={isHovered ? "5.5" : "3.5"} 
+                    fill="#a855f7" 
+                    stroke="#ffffff" 
+                    strokeWidth="1.2" 
+                  />
+
+                  {/* Trough Marker Dot */}
+                  <circle
+                    cx={w.xTrough}
+                    cy={w.yTrough}
+                    r={isHovered ? "5.5" : "3.5"}
+                    fill={w.is_lower_low ? "#ef4444" : (isFloorValid ? "#10b981" : "#f59e0b")}
+                    stroke="#ffffff"
+                    strokeWidth="1.2"
+                  />
+
+                  {/* Vertically Staggered Compact Badge */}
+                  <g transform={`translate(${badgeX}, ${badgeY})`}>
+                    <rect
+                      x="-25"
+                      y="-8"
+                      width="50"
+                      height="16"
+                      rx="4"
+                      fill="#0f172a"
+                      stroke={w.is_lower_low ? "#ef4444" : (isHovered ? "#38bdf8" : "#a855f7")}
+                      strokeWidth={isHovered ? "1.8" : "1"}
+                      opacity="0.95"
+                    />
+                    <text
+                      x="0"
+                      y="3.5"
+                      fill={w.is_lower_low ? "#f87171" : (isHovered ? "#38bdf8" : "#e9d5ff")}
+                      fontSize="8.5"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      {w.wave}: -{w.depth_pct}%
+                    </text>
+                  </g>
+
+                  {/* Interactive Tooltip Card when Wave is Hovered */}
+                  {isHovered && (
+                    <g transform={`translate(${Math.min(width - padding.right - 180, Math.max(padding.left, w.xPeak - 40))}, ${Math.max(padding.top, w.yPeak - 55)})`}>
+                      <rect
+                        x="0"
+                        y="0"
+                        width="180"
+                        height={w.is_lower_low ? 52 : 44}
+                        rx="6"
+                        fill="#0f172a"
+                        stroke={w.is_lower_low ? "#ef4444" : "#38bdf8"}
+                        strokeWidth="1.5"
+                      />
+                      <text x="8" y="16" fill={w.is_lower_low ? "#f87171" : "#38bdf8"} fontSize="10" fontWeight="bold">
+                        ⚡ {w.wave} Contraction: -{w.depth_pct}%
+                      </text>
+                      <text x="8" y="32" fill="#e2e8f0" fontSize="9">
+                        ${w.peak_price} ➔ ${w.trough_price} ({w.days || 7} days)
+                      </text>
+                      {w.is_lower_low && (
+                        <text x="8" y="46" fill="#f87171" fontSize="8" fontWeight="bold">
+                          ⚠️ Under-cut Prior Low (Lower Low)
+                        </text>
+                      )}
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </g>
         )}
 
         {/* Price Labels on Right Axis */}

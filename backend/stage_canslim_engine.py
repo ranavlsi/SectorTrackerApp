@@ -589,53 +589,99 @@ def detect_vcp_contractions(df_daily):
             "description": "Insufficient history for VCP analysis"
         }
 
-    recent = df_daily.iloc[-75:].copy().reset_index(drop=True)
+    lookback = min(len(df_daily), 90)
+    recent = df_daily.iloc[-lookback:].copy().reset_index(drop=True)
     highs = recent['High'].values
     lows = recent['Low'].values
+    dates = recent['Date'].values
 
-    peaks = []
-    troughs = []
-    window = 4
-    for i in range(window, len(recent) - window):
-        if highs[i] == max(highs[i-window : i+window+1]):
-            peaks.append((i, highs[i]))
-        if lows[i] == min(lows[i-window : i+window+1]):
-            troughs.append((i, lows[i]))
+    # Alternating Zigzag Swing Extractor (requires minimum 5.0% price reversal to filter noise)
+    min_reversal_pct = 5.0
+    swings = []
+    trend = None
+    cur_high, cur_high_idx = float(highs[0]), 0
+    cur_low, cur_low_idx = float(lows[0]), 0
 
+    for i in range(1, len(recent)):
+        h = float(highs[i])
+        l = float(lows[i])
+        if trend is None:
+            if h >= cur_low * (1 + min_reversal_pct / 100):
+                trend = 'UP'
+                cur_high, cur_high_idx = h, i
+                swings.append(('TROUGH', cur_low_idx, cur_low, dates[cur_low_idx]))
+            elif l <= cur_high * (1 - min_reversal_pct / 100):
+                trend = 'DOWN'
+                cur_low, cur_low_idx = l, i
+                swings.append(('PEAK', cur_high_idx, cur_high, dates[cur_high_idx]))
+            else:
+                if h > cur_high:
+                    cur_high, cur_high_idx = h, i
+                if l < cur_low:
+                    cur_low, cur_low_idx = l, i
+        elif trend == 'UP':
+            if h > cur_high:
+                cur_high, cur_high_idx = h, i
+            elif l <= cur_high * (1 - min_reversal_pct / 100):
+                swings.append(('PEAK', cur_high_idx, cur_high, dates[cur_high_idx]))
+                trend = 'DOWN'
+                cur_low, cur_low_idx = l, i
+        elif trend == 'DOWN':
+            if l < cur_low:
+                cur_low, cur_low_idx = l, i
+            elif h >= cur_low * (1 + min_reversal_pct / 100):
+                swings.append(('TROUGH', cur_low_idx, cur_low, dates[cur_low_idx]))
+                trend = 'UP'
+                cur_high, cur_high_idx = h, i
+
+    # Extract distinct alternating Peak -> Trough contraction waves
     contractions = []
-    for i in range(len(peaks)):
-        p_idx, p_val = peaks[i]
-        subsequent_troughs = [t for t in troughs if t[0] > p_idx]
-        if subsequent_troughs:
-            t_idx, t_val = subsequent_troughs[0]
-            depth_pct = round(((p_val - t_val) / p_val) * 100, 1)
+    for k in range(len(swings) - 1):
+        s1 = swings[k]
+        s2 = swings[k + 1]
+        if s1[0] == 'PEAK' and s2[0] == 'TROUGH':
+            p_price = float(s1[2])
+            t_price = float(s2[2])
+            depth_pct = round(((p_price - t_price) / p_price) * 100, 1)
+            p_date_dt = pd.to_datetime(s1[3])
+            t_date_dt = pd.to_datetime(s2[3])
+            days_span = int((t_date_dt - p_date_dt).days)
             contractions.append({
-                "wave": f"T{len(contractions)+1}",
-                "depth_pct": depth_pct,
-                "peak_idx": int(p_idx),
-                "peak_price": round(float(p_val), 2),
-                "trough_price": round(float(t_val), 2)
+                "wave": f"T{len(contractions) + 1}",
+                "depth_pct": float(depth_pct),
+                "peak_idx": int(s1[1]),
+                "t_idx": int(s2[1]),
+                "peak_date": p_date_dt.strftime('%Y-%m-%d'),
+                "trough_date": t_date_dt.strftime('%Y-%m-%d'),
+                "peak_price": round(float(p_price), 2),
+                "trough_price": round(float(t_price), 2),
+                "days": max(1, days_span)
             })
 
-    recent_contractions = contractions[-4:] if len(contractions) >= 2 else contractions
+    recent_contractions = contractions[-4:] if len(contractions) >= 4 else contractions
+    breaches = []
     for idx, c in enumerate(recent_contractions):
         c["wave"] = f"T{idx + 1}"
-    depths = [c["depth_pct"] for c in recent_contractions]
-    troughs = [c["trough_price"] for c in recent_contractions]
+        if idx > 0:
+            prev_trough = float(recent_contractions[idx-1]["trough_price"])
+            curr_trough = float(c["trough_price"])
+            if curr_trough < prev_trough:
+                c["is_lower_low"] = True
+                breaches.append(f"{c['wave']} (${curr_trough:.2f}) < T{idx} (${prev_trough:.2f})")
+            else:
+                c["is_lower_low"] = False
+        else:
+            c["is_lower_low"] = False
+
+    depths = [float(c["depth_pct"]) for c in recent_contractions]
+    troughs = [float(c["trough_price"]) for c in recent_contractions]
 
     is_contracting = False
-    has_ascending_floor = True
-    lower_low_warning = False
+    has_ascending_floor = bool(len(breaches) == 0)
+    lower_low_warning = bool(len(breaches) > 0)
 
     if len(depths) >= 2:
         is_contracting = all(depths[i] <= depths[i-1] * 1.15 for i in range(1, len(depths)))
-        # Mark Minervini Law: A true VCP must hold the base floor or form higher lows (ascending floor).
-        # Cascading lower lows (e.g. T2 trough < T1 trough) represents a downward correction channel, NOT a VCP.
-        for i in range(1, len(troughs)):
-            if troughs[i] < troughs[i-1] * 0.985:  # Significant lower low breach
-                has_ascending_floor = False
-                lower_low_warning = True
-                break
 
     avg_vol_50 = float(df_daily['Volume'].iloc[-50:].mean()) if len(df_daily) >= 50 else float(df_daily['Volume'].mean())
     recent_3d_vol = float(df_daily['Volume'].iloc[-3:].mean())
@@ -651,12 +697,12 @@ def detect_vcp_contractions(df_daily):
         vcp_score += 15
     vcp_score = min(100, vcp_score)
 
-    # Disqualify if price made lower lows
+    # Disqualify if price made any lower lows
     is_vcp = bool(is_contracting and has_ascending_floor and len(depths) >= 2 and depths[-1] <= 12.0)
 
     depth_str = " -> ".join([f"{d}%" for d in depths]) if depths else "N/A"
     if lower_low_warning:
-        desc = f"Descending Channel (Lower Lows: ${troughs[0]:.2f} -> ${troughs[1]:.2f}) - Disqualified from VCP"
+        desc = f"Lower Low Breach ({', '.join(breaches)}) - Disqualified from VCP"
     elif is_vcp:
         desc = f"{len(depths)}T Ascending VCP ({depth_str}) with {int(vdu_ratio*100)}% VDU"
     else:
@@ -665,6 +711,7 @@ def detect_vcp_contractions(df_daily):
     return {
         "is_vcp": bool(is_vcp),
         "has_ascending_floor": bool(has_ascending_floor),
+        "lower_low_breaches": breaches,
         "contractions_count": int(len(depths)),
         "contraction_depths": [float(d) for d in depths],
         "waves_detail": recent_contractions,
