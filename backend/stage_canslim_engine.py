@@ -91,8 +91,8 @@ TICKER_SECTOR_MAP = {
     "QQQ": ("QQQ", "Nasdaq 100 Benchmark")
 }
 
-def fetch_ohlcv(ticker, period="3y", interval="1d"):
-    """Fetches clean daily OHLCV dataframe."""
+def fetch_ohlcv(ticker, period="5y", interval="1d"):
+    """Fetches clean daily OHLCV dataframe over 5-year historical horizon."""
     try:
         t = yf.Ticker(ticker.upper())
         df = t.history(period=period, interval=interval)
@@ -169,7 +169,7 @@ def get_sector_data(sector_etf):
     global _SECTOR_CACHE
     if sector_etf in _SECTOR_CACHE:
         return _SECTOR_CACHE[sector_etf]
-    df_daily = fetch_ohlcv(sector_etf, period="2y")
+    df_daily = fetch_ohlcv(sector_etf, period="5y")
     if df_daily is not None:
         df_weekly = compute_weekly_bars(df_daily)
         _SECTOR_CACHE[sector_etf] = (df_daily, df_weekly)
@@ -1044,8 +1044,9 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
 
     regime_weeks = 4
     if df_weekly is not None and len(df_weekly) >= 15:
-        w_closes = df_weekly['Close'].iloc[-15:].values
-        w_ma30 = df_weekly['Close'].rolling(30).mean().iloc[-15:].values
+        lookback_w = min(len(df_weekly), 200)
+        w_closes = df_weekly['Close'].iloc[-lookback_w:].values
+        w_ma30 = df_weekly['Close'].rolling(30).mean().iloc[-lookback_w:].values
         streak = 0
         is_above = curr_close >= curr_ma30
         for k in range(len(w_closes)-1, -1, -1):
@@ -1388,7 +1389,8 @@ def serialize_chart_data(df_weekly, mansfield_df, pivot_point, pocket_pivot_date
     else:
         w['Mansfield_RS'] = 0.0
 
-    chart_slice = w.iloc[-52:].copy()
+    # Serialize full 5-year weekly bars (up to 260 weeks) for true multi-year cycle analysis
+    chart_slice = w.iloc[-260:].copy() if len(w) >= 260 else w.copy()
     serialized_bars = []
     pp_date_set = set(pocket_pivot_dates or [])
 
@@ -1417,7 +1419,7 @@ def get_spy_weekly():
     global _SPY_WEEKLY_CACHE
     if _SPY_WEEKLY_CACHE is not None:
         return _SPY_WEEKLY_CACHE
-    df_spy_daily = fetch_ohlcv("SPY", period="3y")
+    df_spy_daily = fetch_ohlcv("SPY", period="5y")
     if df_spy_daily is not None:
         _SPY_WEEKLY_CACHE = compute_weekly_bars(df_spy_daily)
     return _SPY_WEEKLY_CACHE
@@ -1426,7 +1428,7 @@ def analyze_single_stock(ticker, df_spy_weekly=None):
     if df_spy_weekly is None:
         df_spy_weekly = get_spy_weekly()
 
-    df_daily = fetch_ohlcv(ticker, period="3y")
+    df_daily = fetch_ohlcv(ticker, period="5y")
     if df_daily is None or len(df_daily) < 60:
         return None
 

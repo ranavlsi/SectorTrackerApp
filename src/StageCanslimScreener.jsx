@@ -38,6 +38,9 @@ export default function StageCanslimScreener() {
   const [modalTab, setModalTab] = useState('CHART'); // 'CHART' | 'LIFECYCLE' | 'PLAYBOOK'
   const [hoveredBar, setHoveredBar] = useState(null);
   const [copiedTicket, setCopiedTicket] = useState(false);
+  const [chartTimeframe, setChartTimeframe] = useState('2Y'); // '1Y' | '2Y' | '5Y'
+  const [simulatorAccount, setSimulatorAccount] = useState(100000);
+  const [simulatorRiskPct, setSimulatorRiskPct] = useState(1.0);
 
   // Fetch summary on load
   const loadData = async (force = false) => {
@@ -99,6 +102,18 @@ export default function StageCanslimScreener() {
     }
     if (selectedFilter === 'STAGE_2B') {
       return list.filter(s => s.stage_info?.sub_stage === '2B');
+    }
+    if (selectedFilter === 'TRIPLE_GREEN') {
+      return list.filter(s => s.triple_tf?.is_triple_green);
+    }
+    if (selectedFilter === 'SECTOR_TAILWIND') {
+      return list.filter(s => s.sector_info?.has_sector_tailwind);
+    }
+    if (selectedFilter === 'UR_SHAKEOUT') {
+      return list.filter(s => s.ur_info?.has_ur_setup);
+    }
+    if (selectedFilter === 'EPS_ACCEL') {
+      return list.filter(s => s.accel_data?.is_dual_accelerating);
     }
     if (selectedFilter === 'VCP_COILS') {
       return list.filter(s => s.vcp_info?.is_vcp);
@@ -239,6 +254,30 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
             🎯 Stage 2B: 10w MA Reload
           </button>
           <button 
+            className={`sc-pill ${selectedFilter === 'TRIPLE_GREEN' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('TRIPLE_GREEN')}
+          >
+            🟢 Triple Green Stage 2 ({alphas.triple_green || 0})
+          </button>
+          <button 
+            className={`sc-pill ${selectedFilter === 'SECTOR_TAILWIND' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('SECTOR_TAILWIND')}
+          >
+            🚀 Double Stage 2 Tailwind ({alphas.sector_tailwind || 0})
+          </button>
+          <button 
+            className={`sc-pill ${selectedFilter === 'UR_SHAKEOUT' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('UR_SHAKEOUT')}
+          >
+            ⚡ U&R Shakeout Entry ({alphas.ur_shakeouts || 0})
+          </button>
+          <button 
+            className={`sc-pill ${selectedFilter === 'EPS_ACCEL' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('EPS_ACCEL')}
+          >
+            ⚡ Dual EPS Accel ({alphas.eps_acceleration || 0})
+          </button>
+          <button 
             className={`sc-pill ${selectedFilter === 'VCP_COILS' ? 'active' : ''}`}
             onClick={() => setSelectedFilter('VCP_COILS')}
           >
@@ -313,7 +352,9 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
             <thead>
               <tr>
                 <th>Ticker & Price</th>
+                <th>Master Conviction</th>
                 <th>12-Sub-Stage & Duration</th>
+                <th>Sector & Confluence</th>
                 <th>Mansfield RS & Divergence</th>
                 <th>VCP Contractions & VDU</th>
                 <th>Pocket Pivots & Dist</th>
@@ -331,6 +372,10 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                 const rsAlpha = stock.rs_alpha || {};
                 const canslim = stock.canslim_info || {};
                 const playbook = stock.playbook || {};
+                const council = stock.trade_council || {};
+                const sector = stock.sector_info || {};
+                const tripleTf = stock.triple_tf || {};
+                const ur = stock.ur_info || {};
 
                 return (
                   <tr 
@@ -346,12 +391,47 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                     </td>
 
                     <td>
+                      <div className="sc-conviction-cell">
+                        <div className="sc-conviction-score-wrap">
+                          <span className="sc-conviction-val" style={{ color: council.tier_color || '#10b981' }}>
+                            {council.master_conviction_score || 0}
+                          </span>
+                          <span className="sc-conviction-max">/100</span>
+                        </div>
+                        <span className="sc-conviction-badge" style={{ backgroundColor: `${council.tier_color || '#10b981'}22`, color: council.tier_color || '#10b981', borderColor: council.tier_color || '#10b981' }}>
+                          {council.tier || 'CONVICTION B'}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td>
                       <div className="sc-stage-cell">
                         <div className="sc-stage-badge" style={{ backgroundColor: `${stage.status_color}22`, borderColor: stage.status_color, color: stage.status_color }}>
                           <span className="sc-stage-id">{stage.sub_stage}</span>
                           <span className="sc-stage-desc">{stage.sub_stage_name}</span>
                         </div>
                         <span className="sc-regime-duration">Duration: {stage.regime_duration_weeks || 1}w</span>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div className="sc-sector-confluence-cell">
+                        <div className="sc-sec-etf-line">
+                          <span className="sc-sec-etf-tag">{sector.sector_etf || 'SPY'}</span>
+                          {sector.has_sector_tailwind ? (
+                            <span className="sc-tailwind-pill">🚀 TAILWIND</span>
+                          ) : (
+                            <span className="sc-neutral-pill">{sector.sector_stage || 'Stage 2'}</span>
+                          )}
+                        </div>
+                        <div className="sc-sec-sub-badges">
+                          {tripleTf.is_triple_green && (
+                            <span className="sc-micro-badge triple-green">🟢 3-GREEN</span>
+                          )}
+                          {ur.has_ur_setup && (
+                            <span className="sc-micro-badge ur-shakeout">⚡ U&R</span>
+                          )}
+                        </div>
                       </div>
                     </td>
 
@@ -532,6 +612,29 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                           <span className="sc-legend-item"><span className="sc-legend-dot buyzone-dot"></span> 5% Buy Zone: [${activeStock.playbook?.buy_zone_min} - ${activeStock.playbook?.buy_zone_max}]</span>
                           <span className="sc-legend-item"><span className="sc-legend-dot pp-dot"></span> 🟣 Institutional Pocket Pivot</span>
                         </div>
+                        
+                        <div className="sc-tf-selector">
+                          <span className="sc-tf-label">Cycle Horizon:</span>
+                          <button 
+                            className={`sc-tf-btn ${chartTimeframe === '1Y' ? 'active' : ''}`}
+                            onClick={() => setChartTimeframe('1Y')}
+                          >
+                            1Y (52w)
+                          </button>
+                          <button 
+                            className={`sc-tf-btn ${chartTimeframe === '2Y' ? 'active' : ''}`}
+                            onClick={() => setChartTimeframe('2Y')}
+                          >
+                            2Y (Tactical)
+                          </button>
+                          <button 
+                            className={`sc-tf-btn ${chartTimeframe === '5Y' ? 'active' : ''}`}
+                            onClick={() => setChartTimeframe('5Y')}
+                          >
+                            5Y (Full Stage Cycle)
+                          </button>
+                        </div>
+
                         {hoveredBar && (
                           <div className="sc-hover-tooltip">
                             <span>Date: <strong>{hoveredBar.date}</strong></span>
@@ -547,9 +650,15 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                         )}
                       </div>
 
-                      {/* SVG Canvas */}
+                      {/* SVG Canvas with dynamic timeframe bars */}
                       <StageChartCanvas 
-                        chartData={activeStock.chart_data || []} 
+                        chartData={
+                          chartTimeframe === '1Y' 
+                            ? (activeStock.chart_data || []).slice(-52) 
+                            : chartTimeframe === '2Y' 
+                              ? (activeStock.chart_data || []).slice(-104) 
+                              : (activeStock.chart_data || [])
+                        } 
                         playbook={activeStock.playbook}
                         onHover={setHoveredBar}
                       />
@@ -653,6 +762,80 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                           </ul>
                         </div>
                       </div>
+
+                      {/* v3.0 Triple-Timeframe Stage Matrix & Sector Confluence */}
+                      <div className="sc-confluence-grid">
+                        <div className="sc-confluence-card">
+                          <div className="sc-confluence-card-header">
+                            <Compass size={18} color="#38bdf8" />
+                            <h4>Triple-Timeframe Stage Confluence</h4>
+                            {activeStock.triple_tf?.is_triple_green ? (
+                              <span className="sc-triple-green-badge">🟢 TRIPLE GREEN STAGE 2</span>
+                            ) : (
+                              <span className="sc-tf-mixed-badge">{activeStock.triple_tf?.badge || 'Multi-Timeframe Active'}</span>
+                            )}
+                          </div>
+                          <p className="sc-confluence-desc">{activeStock.triple_tf?.confluence_verdict}</p>
+
+                          <div className="sc-timeframes-row">
+                            <div className="sc-tf-box">
+                              <div className="sc-tf-name">Monthly (Secular)</div>
+                              <div className="sc-tf-val" style={{ color: activeStock.triple_tf?.monthly?.status === 'BULLISH' ? '#10b981' : '#f59e0b' }}>
+                                {activeStock.triple_tf?.monthly?.stage}
+                              </div>
+                              <div className="sc-tf-sub">10m MA: ${activeStock.triple_tf?.monthly?.ma10_monthly} • 30m MA: ${activeStock.triple_tf?.monthly?.ma30_monthly}</div>
+                            </div>
+
+                            <div className="sc-tf-box">
+                              <div className="sc-tf-name">Weekly (Primary)</div>
+                              <div className="sc-tf-val" style={{ color: '#10b981' }}>
+                                {activeStock.triple_tf?.weekly?.stage}
+                              </div>
+                              <div className="sc-tf-sub">10w MA: ${activeStock.triple_tf?.weekly?.ma10_weekly} • 30w MA: ${activeStock.triple_tf?.weekly?.ma30_weekly}</div>
+                            </div>
+
+                            <div className="sc-tf-box">
+                              <div className="sc-tf-name">Daily (Tactical)</div>
+                              <div className="sc-tf-val" style={{ color: activeStock.triple_tf?.daily?.status === 'BULLISH' ? '#10b981' : '#f59e0b' }}>
+                                {activeStock.triple_tf?.daily?.status} ({activeStock.triple_tf?.daily?.trend_template_passed ? 'Minervini Template Pass' : 'Tactical Base'})
+                              </div>
+                              <div className="sc-tf-sub">SMA50: ${activeStock.triple_tf?.daily?.sma50} • SMA200: ${activeStock.triple_tf?.daily?.sma200}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="sc-confluence-card">
+                          <div className="sc-confluence-card-header">
+                            <Activity size={18} color="#10b981" />
+                            <h4>Sector & Order Flow Confluence</h4>
+                            {activeStock.sector_info?.has_sector_tailwind && (
+                              <span className="sc-tailwind-badge">🚀 DOUBLE STAGE 2 TAILWIND</span>
+                            )}
+                          </div>
+                          <div className="sc-sec-flow-body">
+                            <div className="sc-sec-info-line">
+                              <span>Industry / Sector ETF:</span>
+                              <strong>{activeStock.sector_info?.sector_etf} ({activeStock.sector_info?.industry_name})</strong>
+                            </div>
+                            <div className="sc-sec-info-line">
+                              <span>Sector Stage Status:</span>
+                              <strong style={{ color: '#10b981' }}>{activeStock.sector_info?.sector_stage}</strong>
+                            </div>
+                            <div className="sc-sec-info-line">
+                              <span>Order Flow A/D Grade:</span>
+                              <strong className={`sc-grade-badge grade-${activeStock.ad_info?.ad_rating || 'B'}`}>
+                                Grade {activeStock.ad_info?.ad_rating} ({activeStock.ad_info?.ad_label})
+                              </strong>
+                            </div>
+                            <div className="sc-sec-info-line">
+                              <span>Volume Spread (VSA):</span>
+                              <strong style={{ color: activeStock.ad_info?.is_squat_warning ? '#f59e0b' : '#38bdf8' }}>
+                                {activeStock.ad_info?.vsa_signal}
+                              </strong>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -694,6 +877,37 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                           </div>
                         ))}
                       </div>
+
+                      {/* Institutional Undercut & Rally (U&R) Shakeout Box */}
+                      {activeStock.ur_info?.has_ur_setup && (
+                        <div className="sc-ur-alert-box">
+                          <div className="sc-ur-alert-header">
+                            <Zap size={22} color="#fbbf24" />
+                            <div>
+                              <h4>⚡ Institutional Undercut & Rally (U&R) Shakeout Active!</h4>
+                              <p>Base support low (${activeStock.ur_info.shakeout_low}) was undercut by {activeStock.ur_info.undercut_pct}% and swiftly reclaimed. High R/R early entry pivot inside the base before the main breakout ceiling!</p>
+                            </div>
+                          </div>
+                          <div className="sc-ur-details-grid">
+                            <div className="sc-ur-detail">
+                              <span>Early U&R Pivot:</span>
+                              <strong style={{ color: '#10b981' }}>${activeStock.ur_info.undercut_pivot}</strong>
+                            </div>
+                            <div className="sc-ur-detail">
+                              <span>Shakeout Low Floor:</span>
+                              <strong style={{ color: '#ef4444' }}>${activeStock.ur_info.shakeout_low}</strong>
+                            </div>
+                            <div className="sc-ur-detail">
+                              <span>Headstart to Ceiling:</span>
+                              <strong style={{ color: '#38bdf8' }}>+{activeStock.ur_info.gain_to_base_high}%</strong>
+                            </div>
+                            <div className="sc-ur-detail">
+                              <span>Action Directive:</span>
+                              <strong>{activeStock.ur_info.action_note}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Interactive O'Neil 3-Tier Order Ticket Card */}
                       <div className="sc-execution-card">
@@ -782,16 +996,106 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                           </div>
                         </div>
 
-                        {/* Sizing & Allocation Box */}
-                        <div className="sc-sizing-box">
-                          <div className="sc-sizing-title">
-                            <Percent size={18} color="#f59e0b" />
-                            <span>Position Sizing ($100,000 Portfolio, 1% Risk Rule)</span>
+                        {/* Interactive Dynamic Position Sizing Simulator */}
+                        <div className="sc-simulator-card">
+                          <div className="sc-sim-header">
+                            <div className="sc-sim-title-wrap">
+                              <Percent size={20} color="#f59e0b" />
+                              <div>
+                                <h4>Dynamic Account Capital & Risk Position Simulator</h4>
+                                <p>Adjust account equity and risk budget to simulate precise position sizing & scale-in orders.</p>
+                              </div>
+                            </div>
+
+                            <div className="sc-sim-risk-pills">
+                              <span className="sc-sim-pill-label">Risk Rule:</span>
+                              {[0.5, 1.0, 2.0].map((r) => (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  className={`sc-risk-pill ${simulatorRiskPct === r ? 'active' : ''}`}
+                                  onClick={() => setSimulatorRiskPct(r)}
+                                >
+                                  {r}% Risk
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <div className="sc-sizing-content">
-                            <div>Recommended Total Allocation: <strong>{activeStock.playbook?.position_sizing?.recommended_shares} shares</strong> ({activeStock.playbook?.position_sizing?.allocated_capital})</div>
-                            <div className="sc-sizing-rule">{activeStock.playbook?.position_sizing?.oneil_rule}</div>
+
+                          <div className="sc-sim-controls">
+                            <div className="sc-slider-wrap">
+                              <div className="sc-slider-label-row">
+                                <span>Account Portfolio Equity:</span>
+                                <strong className="sc-sim-equity-val">${simulatorAccount.toLocaleString()}</strong>
+                              </div>
+                              <input 
+                                type="range" 
+                                min="10000" 
+                                max="500000" 
+                                step="5000"
+                                value={simulatorAccount}
+                                onChange={(e) => setSimulatorAccount(Number(e.target.value))}
+                                className="sc-equity-slider"
+                              />
+                              <div className="sc-slider-presets">
+                                {[25000, 50000, 100000, 250000, 500000].map((amt) => (
+                                  <button 
+                                    key={amt} 
+                                    type="button" 
+                                    onClick={() => setSimulatorAccount(amt)} 
+                                    className={`sc-preset-btn ${simulatorAccount === amt ? 'active' : ''}`}
+                                  >
+                                    ${amt >= 1000 ? `${amt / 1000}k` : amt}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
+
+                          {/* Live Computed Sizing Output */}
+                          {(() => {
+                            const pivot = activeStock.playbook?.pivot_buy_point || activeStock.current_price || 100;
+                            const stop = activeStock.playbook?.stop_loss_price || (pivot * 0.93);
+                            const riskPerShare = Math.max(0.01, pivot - stop);
+                            const totalMaxRiskDollars = simulatorAccount * (simulatorRiskPct / 100);
+                            const simShares = Math.max(1, Math.floor(totalMaxRiskDollars / riskPerShare));
+                            const totalSimCapital = simShares * pivot;
+                            const pctOfAccount = Math.min(100, ((totalSimCapital / simulatorAccount) * 100)).toFixed(1);
+
+                            const t1Shares = Math.round(simShares * 0.5);
+                            const t2Shares = Math.round(simShares * 0.3);
+                            const t3Shares = Math.max(0, simShares - t1Shares - t2Shares);
+
+                            return (
+                              <div className="sc-sim-results-grid">
+                                <div className="sc-sim-res-box">
+                                  <span className="sc-sim-res-lbl">Max Dollar Risk ({simulatorRiskPct}%)</span>
+                                  <strong className="sc-sim-res-val" style={{ color: '#ef4444' }}>${Math.round(totalMaxRiskDollars).toLocaleString()}</strong>
+                                  <span className="sc-sim-res-sub">Capital at risk if stop is triggered</span>
+                                </div>
+
+                                <div className="sc-sim-res-box">
+                                  <span className="sc-sim-res-lbl">Total Position Size</span>
+                                  <strong className="sc-sim-res-val" style={{ color: '#10b981' }}>{simShares.toLocaleString()} shares</strong>
+                                  <span className="sc-sim-res-sub">Based on ${(riskPerShare).toFixed(2)}/sh stop distance</span>
+                                </div>
+
+                                <div className="sc-sim-res-box">
+                                  <span className="sc-sim-res-lbl">Total Capital Allocated</span>
+                                  <strong className="sc-sim-res-val" style={{ color: '#38bdf8' }}>${Math.round(totalSimCapital).toLocaleString()}</strong>
+                                  <span className="sc-sim-res-sub">{pctOfAccount}% of total portfolio</span>
+                                </div>
+
+                                <div className="sc-sim-res-box">
+                                  <span className="sc-sim-res-lbl">Scale-In Plan (Shares)</span>
+                                  <strong className="sc-sim-res-val" style={{ color: '#c084fc', fontSize: '0.95rem' }}>
+                                    T1: {t1Shares} • T2: {t2Shares} • T3: {t3Shares}
+                                  </strong>
+                                  <span className="sc-sim-res-sub">50% Breakout, 30% Confirm, 20% 10w MA</span>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -862,8 +1166,8 @@ function StageChartCanvas({ chartData, playbook, onHover }) {
 
   // X coordinate
   const usableWidth = width - padding.left - padding.right;
-  const barWidth = Math.max(4, Math.min(14, (usableWidth / chartData.length) * 0.7));
-  const getX = (index) => padding.left + (index / (chartData.length - 1)) * usableWidth;
+  const barWidth = Math.max(1.8, Math.min(14, (usableWidth / Math.max(1, chartData.length)) * 0.75));
+  const getX = (index) => padding.left + (index / Math.max(1, chartData.length - 1)) * usableWidth;
 
   // Build MA lines paths
   let ma10Path = '';
