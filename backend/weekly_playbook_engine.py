@@ -597,6 +597,7 @@ def generate_weekly_playbook():
         json.dump(final_json, f, indent=4)
         
     print(f"Successfully generated Weekly Playbook 2.0 at {OUTPUT_FILE} with {len(focus_list_payload)} focus list stocks and {len(character_change_watch)} character change alerts.")
+    return final_json
 
 if __name__ == "__main__":
     generate_weekly_playbook()

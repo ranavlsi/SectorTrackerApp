@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { StockPersonalityBadge } from './StockPersonalityBadge';
 
-export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
+export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick, onRefresh }) => {
   const [copied, setCopied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState('');
@@ -48,6 +48,7 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
   const focusList = playbook.focus_list || playbook.top_3_picks || [];
   const sectorRotation = playbook.sector_rotation || { leading_sectors: [], lagging_sectors: [] };
   const characterWatch = playbook.character_change_watch || [];
+  const characterChangeWatch = characterWatch;
   const stocksThatRan = playbook.stocks_that_ran || [];
   const aboutToFly = playbook.about_to_fly || [];
 
@@ -81,10 +82,23 @@ export const WeeklyPlaybookDashboard = ({ playbook, onTickerClick }) => {
       const res = await fetch('/api/run_weekly_playbook', { method: 'POST' });
       const data = await res.json();
       setRefreshMessage(data.message || 'Playbook generation started.');
-      setTimeout(() => {
-        setRefreshMessage('Refreshing playbook data...');
+      setTimeout(async () => {
+        setRefreshMessage('Loading updated playbook data...');
+        try {
+          const freshRes = await fetch('/api/weekly_playbook?t=' + Date.now());
+          const freshData = await freshRes.json();
+          if (freshData && freshData.date && !freshData.error) {
+            if (onRefresh) onRefresh(freshData);
+            setRefreshing(false);
+            setRefreshMessage('Weekly Playbook updated successfully!');
+            setTimeout(() => setRefreshMessage(''), 3000);
+            return;
+          }
+        } catch (e) {
+          console.warn('Could not fetch fresh playbook via API, falling back to reload:', e);
+        }
         window.location.reload();
-      }, 4000);
+      }, 3500);
     } catch (err) {
       console.error('Error refreshing playbook:', err);
       setRefreshing(false);

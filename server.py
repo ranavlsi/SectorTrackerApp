@@ -474,29 +474,44 @@ def get_vol_surface():
             return jsonify(cached_data)
 
     try:
-        t = yf.Ticker(ticker_clean)
-        options = t.options
-        if not options:
-            return jsonify({"error": f"No options chain available for {ticker_clean}"}), 400
-            
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from gex_engine import fetch_cboe_options
+        cboe_res = fetch_cboe_options(ticker_clean)
+        
+        cboe_calls_df = None
+        cboe_puts_df = None
+        t = None
         spot = None
-        try:
-            spot = float(t.fast_info.get('lastPrice', 0.0) or t.fast_info.get('regularMarketPrice', 0.0) or 0.0)
-        except Exception:
-            pass
-            
-        if not spot or spot <= 0:
+
+        if cboe_res is not None:
+            spot, _, cboe_calls_df, cboe_puts_df, options = cboe_res
+        else:
+            t = yf.Ticker(ticker_clean)
+            options = t.options
+            if not options:
+                return jsonify({"error": f"No options chain available for {ticker_clean}"}), 400
+                
             try:
-                hist = t.history(period="5d")
-                spot = float(hist['Close'].iloc[-1]) if not hist.empty else 100.0
+                spot = float(t.fast_info.get('lastPrice', 0.0) or t.fast_info.get('regularMarketPrice', 0.0) or 0.0)
             except Exception:
-                spot = 100.0
+                pass
+                
+            if not spot or spot <= 0:
+                try:
+                    hist = t.history(period="5d")
+                    spot = float(hist['Close'].iloc[-1]) if not hist.empty else 100.0
+                except Exception:
+                    spot = 100.0
             
         # Calculate 30D Realized Historical Volatility (HV)
         hv_30d = 20.0
         try:
-            hist_30 = t.history(period="3mo")
-            if len(hist_30) >= 20:
+            if t is None:
+                t = yf.Ticker(ticker_clean)
+            hist_30 = t.history(period="1mo")
+            if len(hist_30) >= 10:
                 log_rets = np.log(hist_30['Close'] / hist_30['Close'].shift(1)).dropna()
                 std_calc = float(log_rets.std() * np.sqrt(252) * 100)
                 if not math.isnan(std_calc) and std_calc > 0:
@@ -511,8 +526,8 @@ def get_vol_surface():
         all_points = []
         atm_ivs = []
         
-        # Select up to 6 expirations across curve
-        selected_expiries = options[:6]
+        # Select up to 8 expirations across curve
+        selected_expiries = options[:min(8, len(options))]
         
         for expiry in selected_expiries:
             try:
@@ -525,12 +540,16 @@ def get_vol_surface():
                 T = 30.0 / 365.25
             r = 0.045
                 
-            try:
-                chain = t.option_chain(expiry)
-                calls = chain.calls
-                puts = chain.puts
-            except Exception:
-                continue
+            if cboe_calls_df is not None and cboe_puts_df is not None:
+                calls = cboe_calls_df[cboe_calls_df['expiration'] == expiry]
+                puts = cboe_puts_df[cboe_puts_df['expiration'] == expiry]
+            else:
+                try:
+                    chain = t.option_chain(expiry)
+                    calls = chain.calls
+                    puts = chain.puts
+                except Exception:
+                    continue
                 
             # Tradable moneyness band scaled by time to expiration (min +/-5%, max +/-25%)
             # Prevents near-dated 1-cent penny options from injecting 350% IV noise
@@ -2064,26 +2083,21 @@ def api_gex():
     if not ticker:
         return jsonify({"error": "No ticker provided"}), 400
     try:
-        import sys, json, importlib
+        import sys, json
         if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
             sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
-        import gex_engine
-        importlib.reload(gex_engine)
         from gex_engine import get_gex_profile, evaluate_gex_regime, sync_gex_results_regimes
         data = get_gex_profile(ticker.upper(), expiry_filter=expiry)
         
-        # Yahoo Finance often clears OI to 0 after hours/weekends, resulting in 0.0 GEX.
-        # If all values are 0, gracefully fallback to the pre-calculated results file.
-        if "gex_profile" in data and len(data["gex_profile"]) > 0:
-            if all(p.get("net_gex", 0) == 0.0 for p in data["gex_profile"]):
-                try:
-                    sync_gex_results_regimes()
-                    with open('/Users/amitkumar/Desktop/SectorTrackerApp/public/gex_results.json', 'r') as f:
-                        cached = json.load(f)
-                        if ticker.upper() in cached:
-                            data = cached[ticker.upper()]
-                except Exception as fallback_e:
-                    print("Fallback to cached GEX failed:", fallback_e)
+        # If an error occurred or OI is cleared to 0, gracefully fallback to the pre-calculated results file.
+        if ("error" in data) or ("gex_profile" in data and (len(data["gex_profile"]) == 0 or all(p.get("net_gex", 0) == 0.0 for p in data["gex_profile"]))):
+            try:
+                with open('/Users/amitkumar/Desktop/SectorTrackerApp/public/gex_results.json', 'r') as f:
+                    cached = json.load(f)
+                    if ticker.upper() in cached:
+                        data = cached[ticker.upper()]
+            except Exception as fallback_e:
+                print("Fallback to cached GEX failed:", fallback_e)
                     
         # Ensure regime is consistently evaluated using the 4-quadrant institutional model
         if "spot_price" in data and "key_levels" in data and "totals" in data:
@@ -2222,6 +2236,41 @@ def get_screener_monitor():
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/weekly_playbook', methods=['GET'])
+def get_weekly_playbook():
+    """Serves the latest Weekly Playbook 2.0 data."""
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        public_file = os.path.join(base_dir, 'public', 'weekly_playbook.json')
+        if not os.path.exists(public_file):
+            import sys
+            backend_dir = os.path.join(base_dir, 'backend')
+            if backend_dir not in sys.path:
+                sys.path.append(backend_dir)
+            from weekly_playbook_engine import generate_weekly_playbook
+            data = generate_weekly_playbook()
+            return jsonify(data)
+        with open(public_file, 'r') as f:
+            data = json.load(f)
+            return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/run_weekly_playbook', methods=['POST'])
+def run_weekly_playbook_endpoint():
+    """Triggers background generation of Weekly Playbook 2.0."""
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        import sys
+        backend_dir = os.path.join(base_dir, 'backend')
+        if backend_dir not in sys.path:
+            sys.path.append(backend_dir)
+        from weekly_playbook_engine import generate_weekly_playbook
+        threading.Thread(target=generate_weekly_playbook, daemon=True).start()
+        return jsonify({"status": "started", "message": "Weekly Playbook 2.0 generation started successfully."})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route('/api/swing_trading_setups', methods=['GET', 'POST'])
 def get_swing_trading_setups():
@@ -2679,6 +2728,385 @@ def get_personality():
         print(f"Error calculating personality for {ticker}: {e}")
         return jsonify({"error": str(e)}), 500
 
+# -------------------------------------------------------------
+# Options Intelligence & 30-Day Rolling Screener APIs
+# -------------------------------------------------------------
+@app.route('/api/options_screener/summary', methods=['GET'])
+def get_options_screener_summary_api():
+    try:
+        from options_screener_engine import get_options_screener_summary
+        data = get_options_screener_summary()
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/options_screener/summary: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/options_screener/ticker_history', methods=['GET'])
+def get_options_screener_ticker_history_api():
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker provided"}), 400
+    try:
+        from options_screener_engine import get_ticker_30d_history
+        data = get_ticker_30d_history(ticker)
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/options_screener/ticker_history for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/options_screener/deep_analytics', methods=['GET'])
+def get_options_screener_deep_analytics_api():
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker provided"}), 400
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from options_screener_engine import get_deep_options_analytics
+        data = get_deep_options_analytics(ticker)
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/options_screener/deep_analytics for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/options_screener/dump_now', methods=['POST'])
+def trigger_options_dump_now():
+    try:
+        scope = request.json.get('scope', 'all') if (request.is_json and request.json) else 'all'
+        symbols_arg = request.json.get('symbols') if (request.is_json and request.json) else None
+        def _run_dump():
+            try:
+                from options_dumper import run_options_dump, seed_rolling_history_if_needed
+                run_options_dump(symbols=symbols_arg, scope=scope)
+                seed_rolling_history_if_needed()
+            except Exception as ex:
+                print(f"Background options dump failed: {ex}")
+        threading.Thread(target=_run_dump, daemon=True).start()
+        return jsonify({"status": "started", "message": f"Options dump initiated in background for scope '{scope}'."})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/options_screener/status', methods=['GET'])
+def get_options_screener_status_api():
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend', 'data')
+    status_file = os.path.join(data_dir, 'options_dumper_status.json')
+    if os.path.exists(status_file):
+        try:
+            with open(status_file, 'r') as f:
+                return jsonify(json.load(f))
+        except Exception:
+            pass
+    return jsonify({"is_running": False, "progress": 0, "total": 0, "message": "Idle"})
+
+# ==============================================================================
+# WYCKOFF METHOD SCREENER & INTERACTIVE ANALYSIS TERMINAL ENDPOINTS
+# ==============================================================================
+@app.route('/api/wyckoff/summary', methods=['GET'])
+def get_wyckoff_summary_api():
+    """Returns Wyckoff market posture breadth, setup counts, and top opportunities."""
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from wyckoff_engine import run_wyckoff_screener
+        force = request.args.get('refresh', 'false').lower() == 'true'
+        data = run_wyckoff_screener(force_refresh=force)
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/wyckoff/summary: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/wyckoff/screener', methods=['GET'])
+def get_wyckoff_screener_api():
+    """Returns Wyckoff screener results, optionally filtered by setup_key."""
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from wyckoff_engine import run_wyckoff_screener
+        setup_filter = request.args.get('setup', '').lower().strip()
+        data = run_wyckoff_screener(force_refresh=False)
+        stocks = data.get('stocks', [])
+        
+        if setup_filter and setup_filter != 'all':
+            filtered_stocks = []
+            for s in stocks:
+                p_key = s.get('primary_setup', {}).get('setup_key', '').lower()
+                all_keys = [x.get('setup_key', '').lower() for x in s.get('all_setups', [])]
+                if setup_filter == p_key or setup_filter in all_keys:
+                    filtered_stocks.append(s)
+            return jsonify({
+                "last_updated": data.get("last_updated"),
+                "total_scanned": data.get("total_scanned"),
+                "market_posture": data.get("market_posture"),
+                "filter": setup_filter,
+                "count": len(filtered_stocks),
+                "stocks": filtered_stocks
+            })
+            
+        return jsonify({
+            "last_updated": data.get("last_updated"),
+            "total_scanned": data.get("total_scanned"),
+            "market_posture": data.get("market_posture"),
+            "filter": "all",
+            "count": len(stocks),
+            "stocks": stocks
+        })
+    except Exception as e:
+        print(f"Error in /api/wyckoff/screener: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/wyckoff/stock_analysis', methods=['GET'])
+def get_wyckoff_stock_analysis_api():
+    """Returns deep Wyckoff schematic analysis, Creek & Ice collars, candle data, and trade playbook."""
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker specified"}), 400
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from wyckoff_engine import get_detailed_stock_wyckoff
+        data = get_detailed_stock_wyckoff(ticker.upper().strip())
+        if 'error' in data:
+            return jsonify(data), 404
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/wyckoff/stock_analysis for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ==============================================================================
+# ELLIOTT WAVE SCANNER & INTERACTIVE ANALYSIS TERMINAL ENDPOINTS
+# ==============================================================================
+@app.route('/api/elliott_wave/summary', methods=['GET'])
+def get_elliott_wave_summary_api():
+    """Returns Elliott Wave market posture breadth, pattern counts, and summary."""
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from elliott_wave_engine import run_elliott_wave_screener
+        force = request.args.get('refresh', 'false').lower() == 'true'
+        data = run_elliott_wave_screener(force_refresh=force)
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/elliott_wave/summary: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/elliott_wave/screener', methods=['GET'])
+def get_elliott_wave_screener_api():
+    """Returns Elliott Wave screener results, optionally filtered by pattern or sub_category."""
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from elliott_wave_engine import run_elliott_wave_screener
+        pat_filter = (request.args.get('pattern') or request.args.get('category') or request.args.get('filter') or '').lower().strip()
+        data = run_elliott_wave_screener(force_refresh=False)
+        stocks = data.get('stocks', [])
+        
+        if pat_filter and pat_filter != 'all':
+            filtered_stocks = []
+            for s in stocks:
+                p = s.get('pattern', {})
+                pkey = p.get('pattern_key', '').lower()
+                pname = p.get('pattern_name', '').lower()
+                sub = p.get('sub_category', '').lower()
+                wave = p.get('active_wave', '').lower()
+                
+                matched = False
+                if pat_filter == 'wave3_ignition' and ('ignition' in pkey or 'ignition' in sub or 'ignition' in pname or 'impulse_w3_ignition' in pkey):
+                    matched = True
+                elif pat_filter == 'impulse_5' and ('impulse' in pkey or 'impulse' in pname):
+                    matched = True
+                elif pat_filter == 'wave_3' and ('wave 3' in sub or 'wave (3)' in wave or 'impulse_w3_ignition' in pkey):
+                    matched = True
+                elif pat_filter == 'wave_4' and ('wave 4' in sub or 'wave (4)' in wave or 'impulse_w4' in pkey):
+                    matched = True
+                elif pat_filter == 'wave_5' and ('wave 5' in sub or 'wave (5)' in wave):
+                    matched = True
+                elif pat_filter == 'flat' and ('flat' in pkey or 'flat' in pname or 'flat' in sub):
+                    matched = True
+                elif pat_filter == 'triangle' and ('triangle' in pkey or 'triangle' in pname or 'triangle' in sub):
+                    matched = True
+                elif pat_filter == 'zigzag' and ('zigzag' in pkey or 'zigzag' in pname or 'zigzag' in sub):
+                    matched = True
+                elif pat_filter == 'diagonal' and ('diagonal' in pkey or 'diagonal' in pname or 'diagonal' in sub):
+                    matched = True
+                elif pat_filter in pkey or pat_filter in sub:
+                    matched = True
+                    
+                if matched:
+                    filtered_stocks.append(s)
+                    
+            return jsonify({
+                "last_updated": data.get("last_updated"),
+                "total_scanned": data.get("total_scanned"),
+                "market_posture": data.get("market_posture"),
+                "filter": pat_filter,
+                "count": len(filtered_stocks),
+                "stocks": filtered_stocks
+            })
+            
+        return jsonify({
+            "last_updated": data.get("last_updated"),
+            "total_scanned": data.get("total_scanned"),
+            "market_posture": data.get("market_posture"),
+            "filter": "all",
+            "count": len(stocks),
+            "stocks": stocks
+        })
+    except Exception as e:
+        print(f"Error in /api/elliott_wave/screener: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/elliott_wave/stock_analysis', methods=['GET'])
+def get_elliott_wave_stock_analysis_api():
+    """Returns deep Elliott Wave analysis, candlestick data, wave counts, subwaves, EWO series, and fib projections."""
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker specified"}), 400
+    timeframe = request.args.get('timeframe', '1D').upper().strip()
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from elliott_wave_engine import get_detailed_stock_elliott_wave
+        data = get_detailed_stock_elliott_wave(ticker.upper().strip(), timeframe=timeframe)
+        if 'error' in data:
+            return jsonify(data), 404
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/elliott_wave/stock_analysis for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ==============================================================================
+# W.D. GANN GEOMETRIC & CYCLE TERMINAL ENDPOINTS
+# ==============================================================================
+@app.route('/api/gann/summary', methods=['GET'])
+def get_gann_summary_api():
+    """Returns Gann market posture breadth, 1x1 angle distribution, and cycle overview."""
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from gann_engine import run_gann_screener
+        force = request.args.get('refresh', 'false').lower() == 'true'
+        data = run_gann_screener(force_refresh=force)
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/gann/summary: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/gann/screener', methods=['GET'])
+def get_gann_screener_api():
+    """Returns Gann screener results, optionally filtered by setup or angle."""
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from gann_engine import run_gann_screener
+        setup_filter = (request.args.get('filter') or request.args.get('setup') or '').lower().strip()
+        data = run_gann_screener(force_refresh=False)
+        stocks = data.get('stocks', [])
+        
+        if setup_filter and setup_filter != 'all':
+            filtered_stocks = []
+            for s in stocks:
+                s_key = s.get('setup_key', '').lower()
+                s_name = s.get('setup_name', '').lower()
+                matched = False
+                if setup_filter == '1x1_bull' and (s.get('above_1x1') or '1x1' in s_key):
+                    matched = True
+                elif setup_filter == 'sq9_target' and ('sq9' in s_key or 'square of 9' in s_name):
+                    matched = True
+                elif setup_filter == 'time_cycle' and ('time' in s_key or 'cycle' in s_key):
+                    matched = True
+                elif setup_filter == 'squared' and s.get('is_squared'):
+                    matched = True
+                elif setup_filter == 'retest_50' and '50' in s_key:
+                    matched = True
+                elif setup_filter in s_key:
+                    matched = True
+                if matched:
+                    filtered_stocks.append(s)
+                    
+            return jsonify({
+                "last_updated": data.get("last_updated"),
+                "posture": data.get("posture"),
+                "filter": setup_filter,
+                "count": len(filtered_stocks),
+                "stocks": filtered_stocks
+            })
+            
+        return jsonify({
+            "last_updated": data.get("last_updated"),
+            "posture": data.get("posture"),
+            "filter": "all",
+            "count": len(stocks),
+            "stocks": stocks
+        })
+    except Exception as e:
+        print(f"Error in /api/gann/screener: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/gann/stock_analysis', methods=['GET'])
+def get_gann_stock_analysis_api():
+    """Returns deep Gann geometric analysis, angles, Square of 9, time cycles, and serialized chart data."""
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker specified"}), 400
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from gann_engine import get_detailed_stock_gann
+        data = get_detailed_stock_gann(ticker.upper().strip())
+        if 'error' in data:
+            return jsonify(data), 404
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/gann/stock_analysis for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+def morning_options_dump_worker():
+    """Triggers the options dump every weekday morning between 8:30 AM and 9:30 AM EST."""
+    import sys
+    import pytz
+    if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
+        sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+    last_dumped_date = None
+    while True:
+        try:
+            eastern = pytz.timezone('US/Eastern')
+            now = datetime.now(eastern)
+            today_str = now.strftime('%Y-%m-%d')
+            if now.weekday() < 5 and ((now.hour == 8 and now.minute >= 30) or (now.hour == 9 and now.minute <= 30)):
+                if last_dumped_date != today_str:
+                    print(f"🌅 Triggering Morning Options Dump for {today_str}...")
+                    from options_dumper import run_options_dump, seed_rolling_history_if_needed
+                    run_options_dump()
+                    seed_rolling_history_if_needed()
+                    last_dumped_date = today_str
+            time.sleep(300)
+        except Exception as e:
+            print(f"morning_options_dump_worker error: {e}")
+            time.sleep(300)
+
 def screener_monitor_worker():
     """Continuously evaluates monitored screener stocks during market hours."""
     import sys
@@ -2725,6 +3153,7 @@ if __name__ == '__main__':
     threading.Thread(target=market_health_worker, daemon=True).start()
     threading.Thread(target=gex_council_worker, daemon=True).start()
     threading.Thread(target=key_levels_worker, daemon=True).start()
+    threading.Thread(target=morning_options_dump_worker, daemon=True).start()
     # threading.Thread(target=expert_screener_worker, daemon=True).start() # Disabled to prevent collision with crontab
     
 

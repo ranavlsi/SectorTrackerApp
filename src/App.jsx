@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target, Landmark, Waves } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
@@ -24,6 +24,10 @@ import MacroMatrixDashboard from './MacroMatrixDashboard';
 import AiPlaybookDashboard from './AiPlaybookDashboard';
 import AskAiLiveDashboard from './AskAiLiveDashboard';
 import SwingTradingSystem from './SwingTradingSystem';
+import OptionsIntelligenceScreener from './OptionsIntelligenceScreener';
+import WyckoffScreener from './WyckoffScreener';
+import ElliottWaveScreener from './ElliottWaveScreener';
+import GannScreener from './GannScreener';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -389,7 +393,15 @@ function App() {
       fetch('/weekly_playbook.json?t=' + new Date().getTime())
         .then(res => res.json())
         .then(data => setWeeklyPlaybook(data))
-        .catch(err => console.error("Error loading weekly playbook:", err))
+        .catch(err => {
+          console.warn("Retrying weekly playbook from API fallback...", err);
+          fetch('/api/weekly_playbook')
+            .then(r => r.json())
+            .then(data => {
+              if (data && !data.error) setWeeklyPlaybook(data);
+            })
+            .catch(apiErr => console.error("Error loading weekly playbook:", apiErr));
+        })
         
       fetch('/squeeze_results.json?t=' + new Date().getTime())
         .then(res => res.json())
@@ -931,6 +943,10 @@ function App() {
           <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
           <button className={activeTab === 'rslinescanner' ? 'tab-active' : ''} onClick={() => setActiveTab('rslinescanner')}><Star size={18} /> RS Line Scanner</button>
           <button className={activeTab === 'volsurface' ? 'tab-active' : ''} onClick={() => setActiveTab('volsurface')}><Activity size={18} /> 3D Vol Surface</button>
+          <button className={activeTab === 'options_screener' ? 'tab-active' : ''} onClick={() => setActiveTab('options_screener')} style={{ color: activeTab === 'options_screener' ? '#38bdf8' : undefined }}><Zap size={18} color="#38bdf8" /> Options Screener ⚡</button>
+          <button className={activeTab === 'wyckoff' ? 'tab-active' : ''} onClick={() => setActiveTab('wyckoff')} style={{ color: activeTab === 'wyckoff' ? '#10b981' : undefined }}><Landmark size={18} color="#10b981" /> Wyckoff Screener 🏛️</button>
+          <button className={activeTab === 'elliott_wave' ? 'tab-active' : ''} onClick={() => setActiveTab('elliott_wave')} style={{ color: activeTab === 'elliott_wave' ? '#38bdf8' : undefined }}><Waves size={18} color="#38bdf8" /> Elliott Wave 🌊</button>
+          <button className={activeTab === 'gann' ? 'tab-active' : ''} onClick={() => setActiveTab('gann')} style={{ color: activeTab === 'gann' ? '#fbbf24' : undefined }}><Compass size={18} color="#fbbf24" /> Gann Wheel 📐</button>
           <button className={activeTab === 'earnings' ? 'tab-active' : ''} onClick={() => setActiveTab('earnings')}><User size={18} /> AI Earnings</button>
           <button className={activeTab === 'zacks' ? 'tab-active' : ''} onClick={() => setActiveTab('zacks')}><BookOpen size={18} /> Zacks Fundamentals</button>
           <button className={activeTab === 'deepfundamentals' ? 'tab-active' : ''} onClick={() => setActiveTab('deepfundamentals')}><PieChartIcon size={18} /> Deep Fundamentals</button>
@@ -1112,6 +1128,40 @@ function App() {
 
           <VolatilitySurface3D ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
         </div>
+      )}
+
+      {activeTab === 'options_screener' && (
+        <OptionsIntelligenceScreener 
+          onNavigateTab={(tab, targetTicker) => {
+            if (tab === 'volsurface') {
+              if (targetTicker) {
+                setGexSearchInput(targetTicker);
+                fetchGexData(targetTicker);
+              }
+              setActiveTab('volsurface');
+            } else if (tab === 'gexprofiler') {
+              if (targetTicker) {
+                setGexSearchInput(targetTicker);
+                fetchGexData(targetTicker);
+              }
+              setActiveTab('gexprofiler');
+            } else if (tab === 'ask_ai') {
+              setActiveTab('ask_ai');
+            }
+          }}
+        />
+      )}
+
+      {activeTab === 'wyckoff' && (
+        <WyckoffScreener />
+      )}
+
+      {activeTab === 'elliott_wave' && (
+        <ElliottWaveScreener />
+      )}
+
+      {activeTab === 'gann' && (
+        <GannScreener />
       )}
 
       {activeTab === 'zacks' && (
@@ -1401,11 +1451,19 @@ function App() {
       )}
 
       {/* Weekly Playbook Tab */}
-      {activeTab === 'playbook' && weeklyPlaybook && (
-        <WeeklyPlaybookDashboard 
-          playbook={weeklyPlaybook} 
-          onTickerClick={fetchTickerData} 
-        />
+      {activeTab === 'playbook' && (
+        weeklyPlaybook ? (
+          <WeeklyPlaybookDashboard 
+            playbook={weeklyPlaybook} 
+            onTickerClick={fetchTickerData} 
+            onRefresh={(newData) => setWeeklyPlaybook(newData)}
+          />
+        ) : (
+          <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', marginTop: '2rem' }}>
+            <h3 style={{ color: '#fff', fontSize: '1.4rem', margin: '0 0 0.5rem' }}>Loading Weekly Playbook 2.0...</h3>
+            <p style={{ color: '#94a3b8' }}>Synthesizing macro regime, sector rotation, and Ross Haber stock personality models.</p>
+          </div>
+        )
       )}
 
       {/* Market Health Dashboard Tab */}

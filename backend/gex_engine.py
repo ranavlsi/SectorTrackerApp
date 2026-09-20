@@ -1,10 +1,13 @@
 import os
+import re
+import requests
 import yfinance as yf
 import pandas as pd
 import numpy as np
 import json
 import math
 import datetime
+import time
 import warnings
 from typing import Dict, List, Any, Optional
 
@@ -549,51 +552,135 @@ def evaluate_gex_regime(ticker: str, spot_price: float, call_wall: float, put_wa
             )
         }
 
+_CBOE_RAW_CACHE = {}
+_CBOE_CACHE_TTL = 180  # 3 minutes
+
+def fetch_cboe_options(ticker: str):
+    """
+    Directly fetches institutional options chain from CBOE delayed quotes CDN.
+    CBOE provides complete chains across all strikes and expirations with zero rate limits.
+    Returns (spot_price, adtv, calls_df, puts_df, expirations_list) or None if unavailable.
+    """
+    sym_key = ticker.upper().strip()
+    now = time.time()
+    if sym_key in _CBOE_RAW_CACHE:
+        cached_entry, cached_time = _CBOE_RAW_CACHE[sym_key]
+        if now - cached_time < _CBOE_CACHE_TTL:
+            return cached_entry
+
+    try:
+        url = f"https://cdn.cboe.com/api/global/delayed_quotes/options/{sym_key}.json"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+        }
+        resp = requests.get(url, headers=headers, timeout=6)
+        if resp.status_code != 200:
+            return None
+            
+        data = resp.json().get('data', {})
+        options_list = data.get('options', [])
+        if not options_list:
+            return None
+            
+        spot_price = float(data.get('current_price') or data.get('close') or data.get('prev_day_close') or 0.0)
+        stock_vol = float(data.get('volume') or 10000000.0)
+        
+        parsed_calls = []
+        parsed_puts = []
+        for o in options_list:
+            sym = o.get('option', '')
+            m = re.match(r'([A-Za-z]+)(\d{2})(\d{2})(\d{2})([CP])(\d{8})', sym)
+            if not m:
+                continue
+            _, yy, mm, dd, opt_type, strike_raw = m.groups()
+            exp_str = f"20{yy}-{mm}-{dd}"
+            strike = float(strike_raw) / 1000.0
+            
+            row = {
+                'strike': strike,
+                'expiration': exp_str,
+                'openInterest': float(o.get('open_interest') or 0.0),
+                'volume': float(o.get('volume') or 0.0),
+                'impliedVolatility': float(o.get('iv') or 0.25),
+                'delta': float(o.get('delta') or 0.0),
+                'gamma': float(o.get('gamma') or 0.0),
+                'bid': float(o.get('bid') or 0.0),
+                'ask': float(o.get('ask') or 0.0),
+                'lastPrice': float(o.get('last_trade_price') or 0.0)
+            }
+            if opt_type == 'C':
+                parsed_calls.append(row)
+            else:
+                parsed_puts.append(row)
+                
+        calls_df = pd.DataFrame(parsed_calls)
+        puts_df = pd.DataFrame(parsed_puts)
+        if calls_df.empty or puts_df.empty:
+            return None
+            
+        expirations = sorted(list(calls_df['expiration'].unique()))
+        result = (spot_price, stock_vol, calls_df, puts_df, expirations)
+        _CBOE_RAW_CACHE[sym_key] = (result, now)
+        return result
+    except Exception as e:
+        print(f"CBOE fetch error for {ticker}: {e}")
+        return None
+
 def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
     """
     Calculates institutional Gamma Exposure (GEX) profile across strikes and expirations.
-    Returns:
-      - spot_price
-      - gex_profile: per-strike data (strike, net_gex, call_gex, put_gex, call_oi, put_oi, call_vol, put_vol)
-      - key_levels: call_wall, put_wall, zero_gamma, max_pain, absolute_gamma
-      - totals: total_net_gex, total_call_gex, total_put_gex, put_call_oi_ratio, put_call_vol_ratio
-      - regime: title, posture, color, summary
-      - trade_setup: institutional trade execution parameters (entry, stop, targets, R:R)
-      - expirations: list of available expiration dates
+    First tries direct CBOE option feed (no rate limits), falling back to yfinance.
     """
     try:
-        t = yf.Ticker(ticker.upper())
-        fast_info = getattr(t, 'fast_info', {}) or {}
-        spot_price = float(fast_info.get('lastPrice') or fast_info.get('regularMarketPrice') or 0.0)
+        ticker = ticker.upper()
+        cboe_data = fetch_cboe_options(ticker)
         
-        # Fetch underlying volume and 20-day Average Daily Traded Volume (ADTV)
-        adtv = 0.0
-        latest_stock_vol = 0.0
-        try:
-            hist_vol = t.history(period="30d")
-            if not hist_vol.empty and 'Volume' in hist_vol.columns:
-                adtv = float(hist_vol['Volume'].tail(20).mean())
-                latest_stock_vol = float(hist_vol['Volume'].iloc[-1])
-                if spot_price <= 0 and 'Close' in hist_vol.columns:
-                    spot_price = float(hist_vol['Close'].iloc[-1])
-        except Exception:
-            pass
+        if cboe_data is not None:
+            spot_price, latest_stock_vol, cboe_calls_df, cboe_puts_df, options = cboe_data
+            adtv = latest_stock_vol
+            t = None
+        else:
+            t = yf.Ticker(ticker)
+            fast_info = getattr(t, 'fast_info', {}) or {}
+            spot_price = float(fast_info.get('lastPrice') or fast_info.get('regularMarketPrice') or 0.0)
+            
+            # Fetch underlying volume and 20-day Average Daily Traded Volume (ADTV)
+            adtv = 0.0
+            latest_stock_vol = 0.0
+            try:
+                hist_vol = t.history(period="30d")
+                if not hist_vol.empty and 'Volume' in hist_vol.columns:
+                    adtv = float(hist_vol['Volume'].tail(20).mean())
+                    latest_stock_vol = float(hist_vol['Volume'].iloc[-1])
+                    if spot_price <= 0 and 'Close' in hist_vol.columns:
+                        spot_price = float(hist_vol['Close'].iloc[-1])
+            except Exception:
+                pass
 
-        if spot_price <= 0:
-            spot_price = 100.0
-        if adtv <= 0:
-            adtv = float(fast_info.get('threeMonthAverageVolume') or fast_info.get('tenDayAverageVolume') or 10000000.0)
-        if latest_stock_vol <= 0:
-            latest_stock_vol = float(fast_info.get('lastVolume') or adtv)
+            if spot_price <= 0:
+                spot_price = 100.0
+            if adtv <= 0:
+                adtv = float(fast_info.get('threeMonthAverageVolume') or fast_info.get('tenDayAverageVolume') or 10000000.0)
+            if latest_stock_vol <= 0:
+                latest_stock_vol = float(fast_info.get('lastVolume') or adtv)
+
+            options = getattr(t, 'options', None)
+            if not options:
+                # Try falling back to public/gex_results.json
+                res_path = '/Users/amitkumar/Desktop/SectorTrackerApp/public/gex_results.json'
+                if os.path.exists(res_path):
+                    with open(res_path, 'r') as f:
+                        cached = json.load(f)
+                        if ticker in cached:
+                            return cached[ticker]
+                return {"error": f"No options chain available for {ticker}"}
+            cboe_calls_df = None
+            cboe_puts_df = None
 
         total_call_delta_flow_shares = 0.0
         total_put_delta_flow_shares = 0.0
         total_net_directional_delta_shares = 0.0
         total_options_notional = 0.0
-
-        options = t.options
-        if not options:
-            return {"error": f"No options chain available for {ticker}"}
 
         r = 0.045
         today = datetime.date.today()
@@ -629,12 +716,17 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                     "put_gex": 0.0,
                     "net_gex": 0.0,
                     "call_oi": 0,
-                    "put_oi": 0
+                    "put_oi": 0,
+                    "atm_iv_samples": []
                 }
 
-                chain = t.option_chain(exp_date_str)
-                calls = chain.calls
-                puts = chain.puts
+                if cboe_calls_df is not None and cboe_puts_df is not None:
+                    calls = cboe_calls_df[cboe_calls_df['expiration'] == exp_date_str]
+                    puts = cboe_puts_df[cboe_puts_df['expiration'] == exp_date_str]
+                else:
+                    chain = t.option_chain(exp_date_str)
+                    calls = chain.calls
+                    puts = chain.puts
 
                 if calls is not None and not calls.empty:
                     for _, row in calls.iterrows():
@@ -644,8 +736,9 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                         raw_iv = float(row['impliedVolatility']) if pd.notna(row.get('impliedVolatility')) else 0.25
                         iv = raw_iv if raw_iv > 0.02 else 0.25
 
-                        if abs(strike - spot_price) / spot_price < 0.03:
+                        if abs(strike - spot_price) / spot_price < 0.04:
                             atm_iv_samples.append(iv)
+                            term_structure_dict[exp_date_str]["atm_iv_samples"].append(iv)
 
                         if strike < spot_price * 0.70 or strike > spot_price * 1.30:
                             continue
@@ -714,8 +807,9 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                         raw_iv = float(row['impliedVolatility']) if pd.notna(row.get('impliedVolatility')) else 0.25
                         iv = raw_iv if raw_iv > 0.02 else 0.25
 
-                        if abs(strike - spot_price) / spot_price < 0.03:
+                        if abs(strike - spot_price) / spot_price < 0.04:
                             atm_iv_samples.append(iv)
+                            term_structure_dict[exp_date_str]["atm_iv_samples"].append(iv)
 
                         if strike < spot_price * 0.70 or strike > spot_price * 1.30:
                             continue
@@ -1026,8 +1120,8 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
 
         # In positive gamma above Zero Gamma, Put Wall is a BUY CUSHION, not a cascade
         if spot_price >= zero_gamma and total_net_gex >= 0:
-            if dist_to_put_wall > 0:
-                cascade_score = max(10, int(cascade_score * 0.55))  # Volatility dampened by dealer dip buying
+            # Volatility dampened by dealer dip buying; cap cascade score
+            cascade_score = min(45, max(10, int(cascade_score * 0.50)))
         elif spot_price < zero_gamma or total_net_gex < 0:
             cascade_score = min(98, cascade_score + 35)
 
@@ -1052,14 +1146,28 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
         # Term Structure array
         term_structure = []
         for exp_key, val in term_structure_dict.items():
+            iv_samples = val.get("atm_iv_samples", [])
+            avg_atm_iv = round(float(np.mean(iv_samples)) * 100, 1) if iv_samples else round(overall_atm_iv * 100, 1)
+            call_oi_val = int(val["call_oi"])
+            put_oi_val = int(val["put_oi"])
+            tot_oi_val = call_oi_val + put_oi_val
+            pcr_oi_val = round(put_oi_val / max(call_oi_val, 1), 2)
+            net_gex_val = round(val["net_gex"], 2)
+
             term_structure.append({
                 "expiry": exp_key,
                 "dte": val["dte"],
-                "net_gex": round(val["net_gex"], 2),
+                "atm_iv": avg_atm_iv,
+                "net_gex": net_gex_val,
+                "net_gex_millions": round(net_gex_val / 1e6, 2),
                 "call_gex": round(val["call_gex"], 2),
+                "call_gex_millions": round(val["call_gex"] / 1e6, 2),
                 "put_gex": round(val["put_gex"], 2),
-                "call_oi": val["call_oi"],
-                "put_oi": val["put_oi"]
+                "put_gex_millions": round(val["put_gex"] / 1e6, 2),
+                "call_oi": call_oi_val,
+                "put_oi": put_oi_val,
+                "total_oi": tot_oi_val,
+                "pcr_oi": pcr_oi_val
             })
 
         # Strike x Expiration Multi-Lens Matrices (top 18 strikes nearest spot)

@@ -244,13 +244,13 @@ Current: $${setup.current_price} | Conviction: ${setup.conviction_rating}
           <p>Try switching to "All Top Setups" or clearing your search term.</p>
         </div>
       ) : (
-        <div className="playbook-grid">
+        <div className="ai-playbook-grid playbook-grid">
           {filteredSetups.map((setup, idx) => {
             const ex = setup.execution || {};
             const isCopied = copiedTicker === setup.ticker;
 
             return (
-              <div key={setup.ticker} className={`playbook-card border-${setup.playbook_color || 'emerald'}`}>
+              <div key={setup.ticker} className={`ai-playbook-card playbook-card border-${setup.playbook_color || 'emerald'}`}>
                 
                 {/* Card Header */}
                 <div className="card-top-row">
