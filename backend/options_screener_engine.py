@@ -279,29 +279,30 @@ def get_options_screener_summary(force_refresh=False):
         signal_color = "#94a3b8"
         priority = 5
         
-        if has_whale_sweep:
+        # 1. Vol Squeeze / Expansion (IV Rank >= 75 and expanding 5d IV)
+        if iv_rank >= 75 and iv_chg_5d > 0 and curr_vol >= 50:
+            signal = "VOL_SQUEEZE"
+            signal_badge = "💥 Vol Squeeze / Expansion"
+            signal_desc = "Implied volatility exploding to 30-day highs alongside elevated options activity."
+            signal_color = "#a855f7"
+            priority = 1
+        elif has_whale_sweep:
             signal = "WHALE_SWEEPS"
             signal_badge = "🐋 Whale Sweeps"
             signal_desc = "Block institutional orders aggressively exceeding existing open interest."
             signal_color = "#f59e0b"
             priority = 1
-        elif net_call_acc_5d > 0 and call_vol_pct >= 58 and vol_ratio >= 1.2 and oi_chg_5d_pct > 1.5:
+        elif net_call_acc_5d > 500 and call_vol_pct >= 58 and oi_chg_5d_pct > 0.5:
             signal = "CALL_ACCUMULATION"
             signal_badge = "🚀 Call Accumulation"
-            signal_desc = "Persistent multi-session call OI accumulation with elevated volume."
+            signal_desc = "Persistent multi-session call OI accumulation with expanding open interest."
             signal_color = "#10b981"
-            priority = 1
+            priority = 2
         elif put_oi_chg_5d > call_oi_chg_5d and skew_rank >= 70 and curr_pcr_vol >= 1.05:
             signal = "PUT_HEDGING"
             signal_badge = "🛡️ Institutional Put Hedge"
             signal_desc = "Spike in put open interest and elevated 25-delta downside crash protection skew."
             signal_color = "#ef4444"
-            priority = 2
-        elif iv_rank >= 75 and iv_chg_5d > 0.015 and vol_ratio >= 1.3:
-            signal = "VOL_SQUEEZE"
-            signal_badge = "💥 Vol Squeeze / Expansion"
-            signal_desc = "Implied volatility exploding to 30-day highs alongside volume expansion."
-            signal_color = "#a855f7"
             priority = 2
         elif iv_rank <= 25 and iv_chg_5d < -0.01:
             signal = "VOL_CRUSH"

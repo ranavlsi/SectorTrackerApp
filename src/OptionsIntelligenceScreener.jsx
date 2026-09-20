@@ -243,6 +243,22 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
     return list;
   }, [data, activePreset, minVolTier, searchQuery, sortBy]);
 
+  // Dynamic counts for each preset
+  const presetCounts = useMemo(() => {
+    if (!data || !data.records) return {};
+    const recs = data.records;
+    return {
+      all: recs.length,
+      flow_impact: recs.filter(r => (r.flow_impact_score >= 50 || r.flow_impact_level === 'EXTREME' || r.flow_impact_level === 'HIGH')).length,
+      vol_squeeze: recs.filter(r => r.signal === 'VOL_SQUEEZE').length,
+      call_acc: recs.filter(r => r.signal === 'CALL_ACCUMULATION').length,
+      put_hedge: recs.filter(r => r.signal === 'PUT_HEDGING').length,
+      vol_crush: recs.filter(r => r.signal === 'VOL_CRUSH').length,
+      whale: recs.filter(r => r.signal === 'WHALE_SWEEPS').length,
+      call_dom: recs.filter(r => r.signal === 'BULLISH_BIAS').length,
+    };
+  }, [data]);
+
   // Pagination slicing
   const totalPages = Math.ceil(filteredRecords.length / pageSize) || 1;
   const paginatedRecords = useMemo(() => {
@@ -253,22 +269,34 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
   // Pre-warm top 12 visible records in client cache so clicks are 0ms instant
   useEffect(() => {
     if (!paginatedRecords || !paginatedRecords.length) return;
-    const topSymbols = paginatedRecords.slice(0, 12).map(r => r.ticker);
-    topSymbols.forEach((sym, idx) => {
-      setTimeout(() => {
-        prefetchDeepAnalytics(sym);
-      }, idx * 60);
-    });
+    const topVisible = paginatedRecords.slice(0, 12).map(r => r.ticker);
+    topVisible.forEach(sym => prefetchDeepAnalytics(sym));
   }, [paginatedRecords]);
 
-  // Quick next / previous ticker navigation directly inside modal
-  const navigateTicker = (direction) => {
-    if (!selectedTicker || !paginatedRecords || !paginatedRecords.length) return;
+  // Modal keyboard navigation (Escape to close, Left/Right arrows to flip tickers)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!selectedTicker) return;
+      if (e.key === 'Escape') {
+        setSelectedTicker(null);
+        setDeepAnalytics(null);
+      } else if (e.key === 'ArrowRight') {
+        navigateTicker('next');
+      } else if (e.key === 'ArrowLeft') {
+        navigateTicker('prev');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedTicker, paginatedRecords, modalTab]);
+
+  const navigateTicker = (dir) => {
+    if (!selectedTicker || !paginatedRecords.length) return;
     const currIdx = paginatedRecords.findIndex(r => r.ticker === selectedTicker);
     if (currIdx === -1) return;
-    let nextIdx = currIdx + direction;
-    if (nextIdx < 0) nextIdx = paginatedRecords.length - 1;
+    let nextIdx = dir === 'next' ? currIdx + 1 : currIdx - 1;
     if (nextIdx >= paginatedRecords.length) nextIdx = 0;
+    if (nextIdx < 0) nextIdx = paginatedRecords.length - 1;
     const nextSym = paginatedRecords[nextIdx].ticker;
     handleOpenDeepAnalytics(nextSym, modalTab);
   };
@@ -277,54 +305,77 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
 
   return (
     <div className="options-screener-container">
-      {/* HEADER BANNER */}
+      {/* SCREENER HEADER */}
       <div className="options-screener-header">
         <div className="header-left">
           <h2>
-            <Globe size={24} color="#38bdf8" /> All-US Stocks Options Intelligence & 30-Day Screener
+            <Globe size={22} color="#38bdf8" />
+            All-US Stocks Options Intelligence & 30-Day Screener
           </h2>
           <p>
-            Continuous quantitative surveillance across all <strong>6,175 active US optionable equities & ETFs</strong>.
+            Continuous quantitative surveillance across all <strong>6,175 active US optionable equities & ETFs</strong>. 
             Tracks institutional Open Interest trends, unusual volume expansions, 30-day IV Rank, and 25-Delta Skew.
           </p>
           <div className="header-meta">
-            <span><Calendar size={14} color="#38bdf8" /> Snapshot Date: <strong>{data?.latest_date || 'Live'}</strong></span>
-            <span><Layers size={14} color="#818cf8" /> Rolling Window: <strong>{data?.available_dates_count || 30} Sessions</strong></span>
-            <span><Globe size={14} color="#10b981" /> Optionable Database: <strong>{data?.total_symbols || 0} Symbols Active</strong> (out of 6,175 US Stocks)</span>
+            {data && (
+              <>
+                <span title="Snapshot date from daily dumper">
+                  <Calendar size={13} /> {data.latest_date}
+                </span>
+                <span title="Rolling lookback duration stored in SQLite">
+                  <Activity size={13} /> {data.available_dates_count}-Day Rolling Window
+                </span>
+                <span title="Total optionable stocks tracked">
+                  <BarChart2 size={13} /> {data.total_symbols} Active Equities
+                </span>
+                <span title="Aggregate contracts traded across all tracked chains">
+                  <Zap size={13} /> {formatKMB(data.market_stats?.total_options_volume)} Total Contracts
+                </span>
+                <span title="Market-wide average 30-day IV Rank">
+                  <TrendingUp size={13} /> Avg IV Rank: {data.market_stats?.avg_iv_rank}%
+                </span>
+                <span title="Market-wide volume Put/Call Ratio">
+                  <Shield size={13} /> Avg PCR: {data.market_stats?.avg_pcr_vol}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
         <div className="header-actions">
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div className="dump-scope-controls">
             <select 
               value={dumpScope} 
-              onChange={(e) => setDumpScope(e.target.value)}
-              className="sort-select"
-              title="Select universe scope to dump"
+              onChange={(e) => setDumpScope(e.target.value)} 
+              disabled={dumperStatus.is_running || dumping}
+              className="scope-select"
+              title="Select equity surveillance coverage"
             >
               <option value="all">Dump All US Stocks (6,175)</option>
-              <option value="liquid">Dump Liquid Leaders (Top 500)</option>
+              <option value="liquid">Dump Top 500 Liquid Only</option>
             </select>
-
             <button 
               className="dump-btn" 
               onClick={() => handleDumpNow(dumpScope)} 
-              disabled={dumperStatus.is_running}
+              disabled={dumperStatus.is_running || dumping}
+              title="Triggers full market options dump in background using ThreadPoolExecutor"
             >
-              <RefreshCw size={16} className={dumperStatus.is_running ? "spin-slow" : ""} />
-              {dumperStatus.is_running ? 'Dumping Options...' : 'Dump Options Now'}
+              <RefreshCw size={15} className={dumperStatus.is_running ? "spin-slow" : ""} />
+              <span>{dumperStatus.is_running ? 'Dumping Active...' : 'Sync Market Options Now'}</span>
             </button>
           </div>
 
           {dumperStatus.is_running && (
             <div className="dump-progress-wrap">
-              <span className="dump-progress-text">
-                {dumperStatus.percentage}% ({dumperStatus.progress}/{dumperStatus.total})
-              </span>
-              <div className="dump-progress-bar-bg">
-                <div className="dump-progress-bar-fill" style={{ width: `${dumperStatus.percentage}%` }} />
+              <div className="dump-progress-text">
+                {dumperStatus.message || `Processing ${dumperStatus.percentage}%`}
               </div>
-              <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{dumperStatus.message}</span>
+              <div className="dump-progress-bar-bg">
+                <div 
+                  className="dump-progress-bar-fill" 
+                  style={{ width: `${dumperStatus.percentage}%` }} 
+                />
+              </div>
             </div>
           )}
         </div>
@@ -374,7 +425,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
             className={`preset-pill ${activePreset === 'ALL' ? 'active' : ''}`}
             onClick={() => setActivePreset('ALL')}
           >
-            All Stocks ({filteredRecords.length})
+            All Stocks ({presetCounts.all || filteredRecords.length})
           </button>
           <button 
             className={`preset-pill flow-highlight ${activePreset === 'HIGHEST_FLOW_IMPACT' ? 'active' : ''}`}
@@ -385,48 +436,77 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
             }}
             title="Scan for equities experiencing the highest options flow notional volume and directional delta pressure"
           >
-            ⚡ Highest Flow Impact ({data?.records?.filter(r => (r.flow_impact_score >= 50 || r.flow_impact_level === 'EXTREME' || r.flow_impact_level === 'HIGH')).length || 0})
-          </button>
-          <button 
-            className={`preset-pill ${activePreset === 'CALL_ACCUMULATION' ? 'active' : ''}`}
-            onClick={() => setActivePreset('CALL_ACCUMULATION')}
-          >
-            🚀 Call Accumulation
-          </button>
-          <button 
-            className={`preset-pill ${activePreset === 'PUT_HEDGING' ? 'active' : ''}`}
-            onClick={() => setActivePreset('PUT_HEDGING')}
-          >
-            🛡️ Institutional Put Hedge
+            ⚡ Highest Flow Impact ({presetCounts.flow_impact || 0})
           </button>
           <button 
             className={`preset-pill ${activePreset === 'VOL_SQUEEZE' ? 'active' : ''}`}
-            onClick={() => setActivePreset('VOL_SQUEEZE')}
+            onClick={() => {
+              setActivePreset('VOL_SQUEEZE');
+              setSortBy('iv_rank');
+              setCurrentPage(1);
+            }}
+            title="Scan for equities with implied volatility exploding to 30-day highs (IV Rank >= 75%)"
           >
-            💥 Vol Squeeze
+            💥 Vol Squeeze ({presetCounts.vol_squeeze || 0})
+          </button>
+          <button 
+            className={`preset-pill ${activePreset === 'CALL_ACCUMULATION' ? 'active' : ''}`}
+            onClick={() => {
+              setActivePreset('CALL_ACCUMULATION');
+              setSortBy('priority');
+              setCurrentPage(1);
+            }}
+            title="Scan for multi-session aggressive institutional Call Open Interest accumulation"
+          >
+            🚀 Call Accumulation ({presetCounts.call_acc || 0})
+          </button>
+          <button 
+            className={`preset-pill ${activePreset === 'PUT_HEDGING' ? 'active' : ''}`}
+            onClick={() => {
+              setActivePreset('PUT_HEDGING');
+              setSortBy('skew_rank');
+              setCurrentPage(1);
+            }}
+            title="Scan for elevated downside put protection and crash skew"
+          >
+            🛡️ Institutional Put Hedge ({presetCounts.put_hedge || 0})
           </button>
           <button 
             className={`preset-pill ${activePreset === 'VOL_CRUSH' ? 'active' : ''}`}
-            onClick={() => setActivePreset('VOL_CRUSH')}
+            onClick={() => {
+              setActivePreset('VOL_CRUSH');
+              setSortBy('iv_rank');
+              setCurrentPage(1);
+            }}
+            title="Scan for volatility crushed to 30-day lows (IV Rank <= 25%)"
           >
-            📉 Vol Crush / Decay
+            📉 Vol Crush / Decay ({presetCounts.vol_crush || 0})
           </button>
           <button 
             className={`preset-pill ${activePreset === 'WHALE_SWEEPS' ? 'active' : ''}`}
-            onClick={() => setActivePreset('WHALE_SWEEPS')}
+            onClick={() => {
+              setActivePreset('WHALE_SWEEPS');
+              setSortBy('vol_ratio');
+              setCurrentPage(1);
+            }}
+            title="Scan for block orders aggressively exceeding open interest"
           >
-            🐋 Whale Sweeps
+            🐋 Whale Sweeps ({presetCounts.whale || 0})
           </button>
           <button 
             className={`preset-pill ${activePreset === 'BULLISH_BIAS' ? 'active' : ''}`}
-            onClick={() => setActivePreset('BULLISH_BIAS')}
+            onClick={() => {
+              setActivePreset('BULLISH_BIAS');
+              setSortBy('priority');
+              setCurrentPage(1);
+            }}
+            title="Scan for dominant call volume outstripping puts"
           >
-            📈 Call Dominance
+            📈 Call Dominance ({presetCounts.call_dom || 0})
           </button>
         </div>
 
         <div className="search-sort-group">
-          {/* Liquidity filter */}
           <select 
             value={minVolTier} 
             onChange={(e) => setMinVolTier(e.target.value)}
