@@ -618,31 +618,53 @@ def detect_vcp_contractions(df_daily):
             })
 
     recent_contractions = contractions[-4:] if len(contractions) >= 2 else contractions
+    for idx, c in enumerate(recent_contractions):
+        c["wave"] = f"T{idx + 1}"
     depths = [c["depth_pct"] for c in recent_contractions]
+    troughs = [c["trough_price"] for c in recent_contractions]
+
     is_contracting = False
+    has_ascending_floor = True
+    lower_low_warning = False
+
     if len(depths) >= 2:
         is_contracting = all(depths[i] <= depths[i-1] * 1.15 for i in range(1, len(depths)))
+        # Mark Minervini Law: A true VCP must hold the base floor or form higher lows (ascending floor).
+        # Cascading lower lows (e.g. T2 trough < T1 trough) represents a downward correction channel, NOT a VCP.
+        for i in range(1, len(troughs)):
+            if troughs[i] < troughs[i-1] * 0.985:  # Significant lower low breach
+                has_ascending_floor = False
+                lower_low_warning = True
+                break
 
     avg_vol_50 = float(df_daily['Volume'].iloc[-50:].mean()) if len(df_daily) >= 50 else float(df_daily['Volume'].mean())
     recent_3d_vol = float(df_daily['Volume'].iloc[-3:].mean())
     vdu_ratio = round(recent_3d_vol / avg_vol_50, 2) if avg_vol_50 > 0 else 1.0
     vdu_confirmed = bool(vdu_ratio <= 0.65)
 
-    vcp_score = 50
+    vcp_score = 35
     if is_contracting:
         vcp_score += 25
+    if has_ascending_floor:
+        vcp_score += 25
     if vdu_confirmed:
-        vcp_score += 20
-    if len(depths) >= 3 and depths[-1] <= 6.0:
         vcp_score += 15
     vcp_score = min(100, vcp_score)
 
-    is_vcp = bool((is_contracting and len(depths) >= 2 and depths[-1] <= 12.0) or (len(depths) >= 2 and vdu_confirmed))
+    # Disqualify if price made lower lows
+    is_vcp = bool(is_contracting and has_ascending_floor and len(depths) >= 2 and depths[-1] <= 12.0)
+
     depth_str = " -> ".join([f"{d}%" for d in depths]) if depths else "N/A"
-    desc = f"{len(depths)}-Wave Contraction ({depth_str}) with {int(vdu_ratio*100)}% VDU" if depths else "Forming Initial Base"
+    if lower_low_warning:
+        desc = f"Descending Channel (Lower Lows: ${troughs[0]:.2f} -> ${troughs[1]:.2f}) - Disqualified from VCP"
+    elif is_vcp:
+        desc = f"{len(depths)}T Ascending VCP ({depth_str}) with {int(vdu_ratio*100)}% VDU"
+    else:
+        desc = f"{len(depths)}-Wave Consolidation ({depth_str}) with {int(vdu_ratio*100)}% VDU" if depths else "Forming Initial Base"
 
     return {
         "is_vcp": bool(is_vcp),
+        "has_ascending_floor": bool(has_ascending_floor),
         "contractions_count": int(len(depths)),
         "contraction_depths": [float(d) for d in depths],
         "waves_detail": recent_contractions,
