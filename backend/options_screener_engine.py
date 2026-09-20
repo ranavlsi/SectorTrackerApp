@@ -11,6 +11,113 @@ STATUS_PATH = os.path.join(DATA_DIR, 'options_dumper_status.json')
 
 _CACHE = {"timestamp": 0, "data": None}
 
+def calculate_flow_impact(spot_price, total_vol, call_vol_pct, vol_ratio, oi_chg_5d_pct, unusual_contracts=None, has_whale_sweep=False):
+    """
+    Quantitative Option Flow Impact (OFI) Model:
+    Evaluates the structural impact options order flow exerts on the underlying equity cash market.
+    1. Notional Dollar Flow: Total Volume * Spot Price * 100
+    2. Directional Delta Flow: Net Call/Put Contracts * Spot Price * 100
+    3. Order Flow Imbalance Ratio: Multiple of dominant contracts vs minor contracts
+    4. Flow Impact Score (0 to 100):
+       - Notional Dollar Clout (0 - 40 pts)
+       - Directional Delta Imbalance (0 - 30 pts)
+       - Relative Volume Surge vs 20D Baseline (0 - 15 pts)
+       - Whale Sweeps & Multi-Day OI Shock (0 - 15 pts)
+    5. Market Maker Microstructure Implication & Driver Vector
+    """
+    if unusual_contracts is None:
+        unusual_contracts = []
+    
+    spot = float(spot_price or 0.0)
+    vol = float(total_vol or 0.0)
+    call_pct = float(call_vol_pct if call_vol_pct is not None else 50.0)
+    ratio = float(vol_ratio or 1.0)
+    oi_chg = float(oi_chg_5d_pct or 0.0)
+    
+    notional_flow = round(vol * spot * 100.0, 2)
+    call_vol = vol * (call_pct / 100.0)
+    put_vol = vol * ((100.0 - call_pct) / 100.0)
+    net_delta_contracts = round(call_vol - put_vol, 0)
+    net_delta_flow = round(net_delta_contracts * spot * 100.0, 2)
+    imbalance_ratio = round(max(call_vol, put_vol) / max(min(call_vol, put_vol), 1.0), 1)
+    
+    # 1. Notional Component (0 - 40 pts): Log-scaled from $100k (4.5) to $100B (10.5)
+    if notional_flow > 1e4:
+        notional_score = float(np.clip((np.log10(notional_flow) - 4.5) / 6.0 * 40.0, 0.0, 40.0))
+    else:
+        notional_score = 0.0
+        
+    # 2. Directional Delta Imbalance (0 - 30 pts)
+    directional_score = (abs(call_pct - 50.0) / 50.0) * 30.0
+    
+    # 3. Volume Surge vs Baseline (0 - 15 pts)
+    vol_surge_score = float(np.clip((ratio - 0.5) / 1.0 * 15.0, 0.0, 15.0))
+    
+    # 4. Whale Sweeps & Multi-Day OI Shock (0 - 15 pts)
+    whale_score = 0.0
+    if has_whale_sweep or any(c.get('vol_oi_ratio', 0) >= 1.5 for c in unusual_contracts):
+        whale_score += 7.0
+    if abs(oi_chg) >= 2.0:
+        whale_score += 5.0
+    if len(unusual_contracts) >= 2:
+        whale_score += 3.0
+    whale_score = min(15.0, whale_score)
+    
+    total_score = round(min(100.0, notional_score + directional_score + vol_surge_score + whale_score), 1)
+    
+    if total_score >= 70.0:
+        level = "EXTREME"
+        badge = "🚨 Extreme Flow Impact"
+        color = "#ef4444"
+    elif total_score >= 55.0:
+        level = "HIGH"
+        badge = "⚡ High Flow Impact"
+        color = "#f59e0b"
+    elif total_score >= 40.0:
+        level = "MODERATE"
+        badge = "🌊 Moderate Flow Impact"
+        color = "#38bdf8"
+    else:
+        level = "NORMAL"
+        badge = "Normal Flow"
+        color = "#94a3b8"
+        
+    if call_pct >= 68.0 and total_score >= 45.0:
+        driver = "CALL_GAMMA_SQUEEZE"
+        driver_label = "🚀 Call Gamma Squeeze Vector"
+        implication = f"Massive call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) forcing market makers into aggressive long share hedging"
+    elif call_pct <= 32.0 and total_score >= 45.0:
+        driver = "PUT_DELTA_CASCADE"
+        driver_label = "🛡️ Put Delta Cascade Vector"
+        implication = f"Heavy put dominance ({100-call_pct:.0f}% P, {imbalance_ratio}x ratio) forcing dealers into protective underlying equity short hedging"
+    elif notional_flow >= 5e9:
+        driver = "MEGA_NOTIONAL_ANCHOR"
+        driver_label = "🏛️ Mega-Cap Notional Anchor"
+        implication = f"Institutional mega-notional flow (${notional_flow/1e9:.1f}B) dictating dealer liquidity and market-wide rebalancing"
+    elif has_whale_sweep or any(c.get('vol_oi_ratio', 0) >= 2.0 for c in unusual_contracts):
+        driver = "WHALE_SWEEP_SURGE"
+        driver_label = "🐋 Whale Block Sweeps"
+        implication = "Aggressive institutional block sweep orders heavily exceeding existing open interest"
+    else:
+        driver = "BALANCED_FLOW"
+        driver_label = "⚖️ Balanced Options Flow"
+        implication = "Order flow is relatively balanced between calls and puts with minimal dealer directional distortion"
+        
+    return {
+        "score": total_score,
+        "level": level,
+        "badge": badge,
+        "color": color,
+        "notional_flow": notional_flow,
+        "net_delta_flow": net_delta_flow,
+        "net_delta_contracts": net_delta_contracts,
+        "call_vol_pct": round(call_pct, 1),
+        "imbalance_ratio": imbalance_ratio,
+        "driver": driver,
+        "driver_label": driver_label,
+        "implication": implication
+    }
+
 def get_options_screener_summary(force_refresh=False):
     """
     Analyzes the rolling 30-day options history in options_intelligence.db.
@@ -215,6 +322,17 @@ def get_options_screener_summary(force_refresh=False):
             signal_color = "#f43f5e"
             priority = 4
 
+        # 7. Options Flow Impact Calculation
+        flow_res = calculate_flow_impact(
+            spot_price=spot_price,
+            total_vol=curr_vol,
+            call_vol_pct=call_vol_pct,
+            vol_ratio=vol_ratio,
+            oi_chg_5d_pct=oi_chg_5d_pct,
+            unusual_contracts=unusual_contracts,
+            has_whale_sweep=has_whale_sweep
+        )
+
         results.append({
             "ticker": ticker,
             "spot_price": spot_price,
@@ -223,6 +341,17 @@ def get_options_screener_summary(force_refresh=False):
             "signal_desc": signal_desc,
             "signal_color": signal_color,
             "priority": priority,
+            "flow_impact_score": flow_res["score"],
+            "flow_impact_level": flow_res["level"],
+            "flow_impact_badge": flow_res["badge"],
+            "flow_impact_color": flow_res["color"],
+            "notional_flow": flow_res["notional_flow"],
+            "net_delta_flow": flow_res["net_delta_flow"],
+            "net_delta_contracts": flow_res["net_delta_contracts"],
+            "flow_imbalance_ratio": flow_res["imbalance_ratio"],
+            "flow_driver": flow_res["driver"],
+            "flow_driver_label": flow_res["driver_label"],
+            "flow_implication": flow_res["implication"],
             "total_oi": curr_oi,
             "oi_chg_1d": oi_chg_1d,
             "oi_chg_1d_pct": oi_chg_1d_pct,
@@ -259,6 +388,9 @@ def get_options_screener_summary(force_refresh=False):
     mkt_tot_vol = sum(r["total_vol"] for r in results)
     mkt_avg_iv_rank = round(np.mean([r["iv_rank"] for r in results]), 1) if results else 50.0
     mkt_avg_pcr = round(np.mean([r["pcr_vol"] for r in results]), 2) if results else 1.0
+    mkt_tot_notional = sum(r["notional_flow"] for r in results)
+    high_impact_cnt = sum(1 for r in results if r["flow_impact_score"] >= 55.0)
+    extreme_impact_cnt = sum(1 for r in results if r["flow_impact_score"] >= 70.0)
     
     payload = {
         "latest_date": latest_date,
@@ -266,6 +398,9 @@ def get_options_screener_summary(force_refresh=False):
         "total_symbols": len(results),
         "market_stats": {
             "total_options_volume": mkt_tot_vol,
+            "total_notional_market_flow": mkt_tot_notional,
+            "high_impact_count": high_impact_cnt,
+            "extreme_impact_count": extreme_impact_cnt,
             "avg_iv_rank": mkt_avg_iv_rank,
             "avg_pcr_vol": mkt_avg_pcr,
             "rolling_days": len(all_dates)
@@ -412,6 +547,15 @@ def get_deep_options_analytics(ticker):
     put_oi_tot = totals.get("total_put_oi", history[-1].get("put_oi", 0) if history else 0)
     call_vol_tot = totals.get("total_call_vol", history[-1].get("call_vol", 0) if history else 0)
     put_vol_tot = totals.get("total_put_vol", history[-1].get("put_vol", 0) if history else 0)
+    
+    # If SQLite rolling history has full-chain volume, use full-chain numbers
+    if history and history[-1].get("total_vol", 0) > (call_vol_tot + put_vol_tot):
+        call_vol_tot = history[-1].get("call_vol", call_vol_tot)
+        put_vol_tot = history[-1].get("put_vol", put_vol_tot)
+        if history[-1].get("call_oi", 0) > 0:
+            call_oi_tot = history[-1].get("call_oi", call_oi_tot)
+            put_oi_tot = history[-1].get("put_oi", put_oi_tot)
+
     pcr_oi = totals.get("put_call_oi_ratio", history[-1].get("pcr_oi", 1.0) if history else 1.0)
     pcr_vol = totals.get("put_call_vol_ratio", history[-1].get("pcr_vol", 1.0) if history else 1.0)
     
@@ -931,6 +1075,15 @@ def get_deep_options_analytics(ticker):
         "term_structure_history": term_structure_history,
         "volatility_shift_summary": volatility_shift_summary,
         "unusual_contracts": unusual_contracts,
+        "flow_impact": calculate_flow_impact(
+            spot_price=spot_price,
+            total_vol=curr_total_vol,
+            call_vol_pct=(call_vol_tot / max(curr_total_vol, 1.0)) * 100.0,
+            vol_ratio=vol_ratio,
+            oi_chg_5d_pct=round(((call_oi_tot + put_oi_tot - history[ref_idx].get("total_oi", 1.0)) / max(history[ref_idx].get("total_oi", 1.0), 1.0)) * 100.0, 2) if (N >= 5 and history) else 0.0,
+            unusual_contracts=unusual_contracts,
+            has_whale_sweep=any(c.get("vol_oi_ratio", 0) >= 1.5 for c in unusual_contracts)
+        ),
         "ai_recommendation": ai_recommendation
     }
     _DEEP_ANALYTICS_CACHE[sym] = (payload, now)

@@ -209,7 +209,9 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
     }
 
     // Preset filter
-    if (activePreset !== 'ALL') {
+    if (activePreset === 'HIGHEST_FLOW_IMPACT') {
+      list = list.filter(r => (r.flow_impact_score >= 50 || r.flow_impact_level === 'EXTREME' || r.flow_impact_level === 'HIGH'));
+    } else if (activePreset !== 'ALL') {
       list = list.filter(r => r.signal === activePreset);
     }
 
@@ -221,7 +223,15 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
 
     // Sorting
     list.sort((a, b) => {
-      if (sortBy === 'priority') return (a.priority - b.priority) || (b.vol_ratio - a.vol_ratio);
+      if (sortBy === 'flow_impact_score') return (b.flow_impact_score - a.flow_impact_score) || (b.notional_flow - a.notional_flow);
+      if (sortBy === 'notional_flow') return (b.notional_flow - a.notional_flow);
+      if (sortBy === 'net_delta_flow') return (Math.abs(b.net_delta_flow || 0) - Math.abs(a.net_delta_flow || 0));
+      if (sortBy === 'priority') {
+        if (activePreset === 'HIGHEST_FLOW_IMPACT') {
+          return (b.flow_impact_score - a.flow_impact_score) || (b.notional_flow - a.notional_flow);
+        }
+        return (a.priority - b.priority) || (b.flow_impact_score - a.flow_impact_score) || (b.vol_ratio - a.vol_ratio);
+      }
       if (sortBy === 'vol_ratio') return b.vol_ratio - a.vol_ratio;
       if (sortBy === 'oi_chg_5d_pct') return b.oi_chg_5d_pct - a.oi_chg_5d_pct;
       if (sortBy === 'iv_rank') return b.iv_rank - a.iv_rank;
@@ -328,6 +338,13 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
           <span className="stat-sub">Across active US option chains</span>
         </div>
         <div className="stat-card">
+          <span className="stat-title">Option Flow Impact Leaders</span>
+          <span className="stat-val" style={{ color: '#f59e0b' }}>
+            {marketStats.high_impact_count || 0} Stocks
+          </span>
+          <span className="stat-sub">${formatKMB(marketStats.total_notional_market_flow)} total notional flow</span>
+        </div>
+        <div className="stat-card">
           <span className="stat-title">Market Avg 30D IV Rank</span>
           <span className="stat-val" style={{ color: (marketStats.avg_iv_rank || 50) > 60 ? '#c084fc' : '#38bdf8' }}>
             {marketStats.avg_iv_rank || 50}%
@@ -358,6 +375,17 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
             onClick={() => setActivePreset('ALL')}
           >
             All Stocks ({filteredRecords.length})
+          </button>
+          <button 
+            className={`preset-pill flow-highlight ${activePreset === 'HIGHEST_FLOW_IMPACT' ? 'active' : ''}`}
+            onClick={() => {
+              setActivePreset('HIGHEST_FLOW_IMPACT');
+              setSortBy('flow_impact_score');
+              setCurrentPage(1);
+            }}
+            title="Scan for equities experiencing the highest options flow notional volume and directional delta pressure"
+          >
+            ⚡ Highest Flow Impact ({data?.records?.filter(r => (r.flow_impact_score >= 50 || r.flow_impact_level === 'EXTREME' || r.flow_impact_level === 'HIGH')).length || 0})
           </button>
           <button 
             className={`preset-pill ${activePreset === 'CALL_ACCUMULATION' ? 'active' : ''}`}
@@ -461,6 +489,9 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
             onChange={(e) => setSortBy(e.target.value)}
             className="sort-select"
           >
+            <option value="flow_impact_score">Sort: ⚡ Flow Impact Score</option>
+            <option value="notional_flow">Sort: 💰 Notional Flow ($)</option>
+            <option value="net_delta_flow">Sort: 🎯 Net Delta Flow ($)</option>
             <option value="priority">Sort: Conviction Signal</option>
             <option value="vol_ratio">Sort: Unusual Vol Ratio (x)</option>
             <option value="oi_chg_5d_pct">Sort: 5D OI Growth %</option>
@@ -478,6 +509,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
             <tr>
               <th>Ticker / Price</th>
               <th>Institutional Flow Signal</th>
+              <th>⚡ Flow Impact & Notional</th>
               <th>30D OI Trend & 5D Δ</th>
               <th>Unusual Vol (x Avg)</th>
               <th>Call / Put Flow</th>
@@ -490,14 +522,14 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                   <RefreshCw size={24} className="spin-slow" style={{ margin: '0 auto 0.5rem', display: 'block' }} />
                   Loading Options Intelligence across all US stocks...
                 </td>
               </tr>
             ) : paginatedRecords.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                   No equities match the active filter. Try clearing the search or setting Activity to "All".
                 </td>
               </tr>
@@ -533,6 +565,38 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                         title={r.signal_desc}
                       >
                         {r.signal_badge}
+                      </div>
+                    </td>
+
+                    {/* FLOW IMPACT & NOTIONAL */}
+                    <td>
+                      <div className="flow-impact-cell">
+                        <div className="flow-impact-badge-wrap">
+                          <span 
+                            className={`flow-score-badge badge-${(r.flow_impact_level || 'NORMAL').toLowerCase()}`}
+                            style={{ 
+                              background: `${r.flow_impact_color || '#94a3b8'}18`, 
+                              color: r.flow_impact_color || '#94a3b8',
+                              borderColor: `${r.flow_impact_color || '#94a3b8'}55`
+                            }}
+                            title={r.flow_implication}
+                          >
+                            ⚡ {r.flow_impact_score?.toFixed(1) || '0.0'} {r.flow_impact_level}
+                          </span>
+                        </div>
+                        <div className="flow-notional-val">
+                          ${formatKMB(r.notional_flow)} Notional
+                        </div>
+                        <div 
+                          className="flow-delta-val" 
+                          style={{ color: (r.net_delta_flow || 0) >= 0 ? '#10b981' : '#f87171' }}
+                          title={`Net Directional Delta Flow: ${(r.net_delta_flow || 0) >= 0 ? 'Call Delta Buying Demand' : 'Put Delta Downside Demand'}`}
+                        >
+                          {(r.net_delta_flow || 0) >= 0 ? '+' : ''}${formatKMB(r.net_delta_flow)} Net Δ
+                          {r.flow_imbalance_ratio > 1.2 && (
+                            <span className="flow-ratio-tag"> ({r.flow_imbalance_ratio}x {r.call_vol_pct >= 50 ? 'C' : 'P'})</span>
+                          )}
+                        </div>
                       </div>
                     </td>
 
@@ -884,6 +948,60 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               <span className="chip-val">{ai.expected_holding}</span>
                             </div>
                           </div>
+
+                          {/* OPTION FLOW MARKET IMPACT ANALYSIS CARD */}
+                          {deepAnalytics.flow_impact && (
+                            <div className="flow-impact-modal-card">
+                              <div className="flow-impact-modal-header">
+                                <div className="impact-title-group">
+                                  <Zap size={17} color="#f59e0b" />
+                                  <span className="impact-heading">Option Flow Market Impact Analysis</span>
+                                  <span 
+                                    className="impact-level-pill"
+                                    style={{
+                                      background: `${deepAnalytics.flow_impact.color}22`,
+                                      color: deepAnalytics.flow_impact.color,
+                                      borderColor: `${deepAnalytics.flow_impact.color}60`
+                                    }}
+                                  >
+                                    {deepAnalytics.flow_impact.badge}
+                                  </span>
+                                </div>
+                                <div className="impact-score-display">
+                                  <span className="impact-score-num">{deepAnalytics.flow_impact.score}</span>
+                                  <span className="impact-score-denom">/ 100 Impact Score</span>
+                                </div>
+                              </div>
+                              
+                              <div className="impact-metrics-strip">
+                                <div className="impact-metric-box">
+                                  <span className="imb-label">Total Notional Flow</span>
+                                  <span className="imb-val font-mono">${formatKMB(deepAnalytics.flow_impact.notional_flow)}</span>
+                                </div>
+                                <div className="impact-metric-box">
+                                  <span className="imb-label">Net Directional Delta Flow</span>
+                                  <span className="imb-val font-mono" style={{ color: (deepAnalytics.flow_impact.net_delta_flow || 0) >= 0 ? '#10b981' : '#f87171' }}>
+                                    {(deepAnalytics.flow_impact.net_delta_flow || 0) >= 0 ? '+' : ''}${formatKMB(deepAnalytics.flow_impact.net_delta_flow)}
+                                  </span>
+                                </div>
+                                <div className="impact-metric-box">
+                                  <span className="imb-label">Order Flow Imbalance</span>
+                                  <span className="imb-val font-mono" style={{ color: (deepAnalytics.flow_impact.call_vol_pct || 50) >= 50 ? '#10b981' : '#f87171' }}>
+                                    {deepAnalytics.flow_impact.imbalance_ratio}x {deepAnalytics.flow_impact.call_vol_pct >= 50 ? 'Calls' : 'Puts'}
+                                  </span>
+                                </div>
+                                <div className="impact-metric-box">
+                                  <span className="imb-label">Flow Driver Vector</span>
+                                  <span className="imb-val highlight-small">{deepAnalytics.flow_impact.driver_label}</span>
+                                </div>
+                              </div>
+
+                              <div className="impact-implication-note">
+                                <strong>Market Maker Microstructure Implication: </strong>
+                                <span>{deepAnalytics.flow_impact.implication}</span>
+                              </div>
+                            </div>
+                          )}
 
                           <div className="ai-rationale-section">
                             <div className="rationale-header">

@@ -1232,3 +1232,199 @@
   border-radius: 3px;
 }
 
+/* ==============================================================================
+   OPTION FLOW IMPACT SCAN & VISUALIZATION STYLES
+   ============================================================================== */
+
+.preset-pill.flow-highlight {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fbbf24;
+}
+
+.preset-pill.flow-highlight:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: #f59e0b;
+  color: #fef08a;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
+.preset-pill.flow-highlight.active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.2));
+  border-color: #f59e0b;
+  color: #fef08a;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+}
+
+/* Flow Impact Table Cell */
+.flow-impact-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.flow-impact-badge-wrap {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.flow-score-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.flow-score-badge.badge-extreme {
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.35);
+}
+
+.flow-score-badge.badge-high {
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.25);
+}
+
+.flow-notional-val {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  font-family: monospace;
+}
+
+.flow-delta-val {
+  font-size: 0.70rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.flow-ratio-tag {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: normal;
+}
+
+/* Flow Impact Modal Card */
+.flow-impact-modal-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.flow-impact-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.impact-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.impact-heading {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.impact-level-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 5px;
+  border: 1px solid;
+}
+
+.impact-score-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.impact-score-num {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f59e0b;
+  font-family: monospace;
+}
+
+.impact-score-denom {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.impact-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .impact-metrics-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.impact-metric-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.imb-label {
+  font-size: 0.70rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.imb-val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.highlight-small {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #38bdf8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.impact-implication-note {
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 3px solid #f59e0b;
+  border-radius: 0 6px 6px 0;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.80rem;
+  color: #e2e8f0;
+  line-height: 1.45;
+}
+
+.impact-implication-note strong {
+  color: #fbbf24;
+}
+
+
