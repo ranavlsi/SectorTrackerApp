@@ -558,6 +558,16 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                       <span className="sc-stage-badge" style={{ backgroundColor: `${activeStock.stage_info?.status_color}22`, borderColor: activeStock.stage_info?.status_color, color: activeStock.stage_info?.status_color }}>
                         {activeStock.stage_info?.sub_stage_name}
                       </span>
+                      {activeStock.stage_info?.ma10_test_label === 'UNDERNEATH_RESISTANCE' && (
+                        <span className="sc-ma10-warn-pill">
+                          ⚠️ 10w MA Overhead Resistance (Testing from Underneath)
+                        </span>
+                      )}
+                      {activeStock.stage_info?.sub_stage === '2B' && activeStock.stage_info?.ma10_test_label === 'UPSIDE_SUPPORT' && (
+                        <span className="sc-ma10-support-pill">
+                          🟢 10w MA Support (Orderly Bounce from Above)
+                        </span>
+                      )}
                       <span className={`sc-grade-badge grade-${activeStock.canslim_info?.canslim_grade}`}>
                         CANSLIM {activeStock.canslim_info?.canslim_grade} ({activeStock.canslim_info?.total_canslim_score} pts)
                       </span>
@@ -824,6 +834,14 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                             <div className="sc-rule-row">
                               <span>10-Week MA (50-Day Momentum Line)</span>
                               <strong>${activeStock.stage_info?.ma10_weekly} ({activeStock.stage_info?.ma10_slope_pct > 0 ? `+${activeStock.stage_info?.ma10_slope_pct}% (Rising)` : `${activeStock.stage_info?.ma10_slope_pct}% (Falling)`})</strong>
+                            </div>
+                            <div className="sc-rule-row">
+                              <span>10-Week MA Test Trajectory</span>
+                              <strong style={{ color: activeStock.stage_info?.ma10_test_label === 'UNDERNEATH_RESISTANCE' ? '#ef4444' : '#10b981' }}>
+                                {activeStock.stage_info?.ma10_test_label === 'UNDERNEATH_RESISTANCE' 
+                                  ? `⚠️ Testing from Underneath (${activeStock.stage_info?.weeks_below_ma10}w below MA10 - Resistance)` 
+                                  : '✓ Support Bounce from Above'}
+                              </strong>
                             </div>
                             <div className="sc-rule-row">
                               <span>Distance from 30-Week MA</span>

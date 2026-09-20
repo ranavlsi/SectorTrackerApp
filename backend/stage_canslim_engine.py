@@ -1125,6 +1125,30 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
     low_52w = float(df_daily['Low'].iloc[-252:].min()) if len(df_daily) >= 252 else float(df_daily['Low'].min())
     pct_from_52w_high = ((high_52w - curr_close) / high_52w) * 100
 
+    # Historical 10w MA Trajectory Analysis over last 6 weeks (Upside Support vs Underneath Resistance)
+    recent_w = w.iloc[-6:].copy()
+    closes_recent = recent_w['Close'].values
+    ma10_recent = recent_w['MA10'].values
+    below_count_last4 = sum(1 for c, m in zip(closes_recent[-4:], ma10_recent[-4:]) if c < m)
+    min_low_last4 = float(np.min(recent_w['Low'].iloc[-4:])) if len(recent_w) >= 4 else curr_close
+    rebounded_from_low = ((curr_close - min_low_last4) / min_low_last4 > 0.05) if min_low_last4 > 0 else False
+
+    is_testing_from_underneath = False
+    is_testing_from_above = False
+
+    if curr_close < curr_ma10:
+        if below_count_last4 >= 2 or dist_ma10_pct < -4.0:
+            is_testing_from_underneath = True
+        else:
+            is_testing_from_above = True
+    else:
+        if below_count_last4 >= 2 and (rebounded_from_low or ma10_slope_pct < 0):
+            is_testing_from_underneath = True
+        else:
+            is_testing_from_above = True
+
+    ma10_test_label = "UNDERNEATH_RESISTANCE" if is_testing_from_underneath else "UPSIDE_SUPPORT"
+
     sub_stage = "2A"
     sub_stage_name = "Stage 2A: Breakout Ignition"
     stage_category = "Stage 2: Advancing"
@@ -1133,6 +1157,7 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
     action_directive = "STRONG BUY"
     key_characteristics = []
 
+    # 12 SUB-STAGE RECALIBRATION RULES
     if curr_close > curr_ma30 and ma30_slope_pct >= 0:
         if dist_ma30_pct > 30 or (dist_ma10_pct > 15 and pct_from_52w_high < 3):
             sub_stage = "2D"
@@ -1143,22 +1168,36 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
             action_directive = "TRIM / HOLD (DO NOT CHASE)"
             key_characteristics = [
                 f"Extended +{dist_ma30_pct:.1f}% above 30-week MA",
-                f"Climax run into 52-week highs ({curr_close:.2f})",
+                f"Climax run into 52-week highs (${curr_close:.2f})",
                 "Reward/Risk unfavorable for fresh entry; tighten trailing stops"
             ]
-        elif curr_close < curr_ma10 and curr_close > curr_ma30 and ma30_slope_pct > 0.5:
+        elif is_testing_from_underneath and curr_close < curr_ma10:
+            # Crucial Fix: Testing 10w MA from underneath as overhead resistance (e.g. DDOG)
+            sub_stage = "3A"
+            sub_stage_name = "Stage 3A: Top Churning / 10w MA Resistance Test"
+            stage_category = "Stage 3: Topping"
+            status_color = "#EC4899"
+            stage_score = 45
+            action_directive = "WATCH RESISTANCE / TRIM (TESTING 10W MA FROM UNDERNEATH)"
+            key_characteristics = [
+                f"Testing declining 10-week MA (${curr_ma10:.2f}) from underneath as overhead resistance",
+                f"Closed below 10-week MA for {below_count_last4} of last 4 weeks (-{pct_from_52w_high:.1f}% from 52w high)",
+                "Not a Stage 2B reload buy point; wait for stock to cleanly reclaim and base above 10w MA"
+            ]
+        elif is_testing_from_above and -3.5 <= dist_ma10_pct <= 3.0 and ma10_slope_pct >= -0.3 and pct_from_52w_high <= 18.0:
+            # Genuine Stage 2B: Pullback from upside resting on rising 10w MA support
             sub_stage = "2B"
             sub_stage_name = "Stage 2B: 10w MA Pullback Reload"
             stage_category = "Stage 2: Advancing"
             status_color = "#34D399"
             stage_score = 95
-            action_directive = "PRIME RELOAD BUY"
+            action_directive = "PRIME RELOAD BUY (SUPPORT TEST FROM UPSIDE)"
             key_characteristics = [
-                "Low-volume orderly pullback holding near rising 10w/30w MA",
+                f"Orderly pullback from upside holding near rising 10w MA (${curr_ma10:.2f})",
                 f"Mansfield RS robust (+{curr_rs:.1f}%)",
-                "High R/R entry as stock tests key moving average support"
+                "High R/R entry as stock tests key moving average support floor"
             ]
-        elif dist_ma30_pct <= 10 and ma30_slope_pct >= 0.2 and curr_rs > -2:
+        elif dist_ma30_pct <= 12 and ma30_slope_pct >= 0.2 and curr_rs > -2 and pct_from_52w_high <= 15:
             sub_stage = "2A"
             sub_stage_name = "Stage 2A: Breakout Ignition"
             stage_category = "Stage 2: Advancing"
@@ -1327,6 +1366,8 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
         "status_color": status_color,
         "stage_score": stage_score,
         "action_directive": action_directive,
+        "ma10_test_label": ma10_test_label,
+        "weeks_below_ma10": int(below_count_last4),
         "regime_duration_weeks": int(regime_weeks),
         "ma10_weekly": round(curr_ma10, 2),
         "ma30_weekly": round(curr_ma30, 2),
