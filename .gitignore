@@ -31,3 +31,4 @@ dist-ssr
 *.db
 backend/data/
 data/
+backend/cache/

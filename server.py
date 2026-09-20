@@ -3080,8 +3080,97 @@ def get_gann_stock_analysis_api():
         return jsonify(data)
     except Exception as e:
         print(f"Error in /api/gann/stock_analysis for {ticker}: {e}")
+
+@app.route('/api/stage_canslim/summary', methods=['GET'])
+def get_stage_canslim_summary_api():
+    """Returns stage breadth, posture, and distribution overview."""
+    force = request.args.get('force', 'false').lower() == 'true'
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from stage_canslim_engine import run_stage_canslim_screener
+        data = run_stage_canslim_screener(force_refresh=force)
+        return jsonify({
+            "status": "success",
+            "last_updated": data.get("last_updated"),
+            "stage_2_breadth_pct": data.get("stage_2_breadth_pct"),
+            "market_stage_posture": data.get("market_stage_posture"),
+            "stage_distribution": data.get("stage_distribution"),
+            "alpha_counts": data.get("alpha_counts"),
+            "total_screened": data.get("total_screened")
+        })
+    except Exception as e:
+        print(f"Error in /api/stage_canslim/summary: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/stage_canslim/screener', methods=['GET'])
+def get_stage_canslim_screener_api():
+    """Returns scanned stocks with 12 sub-stages, CANSLIM scorecards, and filtering options."""
+    force = request.args.get('force', 'false').lower() == 'true'
+    stage_filter = request.args.get('stage', 'all').strip().upper()
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from stage_canslim_engine import run_stage_canslim_screener
+        data = run_stage_canslim_screener(force_refresh=force)
+        stocks = data.get("stocks", [])
+
+        if stage_filter != 'ALL':
+            filtered_stocks = [
+                s for s in stocks
+                if s.get("stage_info", {}).get("sub_stage", "").upper() == stage_filter
+                or s.get("stage_info", {}).get("stage_category", "").upper().startswith(stage_filter)
+            ]
+            return jsonify({
+                "status": "success",
+                "last_updated": data.get("last_updated"),
+                "stage_2_breadth_pct": data.get("stage_2_breadth_pct"),
+                "market_stage_posture": data.get("market_stage_posture"),
+                "stage_distribution": data.get("stage_distribution"),
+                "alpha_counts": data.get("alpha_counts"),
+                "filter": stage_filter,
+                "count": len(filtered_stocks),
+                "stocks": filtered_stocks
+            })
+
+        return jsonify({
+            "status": "success",
+            "last_updated": data.get("last_updated"),
+            "stage_2_breadth_pct": data.get("stage_2_breadth_pct"),
+            "market_stage_posture": data.get("market_stage_posture"),
+            "stage_distribution": data.get("stage_distribution"),
+            "alpha_counts": data.get("alpha_counts"),
+            "filter": "ALL",
+            "count": len(stocks),
+            "stocks": stocks
+        })
+    except Exception as e:
+        print(f"Error in /api/stage_canslim/screener: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/stage_canslim/stock_analysis', methods=['GET'])
+def get_stage_canslim_stock_analysis_api():
+    """Returns detailed 12-sub-stage breakdown, Mansfield RS, CANSLIM 7 pillars, playbook, and chart bars."""
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker specified"}), 400
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from stage_canslim_engine import get_detailed_stage_canslim
+        data = get_detailed_stage_canslim(ticker.upper().strip())
+        if 'error' in data:
+            return jsonify(data), 404
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/stage_canslim/stock_analysis for {ticker}: {e}")
+        return jsonify({"error": str(e)}), 500
 
 def morning_options_dump_worker():
     """Triggers the options dump every weekday morning between 8:30 AM and 9:30 AM EST."""

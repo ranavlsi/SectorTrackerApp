@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target, Landmark, Waves } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target, Landmark, Waves, Flame } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
@@ -28,6 +28,7 @@ import OptionsIntelligenceScreener from './OptionsIntelligenceScreener';
 import WyckoffScreener from './WyckoffScreener';
 import ElliottWaveScreener from './ElliottWaveScreener';
 import GannScreener from './GannScreener';
+import StageCanslimScreener from './StageCanslimScreener';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -947,6 +948,7 @@ function App() {
           <button className={activeTab === 'wyckoff' ? 'tab-active' : ''} onClick={() => setActiveTab('wyckoff')} style={{ color: activeTab === 'wyckoff' ? '#10b981' : undefined }}><Landmark size={18} color="#10b981" /> Wyckoff Screener 🏛️</button>
           <button className={activeTab === 'elliott_wave' ? 'tab-active' : ''} onClick={() => setActiveTab('elliott_wave')} style={{ color: activeTab === 'elliott_wave' ? '#38bdf8' : undefined }}><Waves size={18} color="#38bdf8" /> Elliott Wave 🌊</button>
           <button className={activeTab === 'gann' ? 'tab-active' : ''} onClick={() => setActiveTab('gann')} style={{ color: activeTab === 'gann' ? '#fbbf24' : undefined }}><Compass size={18} color="#fbbf24" /> Gann Wheel 📐</button>
+          <button className={activeTab === 'stage_canslim' ? 'tab-active' : ''} onClick={() => setActiveTab('stage_canslim')} style={{ color: activeTab === 'stage_canslim' ? '#10b981' : undefined }}><Flame size={18} color="#10b981" /> Stage + CANSLIM 🚀</button>
           <button className={activeTab === 'earnings' ? 'tab-active' : ''} onClick={() => setActiveTab('earnings')}><User size={18} /> AI Earnings</button>
           <button className={activeTab === 'zacks' ? 'tab-active' : ''} onClick={() => setActiveTab('zacks')}><BookOpen size={18} /> Zacks Fundamentals</button>
           <button className={activeTab === 'deepfundamentals' ? 'tab-active' : ''} onClick={() => setActiveTab('deepfundamentals')}><PieChartIcon size={18} /> Deep Fundamentals</button>
@@ -1162,6 +1164,10 @@ function App() {
 
       {activeTab === 'gann' && (
         <GannScreener />
+      )}
+
+      {activeTab === 'stage_canslim' && (
+        <StageCanslimScreener />
       )}
 
       {activeTab === 'zacks' && (
