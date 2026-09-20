@@ -3,7 +3,8 @@ import {
   Flame, TrendingUp, TrendingDown, ShieldCheck, ShieldAlert, CheckCircle2, 
   Zap, Search, RefreshCw, Layers, Info, ChevronRight, X, ArrowUpRight, 
   ArrowDownRight, Sparkles, Target, Activity, Calendar, BarChart2, Award, 
-  Crosshair, Clock, AlertTriangle, Compass, Check, AlertCircle, Percent, Copy, ExternalLink
+  Crosshair, Clock, AlertTriangle, Compass, Check, AlertCircle, Percent, Copy, ExternalLink,
+  ZoomIn, ZoomOut, RotateCcw, Maximize2
 } from 'lucide-react';
 import './StageCanslimScreener.css';
 
@@ -1204,16 +1205,85 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
   }
 
   // Dimensions
-  const height = 480;
-  const padding = { top: 25, right: 65, bottom: 20, left: 20 };
-  const upperHeight = 315;
-  const gap = 25;
+  const height = 440;
+  const padding = { top: 32, right: 65, bottom: 20, left: 20 };
+  const upperHeight = 280;
+  const gap = 20;
   const lowerHeight = height - upperHeight - gap - padding.top - padding.bottom;
 
-  // Price Scale
-  const prices = chartData.flatMap(b => [b.high, b.low, b.ma10, b.ma30, b.pivot_line].filter(p => p !== null && !isNaN(p)));
-  const minPrice = Math.min(...prices) * 0.96;
-  const maxPrice = Math.max(...prices) * 1.04;
+  // Zoom & Pan Interactive State
+  const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [sliderPos, setSliderPos] = useState(100);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartSliderPosRef = useRef(100);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    setZoomLevel(1.0);
+    setSliderPos(100);
+  }, [chartData?.length]);
+
+  // Compute sliced visible bars based on zoomLevel and sliderPos
+  const allBars = chartData || [];
+  const baseWindowSize = allBars.length;
+  const windowSize = Math.max(12, Math.min(allBars.length, Math.round(baseWindowSize / zoomLevel)));
+  const maxOffset = Math.max(0, allBars.length - windowSize);
+  const offset = Math.round((sliderPos / 100) * maxOffset);
+
+  const visibleBars = useMemo(() => {
+    return allBars.slice(offset, offset + windowSize);
+  }, [allBars, offset, windowSize]);
+
+  // Usable canvas dimensions
+  const usableWidth = width - padding.left - padding.right;
+
+  // Mouse wheel zoom listener
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleWheelZoom = (e) => {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        setZoomLevel(prev => Math.min(4.0, Number((prev * 1.15).toFixed(2))));
+      } else {
+        setZoomLevel(prev => Math.max(0.6, Number((prev * 0.85).toFixed(2))));
+      }
+    };
+    el.addEventListener('wheel', handleWheelZoom, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheelZoom);
+  }, []);
+
+  // Mouse drag panning handlers
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    isDraggingRef.current = true;
+    dragStartXRef.current = e.clientX;
+    dragStartSliderPosRef.current = sliderPos;
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDraggingRef.current && maxOffset > 0) {
+      const dx = e.clientX - dragStartXRef.current;
+      const pctDelta = (dx / (usableWidth || 800)) * 100 * 0.85;
+      const newPos = Math.max(0, Math.min(100, dragStartSliderPosRef.current - pctDelta));
+      setSliderPos(Number(newPos.toFixed(1)));
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    }
+  };
+
+  // Price Scale computed on visible bars
+  const prices = visibleBars.flatMap(b => [b.high, b.low, b.ma10, b.ma30, b.pivot_line].filter(p => p !== null && !isNaN(p)));
+  const minPrice = prices.length > 0 ? Math.min(...prices) * 0.96 : 10;
+  const maxPrice = prices.length > 0 ? Math.max(...prices) * 1.04 : 100;
   const priceRange = maxPrice - minPrice || 1;
 
   const getY = (val) => {
@@ -1221,8 +1291,8 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
     return padding.top + upperHeight - ((val - minPrice) / priceRange) * upperHeight;
   };
 
-  // Mansfield RS Scale
-  const rsVals = chartData.map(b => b.mansfield_rs || 0);
+  // Mansfield RS Scale computed on visible bars
+  const rsVals = visibleBars.map(b => b.mansfield_rs || 0);
   const maxRsAbs = Math.max(10, Math.max(...rsVals.map(Math.abs))) * 1.15;
   const lowerTop = padding.top + upperHeight + gap;
 
@@ -1234,36 +1304,37 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
   const zeroRsY = getRsY(0);
 
   // X coordinate
-  const usableWidth = width - padding.left - padding.right;
-  const barWidth = Math.max(1.8, Math.min(14, (usableWidth / Math.max(1, chartData.length)) * 0.75));
-  const getX = (index) => padding.left + (index / Math.max(1, chartData.length - 1)) * usableWidth;
+  const barWidth = Math.max(2, Math.min(22, (usableWidth / Math.max(1, visibleBars.length)) * 0.75));
+  const getX = (index) => padding.left + (index / Math.max(1, visibleBars.length - 1)) * usableWidth;
 
-  // Helper to map date string to nearest bar index
+  // Helper to map date string to nearest bar index in visibleBars
   const findNearestBarIndex = (dateStr) => {
-    if (!dateStr || !chartData || chartData.length === 0) return -1;
+    if (!dateStr || !visibleBars || visibleBars.length === 0) return -1;
     const targetTime = new Date(dateStr).getTime();
-    let closestIdx = 0;
+    let closestIdx = -1;
     let minDiff = Infinity;
-    for (let i = 0; i < chartData.length; i++) {
-      const barTime = new Date(chartData[i].date).getTime();
+    for (let i = 0; i < visibleBars.length; i++) {
+      const barTime = new Date(visibleBars[i].date).getTime();
       const diff = Math.abs(barTime - targetTime);
       if (diff < minDiff) {
         minDiff = diff;
         closestIdx = i;
       }
     }
+    if (minDiff > 14 * 86400000) return -1;
     return closestIdx;
   };
 
-  // Calculate VCP Waves coordinates
+  // Calculate VCP Waves coordinates on visibleBars
   const vcpWaves = useMemo(() => {
     if (!vcp_info || !vcp_info.waves_detail || vcp_info.waves_detail.length === 0) return [];
-    return vcp_info.waves_detail.map((w) => {
+    return vcp_info.waves_detail.map((w, idx) => {
       const pIdx = findNearestBarIndex(w.peak_date);
       const tIdx = findNearestBarIndex(w.trough_date);
       if (pIdx === -1 || tIdx === -1) return null;
       return {
         ...w,
+        idx,
         pIdx,
         tIdx,
         xPeak: getX(pIdx),
@@ -1272,14 +1343,14 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
         yTrough: getY(w.trough_price)
       };
     }).filter(Boolean);
-  }, [vcp_info, chartData, width]);
+  }, [vcp_info, visibleBars, width]);
 
-  // Build MA lines paths
+  // Build MA lines paths on visibleBars
   let ma10Path = '';
   let ma30Path = '';
   let rsPath = '';
 
-  chartData.forEach((b, i) => {
+  visibleBars.forEach((b, i) => {
     const x = getX(i);
     if (b.ma10) {
       const y10 = getY(b.ma10);
@@ -1298,7 +1369,42 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
   const buyZoneHeight = Math.max(0, pivotY - buyMaxY);
 
   return (
-    <div className="sc-canvas-container" ref={containerRef}>
+    <div 
+      className={`sc-canvas-container ${isDragging ? 'is-dragging' : ''}`} 
+      ref={containerRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      {/* Floating Interactive Zoom & Pan Controls */}
+      <div className="sc-chart-zoom-toolbar">
+        <button 
+          className="sc-zoom-btn" 
+          onClick={() => setZoomLevel(prev => Math.min(4.0, Number((prev * 1.25).toFixed(2))))} 
+          title="Zoom In (or Mouse Wheel Up)"
+        >
+          <ZoomIn size={13} />
+        </button>
+        <button 
+          className="sc-zoom-btn" 
+          onClick={() => setZoomLevel(prev => Math.max(0.6, Number((prev * 0.8).toFixed(2))))} 
+          title="Zoom Out (or Mouse Wheel Down)"
+        >
+          <ZoomOut size={13} />
+        </button>
+        <button 
+          className="sc-zoom-btn fit-btn" 
+          onClick={() => { setZoomLevel(1.0); setSliderPos(100); }} 
+          title="Reset Zoom / Fit View"
+        >
+          <RotateCcw size={12} />
+          <span>{Math.round(zoomLevel * 100)}%</span>
+        </button>
+        <div className="sc-zoom-badge">
+          {visibleBars.length} / {allBars.length} bars
+        </div>
+      </div>
       <svg width={width} height={height} className="sc-svg-canvas">
         {/* Background grids */}
         <line x1={padding.left} y1={padding.top} x2={width - padding.right} y2={padding.top} stroke="#334155" strokeDasharray="3 3" opacity="0.4" />
@@ -1332,7 +1438,7 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
         )}
 
         {/* Candlesticks & Pocket Pivot Markers */}
-        {chartData.map((bar, i) => {
+        {visibleBars.map((bar, i) => {
           const x = getX(i);
           const isUp = bar.close >= bar.open;
           const candleColor = isUp ? '#10b981' : '#ef4444';
@@ -1573,7 +1679,7 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
           )}
 
           {/* Mansfield RS Area fills */}
-          {chartData.map((bar, i) => {
+          {visibleBars.map((bar, i) => {
             const x = getX(i);
             const y = getRsY(bar.mansfield_rs);
             const isPos = bar.mansfield_rs >= 0;
@@ -1592,6 +1698,23 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
           })}
         </g>
       </svg>
+
+      {/* Timeline Viewport Scrubber Slider (shown when zoomed in) */}
+      {maxOffset > 0 && (
+        <div className="sc-pan-slider-bar">
+          <span className="sc-pan-date">{visibleBars[0]?.date}</span>
+          <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            step="0.5"
+            value={sliderPos} 
+            onChange={(e) => setSliderPos(Number(e.target.value))}
+            className="sc-pan-range-slider"
+          />
+          <span className="sc-pan-date">{visibleBars[visibleBars.length - 1]?.date}</span>
+        </div>
+      )}
     </div>
   );
 }
