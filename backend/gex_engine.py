@@ -1196,6 +1196,10 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
 
         # Multi-expiry Delta & Charm Hedge Pressure Map (Price vs Time)
         # Y-axis: strikes, X-axis: expirations
+        # In dealer microstructure:
+        # - Dealers are short customer positions.
+        # - Short puts (strikes <= spot) create dealer positive delta (+ buying cushion floor).
+        # - Short calls (strikes >= spot) create dealer negative delta (- overhead selling resistance).
         delta_grid = []
         charm_grid = []
         combined_grid = []
@@ -1206,32 +1210,46 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             c_row = []
             comb_row = []
             for exp_key in target_expiries:
-                d_val = round(delta_matrix_dict.get(st, {}).get(exp_key, 0.0), 2)
-                c_val = round(charm_matrix_dict.get(st, {}).get(exp_key, 0.0), 2)
-                # Combined directional pressure: Delta Pressure + 3-day scaled Charm drift
+                raw_d = round(delta_matrix_dict.get(st, {}).get(exp_key, 0.0), 2)
+                raw_c = round(charm_matrix_dict.get(st, {}).get(exp_key, 0.0), 2)
+                
+                # Dealer directional hedging exposure (opposite of customer sign)
+                d_val = round(-raw_d, 2)
+                c_val = round(-raw_c, 2)
+                
+                # Combined directional dealer pressure: Dealer Delta + 3-day scaled Charm drift
                 comb_val = round(d_val + (c_val * 3.0), 2)
                 d_row.append(d_val)
                 c_row.append(c_val)
                 comb_row.append(comb_val)
 
-                if abs(comb_val) > 0.5:
+                if abs(comb_val) > 0.3:
+                    is_support = st <= spot_price * 1.005
                     all_pressure_points.append({
                         "strike": st,
                         "expiry": exp_key,
                         "delta_pressure_m": d_val,
                         "charm_decay_m": c_val,
                         "combined_pressure_m": comb_val,
-                        "action": "BUY ZONE (Support)" if comb_val > 0 else "SELL ZONE (Resistance)"
+                        "action": "BUY ZONE (Support Floor)" if is_support else "SELL ZONE (Resistance Ceiling)"
                     })
 
             delta_grid.append(d_row)
             charm_grid.append(c_row)
             combined_grid.append(comb_row)
 
-        # Extract top 3 institutional Buy Zones (Green) and Sell Zones (Red)
-        sorted_by_comb = sorted(all_pressure_points, key=lambda x: x["combined_pressure_m"])
-        top_sell_zones = sorted_by_comb[:3]  # most negative (dealers short delta / overhead resistance)
-        top_buy_zones = sorted_by_comb[-3:][::-1]  # most positive (dealers long delta / dip support floor)
+        # Extract top 3 institutional Buy Zones (Support floors at or below spot)
+        # and Sell Zones (Resistance ceilings at or above spot)
+        buy_candidates = [p for p in all_pressure_points if p["strike"] <= spot_price * 1.005 and p["combined_pressure_m"] > 0]
+        if not buy_candidates:
+            buy_candidates = [p for p in all_pressure_points if p["strike"] <= spot_price * 1.005]
+            
+        sell_candidates = [p for p in all_pressure_points if p["strike"] >= spot_price * 0.995 and p["combined_pressure_m"] < 0]
+        if not sell_candidates:
+            sell_candidates = [p for p in all_pressure_points if p["strike"] >= spot_price * 0.995]
+
+        top_buy_zones = sorted(buy_candidates, key=lambda x: x["combined_pressure_m"], reverse=True)[:3]
+        top_sell_zones = sorted(sell_candidates, key=lambda x: x["combined_pressure_m"])[:3]
 
         tot_buy_m = sum(x["combined_pressure_m"] for x in all_pressure_points if x["combined_pressure_m"] > 0)
         tot_sell_m = sum(abs(x["combined_pressure_m"]) for x in all_pressure_points if x["combined_pressure_m"] < 0)
