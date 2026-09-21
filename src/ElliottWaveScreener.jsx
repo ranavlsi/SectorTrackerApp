@@ -2383,57 +2383,70 @@ function ElliottWaveSvgChart({
         )}
 
         {/* Primary Elliott Wave Polyline Path & Nodes */}
-        {showPrimary && primaryPathD && (
-          <g>
-            {/* Glowing polyline */}
-            <path 
-              d={primaryPathD} 
-              fill="none" 
-              stroke="#38bdf8" 
-              strokeWidth="2.5" 
-              filter="url(#waveGlow)" 
-            />
-            <path 
-              d={primaryPathD} 
-              fill="none" 
-              stroke="#e0f2fe" 
-              strokeWidth="1.2" 
-            />
+        {showPrimary && primaryPathD && (() => {
+          const isCorrective = pattern?.pattern_key === 'abc_zigzag' || pattern?.pattern_name?.includes('A-B-C');
+          const lineColor = isCorrective ? '#f59e0b' : '#38bdf8';
+          const innerLineColor = isCorrective ? '#fef3c7' : '#e0f2fe';
+          const badgeFill = isCorrective ? '#78350f' : '#0369a1';
+          const badgeStroke = isCorrective ? '#f59e0b' : '#38bdf8';
+          const badgeText = isCorrective ? '#fbbf24' : '#38bdf8';
 
-            {/* Wave Pivot Badges */}
-            {wavePoints.map((p, idx) => {
-              const cx = padLeft + p.sliceIndex * step + step / 2;
-              const cy = getY(p.price);
-              const isPeak = p.label.includes('1') || p.label.includes('3') || p.label.includes('5') || p.label === 'A' || p.label === 'C' || p.label === 'E';
+          return (
+            <g>
+              {/* Glowing polyline */}
+              <path 
+                d={primaryPathD} 
+                fill="none" 
+                stroke={lineColor} 
+                strokeWidth="2.5" 
+                filter="url(#waveGlow)" 
+              />
+              <path 
+                d={primaryPathD} 
+                fill="none" 
+                stroke={innerLineColor} 
+                strokeWidth="1.2" 
+              />
 
-              return (
-                <g key={`p-${idx}`}>
-                  <circle cx={cx} cy={cy} r="7" fill="#0369a1" stroke="#38bdf8" strokeWidth="2" />
-                  <rect 
-                    x={cx - 15} 
-                    y={isPeak ? cy - 26 : cy + 10} 
-                    width="30" 
-                    height="16" 
-                    rx="4" 
-                    fill="#0f172a" 
-                    stroke="#38bdf8" 
-                    strokeWidth="1.2" 
-                  />
-                  <text 
-                    x={cx} 
-                    y={isPeak ? cy - 14 : cy + 22} 
-                    textAnchor="middle" 
-                    fill="#38bdf8" 
-                    fontSize="10" 
-                    fontWeight="bold"
-                  >
-                    {p.label}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        )}
+              {/* Wave Pivot Badges */}
+              {wavePoints.map((p, idx) => {
+                const cx = padLeft + p.sliceIndex * step + step / 2;
+                const cy = getY(p.price);
+                const isPeak = p.type === 'corrective_peak' || p.type === 'corrective_b' || p.label.includes('P0') || p.label.includes('(B)')
+                  ? true 
+                  : p.type === 'corrective_a' || p.type === 'corrective_c' || p.label.includes('(A)') || p.label.includes('(C)')
+                  ? false
+                  : p.label.includes('1') || p.label.includes('3') || p.label.includes('5') || p.label === 'A' || p.label === 'C' || p.label === 'E';
+
+                return (
+                  <g key={`p-${idx}`}>
+                    <circle cx={cx} cy={cy} r="7" fill={badgeFill} stroke={badgeStroke} strokeWidth="2" />
+                    <rect 
+                      x={cx - 16} 
+                      y={isPeak ? cy - 26 : cy + 10} 
+                      width="32" 
+                      height="16" 
+                      rx="4" 
+                      fill="#0f172a" 
+                      stroke={badgeStroke} 
+                      strokeWidth="1.2" 
+                    />
+                    <text 
+                      x={cx} 
+                      y={isPeak ? cy - 14 : cy + 22} 
+                      textAnchor="middle" 
+                      fill={badgeText} 
+                      fontSize="10" 
+                      fontWeight="bold"
+                    >
+                      {p.label}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })()}
 
         {/* Secular Macro Anchor Marker Pin (if in visible window) */}
         {secularPin && (
