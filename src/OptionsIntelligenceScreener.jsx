@@ -256,6 +256,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
     const recs = data.records;
     return {
       all: recs.length,
+      tailwind: recs.filter(r => r.signal === 'OPTIONS_TAILWIND').length,
       flow_impact: recs.filter(r => (r.flow_impact_score >= 50 || r.flow_impact_level === 'EXTREME' || r.flow_impact_level === 'HIGH')).length,
       vol_squeeze: recs.filter(r => r.signal === 'VOL_SQUEEZE').length,
       call_acc: recs.filter(r => r.signal === 'CALL_ACCUMULATION').length,
@@ -444,6 +445,18 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
             title="Scan for equities experiencing the highest options flow notional volume and directional delta pressure"
           >
             ⚡ Highest Flow Impact ({presetCounts.flow_impact || 0})
+          </button>
+          <button 
+            className={`preset-pill ${activePreset === 'OPTIONS_TAILWIND' ? 'active' : ''}`}
+            style={activePreset === 'OPTIONS_TAILWIND' ? { background: '#00E676', color: '#000', fontWeight: 'bold' } : { borderColor: '#00E676', color: '#00E676' }}
+            onClick={() => {
+              setActivePreset('OPTIONS_TAILWIND');
+              setSortBy('flow_impact_score');
+              setCurrentPage(1);
+            }}
+            title="Scan for stocks experiencing heavy market open options tailwinds (high call ratio, volume surge, positive dealer gamma)"
+          >
+            🚀 Options Tailwind ({presetCounts.tailwind || 0})
           </button>
           <button 
             className={`preset-pill ${activePreset === 'VOL_SQUEEZE' ? 'active' : ''}`}

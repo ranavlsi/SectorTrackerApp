@@ -335,8 +335,16 @@ def get_options_screener_summary(force_refresh=False):
         signal_color = "#94a3b8"
         priority = 5
         
+        # 0. Market Open Options Tailwind (Call Vol % >= 60, Vol Ratio >= 1.2)
+        curr_gex = today_row.get("net_gex", 0.0)
+        if (call_vol_pct >= 60.0 and vol_ratio >= 1.2 and (curr_gex >= 0 or (today_row.get("spot_price") and abs(today_row.get("spot_price", 0) - today_row.get("max_pain", 0)) < 10))):
+            signal = "OPTIONS_TAILWIND"
+            signal_badge = "🚀 Options Tailwind"
+            signal_desc = "Intraday buying pressure backed by strong call volume dominance and positive dealer delta alignment."
+            signal_color = "#00E676"
+            priority = 1
         # 1. Vol Squeeze / Expansion (IV Rank >= 75 and expanding 5d IV)
-        if iv_rank >= 75 and iv_chg_5d > 0 and curr_vol >= 50:
+        elif iv_rank >= 75 and iv_chg_5d > 0 and curr_vol >= 50:
             signal = "VOL_SQUEEZE"
             signal_badge = "💥 Vol Squeeze / Expansion"
             signal_desc = "Implied volatility exploding to 30-day highs alongside elevated options activity."
