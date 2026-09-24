@@ -1197,33 +1197,45 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
         # Multi-expiry Delta & Charm Hedge Pressure Map (Price vs Time)
         # Y-axis: strikes, X-axis: expirations
         # In dealer microstructure:
-        # - Dealers are short customer positions.
-        # - Short puts (strikes <= spot) create dealer positive delta (+ buying cushion floor).
-        # - Short calls (strikes >= spot) create dealer negative delta (- overhead selling resistance).
+        # Multi-expiry Greek & Hedge Pressure Map (Price vs Time)
+        # Y-axis: strikes, X-axis: expirations
+        # Harmonized with matrix_data, delta_matrix, and charm_matrix:
+        # - Positive Delta / DEX (> 0): Net long delta / buy cushion (dominant below spot).
+        # - Negative Delta / DEX (< 0): Net short delta / selling resistance (dominant above spot).
+        # - Positive Gamma / GEX (> 0): Volatility dampening / pin risk.
+        # - Charm Decay (CEX): Delta decay drift toward expiration.
+        gex_grid = []
         delta_grid = []
         charm_grid = []
         combined_grid = []
+        combined_matrix = []
         all_pressure_points = []
 
         for st in near_strikes:
+            g_row = []
             d_row = []
             c_row = []
             comb_row = []
+            comb_mat_row = {"strike": st}
             for exp_key in target_expiries:
+                raw_g = round(matrix_strikes.get(st, {}).get(exp_key, 0.0), 2)
                 raw_d = round(delta_matrix_dict.get(st, {}).get(exp_key, 0.0), 2)
                 raw_c = round(charm_matrix_dict.get(st, {}).get(exp_key, 0.0), 2)
                 
-                # Dealer directional hedging exposure (opposite of customer sign)
-                d_val = round(-raw_d, 2)
-                c_val = round(-raw_c, 2)
+                # Direct harmonization with delta_matrix & charm_matrix (no sign inversion)
+                d_val = raw_d
+                c_val = raw_c
                 
                 # Combined directional dealer pressure: Dealer Delta + 3-day scaled Charm drift
                 comb_val = round(d_val + (c_val * 3.0), 2)
+                g_row.append(raw_g)
                 d_row.append(d_val)
                 c_row.append(c_val)
                 comb_row.append(comb_val)
+                comb_mat_row[exp_key] = comb_val
 
-                if abs(comb_val) > 0.3:
+                # Capture significant pressure points (adaptive threshold for large vs small cap stocks)
+                if abs(comb_val) >= 0.01:
                     is_support = st <= spot_price * 1.005
                     all_pressure_points.append({
                         "strike": st,
@@ -1234,12 +1246,14 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                         "action": "BUY ZONE (Support Floor)" if is_support else "SELL ZONE (Resistance Ceiling)"
                     })
 
+            gex_grid.append(g_row)
             delta_grid.append(d_row)
             charm_grid.append(c_row)
             combined_grid.append(comb_row)
+            combined_matrix.append(comb_mat_row)
 
-        # Extract top 3 institutional Buy Zones (Support floors at or below spot)
-        # and Sell Zones (Resistance ceilings at or above spot)
+        # Extract top 3 institutional Buy Zones (Support floors at or below spot with positive cushion)
+        # and Sell Zones (Resistance ceilings at or above spot with negative pressure)
         buy_candidates = [p for p in all_pressure_points if p["strike"] <= spot_price * 1.005 and p["combined_pressure_m"] > 0]
         if not buy_candidates:
             buy_candidates = [p for p in all_pressure_points if p["strike"] <= spot_price * 1.005]
@@ -1261,9 +1275,11 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             "call_wall": call_wall,
             "put_wall": put_wall,
             "zero_gamma": zero_gamma,
+            "gex_grid": gex_grid,
             "delta_grid": delta_grid,
             "charm_grid": charm_grid,
             "combined_grid": combined_grid,
+            "combined_matrix": combined_matrix,
             "top_buy_zones": top_buy_zones,
             "top_sell_zones": top_sell_zones,
             "total_buy_pressure_m": round(tot_buy_m, 1),
@@ -1686,6 +1702,7 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             "delta_matrix": delta_matrix,
             "charm_matrix": charm_matrix,
             "vanna_matrix": vanna_matrix,
+            "combined_matrix": combined_matrix,
             "regime": {
                 "title": regime_title,
                 "posture": regime_posture,

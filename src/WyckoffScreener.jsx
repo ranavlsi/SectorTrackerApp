@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Landmark, TrendingUp, TrendingDown, ShieldAlert, CheckCircle2, 
   Zap, Search, RefreshCw, SlidersHorizontal, Layers, Info, 
-  ChevronRight, X, ArrowUpRight, ArrowDownRight, Sparkles, Target, Compass
+  ChevronRight, X, ArrowUpRight, ArrowDownRight, Sparkles, Target, Compass,
+  ZoomIn, ZoomOut, RotateCcw
 } from 'lucide-react';
 import './WyckoffScreener.css';
 
@@ -196,6 +197,13 @@ export default function WyckoffScreener() {
             onClick={() => setSelectedFilter('sos')}
           >
             SOS Breakouts
+          </button>
+          <button 
+            className={`filter-pill lps ${selectedFilter === 'lps' ? 'active lps' : ''}`}
+            onClick={() => setSelectedFilter('lps')}
+            title="Phase D: Back-Up to Creek / Last Point of Support (BUEC / LPS)"
+          >
+            BUEC / LPS
           </button>
           <button 
             className={`filter-pill utad ${selectedFilter === 'utad' ? 'active utad' : ''}`}
@@ -772,22 +780,56 @@ function WyckoffSvgChart({ chartData, timeframe = '180D', baseBars = 45, upperCo
   const allMarkers = chartData.markers || [];
 
   const [sliderPos, setSliderPos] = useState(100);
+  const [zoomLevel, setZoomLevel] = useState(1.0); // 1.0 = standard, > 1.0 = zoomed in, < 1.0 = zoomed out
 
-  // Reset slider to live/recent on timeframe change
+  // Reset slider & zoom to live/recent on timeframe change
   useEffect(() => {
     setSliderPos(100);
+    setZoomLevel(1.0);
   }, [timeframe]);
 
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(3.5, Number((prev * 1.3).toFixed(2))));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(0.4, Number((prev / 1.3).toFixed(2))));
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1.0);
+    setSliderPos(100);
+  };
+
+  // Enable mouse wheel / trackpad pinch zoom on chart canvas
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          setZoomLevel(prev => Math.min(3.5, Number((prev * 1.12).toFixed(2))));
+        } else {
+          setZoomLevel(prev => Math.max(0.4, Number((prev / 1.12).toFixed(2))));
+        }
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
   const windowSize = useMemo(() => {
-    if (timeframe === '90D') return Math.min(allCandles.length, 90);
-    if (timeframe === '180D') return Math.min(allCandles.length, 180);
-    if (timeframe === '1Y') return Math.min(allCandles.length, 252);
-    if (timeframe === 'BASE') {
-      const needed = Math.max(35, (baseBars || 40) + 20);
-      return Math.min(allCandles.length, needed);
+    let base = 180;
+    if (timeframe === '90D') base = 90;
+    else if (timeframe === '180D') base = 180;
+    else if (timeframe === '1Y') base = 252;
+    else if (timeframe === 'BASE') {
+      base = Math.max(35, (baseBars || 40) + 20);
     }
-    return Math.min(allCandles.length, 180);
-  }, [allCandles, timeframe, baseBars]);
+    const scaled = Math.round(base / zoomLevel);
+    return Math.max(15, Math.min(allCandles.length, scaled));
+  }, [allCandles, timeframe, baseBars, zoomLevel]);
 
   const maxOffset = Math.max(0, allCandles.length - windowSize);
   const offset = Math.round((sliderPos / 100) * maxOffset);
@@ -817,7 +859,7 @@ function WyckoffSvgChart({ chartData, timeframe = '180D', baseBars = 45, upperCo
   const priceHeight = 270;
   const volHeight = 70;
   const gap = 15;
-  const padTop = 20;
+  const padTop = 28;
   const padRight = 75;
   const padLeft = 10;
   const drawWidth = width - padLeft - padRight;
@@ -825,7 +867,7 @@ function WyckoffSvgChart({ chartData, timeframe = '180D', baseBars = 45, upperCo
   const allHighs = candles.map(c => c.high);
   const allLows = candles.map(c => c.low);
   const minP = Math.min(...allLows, ice * 0.985);
-  const maxP = Math.max(...allHighs, creek * 1.015);
+  const maxP = Math.max(...allHighs, creek * 1.02) * 1.025;
   const pSpan = (maxP - minP) || 1.0;
 
   const maxRvolVol = Math.max(...candles.map(c => c.volume), 1000);
@@ -850,8 +892,35 @@ function WyckoffSvgChart({ chartData, timeframe = '180D', baseBars = 45, upperCo
 
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Volume Mode Toggle Overlay */}
-      <div style={{ position: 'absolute', right: '80px', top: '10px', zIndex: 10 }}>
+      {/* Chart Control Toolbar: Zoom In/Out/Reset + Volume Mode Toggle */}
+      <div style={{ position: 'absolute', left: '14px', top: '10px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="zoom-btn-group">
+          <button 
+            className="zoom-btn" 
+            onClick={handleZoomIn} 
+            title="Zoom In (+): Fewer bars, detailed candle inspection"
+          >
+            <ZoomIn size={13} />
+          </button>
+          <span className="zoom-level-badge" title="Current Zoom Level">
+            {Math.round(zoomLevel * 100)}%
+          </span>
+          <button 
+            className="zoom-btn" 
+            onClick={handleZoomOut} 
+            title="Zoom Out (-): More bars, macro context"
+          >
+            <ZoomOut size={13} />
+          </button>
+          <button 
+            className="zoom-btn" 
+            onClick={handleResetZoom} 
+            title="Reset Zoom (100% LIVE)"
+          >
+            <RotateCcw size={12} />
+          </button>
+        </div>
+
         <div className="vol-toggle-group">
           <button 
             className={`vol-toggle-btn ${volMode === 'RVOL' ? 'active' : ''}`}

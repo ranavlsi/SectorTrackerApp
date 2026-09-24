@@ -18,6 +18,7 @@ from regression_channel_scanner import evaluate_regression_channel
 from fvg_sma_scanner import evaluate_fvg_sma_confluence
 from volume_profile_scanner import evaluate_volume_profile_rejections, evaluate_val_rejection
 from divergence_reversal_scanner import evaluate_divergence_reversal
+from deepvue_launchpad_scanner import evaluate_deepvue_launchpad
 from chop_incubation_scanner import scan_chop_incubation_leaders
 
 warnings.filterwarnings('ignore')
@@ -191,7 +192,7 @@ def run_screener(custom_universe=None):
     else:
         dynamic_universe = custom_universe if custom_universe is not None else get_dynamic_universe()
         print(f"Running Unified Expert Screener on {len(dynamic_universe)} stocks (Legacy YF Mode)...")
-        df = yf.download(dynamic_universe + ['SPY'], period='4y', interval='1d', group_by='ticker', progress=False)
+        df = yf.download(dynamic_universe + ['SPY'], period='5y', interval='1d', group_by='ticker', progress=False)
         
         if df.empty or 'SPY' not in df:
             print("Failed to download data.")
@@ -251,6 +252,8 @@ def run_screener(custom_universe=None):
         "base_pullback_ma": [],
         "reversal": [],
         "smc_divergence_reversal": [],
+        "smc_200w_sma_reversal": [],
+        "deepvue_launchpad": [],
         "hve_volume": [],
         "hve_consolidation": [],
         "post_earning_reaction": [],
@@ -758,14 +761,39 @@ def run_screener(custom_universe=None):
             # Score is distance below 40 (deeper oversold = higher score)
             results["reversal"].append({"ticker": ticker, "metric": f"RSI {rsi.iloc[-1]:.1f} + Bullish Candle", "score": float(40 - rsi.iloc[-1])})
             
-        # 8.5 SMC Bullish Divergence Reversal (Liquidity Grab / CHoCH / W-Bottom)
+        # 8.5 SMC Bullish Divergence Reversal & 200W-SMA Institutional Defense
         try:
             div_res = evaluate_divergence_reversal(ticker, df=ticker_df)
             if div_res:
-                results["smc_divergence_reversal"].append({
+                if div_res.get("has_bull_div"):
+                    results["smc_divergence_reversal"].append({
+                        "ticker": ticker,
+                        "metric": div_res["metric"],
+                        "score": div_res["score"],
+                        "is_confluence": bool(div_res.get("is_confluence"))
+                    })
+                if div_res.get("has_200w_touch"):
+                    results["smc_200w_sma_reversal"].append({
+                        "ticker": ticker,
+                        "metric": div_res["metric"],
+                        "score": div_res["score"],
+                        "is_confluence": bool(div_res.get("is_confluence"))
+                    })
+        except Exception:
+            pass
+            
+        # 8.6 DeepVue Launchpad Setup (21/50/65 MA Pinch + VDU)
+        try:
+            lp_res = evaluate_deepvue_launchpad(ticker, df=ticker_df)
+            if lp_res:
+                results["deepvue_launchpad"].append({
                     "ticker": ticker,
-                    "metric": div_res["metric"],
-                    "score": div_res["score"]
+                    "metric": lp_res["metric"],
+                    "score": lp_res["score"],
+                    "price": lp_res["price"],
+                    "entry_pivot": lp_res["entry_pivot"],
+                    "stop_loss": lp_res["stop_loss"],
+                    "risk_pct": lp_res["risk_pct"]
                 })
         except Exception:
             pass
@@ -1116,7 +1144,19 @@ def run_screener(custom_universe=None):
         
         # 2. Sort by TECHNICAL SCORE descending (the true power of the setup)!
         # If score is perfectly tied or doesn't exist, fallback to dollar volume to keep the most liquid names at the top.
-        results[key] = sorted(filtered_mcap, key=lambda x: (x.get("score", 0), dollar_vol_dict.get(x["ticker"], 0)), reverse=True)[:50]
+        if key == "smc_divergence_reversal":
+            # Keep stocks that DO NOT have 200 SMA confluence at top per user request
+            results[key] = sorted(
+                filtered_mcap,
+                key=lambda x: (
+                    0 if x.get("is_confluence") else 1,
+                    x.get("score", 0),
+                    dollar_vol_dict.get(x["ticker"], 0)
+                ),
+                reverse=True
+            )[:50]
+        else:
+            results[key] = sorted(filtered_mcap, key=lambda x: (x.get("score", 0), dollar_vol_dict.get(x["ticker"], 0)), reverse=True)[:50]
 
     with open('/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_results.json', 'w') as f:
         json.dump(results, f)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target, Landmark, Waves, Flame } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target, Landmark, Waves, Flame, Rocket } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
@@ -51,6 +51,7 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 const ScreenerCategories = {
+  deepvue_launchpad: { title: "DeepVue: Launchpad Setup", icon: <Rocket color="#f43f5e" />, desc: "TraderLion / Deepvue: Moving average convergence (21 SMA, 50 SMA, and 65 EMA pinch within 2.5%) with tight price action and Volume Dry-Up (VDU). Early low-risk entry inside bases." },
   chop_incubation_leaders: { title: "Next Leg Leaders (Chop Incubation)", icon: <ShieldCheck color="#10b981" />, desc: "William O'Neil's 5 Market Chop Rules: Stocks holding above their 50-day line with top-tier Relative Strength, tight base depth (<25%), and Volume Dry-Up (VDU) while the broader market consolidates." },
   relative_strength: { title: "Highest Relative Strength", icon: <TrendingUp color="#10b981" />, desc: "Top momentum stocks exhibiting the highest relative strength vs the S&P 500." },
   early_stage_2: { title: "Early Stage 2 Breakouts", icon: <Activity color="#4facfe" />, desc: "Stocks newly transitioning from a Stage 1 base into a Stage 2 uptrend with volume conviction." },
@@ -69,8 +70,9 @@ const ScreenerCategories = {
   ipo_avwap: { title: "IPO AVWAP Bounce", icon: <Crosshair color="#ec4899" />, desc: "Recent IPOs pulling back and defending the crucial Anchored VWAP from their IPO debut day." },
   bullish_candlestick: { title: "Bullish Candlestick", icon: <TrendingUp color="#22c55e" />, desc: "Bullish engulfing or massive hammer candles appearing at crucial structural support levels." },
   bearish_candlestick: { title: "Bearish Candlestick", icon: <TrendingUp color="#ef4444" style={{ transform: 'rotate(180deg)' }} />, desc: "Bearish engulfing or shooting stars signaling trend exhaustion at the top of a run." },
-  reversal: { title: "Oversold Reversal", icon: <RefreshCw color="#ef4444" />, desc: "Deep oversold (RSI < 40) snapback setups flashing bullish reversal candle patterns." },
-  smc_divergence_reversal: { title: "SMC: Divergence + Liquidity Grab + CHoCH", icon: <Zap color="#10b981" />, desc: "Smart Money Concepts: Bullish RSI divergence resolved with a Liquidity Grab (stop sweep) and Change of Character (CHoCH / W-bottom structural shift)." },
+  reversal: { title: "Bullish Reversal (Oversold Bounce)", icon: <RefreshCw color="#10b981" />, desc: "Deep oversold (RSI < 40) snapback setups flashing confirmed bullish reversal candlestick patterns." },
+  smc_divergence_reversal: { title: "SMC: RSI Divergence + Liquidity Grab + CHoCH", icon: <Zap color="#10b981" />, desc: "Smart Money Concepts: Pure momentum exhaustion setups. Multi-pivot Bullish RSI divergence resolved with a Liquidity Grab (stop sweep) and Change of Character (CHoCH / market structure shift)." },
+  smc_200w_sma_reversal: { title: "SMC: 200W-SMA Defense + CHoCH", icon: <Landmark color="#4facfe" />, desc: "Smart Money Concepts: Macro institutional line-in-the-sand defense. Stocks arriving from secular uptrends testing/sweeping the 200-Weekly SMA from the upside and reclaiming structure." },
   zacks_rank_1: { title: "Zacks Rank #1 (Strong Buy)", icon: <BookOpen color="#10b981" />, desc: "Strict fundamental filter showing only stocks with upward earnings estimate revisions and PEG < 2." },
   qullamaggie_parabolic: { title: "Qullamaggie: Parabolic Flag", icon: <TrendingUp color="#3b82f6" />, desc: "Fast-moving momentum stocks forming tight flags after 3+ consecutive up days. (Excludes intraday fades: requires daily close near highs)." },
   universal_takeout: { title: "Universal Takeout", icon: <Activity color="#8b5cf6" />, desc: "JAZZ Engine: Stocks taking out the highs of the previous two trading sessions with heavy volume." },
@@ -90,7 +92,6 @@ const ScreenerCategories = {
   rs_divergence: { title: "RS Line Divergence (New High)", icon: <Activity color="#10b981" />, desc: "Alpha indicator: The stock's Relative Strength line is making a new high *before* price does." },
   bull_flag_breakout: { title: "Bull Flag Breakout", icon: <TrendingUp color="#38bdf8" />, desc: ">15% pole rally followed by a tight <12% pullback flag, actively breaking out today on 1.5x volume." },
   bull_flag_pending: { title: "Bull Flag Pending Breakout", icon: <ActivitySquare color="#f43f5e" />, desc: "Perfectly formed Bull Flags currently coiling inside the flag structure waiting for the volume trigger." },
-  universal_takeout: { title: "Universal Takeout", icon: <CheckCircle2 color="#eab308" />, desc: "Sequential higher-low compression anticipating or confirming an overhead structural takeout." },
   earnings_surge: { title: "Earnings Surge (PEDP)", icon: <TrendingUp color="#ec4899" />, desc: "High Post-Earnings Drift Potential: Massive EPS beats corroborated by heavy upward analyst estimate revisions." }
 }
 const ScreenerPill = ({ item, rank, onClick }) => {
@@ -134,11 +135,35 @@ const ScreenerPill = ({ item, rank, onClick }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         {rank && <span style={{ color: '#4facfe', fontWeight: 'bold', minWidth: '25px' }}>#{rank}</span>}
         <strong>{item.ticker}</strong>
+        {item.state_label && (
+          <span style={{
+            fontSize: '0.7rem',
+            padding: '1px 6px',
+            borderRadius: '4px',
+            background: item.state === 'LAUNCHING' ? 'rgba(16, 185, 129, 0.2)' : item.state === 'DNB' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(251, 191, 36, 0.2)',
+            color: item.state_color || '#fbbf24',
+            border: `1px solid ${item.state_color || '#fbbf24'}`,
+            fontWeight: 700,
+            whiteSpace: 'nowrap'
+          }}>
+            {item.state_label}
+          </span>
+        )}
+        {item.has_pocket_pivot && (
+          <span style={{ fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', border: '1px solid #a855f7', whiteSpace: 'nowrap' }} title="Pocket Pivot on Pad: Volume exceeded max down volume">
+            ⚡ PP
+          </span>
+        )}
+        {item.has_rs_high && (
+          <span style={{ fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(249, 115, 22, 0.2)', color: '#fb923c', border: '1px solid #f97316', whiteSpace: 'nowrap' }} title="RS Line at New 20-Day High while coiling">
+            🔥 RS High
+          </span>
+        )}
       </div>
-      <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{item.metric}</span>
+      <span style={{ color: '#94a3b8', fontSize: '0.88rem', textAlign: 'right' }}>{item.metric}</span>
       
       {isHovered && (
         <div style={{ position: 'absolute', top: 'calc(100% + 5px)', right: '0', width: '280px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid #4facfe', borderRadius: '8px', padding: '1rem', zIndex: 9999, boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>

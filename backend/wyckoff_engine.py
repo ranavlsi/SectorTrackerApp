@@ -670,15 +670,27 @@ def detect_wyckoff_setups(ticker, df):
     # =========================================================================
     # 4. ACCUMULATION: PHASE C - Springs (Schematic #1) & LPS (Schematic #2)
     # =========================================================================
-    # Schematic #1: Spring / Shakeout below Ice
-    spring_bar = None
-    for idx, b in recent_6.iterrows():
+    # Look back over recent 15 bars for a Spring shakeout below Ice
+    recent_15 = df.iloc[-15:]
+    spring_bar_info = None
+    for idx_pos, (idx_val, b) in enumerate(recent_15.iterrows()):
         if b['Low'] < ice * 0.998 and (b['Close'] >= ice * 0.990 or current_close >= ice * 0.995):
-            spring_bar = b
+            # Record historical spring bar details
+            global_idx = df.index.get_loc(idx_val) if hasattr(df.index, 'get_loc') else int(df.index.get_loc(idx_val))
+            date_str = b['Date'].strftime('%Y-%m-%d') if hasattr(b['Date'], 'strftime') else str(b['Date'])
+            spring_bar_info = {
+                'index': global_idx,
+                'date': date_str,
+                'low': round(float(b['Low']), 2),
+                'rvol': float(b['RVOL']) if not pd.isna(b['RVOL']) else 1.0
+            }
             break
 
-    if spring_bar is not None and current_close >= ice and not detected_setups:
-        spring_type = "Type 2 (Low-Volume Test)" if spring_bar['RVOL'] < 1.1 else "Type 1 (Stopping Shakeout)"
+    if spring_bar_info is not None and current_close >= ice and not detected_setups:
+        # Check if price has already advanced into upper/mid range -> Phase D transition!
+        is_phase_d_advance = range_pos >= 45.0 or current_close >= (ice + creek) / 2.0
+        
+        spring_type = "Type 2 (Low-Volume Test)" if spring_bar_info['rvol'] < 1.1 else "Type 1 (Stopping Shakeout)"
         confidence = 90 if current_close > ice * 1.01 else 82
         entry = round(current_close, 2)
         stop_loss = round(min_recent_low * 0.985, 2)
@@ -687,11 +699,22 @@ def detect_wyckoff_setups(ticker, df):
         target2 = round(pf_target_t1, 2)
         rr_ratio = round((target1 - entry) / risk, 2) if risk > 0 else 3.0
         
+        if is_phase_d_advance:
+            setup_key = 'phase_d_post_spring'
+            phase_name = 'Phase D (Post-Spring Markup)'
+            phase_ltr = 'D'
+            desc = f"Phase D Sign of Strength advance following Phase C Spring! Price pierced SC support (${ice:.2f}) down to ${spring_bar_info['low']:.2f} on {spring_bar_info['date']} and has advanced to {range_pos:.1f}% range position (${current_close:.2f})."
+        else:
+            setup_key = 'spring'
+            phase_name = 'Phase C (Spring)'
+            phase_ltr = 'C'
+            desc = f"Bear trap identified! Price pierced Selling Climax support (${ice:.2f}) down to ${spring_bar_info['low']:.2f} on {spring_bar_info['date']} and immediately reclaimed the range. {spring_type} confirms exhausted supply after {base_bars} bars ({cal_days}d) of cause."
+
         detected_setups.append({
-            'setup_key': 'spring',
-            'name': 'Spring / Shakeout',
-            'phase': 'Phase C (Spring)',
-            'phase_letter': 'C',
+            'setup_key': setup_key,
+            'name': 'Post-Spring Markup (Phase D)' if is_phase_d_advance else 'Spring / Shakeout',
+            'phase': phase_name,
+            'phase_letter': phase_ltr,
             'sub_type': spring_type,
             'direction': 'BULLISH',
             'confidence': confidence,
@@ -704,12 +727,15 @@ def detect_wyckoff_setups(ticker, df):
             'macro_pf_target': round(pf_target_t2, 2),
             'macro_pf_gain': pf_gain_t2,
             'risk_reward': rr_ratio,
-            'description': f"Bear trap identified! Price pierced Selling Climax support (${ice:.2f}) down to ${min_recent_low:.2f} and immediately reclaimed the range. {spring_type} confirms exhausted supply after {base_bars} bars ({cal_days}d) of cause."
+            'spring_bar_idx': spring_bar_info['index'],
+            'spring_bar_date': spring_bar_info['date'],
+            'spring_bar_low': spring_bar_info['low'],
+            'description': desc
         })
-        wyckoff_phase = "Phase C (Spring Reclaim)"
-        phase_letter = 'C'
+        wyckoff_phase = phase_name
+        phase_letter = phase_ltr
         wyckoff_score = max(wyckoff_score, 88)
-        effort_result_bias = "Smart Money Absorption (Bullish)"
+        effort_result_bias = "Post-Spring Demand Advance (Bullish)" if is_phase_d_advance else "Smart Money Absorption (Bullish)"
 
     # Schematic #2: Phase C LPS (Higher Low Test on VDU without Spring)
     tested_lower_tr = (min_recent_low >= ice * 0.995) and (min_recent_low <= ice + 0.48 * height)
@@ -752,14 +778,59 @@ def detect_wyckoff_setups(ticker, df):
         effort_result_bias = "Volume Dry-Up / Supply Exhaustion (Bullish)"
 
     # =========================================================================
-    # 5. ACCUMULATION: PHASE D - Transition to Markup (SOS / LPS / JAC)
     # =========================================================================
+    # 5. ACCUMULATION: PHASE D - Transition to Markup (SOS / LPS / JAC / BUEC)
+    # =========================================================================
+    # Wyckoff Law of Cause and Effect: Phase D represents the transition into markup
+    # AFTER substantial Cause (Phase B) has been built across the trading range.
+    has_sufficient_cause = base_bars >= 25 or range_pos >= 75.0 or current_close >= creek * 0.98
+
+    # Prior SOS Jump across Creek in recent 25 bars
+    prior_sos = any(df.iloc[-25:]['Close'] >= creek * 0.995) or any(df.iloc[-25:]['High'] >= creek * 1.005)
+    near_creek_support = (abs(current_close - creek) / (creek + 1e-6) <= 0.045) or (current_close >= creek * 0.955 and current_close <= creek * 1.045)
+    volume_digesting = (rvol <= 1.35 and spread_ratio <= 1.50) or (clv >= 0.35) or (current_close >= creek * 0.98)
+    is_pulling_back_from_sos = max_recent_high >= creek * 1.005 and current_close < max_recent_high * 0.99
+
+    # Case D2: Back-Up to the Edge of the Creek (BUEC / LPS) - Stock jumped Creek and is retesting support
+    if has_sufficient_cause and prior_sos and near_creek_support and is_pulling_back_from_sos and not detected_setups:
+        confidence = 90
+        entry = round(current_close, 2)
+        stop_loss = round(creek * 0.95, 2)
+        risk = max(0.01, entry - stop_loss)
+        target1 = round(pf_target_t1, 2)
+        target2 = round(pf_target_t2, 2)
+        rr_ratio = round((target1 - entry) / risk, 2) if risk > 0 else 3.2
+        
+        detected_setups.append({
+            'setup_key': 'lps',
+            'name': 'Back-Up to Creek (BUEC / LPS)',
+            'phase': 'Phase D (Back-Up Retest)',
+            'phase_letter': 'D',
+            'sub_type': 'Back-Up to Edge of Creek (BUEC)',
+            'direction': 'BULLISH',
+            'confidence': confidence,
+            'entry': entry,
+            'stop_loss': stop_loss,
+            'target_1': target1,
+            'target_1_label': 'Phase D Continuation (T1)',
+            'target_2': target2,
+            'target_2_label': 'Standard Base P&F (T2)',
+            'macro_pf_target': round(pf_target_t3, 2),
+            'macro_pf_gain': pf_gain_t3,
+            'risk_reward': rr_ratio,
+            'description': f"Low-risk continuation entry! Jumped Creek to ${max_recent_high:.2f} and is now testing broken Creek resistance (${creek:.2f}) as new support on digesting volume ({rvol:.2f}x). Confirms old resistance has flipped to support."
+        })
+        wyckoff_phase = "Phase D (BUEC / LPS Retest)"
+        phase_letter = 'D'
+        wyckoff_score = max(wyckoff_score, 89)
+        effort_result_bias = "Supply Exhaustion / VDU at Creek (Bullish)"
+
     # Case D1: Breaking / testing Creek on expanding volume (SOS / JAC)
     is_breaking_creek = (current_close >= creek * 0.992) or (float(prev1['Close']) >= creek * 0.992) or (max_recent_high >= creek * 1.005 and range_pos >= 80.0)
     high_volume_break = (rvol >= 1.15) or (float(prev1['RVOL']) >= 1.15) or ((recent_6['RVOL'] >= 1.25).any())
     bullish_spread = (clv >= 0.40) or (float(prev1['CLV']) >= 0.50) or (current_close >= creek * 0.995)
     
-    if is_breaking_creek and (high_volume_break or current_close >= creek) and bullish_spread and not detected_setups:
+    if has_sufficient_cause and is_breaking_creek and (high_volume_break or current_close >= creek) and bullish_spread and not detected_setups:
         confidence = 92 if rvol >= 1.6 else 85
         entry = round(current_close, 2)
         stop_loss = round(ice + 0.7 * height, 2)
@@ -792,12 +863,8 @@ def detect_wyckoff_setups(ticker, df):
         wyckoff_score = max(wyckoff_score, 90)
         effort_result_bias = "High Demand Effort, Strong Result (Bullish)"
 
-    # Case D2: Back-Up to the Edge of the Creek (BU / LPS)
-    prior_sos = any(df.iloc[-25:]['Close'] >= creek * 0.995) or any(df.iloc[-25:]['High'] >= creek * 1.005)
-    near_creek_support = (abs(current_close - creek) / (creek + 1e-6) <= 0.04) or (current_close >= creek * 0.96 and current_close <= creek * 1.04)
-    volume_digesting = (rvol <= 1.35 and spread_ratio <= 1.50) or (clv >= 0.35)
-    
-    if prior_sos and near_creek_support and volume_digesting and not detected_setups:
+    # Case D2b: Fallback Back-Up to the Edge of the Creek (BU / LPS) if not caught above
+    if has_sufficient_cause and prior_sos and near_creek_support and volume_digesting and not detected_setups:
         confidence = 88
         entry = round(current_close, 2)
         stop_loss = round(creek * 0.95, 2)
@@ -808,7 +875,7 @@ def detect_wyckoff_setups(ticker, df):
         
         detected_setups.append({
             'setup_key': 'lps',
-            'name': 'Last Point of Support (LPS)',
+            'name': 'Back-Up to Creek (BUEC / LPS)',
             'phase': 'Phase D (Back-Up Retest)',
             'phase_letter': 'D',
             'sub_type': 'Back-Up to Edge of Creek (BUEC)',
@@ -825,13 +892,13 @@ def detect_wyckoff_setups(ticker, df):
             'risk_reward': rr_ratio,
             'description': f"Low-risk continuation entry! Testing broken Creek resistance (${creek:.2f}) as new support on dry volume ({rvol:.2f}x). Confirms old resistance has flipped to support."
         })
-        wyckoff_phase = "Phase D (LPS Retest)"
+        wyckoff_phase = "Phase D (BUEC / LPS Retest)"
         phase_letter = 'D'
         wyckoff_score = max(wyckoff_score, 88)
-        effort_result_bias = "Supply Exhaustion / VDU (Bullish)"
+        effort_result_bias = "Supply Exhaustion / VDU at Creek (Bullish)"
 
-    # Case D3: Phase D Internal Markup Advance
-    advancing_upper_range = range_pos >= 65.0 and base_bars >= 15
+    # Case D3: Phase D Internal Markup Advance (requires mature cause)
+    advancing_upper_range = has_sufficient_cause and range_pos >= 65.0 and base_bars >= 42
     favorable_demand = (up_down_vol >= 1.05) or (current_close > sma20 and pos_in_52w >= 45.0)
     
     if advancing_upper_range and favorable_demand and not detected_setups:
@@ -867,8 +934,8 @@ def detect_wyckoff_setups(ticker, df):
         wyckoff_score = max(wyckoff_score, 82)
         effort_result_bias = "Demand Wave Dominance (Bullish)"
 
-    # Case D4: Phase D Upper Range Guardrail (Prevent Phase B false trapping)
-    if range_pos >= 78.0 and not detected_setups:
+    # Case D4: Phase D Upper Range Guardrail (requires mature cause)
+    if has_sufficient_cause and range_pos >= 78.0 and not detected_setups:
         confidence = 82
         entry = round(current_close, 2)
         stop_loss = round(ice + 0.65 * height, 2)
@@ -900,6 +967,40 @@ def detect_wyckoff_setups(ticker, df):
         phase_letter = 'D'
         wyckoff_score = max(wyckoff_score, 82)
         effort_result_bias = "Markup Advance / Supply Absorbed (Bullish)"
+
+    # Case B1: Young Base Advancing / Building Cause at Resistance
+    if not has_sufficient_cause and range_pos >= 60.0 and not detected_setups:
+        confidence = 82
+        entry = round(current_close, 2)
+        stop_loss = round(ice + 0.5 * height, 2)
+        risk = max(0.01, entry - stop_loss)
+        target1 = round(creek, 2)
+        target2 = round(pf_target_t1, 2)
+        rr_ratio = round((target1 - entry) / risk, 2) if risk > 0 else 2.4
+        
+        detected_setups.append({
+            'setup_key': 'absorption',
+            'name': 'Supply Absorption (Phase B)',
+            'phase': 'Phase B (Building Cause)',
+            'phase_letter': 'B',
+            'sub_type': 'Testing Resistance in Phase B',
+            'direction': 'BULLISH',
+            'confidence': confidence,
+            'entry': entry,
+            'stop_loss': stop_loss,
+            'target_1': target1,
+            'target_1_label': 'Creek Ceiling (T1)',
+            'target_2': target2,
+            'target_2_label': 'Conservative P&F (T2)',
+            'macro_pf_target': round(pf_target_t2, 2),
+            'macro_pf_gain': pf_gain_t2,
+            'risk_reward': rr_ratio,
+            'description': f"Developing accumulation base ({base_bars} bars / {cal_days}d). Stock completed its initial relief rally off Selling Climax (${ice:.2f}) to establish The Creek (${creek:.2f}) and is now building Phase B horizontal cause to absorb overhead floating supply."
+        })
+        wyckoff_phase = "Phase B (Absorption / Building Cause)"
+        phase_letter = 'B'
+        wyckoff_score = 78
+        effort_result_bias = "Phase B Cause Building / Supply Absorption"
 
     # =========================================================================
     # 6. ACCUMULATION: PHASE A - Stopping Action (SC / AR / ST Active)
@@ -1070,6 +1171,7 @@ def detect_wyckoff_setups(ticker, df):
 
 def compute_wyckoff_phase_progression(wyckoff_phase, setup_key, base_bars, current_close, creek, ice, phase_letter=None, direction='BULLISH'):
     """Computes Wyckoff Phase A-E progression, completion percentage, and active criteria with 100% phase synchronization and distinct Accumulation vs Distribution schematics."""
+    current_price = current_close
     if not phase_letter:
         if 'Phase E' in wyckoff_phase or setup_key in ['phase_e_markup', 'phase_e_markdown']:
             phase_letter = 'E'
@@ -1174,32 +1276,48 @@ def compute_wyckoff_phase_progression(wyckoff_phase, setup_key, base_bars, curre
             {'id': 'A', 'name': 'Phase A', 'role': 'Stopping Action', 'events': 'PS • SC • AR • ST'},
             {'id': 'B', 'name': 'Phase B', 'role': 'Building Cause', 'events': 'Absorption • TR'},
             {'id': 'C', 'name': 'Phase C', 'role': 'The Test', 'events': 'Spring • LPS Test'},
-            {'id': 'D', 'name': 'Phase D', 'role': 'Markup in Range', 'events': 'SOS • LPS • BU'},
+            {'id': 'D', 'name': 'Phase D', 'role': 'Markup in Range', 'events': 'SOS • BUEC / LPS'},
             {'id': 'E', 'name': 'Phase E', 'role': 'Runaway Trend', 'events': 'Expansion • Markup'}
         ]
 
         if phase_letter == 'E':
-            phase_title = 'Phase E (Unfolded Markup)'
+            phase_title = 'Phase E (Unfolded Markup Expansion)'
             progress_pct = 100
             desc = "Runaway markup phase underway outside and above the accumulation base in open market expansion."
             checklist = [
                 {'title': 'Phase A: Stopping Action (SC/AR/ST)', 'done': True},
                 {'title': 'Phase B: Horizontal Cause Built', 'done': True},
                 {'title': 'Phase C: Boundary Test Confirmed', 'done': True},
-                {'title': 'Phase D: Creek Absorption & Breakout', 'done': True},
+                {'title': 'Phase D: Jump Across Creek (SOS / JAC)', 'done': True},
+                {'title': 'Phase D: Back-Up to Creek (BUEC / LPS)', 'done': True},
                 {'title': 'Phase E: Sustained Markup Trend', 'done': True, 'active': True}
             ]
         elif phase_letter == 'D':
-            phase_title = 'Phase D (Transition to Markup)'
-            progress_pct = 85
-            desc = "Demand has overcome supply. Price jumping across or backing up to Creek support inside the range."
-            checklist = [
-                {'title': 'Phase A: Stopping Action (SC/AR/ST)', 'done': True},
-                {'title': 'Phase B: Horizontal Cause Built', 'done': True},
-                {'title': 'Phase C: Boundary Test Confirmed', 'done': True},
-                {'title': 'Phase D: Breakout Across Creek (SOS)', 'done': True, 'active': True},
-                {'title': 'Phase E: Sustained Markup Trend', 'done': False}
-            ]
+            is_buec = (setup_key in ['lps', 'buec']) or (current_price <= creek * 1.035 and setup_key != 'markup_advance')
+            if is_buec:
+                phase_title = 'Phase D (Back-Up to Creek - BUEC / LPS)'
+                progress_pct = 90
+                desc = "Demand has overcome supply. Price completed the Jump Across The Creek (SOS / JAC) and is now executing a Back-Up to Creek / Last Point of Support (BUEC / LPS) retest to confirm Creek as new support."
+                checklist = [
+                    {'title': 'Phase A: Stopping Action (SC/AR/ST)', 'done': True},
+                    {'title': 'Phase B: Horizontal Cause Built', 'done': True},
+                    {'title': 'Phase C: Boundary Test Confirmed', 'done': True},
+                    {'title': 'Phase D: Jump Across Creek (SOS / JAC)', 'done': True},
+                    {'title': 'Phase D: Back-Up to Creek (BUEC / LPS)', 'done': True, 'active': True},
+                    {'title': 'Phase E: Sustained Markup Trend', 'done': False}
+                ]
+            else:
+                phase_title = 'Phase D (Jump Across Creek - SOS / JAC)'
+                progress_pct = 82
+                desc = "Demand has overcome supply. Price is staging a high-momentum Sign of Strength (SOS / JAC) breakout across The Creek resistance."
+                checklist = [
+                    {'title': 'Phase A: Stopping Action (SC/AR/ST)', 'done': True},
+                    {'title': 'Phase B: Horizontal Cause Built', 'done': True},
+                    {'title': 'Phase C: Boundary Test Confirmed', 'done': True},
+                    {'title': 'Phase D: Jump Across Creek (SOS / JAC)', 'done': True, 'active': True},
+                    {'title': 'Phase D: Back-Up to Creek (BUEC / LPS)', 'done': False},
+                    {'title': 'Phase E: Sustained Markup Trend', 'done': False}
+                ]
         elif phase_letter == 'C':
             phase_title = 'Phase C (The Definitive Test)'
             progress_pct = 70
@@ -1208,7 +1326,8 @@ def compute_wyckoff_phase_progression(wyckoff_phase, setup_key, base_bars, curre
                 {'title': 'Phase A: Stopping Action (SC/AR/ST)', 'done': True},
                 {'title': 'Phase B: Horizontal Cause Built', 'done': True},
                 {'title': 'Phase C: Boundary Test Active', 'done': True, 'active': True},
-                {'title': 'Phase D: Breakout Across Creek', 'done': False},
+                {'title': 'Phase D: Jump Across Creek (SOS / JAC)', 'done': False},
+                {'title': 'Phase D: Back-Up to Creek (BUEC / LPS)', 'done': False},
                 {'title': 'Phase E: Sustained Markup Trend', 'done': False}
             ]
         elif phase_letter == 'A':
@@ -1219,7 +1338,8 @@ def compute_wyckoff_phase_progression(wyckoff_phase, setup_key, base_bars, curre
                 {'title': 'Phase A: Stopping Action (SC/AR/ST)', 'done': True, 'active': True},
                 {'title': 'Phase B: Horizontal Cause Building', 'done': False},
                 {'title': 'Phase C: Boundary Supply Test', 'done': False},
-                {'title': 'Phase D: Breakout Across Creek', 'done': False},
+                {'title': 'Phase D: Jump Across Creek (SOS / JAC)', 'done': False},
+                {'title': 'Phase D: Back-Up to Creek (BUEC / LPS)', 'done': False},
                 {'title': 'Phase E: Sustained Markup Trend', 'done': False}
             ]
         else: # Phase B
@@ -1230,7 +1350,8 @@ def compute_wyckoff_phase_progression(wyckoff_phase, setup_key, base_bars, curre
                 {'title': 'Phase A: Stopping Action (SC/AR/ST)', 'done': True},
                 {'title': 'Phase B: Horizontal Cause Building', 'done': True, 'active': True},
                 {'title': 'Phase C: Boundary Supply Test', 'done': False},
-                {'title': 'Phase D: Breakout Across Creek', 'done': False},
+                {'title': 'Phase D: Jump Across Creek (SOS / JAC)', 'done': False},
+                {'title': 'Phase D: Back-Up to Creek (BUEC / LPS)', 'done': False},
                 {'title': 'Phase E: Sustained Markup Trend', 'done': False}
             ]
 
@@ -1270,62 +1391,66 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
     lows = df['Low'].values
     closes = df['Close'].values
     
-    # 1. Base Onset marker
+    # 1. Base Window & Phase A Stopping Action Detection
     onset_idx = max(0, len(df) - base_bars)
-    if onset_idx < len(df):
-        markers.append({
-            'index': onset_idx,
-            'date': df.iloc[onset_idx]['Date'].strftime('%Y-%m-%d'),
-            'price': round(float(highs[onset_idx] if is_distribution else lows[onset_idx]), 2),
-            'label': 'DIST ONSET' if is_distribution else 'ACCUM ONSET',
-            'name': 'Distribution Window Anchor' if is_distribution else 'Accumulation Anchor',
-            'position': 'above' if is_distribution else 'below',
-            'color': '#f59e0b' if is_distribution else '#38bdf8'
-        })
-
-    # 2. Phase A Stopping Action Detection within Base Window
     base_window = df.iloc[onset_idx:].reset_index(drop=True)
     if len(base_window) >= 6:
         if is_distribution:
             # DISTRIBUTION: Phase A stops the prior uptrend (PSY -> BC -> AR -> ST)
-            # Find Buying Climax (BC) - highest high in the early window
-            bc_search_len = max(5, int(len(base_window) * 0.70))
+            # Find Buying Climax (BC) in early window of base
+            bc_search_len = max(5, int(len(base_window) * 0.50))
             bc_local_idx = int(base_window.iloc[:bc_search_len]['High'].idxmax())
             bc_global_idx = onset_idx + bc_local_idx
             bc_date = df.iloc[bc_global_idx]['Date'].strftime('%Y-%m-%d')
             bc_price = round(float(highs[bc_global_idx]), 2)
 
-            if bc_global_idx != onset_idx:
+            # Always mark Buying Climax (BC)
+            markers.append({
+                'index': bc_global_idx,
+                'date': bc_date,
+                'price': bc_price,
+                'label': 'BC',
+                'name': 'Buying Climax',
+                'position': 'above',
+                'color': '#ef4444'
+            })
+
+            # Base onset anchor only if separated from BC by at least 5 bars
+            if bc_global_idx - onset_idx >= 5:
                 markers.append({
-                    'index': bc_global_idx,
-                    'date': bc_date,
-                    'price': bc_price,
-                    'label': 'BC',
-                    'name': 'Buying Climax',
+                    'index': onset_idx,
+                    'date': df.iloc[onset_idx]['Date'].strftime('%Y-%m-%d'),
+                    'price': round(float(highs[onset_idx]), 2),
+                    'label': 'DIST ONSET',
+                    'name': 'Distribution Window Anchor',
                     'position': 'above',
-                    'color': '#ef4444'
+                    'color': '#f59e0b'
                 })
 
-            # Preliminary Supply (PSY) in 5-15 bars before BC
-            psy_search_start = max(0, bc_global_idx - 14)
-            psy_search_end = max(0, bc_global_idx - 2)
+            # Preliminary Supply (PSY) before BC: Must have High < BC_price
+            psy_search_start = max(0, bc_global_idx - 20)
+            psy_search_end = max(0, bc_global_idx - 1)
             if psy_search_end > psy_search_start:
                 pre_window = df.iloc[psy_search_start:psy_search_end]
-                high_vol_bars = pre_window[pre_window['RVOL'] >= 1.25]
-                if not high_vol_bars.empty:
-                    psy_bar = high_vol_bars.iloc[-1]
-                    psy_idx = int(psy_bar.name)
+                # ENFORCE: PSY high must be strictly less than BC high
+                valid_psy_bars = pre_window[pre_window['High'] < bc_price]
+                if not valid_psy_bars.empty:
+                    # Pick high volume or peak swing high before BC
+                    high_vol = valid_psy_bars[valid_psy_bars['RVOL'] >= 1.15]
+                    target_bars = high_vol if not high_vol.empty else valid_psy_bars
+                    psy_idx = int(target_bars['High'].idxmax())
                     markers.append({
                         'index': psy_idx,
-                        'date': psy_bar['Date'].strftime('%Y-%m-%d'),
-                        'price': round(float(psy_bar['High']), 2),
+                        'date': df.iloc[psy_idx]['Date'].strftime('%Y-%m-%d'),
+                        'price': round(float(highs[psy_idx]), 2),
                         'label': 'PSY',
                         'name': 'Preliminary Supply',
                         'position': 'above',
                         'color': '#f59e0b'
                     })
 
-            # Automatic Reaction (AR) following BC
+            # Automatic Reaction (AR) following BC:
+            # AR is established as the reaction drop directly reacting off BC
             ar_search_start = bc_global_idx + 1
             ar_search_end = min(len(df) - 1, bc_global_idx + 18)
             if ar_search_end > ar_search_start:
@@ -1345,7 +1470,7 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
 
                 # Secondary Test (ST) following AR
                 st_search_start = ar_idx + 1
-                st_search_end = min(len(df) - 1, ar_idx + 16)
+                st_search_end = min(len(df) - 1, ar_idx + 20)
                 if st_search_end > st_search_start:
                     post_ar = df.iloc[st_search_start:st_search_end]
                     st_idx = int(post_ar['High'].idxmax())
@@ -1363,43 +1488,61 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
 
         else:
             # ACCUMULATION: Phase A stops the prior downtrend (PS -> SC -> AR -> ST)
-            sc_local_idx = int(base_window['Low'].idxmin())
+            # Find Selling Climax (SC) in early window of base (avoiding Phase C Springs)
+            sc_search_len = max(6, int(len(base_window) * 0.50))
+            sc_local_idx = int(base_window.iloc[:sc_search_len]['Low'].idxmin())
             sc_global_idx = onset_idx + sc_local_idx
             sc_date = df.iloc[sc_global_idx]['Date'].strftime('%Y-%m-%d')
             sc_price = round(float(lows[sc_global_idx]), 2)
             
-            # Add SC marker if not overlapping with Base Onset or within 1 bar
-            if sc_global_idx != onset_idx:
+            # Always mark Selling Climax (SC)
+            markers.append({
+                'index': sc_global_idx,
+                'date': sc_date,
+                'price': sc_price,
+                'label': 'SC',
+                'name': 'Selling Climax',
+                'position': 'below',
+                'color': '#ef4444'
+            })
+
+            # Base onset anchor only if separated from SC by at least 5 bars
+            if sc_global_idx - onset_idx >= 5:
                 markers.append({
-                    'index': sc_global_idx,
-                    'date': sc_date,
-                    'price': sc_price,
-                    'label': 'SC',
-                    'name': 'Selling Climax',
+                    'index': onset_idx,
+                    'date': df.iloc[onset_idx]['Date'].strftime('%Y-%m-%d'),
+                    'price': round(float(lows[onset_idx]), 2),
+                    'label': 'ACCUM ONSET',
+                    'name': 'Accumulation Anchor',
                     'position': 'below',
-                    'color': '#ef4444'
+                    'color': '#38bdf8'
                 })
                 
-            # Check for Preliminary Support (PS) in the 5-15 bars before SC
-            ps_search_start = max(0, sc_global_idx - 14)
-            ps_search_end = max(0, sc_global_idx - 2)
+            # Preliminary Support (PS) before SC:
+            # ENFORCE: SC MUST be a lower low than PS (i.e. PS low > SC low)
+            ps_search_start = max(0, sc_global_idx - 20)
+            ps_search_end = max(0, sc_global_idx - 1)
             if ps_search_end > ps_search_start:
                 pre_window = df.iloc[ps_search_start:ps_search_end]
-                high_vol_bars = pre_window[pre_window['RVOL'] >= 1.25]
-                if not high_vol_bars.empty:
-                    ps_bar = high_vol_bars.iloc[-1]
-                    ps_idx = int(ps_bar.name)
+                # ENFORCE STRICT RULE: PS low must be strictly greater than SC low
+                valid_ps_bars = pre_window[pre_window['Low'] > sc_price]
+                if not valid_ps_bars.empty:
+                    # Pick high RVOL bar or swing low where initial demand emerged before SC
+                    high_vol = valid_ps_bars[valid_ps_bars['RVOL'] >= 1.15]
+                    target_bars = high_vol if not high_vol.empty else valid_ps_bars
+                    ps_idx = int(target_bars['Low'].idxmin())
                     markers.append({
                         'index': ps_idx,
-                        'date': ps_bar['Date'].strftime('%Y-%m-%d'),
-                        'price': round(float(ps_bar['Low']), 2),
+                        'date': df.iloc[ps_idx]['Date'].strftime('%Y-%m-%d'),
+                        'price': round(float(lows[ps_idx]), 2),
                         'label': 'PS',
                         'name': 'Preliminary Support',
                         'position': 'below',
                         'color': '#f59e0b'
                     })
                     
-            # Find Automatic Rally (AR) following SC (within 18 bars after SC)
+            # Automatic Rally (AR) following SC:
+            # AR is established as the reaction rally directly following SC (peak of initial relief surge)
             ar_search_start = sc_global_idx + 1
             ar_search_end = min(len(df) - 1, sc_global_idx + 18)
             if ar_search_end > ar_search_start:
@@ -1417,9 +1560,10 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
                     'color': '#10b981'
                 })
                 
-                # Find Secondary Test (ST) following AR (within 16 bars after AR)
+                # Secondary Test (ST) following AR:
+                # ST tests supply by pulling back from AR towards SC
                 st_search_start = ar_idx + 1
-                st_search_end = min(len(df) - 1, ar_idx + 16)
+                st_search_end = min(len(df) - 1, ar_idx + 20)
                 if st_search_end > st_search_start:
                     post_ar = df.iloc[st_search_start:st_search_end]
                     st_idx = int(post_ar['Low'].idxmin())
@@ -1434,6 +1578,16 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
                         'position': 'below',
                         'color': '#38bdf8'
                     })
+    elif onset_idx < len(df):
+        markers.append({
+            'index': onset_idx,
+            'date': df.iloc[onset_idx]['Date'].strftime('%Y-%m-%d'),
+            'price': round(float(highs[onset_idx] if is_distribution else lows[onset_idx]), 2),
+            'label': 'DIST ONSET' if is_distribution else 'ACCUM ONSET',
+            'name': 'Distribution Window Anchor' if is_distribution else 'Accumulation Anchor',
+            'position': 'above' if is_distribution else 'below',
+            'color': '#f59e0b' if is_distribution else '#38bdf8'
+        })
 
     # 3. Setup Specific Markers on Recent Action
     last_idx = len(df) - 1
@@ -1441,11 +1595,20 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
     p_setup = setup_result['primary_setup']
     p_key = p_setup.get('setup_key', '')
     
-    if p_key == 'spring':
+    if p_key in ['spring', 'phase_d_post_spring']:
+        spring_date = p_setup.get('spring_bar_date', last_date)
+        # Match by date string in sliced df if present, otherwise fallback
+        date_matches = df[df['Date'].astype(str).str.contains(spring_date)] if 'Date' in df.columns else []
+        if len(date_matches) > 0:
+            spring_idx = int(df.index.get_loc(date_matches.index[0]))
+        else:
+            spring_idx = min(last_idx, max(0, p_setup.get('spring_bar_idx', last_idx)))
+        spring_low = p_setup.get('spring_bar_low', round(float(df.iloc[spring_idx]['Low']), 2))
+        
         markers.append({
-            'index': last_idx,
-            'date': last_date,
-            'price': round(float(df.iloc[-1]['Low']), 2),
+            'index': spring_idx,
+            'date': spring_date,
+            'price': spring_low,
             'label': 'SPRING',
             'name': 'Spring / Shakeout',
             'position': 'below',
@@ -1461,26 +1624,105 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
             'position': 'below',
             'color': '#a855f7'
         })
-    elif p_key == 'sos':
-        markers.append({
-            'index': last_idx,
-            'date': last_date,
-            'price': round(float(df.iloc[-1]['High']), 2),
-            'label': 'SOS / JAC',
-            'name': 'Jump Across The Creek',
-            'position': 'above',
-            'color': '#3b82f6'
-        })
-    elif p_key == 'lps':
-        markers.append({
-            'index': last_idx,
-            'date': last_date,
-            'price': round(float(df.iloc[-1]['Low']), 2),
-            'label': 'BU / LPS',
-            'name': 'Back-Up to Creek',
-            'position': 'below',
-            'color': '#c084fc'
-        })
+    elif p_key in ['sos', 'lps']:
+        # Phase D (SOS / JAC & BUEC / LPS) occurs strictly AFTER Phase A and intervening Phase B cause.
+        # Find where Phase A finished (ST or AR) so we don't accidentally pick Phase A candles.
+        st_marker = next((m for m in markers if m['label'] == 'ST'), None)
+        ar_marker = next((m for m in markers if m['label'] == 'AR'), None)
+        
+        if st_marker:
+            phase_d_start = st_marker['index'] + 1
+        elif ar_marker:
+            phase_d_start = ar_marker['index'] + 12
+        else:
+            phase_d_start = max(0, len(df) - 30)
+        
+        # Ensure valid non-empty window
+        phase_d_start = min(phase_d_start, len(df) - 2)
+        post_phase_a = df.iloc[phase_d_start:]
+        
+        if len(post_phase_a) >= 2:
+            if p_key == 'lps':
+                # Back-Up to Creek (BUEC / LPS): Stock made a prior Jump Across Creek (SOS), followed by a pullback retest (LPS)
+                # 1. Identify prior SOS Jump Across Creek before recent retest
+                prior_window = post_phase_a.iloc[:-2] if len(post_phase_a) >= 5 else post_phase_a
+                creek_candidates = prior_window[prior_window['High'] >= creek * 0.97]
+                if not creek_candidates.empty:
+                    sos_global_idx = int(creek_candidates['High'].idxmax())
+                else:
+                    sos_global_idx = int(prior_window['High'].idxmax())
+                
+                sos_high = round(float(df.iloc[sos_global_idx]['High']), 2)
+                sos_date = df.iloc[sos_global_idx]['Date'].strftime('%Y-%m-%d')
+                
+                markers.append({
+                    'index': sos_global_idx,
+                    'date': sos_date,
+                    'price': sos_high,
+                    'label': 'SOS / JAC',
+                    'name': 'Jump Across The Creek',
+                    'position': 'above',
+                    'color': '#3b82f6'
+                })
+                
+                # 2. Identify the Back-Up (BUEC / LPS) pullback low following the SOS jump
+                if sos_global_idx < last_idx:
+                    post_sos = df.iloc[sos_global_idx + 1:]
+                    lps_global_idx = int(post_sos['Low'].idxmin())
+                    lps_low = round(float(df.iloc[lps_global_idx]['Low']), 2)
+                    lps_date = df.iloc[lps_global_idx]['Date'].strftime('%Y-%m-%d')
+                    
+                    markers.append({
+                        'index': lps_global_idx,
+                        'date': lps_date,
+                        'price': lps_low,
+                        'label': 'BUEC / LPS',
+                        'name': 'Back-Up to Creek (LPS)',
+                        'position': 'below',
+                        'color': '#a855f7'
+                    })
+                else:
+                    markers.append({
+                        'index': last_idx,
+                        'date': last_date,
+                        'price': round(float(df.iloc[-1]['Low']), 2),
+                        'label': 'BUEC / LPS',
+                        'name': 'Back-Up to Creek (LPS)',
+                        'position': 'below',
+                        'color': '#a855f7'
+                    })
+            else:
+                # Sign of Strength (SOS / JAC Breakout):
+                sos_global_idx = int(post_phase_a['High'].idxmax())
+                sos_high = round(float(df.iloc[sos_global_idx]['High']), 2)
+                sos_date = df.iloc[sos_global_idx]['Date'].strftime('%Y-%m-%d')
+                
+                markers.append({
+                    'index': sos_global_idx,
+                    'date': sos_date,
+                    'price': sos_high,
+                    'label': 'SOS / JAC',
+                    'name': 'Jump Across The Creek',
+                    'position': 'above',
+                    'color': '#3b82f6'
+                })
+                
+                # If price consolidated or pulled back after the initial breakout jump
+                if sos_global_idx < last_idx:
+                    post_sos = df.iloc[sos_global_idx + 1:]
+                    lps_global_idx = int(post_sos['Low'].idxmin())
+                    lps_low = round(float(df.iloc[lps_global_idx]['Low']), 2)
+                    lps_date = df.iloc[lps_global_idx]['Date'].strftime('%Y-%m-%d')
+                    
+                    markers.append({
+                        'index': lps_global_idx,
+                        'date': lps_date,
+                        'price': lps_low,
+                        'label': 'BUEC / LPS',
+                        'name': 'Back-Up to Creek (LPS)',
+                        'position': 'below',
+                        'color': '#a855f7'
+                    })
     elif p_key == 'markup_advance':
         markers.append({
             'index': last_idx,

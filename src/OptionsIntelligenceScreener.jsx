@@ -68,6 +68,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [deepAnalytics, setDeepAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState(null);
   const [modalTab, setModalTab] = useState('ai_recommendation'); // 'ai_recommendation', 'greeks_matrix', 'trends_30d', 'strike_curve', 'term_structure', 'unusual'
   const [trendViewMode, setTrendViewMode] = useState('all'); // 'all', 'price_pain', 'oi', 'vol', 'iv_skew', 'gex'
   const [hoveredHistoryIndex, setHoveredHistoryIndex] = useState(null);
@@ -159,6 +160,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
   // 4. One-Click Deep Analytics Fetch (0ms Instant Cache Hit)
   const handleOpenDeepAnalytics = async (ticker, preferredTab = null) => {
     setSelectedTicker(ticker);
+    setAnalyticsError(null);
     if (preferredTab) {
       setModalTab(preferredTab);
     }
@@ -173,12 +175,17 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
     setLoadingAnalytics(true);
     try {
       const res = await fetch(`/api/options_screener/deep_analytics?ticker=${ticker}`);
-      if (!res.ok) throw new Error('Failed to load deep analytics');
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}: Failed to load deep analytics`);
+      }
       const json = await res.json();
       analyticsCache.current[ticker] = json;
       setDeepAnalytics(json);
+      setAnalyticsError(null);
     } catch (err) {
       console.error('Error fetching ticker deep options analytics:', err);
+      setAnalyticsError(err.message);
     } finally {
       setLoadingAnalytics(false);
     }
@@ -926,6 +933,21 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                 <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>
                   <RefreshCw size={32} className="spin-slow" style={{ margin: '0 auto 1rem', display: 'block', color: '#38bdf8' }} />
                   Synthesizing real-time CBOE Greeks, 30-day volatility surface, and AI Playbook for ${selectedTicker}...
+                </div>
+              ) : analyticsError && !deepAnalytics ? (
+                <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', margin: '1rem' }}>
+                  <AlertTriangle size={36} style={{ margin: '0 auto 1rem', display: 'block', color: '#ef4444' }} />
+                  <h4 style={{ color: '#f87171', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Options Intelligence Synthesis Failed</h4>
+                  <p style={{ maxWidth: '500px', margin: '0 auto 1.5rem', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                    {analyticsError}
+                  </p>
+                  <button 
+                    className="action-btn"
+                    onClick={() => handleOpenDeepAnalytics(selectedTicker)}
+                    style={{ background: '#38bdf8', color: '#0f172a', fontWeight: 600, padding: '0.5rem 1.25rem' }}
+                  >
+                    <RefreshCw size={14} style={{ marginRight: '6px' }} /> Retry Analysis
+                  </button>
                 </div>
               ) : (
                 <>

@@ -1015,25 +1015,27 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                             <Zap size={22} color="#fbbf24" />
                             <div>
                               <h4>⚡ Institutional Undercut & Rally (U&R) Shakeout Active!</h4>
-                              <p>Base support low (${activeStock.ur_info.shakeout_low}) was undercut by {activeStock.ur_info.undercut_pct}% and swiftly reclaimed. High R/R early entry pivot inside the base before the main breakout ceiling!</p>
+                              <p>
+                                Prior support low (${activeStock.ur_info.prior_low || activeStock.ur_info.ur_prior_low || activeStock.ur_info.shakeout_low}) was undercut by {activeStock.ur_info.undercut_pct ?? ((( (activeStock.ur_info.ur_prior_low || 1) - (activeStock.ur_info.ur_shakeout_low || 1) ) / (activeStock.ur_info.ur_prior_low || 1) * 100).toFixed(1))}% down to ${activeStock.ur_info.shakeout_low || activeStock.ur_info.ur_shakeout_low} and swiftly reclaimed. High R/R early entry pivot inside the base before the main breakout ceiling!
+                              </p>
                             </div>
                           </div>
                           <div className="sc-ur-details-grid">
                             <div className="sc-ur-detail">
                               <span>Early U&R Pivot:</span>
-                              <strong style={{ color: '#10b981' }}>${activeStock.ur_info.undercut_pivot}</strong>
+                              <strong style={{ color: '#10b981' }}>${activeStock.ur_info.undercut_pivot || activeStock.ur_info.ur_pivot_price}</strong>
                             </div>
                             <div className="sc-ur-detail">
                               <span>Shakeout Low Floor:</span>
-                              <strong style={{ color: '#ef4444' }}>${activeStock.ur_info.shakeout_low}</strong>
+                              <strong style={{ color: '#ef4444' }}>${activeStock.ur_info.shakeout_low || activeStock.ur_info.ur_shakeout_low || activeStock.ur_info.ur_stop_price}</strong>
                             </div>
                             <div className="sc-ur-detail">
                               <span>Headstart to Ceiling:</span>
-                              <strong style={{ color: '#38bdf8' }}>+{activeStock.ur_info.gain_to_base_high}%</strong>
+                              <strong style={{ color: '#38bdf8' }}>+{activeStock.ur_info.gain_to_base_high || 0}%</strong>
                             </div>
                             <div className="sc-ur-detail">
                               <span>Action Directive:</span>
-                              <strong>{activeStock.ur_info.action_note}</strong>
+                              <strong>{activeStock.ur_info.action_note || activeStock.ur_info.ur_description || `Enter near $${activeStock.ur_info.ur_pivot_price} | Hard Stop @ $${activeStock.ur_info.ur_shakeout_low}`}</strong>
                             </div>
                           </div>
                         </div>

@@ -31,6 +31,7 @@ export default function GannScreener() {
   const [activeStock, setActiveStock] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalTab, setModalTab] = useState('CHART');
+  const [sq9Tab, setSq9Tab] = useState('ALL'); // 'ALL' | 'RESISTANCE' | 'SUPPORT'
   const [selectedMatrixCell, setSelectedMatrixCell] = useState(null);
 
   // Fetch summary on load

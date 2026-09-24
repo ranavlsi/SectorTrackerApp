@@ -2,7 +2,8 @@ import os
 import json
 import time
 import sqlite3
-from datetime import datetime
+import datetime
+from datetime import datetime, date, timedelta
 import numpy as np
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
@@ -880,9 +881,9 @@ def get_deep_options_analytics(ticker):
     term_structure = gex_data.get("term_structure", [])
     if not term_structure and spot_price > 0:
         dtes = [7, 14, 21, 30, 45, 60, 90, 120, 180, 360]
-        today_date = datetime.date.today()
+        today_date = date.today()
         for d in dtes:
-            exp_str = (today_date + datetime.timedelta(days=d)).strftime('%Y-%m-%d')
+            exp_str = (today_date + timedelta(days=d)).strftime('%Y-%m-%d')
             slope_est = math.log(d / 30.0) * 2.2
             cycle_iv = max(15.0, round(atm_iv + slope_est, 1))
             cycle_gex = round((net_gex / 1e6) * math.exp(-d / 120.0), 2)

@@ -398,7 +398,7 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
         BREAKOUT_SCREENERS = {
             'Fresh 52W High', 'All Time High', 'Bull Flag Breakout', 'Breakout Retest',
             'Earnings Surge', 'Qullamaggie Setup', 'Regression Channel Breakout',
-            'Chop Incubation Leaders', 'Darvas Strong'
+            'Chop Incubation Leaders', 'Darvas Strong', 'Deepvue Launchpad'
         }
         is_breakout_screener = any(sc in BREAKOUT_SCREENERS for sc in screeners) or ('Triggered' in metric)
 
@@ -596,10 +596,14 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
                 'msg': f"🚨 PRE-FIRE RADAR: ${t} is IMMINENT! Only {dist_to_pivot:.1f}% to Pivot (${pivot_price:.2f}) with {vol_ratio}x Volume Pace and {readiness_score}/100 Readiness! Setup: {screeners[0]}."
             })
         elif prev_status != status and status in ('TRIGGERED', 'TARGET_HIT', 'TARGET_2_HIT', 'STOPPED_OUT'):
+            if 'Deepvue Launchpad' in screeners and status == 'TRIGGERED':
+                alert_msg = f"🚀 DEEPVUE LAUNCHPAD TRIGGERED: ${t} clearing 3-day pivot (${pivot_price:.2f}) on {vol_ratio}x volume! Target: ${target_1:.2f} · Stop: ${stop_loss:.2f}."
+            else:
+                alert_msg = f"🎯 SCREENER MONITOR: ${t} {status_label}! Current: ${price:.2f} ({gain_pct:+.1f}% from alert). Setup: {screeners[0]}."
             new_alerts.append({
                 'ticker': t,
                 'status': status,
-                'msg': f"🎯 SCREENER MONITOR: ${t} {status_label}! Current: ${price:.2f} ({gain_pct:+.1f}% from alert). Setup: {screeners[0]}."
+                'msg': alert_msg
             })
 
         total_dist = max(target_1 - alert_price, 0.01)

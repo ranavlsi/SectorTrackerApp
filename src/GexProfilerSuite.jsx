@@ -201,8 +201,12 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
       if (!hmap || !hmap.expirations || !hmap.strikes || hmap.strikes.length === 0) return;
 
       let zValues = hmap.combined_grid;
-      let labelPrefix = 'Combined Hedge Flow';
-      if (hedgeHeatmapLens === 'dex') {
+      let labelPrefix = 'Combined Net Flow';
+      const isGexLens = hedgeHeatmapLens === 'gex';
+      if (hedgeHeatmapLens === 'gex') {
+        zValues = hmap.gex_grid;
+        labelPrefix = 'Gamma Exposure (GEX)';
+      } else if (hedgeHeatmapLens === 'dex') {
         zValues = hmap.delta_grid;
         labelPrefix = 'Delta Pressure';
       } else if (hedgeHeatmapLens === 'cex') {
@@ -227,14 +231,21 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
       const activeStrikes = filteredStrikes.length > 0 ? filteredStrikes : hmap.strikes;
       const activeZ = (filteredStrikes.length > 0 ? strikeIndices.map(i => zValues[i]) : zValues) || [];
 
-      // Construct custom rich hover text matrix with explicit Buy / Sell directives
+      // Construct custom rich hover text matrix with explicit Buy / Sell / Gamma directives
       const hoverText = activeStrikes.map((st, sIdx) => {
         return hmap.expirations.map((exp, eIdx) => {
           const val = activeZ[sIdx]?.[eIdx] || 0;
-          const isBuy = val >= 0;
-          const actionStr = isBuy 
-            ? '🟢 DEALER BUY ZONE (Support Floor · Buy Stocks / Calls)' 
-            : '🔴 DEALER SELL ZONE (Resistance Ceiling · Sell / Short / Trim)';
+          const isPos = val >= 0;
+          let actionStr = '';
+          if (isGexLens) {
+            actionStr = isPos
+              ? '🟢 POSITIVE GAMMA (Volatility Dampening · Pinning / Mean-Reverting Floor)'
+              : '🔴 NEGATIVE GAMMA (Volatility Acceleration · Breakout / Trending Zone)';
+          } else {
+            actionStr = isPos
+              ? '🟢 DEALER BUY ZONE (Support Floor · Buy Stocks / Calls)'
+              : '🔴 DEALER SELL ZONE (Resistance Ceiling · Sell / Short / Trim)';
+          }
           const valFormatted = `${val >= 0 ? '+' : ''}$${val.toFixed(1)}M`;
           const distPct = (((st - spotVal) / spotVal) * 100).toFixed(1);
           return `<b>Strike Price: $${st}</b> (${distPct >= 0 ? '+' : ''}${distPct}% from Spot)<br>` +
@@ -1709,6 +1720,13 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                   <span className="gex-trace-lens-label">HEDGE LENS:</span>
                   <button
                     type="button"
+                    onClick={() => setHedgeHeatmapLens('gex')}
+                    className={`gex-trace-lens-btn ${hedgeHeatmapLens === 'gex' ? 'active gex' : ''}`}
+                  >
+                    📊 Gamma Exposure (GEX)
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setHedgeHeatmapLens('combined')}
                     className={`gex-trace-lens-btn ${hedgeHeatmapLens === 'combined' ? 'active' : ''}`}
                   >
@@ -1946,7 +1964,13 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                 {hedgeHeatmapViewMode === 'table' && (
                   <div className="gex-heatmap-matrix-wrapper">
                     {(() => {
-                      const activeMatrix = hedgeHeatmapLens === 'dex' ? deltaMatrix : (hedgeHeatmapLens === 'cex' ? charmMatrix : deltaMatrix);
+                      const activeMatrix = hedgeHeatmapLens === 'gex'
+                        ? matrixData
+                        : (hedgeHeatmapLens === 'dex'
+                            ? deltaMatrix
+                            : (hedgeHeatmapLens === 'cex'
+                                ? charmMatrix
+                                : (data?.combined_matrix || data?.hedge_pressure_map?.combined_matrix || deltaMatrix)));
                       const expKeys = (data?.hedge_pressure_map?.expirations || expirations).slice(0, 8);
                       if (!activeMatrix || activeMatrix.length === 0) {
                         return <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>Loading multi-lens Greek matrix...</div>;

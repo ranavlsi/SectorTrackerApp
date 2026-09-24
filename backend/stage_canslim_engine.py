@@ -315,10 +315,25 @@ def detect_undercut_and_rally(df_daily):
     Price breaks below a prior swing low by 0.5% - 3.5%, traps bears, and closes back above it within 1-3 bars.
     """
     if len(df_daily) < 40:
-        return {"has_ur_setup": False, "ur_pivot_price": None, "ur_stop_price": None, "ur_description": "None"}
+        return {
+            "has_ur_setup": False,
+            "ur_prior_low": None,
+            "prior_low": None,
+            "ur_shakeout_low": None,
+            "shakeout_low": None,
+            "ur_pivot_price": None,
+            "undercut_pivot": None,
+            "ur_stop_price": None,
+            "stop_price": None,
+            "undercut_pct": 0.0,
+            "gain_to_base_high": 0.0,
+            "action_note": "None",
+            "ur_description": "None"
+        }
 
     recent = df_daily.iloc[-40:].copy().reset_index(drop=True)
     lows = recent['Low'].values
+    highs = recent['High'].values
     closes = recent['Close'].values
     vols = recent['Volume'].values
 
@@ -331,7 +346,21 @@ def detect_undercut_and_rally(df_daily):
             prior_low_val = lows[i]
 
     if prior_low_idx is None:
-        return {"has_ur_setup": False, "ur_pivot_price": None, "ur_stop_price": None, "ur_description": "None"}
+        return {
+            "has_ur_setup": False,
+            "ur_prior_low": None,
+            "prior_low": None,
+            "ur_shakeout_low": None,
+            "shakeout_low": None,
+            "ur_pivot_price": None,
+            "undercut_pivot": None,
+            "ur_stop_price": None,
+            "stop_price": None,
+            "undercut_pct": 0.0,
+            "gain_to_base_high": 0.0,
+            "action_note": "None",
+            "ur_description": "None"
+        }
 
     # Look for subsequent undercut in last 6 bars
     has_ur = False
@@ -350,12 +379,24 @@ def detect_undercut_and_rally(df_daily):
 
     desc = f"Institutional Shakeout (Undercut ${round(prior_low_val, 2)} -> Reclaimed @ ${reclaim_price})" if has_ur else "No Active U&R Shakeout"
 
+    undercut_pct = float(round(((prior_low_val - shakeout_low) / prior_low_val) * 100, 1)) if (has_ur and prior_low_val > 0 and shakeout_low) else 0.0
+    base_high = float(highs.max())
+    gain_to_base_high = float(round(((base_high - reclaim_price) / reclaim_price) * 100, 1)) if (has_ur and reclaim_price and reclaim_price > 0) else 0.0
+    action_note = f"Enter near ${reclaim_price} | Hard Stop @ ${shakeout_low}" if has_ur else "None"
+
     return {
         "has_ur_setup": bool(has_ur),
         "ur_prior_low": round(float(prior_low_val), 2),
+        "prior_low": round(float(prior_low_val), 2),
         "ur_shakeout_low": shakeout_low,
+        "shakeout_low": shakeout_low,
         "ur_pivot_price": reclaim_price,
+        "undercut_pivot": reclaim_price,
         "ur_stop_price": shakeout_low,
+        "stop_price": shakeout_low,
+        "undercut_pct": undercut_pct,
+        "gain_to_base_high": max(0.0, gain_to_base_high),
+        "action_note": action_note,
         "ur_description": desc
     }
 

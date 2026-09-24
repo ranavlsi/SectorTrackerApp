@@ -1,6 +1,30 @@
 import React from 'react';
 
 export const ScreenerDescriptions = {
+  deepvue_launchpad: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (TraderLion / Deepvue Launchpad Setup):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>Moving Average Convergence (&quot;The Pinch&quot;):</strong> The spread between the 21-day SMA, 50-day SMA, and 65-day EMA is compressed tightly within &le; <strong>2.5% to 3.2%</strong>, signaling equilibrium between institutional buyers and sellers.</li>
+        <li><strong>Resting on the Pad:</strong> Closing price is within 1% to 3% of the moving average bundle, establishing a clear structural support floor.</li>
+        <li><strong>Volume Dry-Up (VDU):</strong> Recent daily volume contracts significantly (&le; <strong>60% to 85%</strong> of the 50-day average volume), proving exhaustion of overhead floating supply.</li>
+        <li><strong>Tactical Execution States:</strong>
+          <ul style={{ marginTop: '4px', paddingLeft: '16px' }}>
+            <li><strong style={{ color: '#10b981' }}>🚀 LAUNCHING:</strong> Actively breaking out above the 3-day micro-pivot on volume expansion.</li>
+            <li><strong style={{ color: '#3b82f6' }}>🔵 DNB PIVOT:</strong> Down-day on dry volume followed by a narrow inside-day right on the moving averages (coiled spring).</li>
+            <li><strong style={{ color: '#fbbf24' }}>🟡 COILING:</strong> Orderly consolidation directly on the moving average pad with dry volume.</li>
+          </ul>
+        </li>
+        <li><strong>Institutional Confluence Badges:</strong>
+          <ul style={{ marginTop: '4px', paddingLeft: '16px' }}>
+            <li><strong>⚡ Pocket Pivot (Dr. Chris Kacher / Gil Morales):</strong> Up-day volume exceeded the largest down-day volume of the past 10 days while resting on the MA pad (stealth institutional accumulation).</li>
+            <li><strong>🔥 RS High:</strong> Stock's Relative Strength line vs SPY is printing new 20-day highs while price is still coiling on the pad.</li>
+          </ul>
+        </li>
+        <li><strong>Asymmetrical Risk/Reward:</strong> Tight defined risk (1.5% to 3.5%) placed just below the moving average cluster, allowing an early entry inside the base before traditional high breakouts.</li>
+      </ul>
+    </div>
+  ),
   chop_incubation_leaders: (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <strong>Algorithm Architecture (William O'Neil's 5 Market Chop Rules):</strong>
@@ -182,21 +206,36 @@ export const ScreenerDescriptions = {
   ),
   reversal: (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <strong>Algorithm Architecture:</strong>
+      <strong>Algorithm Architecture (Bullish Reversal / Oversold Bounce):</strong>
       <ul style={{ margin: 0, paddingLeft: '20px' }}>
-        <li><strong>Math:</strong> 14-day RSI drops below 30 (extreme oversold).</li>
-        <li><strong>Trigger:</strong> Stock prints a bullish engulfing or massive hammer candle, indicating violent short-covering.</li>
+        <li><strong>Math:</strong> 14-day RSI drops below 40 (extreme oversold condition, with deeper oversold levels &lt; 30 awarded top priority scores).</li>
+        <li><strong>Trigger:</strong> Stock prints a confirmed bullish reversal candlestick pattern (bullish engulfing, strong hammer, morning star, or piercing line).</li>
+        <li><strong>Institutional Footprint:</strong> Exhaustion selling dries up and aggressive short-covering or bottom-fishing volume steps in, closing near the session high.</li>
+        <li><strong>Tactical Edge:</strong> High-probability mean-reversion snapback targeting the declining 10-day or 20-day moving averages.</li>
       </ul>
     </div>
   ),
   smc_divergence_reversal: (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <strong>Algorithm Architecture (SMC Divergence + Liquidity Grab + CHoCH):</strong>
+      <strong>Algorithm Architecture (SMC: RSI Divergence + Liquidity Grab + CHoCH):</strong>
       <ul style={{ margin: 0, paddingLeft: '20px' }}>
-        <li><strong>Momentum Divergence:</strong> Price prints a lower low or double bottom over 15–35 days, while 14-day RSI prints a distinct higher low (+2.5 to +20+ pts).</li>
-        <li><strong>Liquidity Grab (Stop Sweep):</strong> The second trough wicks below the prior swing low to trigger retail stop-loss orders, but closes back above the level (Turtle Soup / false breakdown).</li>
+        <li><strong>Momentum Divergence:</strong> Price forms an equal/lower low over 15–35 days while 14-day RSI forms a distinct higher low (+2.0 to +15+ pts), signaling aggressive institutional accumulation beneath the surface.</li>
+        <li><strong>Liquidity Grab (Stop Hunt / Sweep):</strong> The second swing low sweeps below the prior trough to trigger retail stop-loss orders, but daily close aggressively reclaims the level (Turtle Soup / false breakdown).</li>
         <li><strong>Change of Character (CHoCH):</strong> Price breaks above the interim swing high (market structure shift from lower highs to higher highs).</li>
-        <li><strong>Trigger & Confirmation:</strong> Reclaims the 10-day EMA and closes green or in the upper 45% of today's range.</li>
+        <li><strong>Execution & Confirmation:</strong> Reclaims the 10-day EMA and prints a bullish rejection candle (close in upper 40% of session range).</li>
+        <li><strong>🔥 Confluence Badge:</strong> Highlighted when the setup also coincides with a defense of the 200-Weekly SMA.</li>
+      </ul>
+    </div>
+  ),
+  smc_200w_sma_reversal: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (SMC: 200-Weekly SMA Defense + CHoCH):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>Macro Institutional Line-in-the-Sand:</strong> The stock arrived from a secular macro bull market (was trading well above the 200W-SMA in preceding months) and pulled back to test its 200-Week SMA floor.</li>
+        <li><strong>Touch & Liquidity Sweep:</strong> Recent low within the last 10 days tested within &plusmn;2% of the 200-Weekly SMA (or briefly swept underneath to flush weak hands).</li>
+        <li><strong>Institutional Defense:</strong> Daily close aggressively holds and defends the 200-Week line (&ge; 98.5% of 200W-SMA).</li>
+        <li><strong>Structural Breakout (CHoCH):</strong> Reclaims the 10-day EMA and breaks above the interim swing high on bullish rejection candle action.</li>
+        <li><strong>🔥 Confluence Badge:</strong> Highlighted when the stock also prints an RSI Bullish Divergence directly on the 200W-SMA.</li>
       </ul>
     </div>
   ),

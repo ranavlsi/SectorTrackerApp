@@ -1617,6 +1617,12 @@
   border-color: #00E676;
 }
 
+.gex-trace-lens-btn.active.gex {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00F0FF;
+  border-color: #00F0FF;
+}
+
 .gex-trace-lens-btn.active.dex {
   background: rgba(56, 189, 248, 0.2);
   color: #38bdf8;

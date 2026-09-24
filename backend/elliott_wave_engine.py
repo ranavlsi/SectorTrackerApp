@@ -17,6 +17,7 @@ Implements Ralph Nelson Elliott's Wave Principle with strict mathematical adhere
 import os
 import json
 import time
+import math
 import datetime
 import numpy as np
 import pandas as pd
@@ -27,10 +28,27 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 CACHE_FILE = os.path.join(DATA_DIR, 'elliott_wave_screener.json')
 PARQUET_FILE = os.path.join(DATA_DIR, 'daily_ohlcv.parquet')
 
+def sanitize_nans(obj):
+    """Recursively replaces NaN and Inf float values with None to produce 100% valid standard JSON."""
+    if isinstance(obj, dict):
+        return {k: sanitize_nans(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_nans(v) for v in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    elif isinstance(obj, (np.floating, np.integer)):
+        val = float(obj)
+        if math.isnan(val) or math.isinf(val):
+            return None
+        return val
+    return obj
+
 CORE_UNIVERSE = [
     "NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "AMD", "PLTR",
     "NFLX", "ADBE", "CRM", "INTC", "CSCO", "QCOM", "TXN", "MU", "AMAT", "LRCX",
-    "PANW", "CRWD", "NOW", "SNOW", "DDOG", "NET", "ZS", "COIN", "MSTR", "ARM",
+    "PANW", "CRWD", "NOW", "SNOW", "DDOG", "NET", "ZS", "COIN", "MSTR", "ARM", "SOFI",
     "SMCI", "MRVL", "KLAC", "CDNS", "SNPS", "ANET", "FTNT", "WDAY", "TEAM", "MDB",
     "JPM", "BAC", "WFC", "C", "GS", "MS", "BLK", "V", "MA", "AXP",
     "XOM", "CVX", "COP", "SLB", "EOG", "OXY", "MPC", "PSX", "VLO", "HAL",
@@ -56,6 +74,7 @@ def fetch_ohlcv_from_lakehouse(ticker, lookback_days=260):
         df = con.execute(query).df()
         con.close()
         if df is not None and not df.empty and len(df) >= 30:
+            df = df.dropna(subset=['close', 'high', 'low']).reset_index(drop=True)
             df = df.sort_values('date').reset_index(drop=True)
             df.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
             df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
@@ -83,6 +102,7 @@ def fetch_ohlcv_by_timeframe(ticker, timeframe='1D'):
     if tf in ['1D', 'DAILY']:
         df = fetch_ohlcv_from_lakehouse(ticker, lookback_days=750)
         if df is not None and len(df) >= 30:
+            df = df.dropna(subset=['Close', 'High', 'Low']).reset_index(drop=True)
             df['Pct_Change'] = df['Close'].pct_change() * 100.0
             return df
 
@@ -106,6 +126,7 @@ def fetch_ohlcv_by_timeframe(ticker, timeframe='1D'):
             date_col = 'Date' if 'Date' in df.columns else ('Datetime' if 'Datetime' in df.columns else df.columns[0])
             df = df[[date_col, 'Open', 'High', 'Low', 'Close', 'Volume']].copy()
             df.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
+            df = df.dropna(subset=['Close', 'High', 'Low']).reset_index(drop=True)
             try:
                 df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
             except Exception:
@@ -2989,7 +3010,7 @@ def get_detailed_stock_elliott_wave(ticker, lookback_days=260, timeframe='1D'):
     if pattern_res:
         pattern_res['elliott_channels'] = elliott_channels
 
-    return {
+    return sanitize_nans({
         'ticker': ticker.upper(),
         'timeframe': tf,
         'timeframe_label': {
@@ -3016,7 +3037,7 @@ def get_detailed_stock_elliott_wave(ticker, lookback_days=260, timeframe='1D'):
             'future_projection': future_proj,
             'elliott_channels': elliott_channels
         }
-    }
+    })
 
 def run_elliott_wave_screener(symbols=None, force_refresh=False):
     """Scans universe of liquid stocks for Elliott Wave structures and caches results."""
@@ -3106,7 +3127,7 @@ def run_elliott_wave_screener(symbols=None, force_refresh=False):
         posture = "Mixed Elliott Wave Cycles (Selective Rotation)"
         posture_badge = "MIXED_ROTATION"
 
-    payload = {
+    payload = sanitize_nans({
         'last_updated': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'total_scanned': total_scanned,
         'market_posture': {
@@ -3123,7 +3144,7 @@ def run_elliott_wave_screener(symbols=None, force_refresh=False):
             'zigzag_count': zigzag_count
         },
         'stocks': results
-    }
+    })
 
     try:
         os.makedirs(DATA_DIR, exist_ok=True)

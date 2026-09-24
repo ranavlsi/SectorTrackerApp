@@ -1,1 +1,1 @@
-{"last_updated": "2026-09-18T14:59:32.530592", "alerts": [{"ticker": "IVES", "time": "2026-09-18T19:58:00+00:00", "price": 40.19, "trigger_price": 39.97, "pct_above": 0.5504128096072026, "volume_1m": 119, "type": "\ud83d\ude80 Handle Breakout"}, {"ticker": "VOC", "time": "2026-09-15T18:26:00+00:00", "price": 3.415, "trigger_price": 3.41, "pct_above": 0.14662756598240156, "volume_1m": 100, "type": "\ud83d\ude80 Handle Breakout"}]}
+{"last_updated": "2026-09-23T14:59:31.619277", "alerts": []}

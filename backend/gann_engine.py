@@ -76,6 +76,8 @@ def get_stock_data(ticker, lookback_days=350):
     df = fetch_ohlcv_from_lakehouse(ticker, lookback_days)
     if df is None or len(df) < 30:
         df = fetch_ohlcv_from_yfinance(ticker, lookback_days)
+    if df is not None:
+        df = df.dropna(subset=['Close', 'High', 'Low']).reset_index(drop=True)
     return df
 
 def calculate_gann_indicators(df):
@@ -562,14 +564,25 @@ def compute_square_of_9(p0, current_price, octaves=None):
         })
         
         sup_p = round(max(1.0, (root_curr - root_shift) ** 2), 2)
-        drop_pct = round(((sup_p - current_price) / current_price) * 100.0, 1)
+        drop_pct = round(abs((current_price - sup_p) / current_price) * 100.0, 1)
+        
+        has_sup_confluence = False
+        sup_confluence_label = ""
+        for op in oct_prices:
+            if abs(sup_p - op) / max(1.0, op) <= 0.015:
+                has_sup_confluence = True
+                sup_confluence_label = f"Confluence with Octave ${op:.0f}"
+                break
+                
         downside_supports.append({
             'deg': deg,
             'name': name,
             'price': sup_p,
             'drop_pct': drop_pct,
             'type': aspect_type,
-            'color': col
+            'color': col,
+            'has_confluence': has_sup_confluence,
+            'confluence_label': sup_confluence_label
         })
         
     next_sq9_res = upside_targets[0]
@@ -585,6 +598,28 @@ def compute_square_of_9(p0, current_price, octaves=None):
     # Generate 81-cell matrix
     matrix_grid = generate_square_of_9_matrix(current_price, p0, size=9)
     
+    channel_span = max(0.01, next_sq9_res['price'] - nearest_sq9_sup['price'])
+    pos_in_channel = round(((current_price - nearest_sq9_sup['price']) / channel_span) * 100.0, 1)
+    
+    sr_ladder = {
+        'current_price': current_price,
+        'r1': {'name': 'R1 (45° Semi-Square)', 'deg': 45, 'price': upside_targets[0]['price'], 'gain_pct': upside_targets[0]['gain_pct'], 'has_confluence': upside_targets[0]['has_confluence']},
+        'r2': {'name': 'R2 (90° Square)', 'deg': 90, 'price': upside_targets[2]['price'], 'gain_pct': upside_targets[2]['gain_pct'], 'has_confluence': upside_targets[2]['has_confluence']},
+        'r3': {'name': 'R3 (135° Sesquisquare)', 'deg': 135, 'price': upside_targets[4]['price'] if len(upside_targets) > 4 else upside_targets[3]['price'], 'gain_pct': upside_targets[4]['gain_pct'] if len(upside_targets) > 4 else upside_targets[3]['gain_pct']},
+        'r4': {'name': 'R4 (180° Major Opposition)', 'deg': 180, 'price': upside_targets[5]['price'] if len(upside_targets) > 5 else upside_targets[4]['price'], 'gain_pct': upside_targets[5]['gain_pct'] if len(upside_targets) > 5 else upside_targets[4]['gain_pct']},
+        's1': {'name': 'S1 (45° Semi-Square)', 'deg': 45, 'price': downside_supports[0]['price'], 'drop_pct': abs(downside_supports[0]['drop_pct']), 'has_confluence': downside_supports[0]['has_confluence']},
+        's2': {'name': 'S2 (90° Square)', 'deg': 90, 'price': downside_supports[2]['price'], 'drop_pct': abs(downside_supports[2]['drop_pct']), 'has_confluence': downside_supports[2]['has_confluence']},
+        's3': {'name': 'S3 (135° Sesquisquare)', 'deg': 135, 'price': downside_supports[4]['price'] if len(downside_supports) > 4 else downside_supports[3]['price'], 'drop_pct': abs(downside_supports[4]['drop_pct']) if len(downside_supports) > 4 else abs(downside_supports[3]['drop_pct'])},
+        's4': {'name': 'S4 (180° Major Opposition)', 'deg': 180, 'price': downside_supports[5]['price'] if len(downside_supports) > 5 else downside_supports[4]['price'], 'drop_pct': abs(downside_supports[5]['drop_pct']) if len(downside_supports) > 5 else abs(downside_supports[4]['drop_pct'])},
+        'channel_spread_pct': round(((next_sq9_res['price'] - nearest_sq9_sup['price']) / current_price) * 100.0, 1),
+        'channel_position_pct': pos_in_channel,
+        'tactical_posture': (
+            f"Testing Immediate Resistance R1 (${next_sq9_res['price']:.2f})" if pos_in_channel >= 80 else
+            f"Testing Immediate Support S1 (${nearest_sq9_sup['price']:.2f})" if pos_in_channel <= 20 else
+            f"In Equilibrium Channel: S1 (${nearest_sq9_sup['price']:.2f}) to R1 (${next_sq9_res['price']:.2f})"
+        )
+    }
+
     return {
         'anchor_price': round(p0, 2),
         'ring_level': ring_level,
@@ -601,6 +636,7 @@ def compute_square_of_9(p0, current_price, octaves=None):
         'nearest_support_drop': nearest_sq9_sup['drop_pct'],
         'upside_targets': upside_targets,
         'downside_supports': downside_supports,
+        'sr_ladder': sr_ladder,
         'cardinal_aligned': is_cardinal or is_fixed,
         'matrix_grid': matrix_grid
     }
@@ -1143,27 +1179,35 @@ def generate_annotated_gann_chart(df, anchors, fan_info, sq9_info, cycle_info, o
                 'color': '#f43f5e' if ang['name'] in ['1x1', '2x1'] else '#fb7185'
             })
             
-    # Square of 9 levels
+    # Square of 9 levels (Harmonic Resistance & Support Ladder)
     sq9_levels = []
+    r_map = {45: 'R1', 90: 'R2', 135: 'R3', 180: 'R4', 225: 'R5', 270: 'R6'}
     for t in sq9_info['upside_targets'][:5]:
+        r_tag = r_map.get(t['deg'], f"R ({t['deg']}°)")
         sq9_levels.append({
             'deg': t['deg'],
-            'name': t['name'],
+            'name': f"{r_tag} ({t['deg']}°)",
+            'full_name': t['name'],
             'price': t['price'],
             'gain_pct': t['gain_pct'],
             'type': 'RESISTANCE',
-            'color': '#fbbf24' if t['deg'] in [90, 180, 270, 360] else '#38bdf8',
+            'color': '#10b981' if t['deg'] in [90, 180, 270, 360] else '#34d399',
             'has_confluence': t['has_confluence'],
-            'confluence_label': t['confluence_label']
+            'confluence_label': t.get('confluence_label', '')
         })
-    for s in sq9_info['downside_supports'][:3]:
+    s_map = {45: 'S1', 90: 'S2', 135: 'S3', 180: 'S4', 225: 'S5', 270: 'S6'}
+    for s in sq9_info['downside_supports'][:4]:
+        s_tag = s_map.get(s['deg'], f"S ({s['deg']}°)")
         sq9_levels.append({
             'deg': s['deg'],
-            'name': s['name'],
+            'name': f"{s_tag} ({s['deg']}°)",
+            'full_name': s['name'],
             'price': s['price'],
             'drop_pct': s['drop_pct'],
             'type': 'SUPPORT',
-            'color': '#f43f5e' if s['deg'] in [90, 180, 270, 360] else '#94a3b8'
+            'color': '#f43f5e' if s['deg'] in [90, 180, 270, 360] else '#fb7185',
+            'has_confluence': s.get('has_confluence', False),
+            'confluence_label': s.get('confluence_label', '')
         })
         
     # Time Cycle Lines
@@ -1362,6 +1406,9 @@ def run_gann_screener(symbols=None, force_refresh=False):
                 'aspect_label': sq9.get('aspect_label', 'Orbital Spiral'),
                 'next_sq9_target': sq9['next_target_price'],
                 'next_sq9_gain': sq9['next_target_gain'],
+                'nearest_sq9_support': sq9['nearest_support_price'],
+                'nearest_sq9_support_drop': sq9['nearest_support_drop'],
+                'gann_sr_summary': sq9.get('sr_ladder', {}),
                 'next_time_turn': next_turn_str,
                 'next_time_cycle': next_cycle_str,
                 'next_confluence_cluster': tc.get('next_cluster'),
