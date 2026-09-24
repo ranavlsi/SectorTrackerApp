@@ -1153,6 +1153,19 @@ def get_deep_options_analytics(ticker):
                 "color": "#00E676" if squeeze_score >= 75 else ("#38bdf8" if squeeze_score >= 55 else "#94a3b8")
             }
         },
+        "dealer_positioning": {
+            "call_wall": call_wall,
+            "put_wall": put_wall,
+            "zero_gamma": zero_gamma,
+            "max_pain": max_pain,
+            "charm_pin_strike": charm_pin,
+            "absolute_gamma": abs_gamma,
+            "absolute_delta_strike": abs_delta,
+            "badge": gamma_trend["badge"],
+            "regime": gamma_trend["regime"],
+            "color": gamma_trend["color"],
+            "net_gex_millions": round(net_gex / 1e6, 2)
+        },
         "strike_distribution": filtered_strikes,
         "term_structure": term_structure,
         "term_structure_history": term_structure_history,
