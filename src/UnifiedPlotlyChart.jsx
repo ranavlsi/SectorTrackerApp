@@ -75,16 +75,16 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 {
                                     x: dates,
                                     close: closes,
-                                    decreasing: {line: {color: '#ef4444'}},
+                                    decreasing: {line: {color: '#ef4444', width: 1.5}, fillcolor: '#ef4444'},
                                     high: highs,
-                                    increasing: {line: {color: '#10b981'}},
-                                    line: {color: 'rgba(31,119,180,1)'},
+                                    increasing: {line: {color: '#10b981', width: 1.5}, fillcolor: '#10b981'},
+                                    line: {color: '#60a5fa'},
                                     low: lows,
                                     open: opens,
                                     type: 'candlestick',
                                     xaxis: 'x',
                                     yaxis: 'y',
-                                    name: data.ticker
+                                    name: `${data.ticker} Price`
                                 }
                             ];
 
@@ -101,41 +101,72 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 });
                             }
 
+                            // Add Blue Dot markers overlay if present
+                            if (data.blue_dots && Array.isArray(data.blue_dots) && data.blue_dots.length > 0) {
+                                plotData.push({
+                                    x: data.blue_dots.map(b => b.time),
+                                    y: data.blue_dots.map(b => b.rs_value),
+                                    type: 'scatter',
+                                    mode: 'markers',
+                                    name: '🔵 RS Blue Dot Pivot',
+                                    marker: {
+                                        color: '#00E676',
+                                        size: 10,
+                                        symbol: 'circle',
+                                        line: { color: '#ffffff', width: 2 }
+                                    },
+                                    yaxis: 'y2',
+                                    hovertemplate: '<b>🔵 RS Blue Dot Pivot</b><br>Date: %{x}<br>RS Level: %{y:.2f}<extra></extra>'
+                                });
+                            }
+
                             const layout = {
-                                dragmode: 'pan', // Default to panning like TradingView
-                                paper_bgcolor: 'transparent',
-                                plot_bgcolor: 'transparent',
-                                margin: { t: 20, r: 50, l: 50, b: 40 },
-                                hovermode: 'x unified', // Show unified tooltip across all series
+                                dragmode: 'pan',
+                                paper_bgcolor: '#090d16',
+                                plot_bgcolor: '#090d16',
+                                margin: { t: 40, r: 65, l: 65, b: 40 },
+                                hovermode: 'x unified',
+                                legend: {
+                                    orientation: 'h',
+                                    yanchor: 'bottom',
+                                    y: 1.02,
+                                    xanchor: 'right',
+                                    x: 1,
+                                    font: { color: '#cbd5e1', size: 11 }
+                                },
                                 xaxis: {
                                     rangeslider: { visible: false },
-                                    gridcolor: 'rgba(255,255,255,0.05)',
-                                    tickfont: { color: '#94a3b8' },
-                                    showspikes: true, // TradingView style crosshair
+                                    type: 'category', // Removes Weekend/Holiday blank gap distortions!
+                                    gridcolor: 'rgba(255,255,255,0.06)',
+                                    tickfont: { color: '#94a3b8', size: 11 },
+                                    showspikes: true,
                                     spikemode: 'across',
                                     spikedash: 'dot',
-                                    spikecolor: '#94a3b8',
-                                    spikethickness: 1
+                                    spikecolor: '#64748b',
+                                    spikethickness: 1,
+                                    nticks: 12
                                 },
                                 yaxis: {
-                                    gridcolor: 'rgba(255,255,255,0.05)',
-                                    tickfont: { color: '#94a3b8' },
+                                    title: { text: 'Stock Price ($)', font: { color: '#94a3b8', size: 12 } },
+                                    gridcolor: 'rgba(255,255,255,0.06)',
+                                    tickfont: { color: '#94a3b8', size: 11 },
                                     side: 'right',
                                     showspikes: true,
                                     spikemode: 'across',
                                     spikedash: 'dot',
-                                    spikecolor: '#94a3b8',
+                                    spikecolor: '#64748b',
                                     spikethickness: 1,
-                                    fixedrange: false
+                                    fixedrange: false,
+                                    autorange: true
                                 },
                                 yaxis2: {
-                                    title: 'IBD RS Line',
-                                    titlefont: { color: '#00E676', size: 11 },
-                                    tickfont: { color: '#00E676' },
+                                    title: { text: 'IBD Relative Strength Line', font: { color: '#00E676', size: 12 } },
+                                    tickfont: { color: '#00E676', size: 11 },
                                     overlaying: 'y',
                                     side: 'left',
                                     showgrid: false,
-                                    fixedrange: false
+                                    fixedrange: false,
+                                    autorange: true
                                 },
                                 shapes: shapes,
                                 annotations: annotations,

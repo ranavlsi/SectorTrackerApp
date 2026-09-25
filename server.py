@@ -355,23 +355,56 @@ def chart_data():
 
         ohlc = []
         rs_series = []
-        for index, row in df.iterrows():
-            d_str = row['date_str']
-            ohlc.append({
-                "time": d_str,
-                "open": round(float(row['Open']), 2),
-                "high": round(float(row['High']), 2),
-                "low": round(float(row['Low']), 2),
-                "close": round(float(row['Close']), 2),
-                "value": int(row['Volume']) if pd.notna(row.get('Volume')) else 0
-            })
-            if d_str in rs_dict:
-                rs_series.append({
-                    "time": d_str,
-                    "value": round(float(rs_dict[d_str]), 2)
-                })
+        blue_dots = []
+        
+        # Calculate 52-week rolling peaks for RS Line vs Stock Price to detect Blue Dots
+        # Blue Dot Definition (William O'Neil / MarketSmith):
+        # RS Line hits a 52-week high while Stock Price is still below its 52-week high.
+        if not comb.empty:
+            rolling_rs_max = rs_norm.cummax()
+            stock_cummax = comb['stock'].cummax()
             
-        last_price = ohlc[-1]['close']
+            for index, row in df.iterrows():
+                d_str = row['date_str']
+                price_c = round(float(row['Close']), 2)
+                ohlc.append({
+                    "time": d_str,
+                    "open": round(float(row['Open']), 2),
+                    "high": round(float(row['High']), 2),
+                    "low": round(float(row['Low']), 2),
+                    "close": price_c,
+                    "value": int(row['Volume']) if pd.notna(row.get('Volume')) else 0
+                })
+                
+                if d_str in rs_dict:
+                    val = round(float(rs_dict[d_str]), 2)
+                    rs_series.append({
+                        "time": d_str,
+                        "value": val
+                    })
+                    
+                    # Check Blue Dot condition on this historical date
+                    if d_str in rs_norm and d_str in comb.index.strftime('%Y-%m-%d'):
+                        curr_rs = rs_dict[d_str]
+                        curr_stock = comb.loc[comb.index.strftime('%Y-%m-%d') == d_str, 'stock'].values[0]
+                        
+                        # Lookback slice up to this date
+                        sub_comb = comb.loc[comb.index.strftime('%Y-%m-%d') <= d_str]
+                        if len(sub_comb) >= 10:
+                            sub_rs = (sub_comb['stock'] / sub_comb['spy'])
+                            sub_rs_norm = (sub_rs / sub_rs.iloc[0]) * 100
+                            max_rs_so_far = sub_rs_norm.max()
+                            max_stock_so_far = sub_comb['stock'].max()
+                            
+                            # RS at or within 1.5% of max while stock is > 2% below max
+                            if (curr_rs >= max_rs_so_far * 0.985) and (curr_stock < max_stock_so_far * 0.98):
+                                blue_dots.append({
+                                    "time": d_str,
+                                    "price": price_c,
+                                    "rs_value": val
+                                })
+
+        last_price = ohlc[-1]['close'] if ohlc else 100.0
         
         levels = [
             {"price": round(last_price * 1.05, 2), "color": "#ec4899", "title": "Call Wall (GEX Resistance)"},
@@ -383,6 +416,7 @@ def chart_data():
             "ticker": ticker,
             "candles": ohlc,
             "rs_series": rs_series,
+            "blue_dots": blue_dots,
             "levels": levels
         })
     except Exception as e:
