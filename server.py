@@ -411,85 +411,56 @@ def chart_data():
                                     "rs_value": val
                                 })
 
-        # Calculate VCP (Volatility Contraction Pattern) Waves (T1, T2, T3) for Chart Overlay
+        # Calculate VCP (Volatility Contraction Pattern) Waves (T1, T2, T3) via Rolling Extrema
         vcp_waves = []
         try:
-            if len(df) >= 40:
-                recent_df = df.tail(120).copy()
-                high_idx = recent_df['High'].values.argmax()
-                base_high = float(recent_df['High'].iloc[high_idx])
-                high_date = recent_df['date_str'].iloc[high_idx]
+            if len(df) >= 30:
+                sub_df = df.tail(120).copy().reset_index(drop=True)
+                sub_df['IsPeak'] = (sub_df['High'] == sub_df['High'].rolling(5, center=True).max())
+                sub_df['IsTrough'] = (sub_df['Low'] == sub_df['Low'].rolling(5, center=True).min())
                 
-                # Check if base high is established (at least 12 sessions ago)
-                days_since_high = len(recent_df) - 1 - high_idx
-                if days_since_high >= 12:
-                    post_high = recent_df.iloc[high_idx:]
-                    t1_low_idx = post_high['Low'].values.argmin()
-                    base_low = float(post_high['Low'].iloc[t1_low_idx])
-                    t1_low_date = post_high['date_str'].iloc[t1_low_idx]
-                    t1_depth_pct = round((base_high - base_low) / base_high * 100, 1)
-                    
-                    if 8.0 <= t1_depth_pct <= 45.0:
-                        vcp_waves.append({
-                            "name": "T1 Contraction",
-                            "start_date": high_date,
-                            "start_price": base_high,
-                            "end_date": t1_low_date,
-                            "end_price": base_low,
-                            "depth_pct": t1_depth_pct,
-                            "color": "#ef4444"
-                        })
-                        
-                        # T2 wave (Rally to secondary peak then contraction to higher low)
-                        post_t1 = post_high.iloc[t1_low_idx:]
-                        if len(post_t1) >= 5:
-                            t2_peak_idx = post_t1['High'].values.argmax()
-                            t2_peak = float(post_t1['High'].iloc[t2_peak_idx])
-                            t2_peak_date = post_t1['date_str'].iloc[t2_peak_idx]
+                peaks = sub_df[sub_df['IsPeak']].copy()
+                troughs = sub_df[sub_df['IsTrough']].copy()
+                
+                # Pair consecutive peaks and troughs to form contraction waves
+                swings = []
+                for p_idx, p_row in peaks.iterrows():
+                    # Find immediate subsequent trough
+                    post_troughs = troughs[troughs.index > p_idx]
+                    if not post_troughs.empty:
+                        tr_row = post_troughs.iloc[0]
+                        depth_pct = round((p_row['High'] - tr_row['Low']) / p_row['High'] * 100, 1)
+                        if 3.0 <= depth_pct <= 50.0:
+                            swings.append({
+                                "start_date": p_row['date_str'],
+                                "start_price": float(p_row['High']),
+                                "end_date": tr_row['date_str'],
+                                "end_price": float(tr_row['Low']),
+                                "depth_pct": depth_pct
+                            })
                             
-                            post_t2 = post_t1.iloc[t2_peak_idx:]
-                            if len(post_t2) >= 3:
-                                t2_low = float(post_t2['Low'].min())
-                                t2_low_idx = post_t2['Low'].values.argmin()
-                                t2_low_date = post_t2['date_str'].iloc[t2_low_idx]
-                                t2_depth_pct = round((t2_peak - t2_low) / t2_peak * 100, 1)
-                                
-                                # Contraction rule: T2 low > T1 low and T2 depth < T1 depth
-                                if t2_low > base_low and t2_depth_pct < t1_depth_pct:
-                                    vcp_waves.append({
-                                        "name": "T2 Contraction",
-                                        "start_date": t2_peak_date,
-                                        "start_price": t2_peak,
-                                        "end_date": t2_low_date,
-                                        "end_price": t2_low,
-                                        "depth_pct": t2_depth_pct,
-                                        "color": "#f59e0b"
-                                    })
-                                    
-                                    # T3 wave (Final tight compression before breakout)
-                                    post_t2_low = post_t2.iloc[t2_low_idx:]
-                                    if len(post_t2_low) >= 4:
-                                        t3_peak_idx = post_t2_low['High'].values.argmax()
-                                        t3_peak = float(post_t2_low['High'].iloc[t3_peak_idx])
-                                        t3_peak_date = post_t2_low['date_str'].iloc[t3_peak_idx]
-                                        
-                                        post_t3 = post_t2_low.iloc[t3_peak_idx:]
-                                        if len(post_t3) >= 2:
-                                            t3_low = float(post_t3['Low'].min())
-                                            t3_low_idx = post_t3['Low'].values.argmin()
-                                            t3_low_date = post_t3['date_str'].iloc[t3_low_idx]
-                                            t3_depth_pct = round((t3_peak - t3_low) / t3_peak * 100, 1)
-                                            
-                                            if t3_low > t2_low and t3_depth_pct < t2_depth_pct:
-                                                vcp_waves.append({
-                                                    "name": "T3 Tightening",
-                                                    "start_date": t3_peak_date,
-                                                    "start_price": t3_peak,
-                                                    "end_date": t3_low_date,
-                                                    "end_price": t3_low,
-                                                    "depth_pct": t3_depth_pct,
-                                                    "color": "#10b981"
-                                                })
+                # Filter for valid VCP contracting sequence (T1 >= T2 >= T3)
+                if len(swings) >= 1:
+                    colors = ["#ef4444", "#f59e0b", "#10b981", "#38bdf8"]
+                    valid_waves = []
+                    last_depth = 999.0
+                    wave_num = 1
+                    
+                    for s in swings:
+                        if s['depth_pct'] <= last_depth * 1.05 and wave_num <= 4:
+                            valid_waves.append({
+                                "name": f"T{wave_num} Contraction",
+                                "start_date": s['start_date'],
+                                "start_price": s['start_price'],
+                                "end_date": s['end_date'],
+                                "end_price": s['end_price'],
+                                "depth_pct": s['depth_pct'],
+                                "color": colors[wave_num - 1]
+                            })
+                            last_depth = s['depth_pct']
+                            wave_num += 1
+                            
+                    vcp_waves = valid_waves[-3:] # Keep up to last 3 waves for clean visual presentation
         except Exception as vcp_err:
             print(f"[VCP CALC ERROR]: {vcp_err}")
 
