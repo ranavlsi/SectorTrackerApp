@@ -101,22 +101,40 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 });
                             }
 
-                            // Add Blue Dot markers overlay if present
+                            // Add Blue Dot markers overlay on BOTH Price and RS Line if present
                             if (data.blue_dots && Array.isArray(data.blue_dots) && data.blue_dots.length > 0) {
+                                // 1. Blue Dots on Price Candles
+                                plotData.push({
+                                    x: data.blue_dots.map(b => b.time),
+                                    y: data.blue_dots.map(b => b.price),
+                                    type: 'scatter',
+                                    mode: 'markers',
+                                    name: '🔵 RS Blue Dot (Price)',
+                                    marker: {
+                                        color: '#38bdf8',
+                                        size: 11,
+                                        symbol: 'circle',
+                                        line: { color: '#ffffff', width: 2 }
+                                    },
+                                    yaxis: 'y',
+                                    hovertemplate: '<b>🔵 RS Blue Dot Pivot (Price)</b><br>Date: %{x}<br>Price: $%{y:.2f}<extra></extra>'
+                                });
+
+                                // 2. Blue Dots on RS Line
                                 plotData.push({
                                     x: data.blue_dots.map(b => b.time),
                                     y: data.blue_dots.map(b => b.rs_value),
                                     type: 'scatter',
                                     mode: 'markers',
-                                    name: '🔵 RS Blue Dot Pivot',
+                                    name: '🔵 RS Blue Dot (RS Line)',
                                     marker: {
                                         color: '#00E676',
-                                        size: 10,
+                                        size: 11,
                                         symbol: 'circle',
                                         line: { color: '#ffffff', width: 2 }
                                     },
                                     yaxis: 'y2',
-                                    hovertemplate: '<b>🔵 RS Blue Dot Pivot</b><br>Date: %{x}<br>RS Level: %{y:.2f}<extra></extra>'
+                                    hovertemplate: '<b>🔵 RS Blue Dot Pivot (RS Line)</b><br>Date: %{x}<br>RS Level: %{y:.2f}<extra></extra>'
                                 });
                             }
 
