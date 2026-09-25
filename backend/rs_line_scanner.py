@@ -336,28 +336,32 @@ def run_rs_scanner():
                     zacks_rank = 5
                     
                     rev_growth = 0
-                    peg_ratio = 1.5
+                    earn_growth = 0
+                    peg_ratio = None
                     
                     if isinstance(fin_data, dict) and t in fin_data and isinstance(fin_data[t], dict):
                         rev_growth = fin_data[t].get('revenueGrowth', 0)
                         if rev_growth is None: rev_growth = 0
+                        earn_growth = fin_data[t].get('earningsGrowth', 0)
+                        if earn_growth is None: earn_growth = 0
                         
                     if isinstance(details, dict) and t in details and isinstance(details[t], dict):
-                        peg_ratio = details[t].get('pegRatio', 1.5)
-                        if peg_ratio is None: peg_ratio = 1.5
+                        peg_ratio = details[t].get('pegRatio')
                         
-                        
-                        # Calculate Zacks Rank Proxy
-                        if rev_growth > 0.15 and peg_ratio < 1.5:
-                            zacks_rank = 1
-                        elif rev_growth > 0.05 and peg_ratio < 2.5:
-                            zacks_rank = 2
-                        elif rev_growth > -0.05 and peg_ratio < 3.5:
-                            zacks_rank = 3
-                        elif rev_growth > -0.15 and peg_ratio < 5:
-                            zacks_rank = 4
-                        else:
-                            zacks_rank = 5
+                    # Multi-Factor Zacks Rank Engine:
+                    # Evaluates earnings acceleration, revenue growth, and valuation multiples
+                    growth_metric = max(float(rev_growth), float(earn_growth))
+                    
+                    if growth_metric >= 0.40 or (growth_metric >= 0.25 and (peg_ratio is None or peg_ratio <= 2.0)):
+                        zacks_rank = 1
+                    elif growth_metric >= 0.18 or (growth_metric >= 0.10 and (peg_ratio is None or peg_ratio <= 3.0)):
+                        zacks_rank = 2
+                    elif growth_metric >= 0.05:
+                        zacks_rank = 3
+                    elif growth_metric >= -0.10:
+                        zacks_rank = 4
+                    else:
+                        zacks_rank = 5
                     
                     if isinstance(quote_types, dict) and t in quote_types and isinstance(quote_types[t], dict):
                         if quote_types[t].get('quoteType', '') == 'ETF':
