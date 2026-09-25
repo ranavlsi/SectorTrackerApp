@@ -159,9 +159,9 @@ def evaluate_deepvue_launchpad(ticker, df=None, spy_series=None):
         if prior_run_pct < 15.0:
             return None
 
-        # Volume & Exhaustion Checks
+        # Volume & Exhaustion Checks (ADV >= 10M shares)
         avg_vol50 = float(vol.iloc[-50:].mean()) if len(vol) >= 50 else float(vol.mean())
-        if avg_vol50 <= 0:
+        if avg_vol50 < 10_000_000:
             return None
 
         vol_ratio = curr_v / avg_vol50
