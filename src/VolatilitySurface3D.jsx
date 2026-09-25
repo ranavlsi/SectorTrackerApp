@@ -1490,6 +1490,55 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           gap: '18px'
         }}
       >
+        {/* Quick Visual Cheat Sheet: How to Read the 3D Volatility Surface */}
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.85)',
+          border: '1px solid rgba(0, 240, 255, 0.25)',
+          borderRadius: '12px',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Info size={18} color="#00F0FF" />
+              <span style={{ color: '#00F0FF', fontFamily: "'JetBrains Mono', monospace", fontWeight: 'bold', fontSize: '13px', textTransform: 'uppercase' }}>
+                How to Read the 3D Volatility Surface ({ticker}):
+              </span>
+            </div>
+            <span style={{ color: '#94a3b8', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>
+              3 Axes Breakdown
+            </span>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '12px'
+          }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #00F0FF' }}>
+              <strong style={{ color: '#00F0FF', fontSize: '12px', display: 'block', marginBottom: '4px' }}>1. X-Axis (Left-to-Right)</strong>
+              <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                <strong>Strike Prices ($):</strong> OTM Puts on the left, ATM Spot (${spot?.toFixed(2)}) in center, OTM Calls on the right.
+              </span>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #fbbf24' }}>
+              <strong style={{ color: '#fbbf24', fontSize: '12px', display: 'block', marginBottom: '4px' }}>2. Y-Axis (Front-to-Back)</strong>
+              <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                <strong>Expiration Dates:</strong> Near-term (near front) to long-term LEAPS (in back).
+              </span>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+              <strong style={{ color: '#10b981', fontSize: '12px', display: 'block', marginBottom: '4px' }}>3. Z-Axis (Vertical Height)</strong>
+              <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                <strong>Implied Volatility (%):</strong> Higher peaks = expensive option premium. Low valleys = cheap option premium.
+              </span>
+            </div>
+          </div>
+        </div>
         {/* Section Title */}
         <div 
           className="vol-surface-header"
