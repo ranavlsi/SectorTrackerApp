@@ -1252,6 +1252,20 @@ function App() {
           )}
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '3px solid #a855f7' }}>
+              <h3 style={{ marginTop: 0, color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Zap /> ⚡ TTM Keltner Squeeze (Pending Breakout)
+              </h3>
+              <p style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Bollinger Bands compressed inside Keltner Channels (BB/KC &lt; 1.0) with Volume Dry-Up. Catches coiling before explosive breakouts.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                {squeezeData.ttm_keltner_squeeze && squeezeData.ttm_keltner_squeeze.length > 0 ? (
+                  squeezeData.ttm_keltner_squeeze.map(item => (
+                    <ScreenerPill key={item.ticker} item={item} onClick={() => fetchTickerData(item.ticker)} />
+                  ))
+                ) : <span style={{ color: '#64748b' }}>None currently detected.</span>}
+              </div>
+            </div>
+
             <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '3px solid #f59e0b' }}>
               <h3 style={{ marginTop: 0, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <ActivitySquare /> Gamma Squeeze Setup
