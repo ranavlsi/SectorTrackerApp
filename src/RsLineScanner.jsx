@@ -83,6 +83,7 @@ export default function RsLineScanner({ onTickerClick }) {
     
     // Filters
     const [minRating, setMinRating] = useState(80);
+    const [blueDotOnly, setBlueDotOnly] = useState(false);
     const [chOnly, setChOnly] = useState(false);
     const [zacksOnly, setZacksOnly] = useState(false);
     const [skipEarnings, setSkipEarnings] = useState(false);
@@ -164,6 +165,7 @@ export default function RsLineScanner({ onTickerClick }) {
 
     const filteredData = data.filter(item => {
         if (item.rs_rating < minRating) return false;
+        if (blueDotOnly && !item.is_blue_dot) return false;
         if (chOnly && item.pattern_status !== 'c_and_h') return false;
         if (zacksOnly && item.zacks_rank > 2) return false;
         if (skipEarnings && item.earnings_days !== 999 && item.earnings_days <= 14) return false;
@@ -288,6 +290,10 @@ export default function RsLineScanner({ onTickerClick }) {
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#00E676', fontWeight: 'bold' }}>
+                        <input type="checkbox" checked={blueDotOnly} onChange={e => setBlueDotOnly(e.target.checked)} />
+                        🔵 RS Blue Dot Pivots Only
+                    </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#e2e8f0' }}>
                         <input type="checkbox" checked={chOnly} onChange={e => setChOnly(e.target.checked)} />
                         ☕ C&H Only
@@ -337,7 +343,8 @@ export default function RsLineScanner({ onTickerClick }) {
                                 <th style={{ padding: '10px' }}>★</th>
                                 <th style={{ padding: '10px' }}>Ticker</th>
                                 <th style={{ padding: '10px' }}>RS Rating</th>
-                                <th style={{ padding: '10px' }}>RS Status</th>
+                                <th style={{ padding: '10px' }}>RS Pivot & Status</th>
+                                <th style={{ padding: '10px' }}>Mansfield RS Slope</th>
                                 <th style={{ padding: '10px' }}>C&H Pattern</th>
                                 <th style={{ padding: '10px' }}>RS Sparkline</th>
                                 <th style={{ padding: '10px' }}>Zacks Rank</th>
@@ -378,10 +385,28 @@ export default function RsLineScanner({ onTickerClick }) {
                                             </div>
                                         </td>
                                         <td style={{ padding: '10px' }}>
-                                            {item.rs_badge === '12M RS High' && <span style={{ color: '#10b981', display: 'flex', gap: '5px', alignItems: 'center' }}><Star size={14} fill="#10b981"/> 12M RS High</span>}
-                                            {item.rs_badge === '6M RS High' && <span style={{ color: '#34d399', display: 'flex', gap: '5px', alignItems: 'center' }}><Star size={14} fill="none"/> 6M RS High</span>}
-                                            {item.rs_badge === '3M RS High' && <span style={{ color: '#f59e0b', display: 'flex', gap: '5px', alignItems: 'center' }}><ChevronUp size={14} /> 3M RS High</span>}
-                                            {item.rs_badge === '1M RS High' && <span style={{ color: '#fbbf24', display: 'flex', gap: '5px', alignItems: 'center' }}><ChevronUp size={14} /> 1M RS High</span>}
+                                            {item.is_blue_dot ? (
+                                                <span style={{ color: '#00E676', background: 'rgba(0,230,118,0.15)', border: '1px solid #00E676', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                    🔵 Blue Dot (+{item.blue_dot_lead_pct}%)
+                                                </span>
+                                            ) : (
+                                                <>
+                                                    {item.rs_badge === '12M RS High' && <span style={{ color: '#10b981', display: 'flex', gap: '5px', alignItems: 'center' }}><Star size={14} fill="#10b981"/> 12M RS High</span>}
+                                                    {item.rs_badge === '6M RS High' && <span style={{ color: '#34d399', display: 'flex', gap: '5px', alignItems: 'center' }}><Star size={14} fill="none"/> 6M RS High</span>}
+                                                    {item.rs_badge === '3M RS High' && <span style={{ color: '#f59e0b', display: 'flex', gap: '5px', alignItems: 'center' }}><ChevronUp size={14} /> 3M RS High</span>}
+                                                    {item.rs_badge === '1M RS High' && <span style={{ color: '#fbbf24', display: 'flex', gap: '5px', alignItems: 'center' }}><ChevronUp size={14} /> 1M RS High</span>}
+                                                </>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '10px' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <span style={{ color: item.mansfield_rs >= 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                                                    {item.mansfield_rs >= 0 ? `+${item.mansfield_rs?.toFixed(1)}%` : `${item.mansfield_rs?.toFixed(1)}%`}
+                                                </span>
+                                                <span style={{ fontSize: '0.78rem', color: item.mansfield_slope > 0 ? '#34d399' : '#f43f5e' }}>
+                                                    Slope: {item.mansfield_slope > 0 ? `+${item.mansfield_slope}` : item.mansfield_slope}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td style={{ padding: '10px' }}>
                                             {item.pattern_status === 'c_and_h' && <span style={{ color: '#c47aff', padding: '2px 8px', background: 'rgba(196,122,255,0.1)', borderRadius: '12px', fontSize: '0.85rem' }}>☕ C&H ({item.pattern_score})</span>}

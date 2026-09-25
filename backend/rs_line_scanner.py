@@ -33,7 +33,7 @@ def detect_rs_cup_and_handle(rs_line):
         return {"status": "none", "score": 0, "details": {}}
         
     cup_depth = float((peak_val - trough_val) / peak_val)
-    if not (0.10 <= cup_depth <= 0.40): # QUANT STRICT: Max cup depth 40%
+    if not (0.08 <= cup_depth <= 0.42): # QUANT STRICT: Max cup depth 42%
         return {"status": "none", "score": 0, "details": {}}
         
     cup_duration = int(trough_idx - peak_idx)
@@ -97,16 +97,28 @@ def detect_rs_cup_and_handle(rs_line):
         }
     }
 
+def compute_mansfield_rs(stock_series, benchmark_series, period=52):
+    """
+    Computes Mansfield Relative Strength (RS) line and slope.
+    Formula: Base_RS = (Stock / Benchmark), Mansfield_RS = ((Base_RS / SMA(Base_RS, 52)) - 1) * 100
+    """
+    base_rs = stock_series / benchmark_series
+    sma_base = base_rs.rolling(period, min_periods=10).mean()
+    mansfield_rs = ((base_rs / sma_base) - 1.0) * 100.0
+    return mansfield_rs
+
 def calculate_adr(highs, lows):
     if len(highs) == 0: return 0
     adrs = (highs - lows) / lows
     return adrs.mean() * 100
 
 def run_rs_scanner():
-    print(f"Loading SPY baseline from {LAKEHOUSE_PATH}...")
+    print(f"Loading SPY and QQQ baselines from {LAKEHOUSE_PATH}...")
     
-    # Load SPY and resample to Weekly (W-FRI)
+    # Load SPY and QQQ baselines
     spy_df = duckdb.query(f"SELECT Date as date, Close as close FROM '{LAKEHOUSE_PATH}' WHERE Ticker='SPY' ORDER BY Date").df()
+    qqq_df = duckdb.query(f"SELECT Date as date, Close as close FROM '{LAKEHOUSE_PATH}' WHERE Ticker='QQQ' ORDER BY Date").df()
+    
     if spy_df.empty:
         print("ERROR: SPY data not found in Lakehouse.")
         return
@@ -114,6 +126,10 @@ def run_rs_scanner():
     spy_df['date'] = pd.to_datetime(spy_df['date'])
     spy_df.set_index('date', inplace=True)
     spy_weekly = spy_df.resample('W-FRI').last()
+
+    qqq_df['date'] = pd.to_datetime(qqq_df['date'])
+    qqq_df.set_index('date', inplace=True)
+    qqq_weekly = qqq_df.resample('W-FRI').last()
     
     print("Loading all stocks from Lakehouse (DuckDB fast weekly resample)...")
     weekly_query = f"""
@@ -131,7 +147,7 @@ def run_rs_scanner():
     all_stocks = duckdb.query(weekly_query).df()
     all_stocks['date'] = pd.to_datetime(all_stocks['date'])
     
-    print("Processing Weekly RS Lines...")
+    print("Processing Weekly RS Lines with Multi-Timeframe Divergence & Blue Dot Detection...")
     
     rs_results = []
     grouped = all_stocks.groupby('ticker')
@@ -231,15 +247,38 @@ def run_rs_scanner():
             
         # USER CONSTRAINT 2: Cup and Handle Detection on STOCK PRICE
         ch_analysis = detect_rs_cup_and_handle(weekly_52['close'])
-        
         if ch_analysis['status'] == 'none':
             continue
+
+        # Compute Mansfield RS & Slope vs SPY
+        mansfield_series = compute_mansfield_rs(weekly_52['close'], spy_aligned['close'])
+        curr_mansfield = float(mansfield_series.iloc[-1]) if not pd.isna(mansfield_series.iloc[-1]) else 0.0
+        mansfield_5w_ago = float(mansfield_series.iloc[-6]) if (len(mansfield_series) >= 6 and not pd.isna(mansfield_series.iloc[-6])) else curr_mansfield
+        mansfield_slope = round(curr_mansfield - mansfield_5w_ago, 2)
         
+        # RS Blue Dot Pivots: RS Line at 52-week new high while stock price is STILL below its 52-week high!
+        is_blue_dot = (rs_vs_high >= 99.0) and (price_vs_high < 98.0)
+        blue_dot_lead_pct = round(high_52_price / current_price * 100 - 100, 1) if is_blue_dot else 0.0
+
+        # Multi-benchmark divergence vs QQQ
+        qqq_aligned = qqq_weekly.reindex(weekly_52.index).ffill()
+        rs_qqq_ratio = weekly_52['close'] / qqq_aligned['close']
+        rs_qqq_normalized = rs_qqq_ratio / rs_qqq_ratio.iloc[0]
+        rs_qqq_current = rs_qqq_normalized.iloc[-1]
+        rs_qqq_peak_12m = rs_qqq_normalized.max()
+        rs_qqq_vs_high = round((rs_qqq_current / rs_qqq_peak_12m) * 100, 1)
+
         rs_results.append({
             "ticker": ticker,
             "rs_raw_return": (rs_ratio_normalized.iloc[-1] - 1.0) * 100, # Used for RS Rating percentile
-            "rs_vs_high": rs_vs_high,
+            "rs_vs_high": round(rs_vs_high, 1),
+            "rs_qqq_vs_high": rs_qqq_vs_high,
             "rs_badge": rs_badge,
+            "is_blue_dot": is_blue_dot,
+            "blue_dot_badge": "🔵 RS BLUE DOT PIVOT" if is_blue_dot else "NORMAL",
+            "blue_dot_lead_pct": blue_dot_lead_pct,
+            "mansfield_rs": round(curr_mansfield, 2),
+            "mansfield_slope": mansfield_slope,
             "pattern_status": ch_analysis['status'],
             "pattern_score": ch_analysis['score'],
             "pattern_details": ch_analysis['details'],
@@ -362,8 +401,9 @@ def run_rs_scanner():
     
     class NumpyEncoder(json.JSONEncoder):
         def default(self, obj):
-            if isinstance(obj, np.integer): return int(obj)
-            if isinstance(obj, np.floating): return float(obj)
+            if isinstance(obj, (np.integer, int)): return int(obj)
+            if isinstance(obj, (np.floating, float)): return float(obj)
+            if isinstance(obj, (np.bool_, bool)): return bool(obj)
             if isinstance(obj, np.ndarray): return obj.tolist()
             return super(NumpyEncoder, self).default(obj)
             
