@@ -88,6 +88,19 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 }
                             ];
 
+                            // Add RS Line vs SPY overlay if present
+                            if (data.rs_series && Array.isArray(data.rs_series) && data.rs_series.length > 0) {
+                                plotData.push({
+                                    x: data.rs_series.map(r => r.time),
+                                    y: data.rs_series.map(r => r.value),
+                                    type: 'scatter',
+                                    mode: 'lines',
+                                    name: 'IBD RS Line (vs SPY)',
+                                    line: { color: '#00E676', width: 2.5 },
+                                    yaxis: 'y2'
+                                });
+                            }
+
                             const layout = {
                                 dragmode: 'pan', // Default to panning like TradingView
                                 paper_bgcolor: 'transparent',
@@ -113,6 +126,15 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                     spikedash: 'dot',
                                     spikecolor: '#94a3b8',
                                     spikethickness: 1,
+                                    fixedrange: false
+                                },
+                                yaxis2: {
+                                    title: 'IBD RS Line',
+                                    titlefont: { color: '#00E676', size: 11 },
+                                    tickfont: { color: '#00E676' },
+                                    overlaying: 'y',
+                                    side: 'left',
+                                    showgrid: false,
                                     fixedrange: false
                                 },
                                 shapes: shapes,

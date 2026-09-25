@@ -326,53 +326,67 @@ def chart_data():
         
     ticker = ticker.upper()
     try:
-        from yahooquery import Ticker as YQTicker
-        t = YQTicker(ticker)
-        df = t.history(period="6mo")
+        t = yf.Ticker(ticker)
+        df = t.history(period="1y").dropna(subset=['Close'])
         
-        if not isinstance(df, pd.DataFrame) or df.empty:
+        if df.empty or len(df) < 5:
             return jsonify({"error": "No data found"}), 404
             
-        df = df.reset_index()
-        df = df.rename(columns={'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'})
-        df = df.dropna(subset=['Open', 'High', 'Low', 'Close'])
-        df['date_str'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
-        df = df.drop_duplicates(subset=['date_str'], keep='last')
-        df = df.sort_values(by='date_str')
+        df['date_str'] = df.index.strftime('%Y-%m-%d')
+        df = df.drop_duplicates(subset=['date_str'], keep='last').sort_values(by='date_str')
         
-        if df.empty:
-            return jsonify({"error": "No data found"}), 404
-            
-        # Format for lightweight-charts: {time: "YYYY-MM-DD", open, high, low, close}
+        # Calculate Relative Strength (RS) Line vs SPY benchmark
+        try:
+            if not hasattr(search_stock, '_spy_cache') or search_stock._spy_cache is None or (time.time() - search_stock._spy_cache_time > 3600):
+                search_stock._spy_cache = yf.Ticker("SPY").history(period="1y").dropna(subset=['Close'])
+                search_stock._spy_cache_time = time.time()
+            spy_df = search_stock._spy_cache
+        except Exception:
+            spy_df = df
+
+        # Align stock and SPY dates for RS Line computation
+        comb = pd.DataFrame({'stock': df['Close'], 'spy': spy_df['Close']}).dropna()
+        if not comb.empty:
+            rs_raw = (comb['stock'] / comb['spy'])
+            rs_norm = (rs_raw / rs_raw.iloc[0]) * 100
+            rs_dict = dict(zip(comb.index.strftime('%Y-%m-%d'), rs_norm))
+        else:
+            rs_dict = {}
+
         ohlc = []
+        rs_series = []
         for index, row in df.iterrows():
+            d_str = row['date_str']
             ohlc.append({
-                "time": row['date_str'],
-                "open": round(row['Open'], 2),
-                "high": round(row['High'], 2),
-                "low": round(row['Low'], 2),
-                "close": round(row['Close'], 2),
-                "value": round(row['Volume'], 0) if pd.notna(row.get('Volume')) else 0
+                "time": d_str,
+                "open": round(float(row['Open']), 2),
+                "high": round(float(row['High']), 2),
+                "low": round(float(row['Low']), 2),
+                "close": round(float(row['Close']), 2),
+                "value": int(row['Volume']) if pd.notna(row.get('Volume')) else 0
             })
+            if d_str in rs_dict:
+                rs_series.append({
+                    "time": d_str,
+                    "value": round(float(rs_dict[d_str]), 2)
+                })
             
         last_price = ohlc[-1]['close']
         
-        # Simulate Institutional Flow Levels for the chart
         levels = [
             {"price": round(last_price * 1.05, 2), "color": "#ec4899", "title": "Call Wall (GEX Resistance)"},
             {"price": round(last_price * 0.96, 2), "color": "#10b981", "title": "Put Wall (GEX Support)"},
-            {"price": round(last_price * 1.02, 2), "color": "#3b82f6", "title": "Dark Pool Print ($150M)"}
+            {"price": round(last_price * 1.02, 2), "color": "#3b82f6", "title": "Dark Pool Print (M)"}
         ]
         
         return jsonify({
             "ticker": ticker,
             "candles": ohlc,
+            "rs_series": rs_series,
             "levels": levels
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/sync_lakehouse', methods=['POST'])
+        return jsonify({"error": str(e)}), 500@app.route('/api/sync_lakehouse', methods=['POST'])
 def sync_lakehouse():
     import subprocess
     script_path = os.path.join(os.path.dirname(__file__), 'backend', 'master_daily_update.sh')
