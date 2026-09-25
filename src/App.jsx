@@ -2676,11 +2676,23 @@ function App() {
                    </div>
                  </div>
                </div>
+            ) : isSearching ? (
+               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "#00F0FF", width: "100%" }} className="glass-card">
+                 <Loader size={48} className="spin" style={{ marginBottom: "1rem" }} />
+                 <h3>Fetching Pro Terminal Data & Technicals...</h3>
+               </div>
             ) : (
-               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#4facfe', width: '100%' }} className="glass-card">
-                 <Search size={48} style={{marginBottom: '1rem', opacity: 0.5}} />
-                 <h3>No Ticker Selected</h3>
-                 <p style={{color: '#94a3b8'}}>Click on an alert in the Live Feed or use the search bar to load a chart.</p>
+               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: searchError ? "#ef4444" : "#4facfe", width: "100%", gap: "10px" }} className="glass-card">
+                 <Search size={48} style={{marginBottom: "1rem", opacity: 0.5}} />
+                 <h3>{searchError ? searchError : "No Ticker Selected"}</h3>
+                 <p style={{color: "#94a3b8"}}>{searchError ? "Please check backend connection." : "Select a ticker below to view its Deep Chart immediately:"}</p>
+                 <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                   {["SPY", "QQQ", "NVDA", "TSLA", "AAPL"].map(sym => (
+                     <button key={sym} onClick={() => fetchTickerData(sym)} style={{ background: "#3b82f6", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>
+                       Load {sym}
+                     </button>
+                   ))}
+                 </div>
                </div>
             )}
         </div>
