@@ -522,16 +522,44 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
 
       const layout = {
         autosize: true,
-        height: 580,
+        height: 640,
         margin: { l: 0, r: 0, b: 0, t: 0 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
         showlegend: true,
-        legend: { font: { color: currentBg.text, family: 'monospace', size: 10 }, x: 0, y: 1 },
+        legend: { 
+          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' }, 
+          x: 0, 
+          y: 1,
+          bgcolor: 'rgba(15, 23, 42, 0.85)',
+          bordercolor: 'rgba(255, 255, 255, 0.15)',
+          borderwidth: 1
+        },
         scene: {
-          xaxis: { title: { text: xAxisTitle, font: { color: currentBg.text, size: 11 } }, gridcolor: currentBg.grid, color: currentBg.text, tickfont: { family: 'monospace', color: currentBg.text } },
-          yaxis: { title: { text: 'Expiration', font: { color: currentBg.text, size: 11 } }, gridcolor: currentBg.grid, color: currentBg.text, tickfont: { family: 'monospace', color: currentBg.text } },
-          zaxis: { title: { text: 'Implied Volatility (%)', font: { color: currentBg.text, size: 11 } }, gridcolor: currentBg.grid, color: currentBg.text, tickfont: { family: 'monospace', color: currentBg.text } },
+          xaxis: { 
+            title: { text: xAxisTitle, font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            gridcolor: 'rgba(255, 255, 255, 0.12)', 
+            color: '#f8fafc', 
+            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
+            backgroundcolor: 'rgba(15, 23, 42, 0.5)',
+            showbackground: true
+          },
+          yaxis: { 
+            title: { text: 'Expiration Date', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            gridcolor: 'rgba(255, 255, 255, 0.12)', 
+            color: '#f8fafc', 
+            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
+            backgroundcolor: 'rgba(15, 23, 42, 0.5)',
+            showbackground: true
+          },
+          zaxis: { 
+            title: { text: 'Implied Volatility (%)', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            gridcolor: 'rgba(255, 255, 255, 0.12)', 
+            color: '#f8fafc', 
+            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
+            backgroundcolor: 'rgba(15, 23, 42, 0.5)',
+            showbackground: true
+          },
           camera: { eye: cameraEye }
         }
       };
