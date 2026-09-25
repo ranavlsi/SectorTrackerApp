@@ -382,7 +382,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           z: topOver.map(h => h.iv * 1.05),
           text: topOver.map(h => `+$${h.strike} (+${Math.round(h.dislocation_pct)}%)`),
           textposition: topOver.map((_, idx) => overPositions[idx % overPositions.length]),
-          textfont: { color: '#fca5a5', family: 'monospace', size: 10 },
+          textfont: { color: '#ef4444', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' },
           hoverinfo: 'text',
           hovertext: topOver.map(h => 
             `<b>🔴 OVERHEDGED PEAK (Rich Premium)</b><br>` +
@@ -392,7 +392,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             `Dislocation: <b>+${h.dislocation_pct}% Rich</b><br>` +
             `<i>Strategy: ${h.strategy || 'Sell Vol / Credit Spread'}</i>`
           ),
-          marker: { size: 8, color: '#ef4444', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
+          marker: { size: 10, color: '#ef4444', symbol: 'diamond', line: { color: '#ffffff', width: 2 } }
         });
       }
 
@@ -406,7 +406,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           z: topUnder.map(h => h.iv * 0.95),
           text: topUnder.map(h => `-$${h.strike} (${Math.round(h.dislocation_pct)}%)`),
           textposition: topUnder.map((_, idx) => underPositions[idx % underPositions.length]),
-          textfont: { color: '#6ee7b7', family: 'monospace', size: 10 },
+          textfont: { color: '#10b981', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' },
           hoverinfo: 'text',
           hovertext: topUnder.map(h => 
             `<b>🟢 UNDERHEDGED VOL VALLEY (Cheap Convexity)</b><br>` +
@@ -417,7 +417,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             `<b>Trader Meaning:</b> Statistical IV discount. Buy cheap gamma/vega with asymmetric upside.<br>` +
             `<i>Strategy: ${h.strategy || 'Buy Cheap Wings / Diagonal'}</i>`
           ),
-          marker: { size: 8, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
+          marker: { size: 10, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 2 } }
         });
       }
 
