@@ -147,6 +147,52 @@ def run_rs_scanner():
     all_stocks = duckdb.query(weekly_query).df()
     all_stocks['date'] = pd.to_datetime(all_stocks['date'])
     
+    print("Loading Daily Data for 3-Day Blue Dot Detection...")
+    daily_query = f"""
+    SELECT 
+        d.Ticker as ticker,
+        d.Date as date,
+        d.Close as close,
+        d.High as high,
+        s.Close as spy_close
+    FROM '{LAKEHOUSE_PATH}' d
+    JOIN '{LAKEHOUSE_PATH}' s ON d.Date = s.Date AND s.Ticker = 'SPY'
+    WHERE d.Date >= CURRENT_DATE - INTERVAL 400 DAY
+    ORDER BY d.Date
+    """
+    daily_df = duckdb.query(daily_query).df()
+    daily_df['date'] = pd.to_datetime(daily_df['date'])
+    daily_df['rs'] = daily_df['close'] / daily_df['spy_close']
+
+    # Pre-compute 3-day Blue Dot metadata per ticker
+    blue_dot_map = {}
+    for t, g in daily_df.groupby('ticker'):
+        if len(g) < 100: continue
+        g_sorted = g.sort_values('date')
+        rs_52w_max = g_sorted['rs'].rolling(250, min_periods=40).max()
+        high_52w_price = g_sorted['high'].rolling(250, min_periods=40).max()
+        
+        rs_vs_high = (g_sorted['rs'] / rs_52w_max) * 100.0
+        price_vs_high = (g_sorted['close'] / high_52w_price) * 100.0
+        
+        is_bd_series = (rs_vs_high >= 98.5) & (price_vs_high < 98.0)
+        recent_3d = is_bd_series.iloc[-3:]
+        
+        if recent_3d.any():
+            last_pos = np.where(recent_3d.values)[0][-1]
+            days_ago = int(3 - last_pos - 1) # 0 = today, 1 = yesterday, 2 = 2d ago
+            curr_c = float(g_sorted['close'].iloc[-1])
+            h52 = float(high_52w_price.iloc[-1])
+            lead_pct = round(((h52 / curr_c) - 1.0) * 100.0, 1) if curr_c > 0 else 0.0
+            
+            blue_dot_map[t] = {
+                "is_blue_dot_3d": True,
+                "blue_dot_days_ago": days_ago,
+                "is_blue_dot_today": bool(is_bd_series.iloc[-1]),
+                "blue_dot_lead_pct": lead_pct
+            }
+
+    print(f"Detected {len(blue_dot_map)} tickers with Blue Dots in the last 3 sessions.")
     print("Processing Weekly RS Lines with Multi-Timeframe Divergence & Blue Dot Detection...")
     
     rs_results = []
@@ -244,14 +290,23 @@ def run_rs_scanner():
         else:
             rs_badge = "None"
 
-        # RS Blue Dot Pivots: RS Line at 52-week new high while stock price is STILL below its 52-week high!
-        is_blue_dot = (rs_vs_high >= 98.5) and (price_vs_high < 98.0)
-        blue_dot_lead_pct = round(high_52_price / current_price * 100 - 100, 1) if is_blue_dot else 0.0
+        # RS Blue Dot Pivots Metadata (Checks 3-Day Rolling Window)
+        bd_info = blue_dot_map.get(ticker, {
+            "is_blue_dot_3d": False,
+            "blue_dot_days_ago": None,
+            "is_blue_dot_today": False,
+            "blue_dot_lead_pct": 0.0
+        })
+        
+        is_blue_dot = bd_info["is_blue_dot_3d"]
+        is_blue_dot_today = bd_info["is_blue_dot_today"]
+        blue_dot_days_ago = bd_info["blue_dot_days_ago"]
+        blue_dot_lead_pct = bd_info["blue_dot_lead_pct"]
 
         # Cup and Handle Detection on STOCK PRICE
         ch_analysis = detect_rs_cup_and_handle(weekly_52['close'])
         
-        # A stock is a valid IBD candidate if it has an RS New High (or Blue Dot) OR a Base/Cup pattern
+        # A stock is a valid IBD candidate if it has an RS New High (or Blue Dot in last 3d) OR a Base/Cup pattern
         if rs_badge == "None" and not is_blue_dot and ch_analysis['status'] == 'none':
             continue
 
@@ -277,6 +332,8 @@ def run_rs_scanner():
             "rs_qqq_vs_high": rs_qqq_vs_high,
             "rs_badge": rs_badge,
             "is_blue_dot": is_blue_dot,
+            "is_blue_dot_today": is_blue_dot_today,
+            "blue_dot_days_ago": blue_dot_days_ago,
             "blue_dot_badge": "🔵 RS BLUE DOT PIVOT" if is_blue_dot else "NORMAL",
             "blue_dot_lead_pct": blue_dot_lead_pct,
             "mansfield_rs": round(curr_mansfield, 2),

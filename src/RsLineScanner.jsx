@@ -316,7 +316,7 @@ export default function RsLineScanner({ onTickerClick }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#00E676', fontWeight: 'bold' }}>
                         <input type="checkbox" checked={blueDotOnly} onChange={e => setBlueDotOnly(e.target.checked)} />
-                        🔵 RS Blue Dot Pivots Only
+                        🔵 RS Blue Dot Pivots (Last 3 Days)
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#e2e8f0' }}>
                         <input type="checkbox" checked={chOnly} onChange={e => setChOnly(e.target.checked)} />
@@ -433,7 +433,7 @@ export default function RsLineScanner({ onTickerClick }) {
                                         <td style={{ padding: '10px' }}>
                                             {item.is_blue_dot ? (
                                                 <span style={{ color: '#00E676', background: 'rgba(0,230,118,0.15)', border: '1px solid #00E676', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                    🔵 Blue Dot (+{item.blue_dot_lead_pct}%)
+                                                    🔵 Blue Dot {item.blue_dot_days_ago === 0 ? '⚡(Today)' : `(${item.blue_dot_days_ago}d ago)`} (+{item.blue_dot_lead_pct}%)
                                                 </span>
                                             ) : (
                                                 <>
