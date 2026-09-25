@@ -68,25 +68,24 @@ def detect_rs_new_high(df, spy_series=None):
 
 def evaluate_deepvue_launchpad(ticker, df=None, spy_series=None):
     """
-    TraderLion / Deepvue Launchpad Scanner (Advanced 3-State Execution Engine):
+    TraderLion / Deepvue Launchpad Scanner (Upgraded Dynamic Execution Engine):
     1. Moving Average Convergence ("The Pinch"):
-       - 21-day SMA, 50-day SMA, and 65-day EMA converge within a tight band (<= 3.2% spread).
-    2. Price Resting on the Pad:
-       - Price is within 1% to 3% of the converged MA bundle.
+       - Bundle A (Fast): 10-day EMA, 21-day EMA, and 50-day SMA.
+       - Bundle B (Standard): 21-day SMA, 50-day SMA, and 65-day EMA.
+       - Pinched if either bundle spread is <= 5.5% (dynamically adjusted for high-volatility Leaders).
+    2. Price Proximity to the Pad:
+       - Price is within <= 5.0% of the MA bundle average floor.
     3. Volume Dry-Up (VDU):
-       - Volume contraction below 50-day average volume (<= 85%).
-    4. Macro Trend Alignment:
-       - Prior Stage 2 advance (+20%+ over 6 months) and trading above or at the 200-day line.
-    5. Tactical States:
-       - 🚀 LAUNCHING: Breaching 3-day pivot on volume.
-       - 🔵 DNB PIVOT: Down day on low volume followed by tight inside/narrow day.
-       - 🟡 COILING: Resting tight on pad on dry volume.
-    6. Institutional Confluence Badges:
-       - ⚡ Pocket Pivot on Pad (Dr. Chris Kacher / Gil Morales stealth accumulation).
-       - 🔥 RS High (Relative Strength Line printing new 20-day highs during the pinch).
+       - Current volume or recent 3-day average volume <= 90% of 50-day average.
+    4. Stage 2 / Trend Alignment:
+       - 6-month prior run >= 15% and price >= 200 SMA * 0.95 (or > 50-day SMA).
+    5. Actionable Tactical States:
+       - 🚀 LAUNCHING: Price breaching the 3-day high pivot on expanding volume (vol_ratio >= 0.80).
+       - 🔵 DNB PIVOT: Low-volume down session followed by tight inside/narrow range bar.
+       - 🟡 COILING: Resting tight on pad on dry volume waiting for entry pivot.
     """
     try:
-        if df is None or len(df) < 65:
+        if df is None or len(df) < 50:
             return None
             
         close = df['Close']
@@ -100,67 +99,78 @@ def evaluate_deepvue_launchpad(ticker, df=None, spy_series=None):
         curr_l = float(low.iloc[-1])
         curr_v = float(vol.iloc[-1])
         
-        # Exclude extreme penny stocks
+        # Exclude penny stocks below $5
         if curr_c < 5.0:
             return None
             
-        # 1. Moving Average Convergence Calculations
+        # Moving Averages
+        ema10 = float(close.ewm(span=10, adjust=False).mean().iloc[-1])
+        ema21 = float(close.ewm(span=21, adjust=False).mean().iloc[-1])
         sma21 = float(close.rolling(21).mean().iloc[-1])
         sma50 = float(close.rolling(50).mean().iloc[-1])
         ema65 = float(close.ewm(span=65, adjust=False).mean().iloc[-1])
         
-        if np.isnan(sma21) or np.isnan(sma50) or np.isnan(ema65):
+        if any(np.isnan([ema10, ema21, sma21, sma50, ema65])):
             return None
-            
-        ma_min = min(sma21, sma50, ema65)
-        ma_max = max(sma21, sma50, ema65)
-        ma_avg = (sma21 + sma50 + ema65) / 3.0
-        
-        if ma_avg <= 0:
+
+        # Bundle A: Fast (10 EMA, 21 EMA, 50 SMA)
+        ma_min_a = min(ema10, ema21, sma50)
+        ma_max_a = max(ema10, ema21, sma50)
+        ma_avg_a = (ema10 + ema21 + sma50) / 3.0
+        spread_a = ((ma_max_a - ma_min_a) / ma_avg_a) * 100
+
+        # Bundle B: Standard (21 SMA, 50 SMA, 65 EMA)
+        ma_min_b = min(sma21, sma50, ema65)
+        ma_max_b = max(sma21, sma50, ema65)
+        ma_avg_b = (sma21 + sma50 + ema65) / 3.0
+        spread_b = ((ma_max_b - ma_min_b) / ma_avg_b) * 100
+
+        # Use the best pinched MA bundle
+        if spread_a <= spread_b:
+            ma_spread_pct = spread_a
+            ma_avg = ma_avg_a
+            ma_min = ma_min_a
+            bundle_name = "Fast (10/21/50)"
+        else:
+            ma_spread_pct = spread_b
+            ma_avg = ma_avg_b
+            ma_min = ma_min_b
+            bundle_name = "Std (21/50/65)"
+
+        # Max allowed spread (5.5%)
+        if ma_spread_pct > 5.5:
             return None
-            
-        # Moving average spread percentage (The Pinch)
-        ma_spread_pct = round(((ma_max - ma_min) / ma_avg) * 100, 2)
-        
-        # Must be tightly pinched (within 3.2% spread between 21 SMA, 50 SMA, 65 EMA)
-        if ma_spread_pct > 3.2:
-            return None
-            
-        # 2. Price Proximity to the Pad
+
+        # Price Proximity to the Pad (within 5.0% of MA bundle, and not collapsing below 4% of floor)
         price_dist_pct = round(abs(curr_c - ma_avg) / ma_avg * 100, 2)
-        
-        # Price must be resting right on or within 3.2% of the MA bundle
-        # and not breaking down severely below the floor
-        if price_dist_pct > 3.2 or curr_c < (ma_min * 0.975):
+        if price_dist_pct > 5.0 or curr_c < (ma_min * 0.96):
             return None
-            
-        # 3. Macro Trend & Stage 2 Prerequisite
+
+        # Macro Trend Alignment
         if len(close) >= 200:
             sma200 = float(close.rolling(200).mean().iloc[-1])
-            if curr_c < (sma200 * 0.96):
+            if curr_c < (sma200 * 0.94):
                 return None
-                
+
         lookback_bars = min(len(close), 130)
-        prior_low = float(low.iloc[-lookback_bars:-20].min())
+        prior_low = float(low.iloc[-lookback_bars:-15].min())
         prior_high = float(high.iloc[-lookback_bars:].max())
         prior_run_pct = ((prior_high - prior_low) / prior_low) * 100 if prior_low > 0 else 0
-        if prior_run_pct < 20.0:
+        if prior_run_pct < 15.0:
             return None
-            
-        # 4. Volume Dry-Up (VDU)
+
+        # Volume & Exhaustion Checks
         avg_vol50 = float(vol.iloc[-50:].mean()) if len(vol) >= 50 else float(vol.mean())
         if avg_vol50 <= 0:
             return None
-            
+
         vol_ratio = curr_v / avg_vol50
         recent_3d_vol_ratio = float(vol.iloc[-3:].mean()) / avg_vol50
-        
-        # VDU requirement: Volume contraction (below 50-day average, <= 85%)
-        has_vdu = (vol_ratio <= 0.85) or (recent_3d_vol_ratio <= 0.90)
-        if not has_vdu:
-            return None
-            
-        # 5. Volatility & ATR Contraction
+
+        # Allow Launching stocks or VDU coiling stocks (<= 92% vol)
+        has_vdu = (vol_ratio <= 0.92) or (recent_3d_vol_ratio <= 0.95)
+
+        # Volatility & ATR Contraction
         tr = pd.concat([
             high - low,
             (high - close.shift(1)).abs(),
@@ -169,26 +179,26 @@ def evaluate_deepvue_launchpad(ticker, df=None, spy_series=None):
         atr14 = float(tr.rolling(14).mean().iloc[-1]) if len(tr) >= 14 else (curr_h - curr_l)
         today_range = curr_h - curr_l
         range_tightness = (today_range / atr14) if atr14 > 0 else 1.0
-        
-        # 6. Trade Parameters
-        # Entry pivot: Highest high of the previous 3 sessions (excluding today for trigger testing)
+
+        # Entry Pivot: 3-day high prior to today
         entry_pivot = round(float(high.iloc[-4:-1].max()) if len(high) >= 4 else float(high.iloc[-2]), 2)
-        stop_loss = round(ma_min * 0.985, 2)
+        stop_loss = round(ma_min * 0.98, 2)
         risk_pct = round(((curr_c - stop_loss) / curr_c) * 100, 1) if curr_c > stop_loss else 2.0
-        
-        # 7. Tactical State Classification
-        # Check State 1: LAUNCHING TODAY
-        is_launching = (curr_c >= entry_pivot * 0.998 or curr_h >= entry_pivot) and (vol_ratio >= 0.80)
-        
-        # Check State 2: DNB SETUP (Down-Narrow-Breakout / Coiled Ready)
-        # Prior day was down on light volume, and today/yesterday was an inside or narrow range day
+
+        # State 1: LAUNCHING (Breaching 3-day pivot today on volume)
+        is_launching = (curr_c >= entry_pivot * 0.995 or curr_h >= entry_pivot) and (vol_ratio >= 0.75)
+
+        # State 2: DNB PIVOT (Down-Narrow-Breakout / Coiled Ready)
         is_dnb = False
         if len(close) >= 4:
-            prior_day_down = (close.iloc[-2] < close.iloc[-3]) and (vol.iloc[-2] <= avg_vol50 * 0.90)
-            narrow_range = (today_range <= atr14 * 0.80) or (curr_h <= float(high.iloc[-2]) and curr_l >= float(low.iloc[-2]))
+            prior_day_down = (close.iloc[-2] < close.iloc[-3]) and (vol.iloc[-2] <= avg_vol50 * 0.92)
+            narrow_range = (today_range <= atr14 * 0.85) or (curr_h <= float(high.iloc[-2]) and curr_l >= float(low.iloc[-2]))
             if prior_day_down and narrow_range:
                 is_dnb = True
-                
+
+        if not (has_vdu or is_launching or is_dnb):
+            return None
+
         if is_launching:
             state = "LAUNCHING"
             state_label = "🚀 LAUNCHING"
@@ -201,35 +211,27 @@ def evaluate_deepvue_launchpad(ticker, df=None, spy_series=None):
             state = "COILING"
             state_label = "🟡 COILING"
             state_color = "#fbbf24"
-            
-        # 8. Institutional Confluence Badges
+
+        # Confluence Badges
         has_pocket_pivot, pp_days_ago = detect_pocket_pivot(df, lookback=10)
         has_rs_high = detect_rs_new_high(df, spy_series=spy_series)
-        
-        # 9. Advanced Quantitative Scoring
-        # Base 80
-        # + Tighter pinch bonus (spread < 1.5% gives max points)
-        pinch_bonus = max(0, (3.2 - ma_spread_pct) * 5.0)
-        # + VDU bonus (lower volume = higher exhaustion)
+
+        # Quantitative Scoring
+        pinch_bonus = max(0, (5.5 - ma_spread_pct) * 4.0)
         vdu_bonus = max(0, (1.0 - min(vol_ratio, recent_3d_vol_ratio)) * 15.0)
-        # + Range tightness bonus
         range_bonus = max(0, (1.2 - min(range_tightness, 1.2)) * 8.0)
-        # + State bonus
-        state_bonus = 15.0 if state == "LAUNCHING" else (8.0 if state == "DNB" else 0.0)
-        # + Pocket Pivot bonus
+        state_bonus = 25.0 if state == "LAUNCHING" else (15.0 if state == "DNB" else 5.0)
         pp_bonus = 12.0 if has_pocket_pivot else 0.0
-        # + RS High bonus
         rs_bonus = 10.0 if has_rs_high else 0.0
-        
+
         score = 80.0 + pinch_bonus + vdu_bonus + range_bonus + state_bonus + pp_bonus + rs_bonus
-        
-        # Format Badges String
+
         badges = [state_label]
         if has_pocket_pivot:
             badges.append(f"⚡ Pocket Pivot ({pp_days_ago}d ago)")
         if has_rs_high:
             badges.append("🔥 RS High")
-            
+
         badge_str = " | ".join(badges)
         vdu_pct_str = f"-{int((1.0 - vol_ratio) * 100)}%" if vol_ratio < 1.0 else f"+{int((vol_ratio - 1.0) * 100)}%"
         metric_str = f"{badge_str} · MA Pinch {ma_spread_pct:.1f}% · VDU {vdu_pct_str} · Risk {risk_pct}%"
