@@ -198,25 +198,28 @@ def run_rs_scanner():
         if weeks_since_high < 3:
             continue
             
+        # Calculate Official William O'Neil IBD 1-Year Weighted Performance Formula:
+        # IBD Weighted Return = 0.40 * Q1_Return + 0.20 * Q2_Return + 0.20 * Q3_Return + 0.20 * Q4_Return
+        closes_len = len(weekly_52['close'])
+        c = weekly_52['close']
+        q1 = (c.iloc[-1] / c.iloc[-13] - 1.0) if closes_len >= 13 else 0.0
+        q2 = (c.iloc[-13] / c.iloc[-26] - 1.0) if closes_len >= 26 else 0.0
+        q3 = (c.iloc[-26] / c.iloc[-39] - 1.0) if closes_len >= 39 else 0.0
+        q4 = (c.iloc[-39] / c.iloc[0] - 1.0) if closes_len >= 52 else 0.0
+        ibd_perf = float(0.40 * q1 + 0.20 * q2 + 0.20 * q3 + 0.20 * q4)
+
         # Moving Average Extensions
         sma_10 = weekly_52['close'].rolling(10).mean().iloc[-1]
         sma_40 = weekly_52['close'].rolling(40).mean().iloc[-1]
         
-        # FILTER 3: Prevent Over-Extended Setups
-        # Must be tightly resting near 10-week MA (max 10% above)
-        if pd.isna(sma_10) or (current_price / sma_10) > 1.10:
+        # FILTER: Skip severely collapsed or penny illiquid stocks
+        if current_price < 3.0 or price_vs_high < 50.0:
             continue
             
-        # Must not be in a climax run above 40-week MA (max 40% above)
-        if pd.isna(sma_40) or (current_price / sma_40) > 1.40:
+        # Prevent Climax Extensions (> 50% above 40-week MA)
+        if not pd.isna(sma_40) and (current_price / sma_40) > 1.50:
             continue
             
-        # FILTER 4: Prevent Intraday/Recent Crashes
-        # If the stock dropped significantly this week (e.g., > 10% from the high of the week), skip it
-        weekly_high = weekly_52['high'].iloc[-1]
-        if (current_price / weekly_high) < 0.90:
-            continue
-        
         # ADR% (over 20 weeks) & Personality Classification
         recent_20 = weekly_52.iloc[-20:]
         adr_pct = calculate_adr(recent_20['high'], recent_20['low'])
@@ -230,24 +233,26 @@ def run_rs_scanner():
         rs_peak_1m = rs_ratio_normalized.iloc[-4:].max() if len(rs_ratio_normalized) >= 4 else rs_peak_12m
         
         # Determine Multi-Timeframe Badge Status
-        if (rs_current / rs_peak_12m) * 100 >= 99.0:
+        if (rs_current / rs_peak_12m) * 100 >= 98.5:
             rs_badge = "12M RS High"
-        elif (rs_current / rs_peak_6m) * 100 >= 99.0:
+        elif (rs_current / rs_peak_6m) * 100 >= 98.5:
             rs_badge = "6M RS High"
-        elif (rs_current / rs_peak_3m) * 100 >= 99.0:
+        elif (rs_current / rs_peak_3m) * 100 >= 98.5:
             rs_badge = "3M RS High"
-        elif (rs_current / rs_peak_1m) * 100 >= 99.0:
+        elif (rs_current / rs_peak_1m) * 100 >= 98.5:
             rs_badge = "1M RS High"
         else:
             rs_badge = "None"
-            
-        # USER CONSTRAINT 1: RS Line MUST be at a fresh high on at least a 1-month timeframe
-        if rs_badge == "None":
-            continue
-            
-        # USER CONSTRAINT 2: Cup and Handle Detection on STOCK PRICE
+
+        # RS Blue Dot Pivots: RS Line at 52-week new high while stock price is STILL below its 52-week high!
+        is_blue_dot = (rs_vs_high >= 98.5) and (price_vs_high < 98.0)
+        blue_dot_lead_pct = round(high_52_price / current_price * 100 - 100, 1) if is_blue_dot else 0.0
+
+        # Cup and Handle Detection on STOCK PRICE
         ch_analysis = detect_rs_cup_and_handle(weekly_52['close'])
-        if ch_analysis['status'] == 'none':
+        
+        # A stock is a valid IBD candidate if it has an RS New High (or Blue Dot) OR a Base/Cup pattern
+        if rs_badge == "None" and not is_blue_dot and ch_analysis['status'] == 'none':
             continue
 
         # Compute Mansfield RS & Slope vs SPY
@@ -255,10 +260,6 @@ def run_rs_scanner():
         curr_mansfield = float(mansfield_series.iloc[-1]) if not pd.isna(mansfield_series.iloc[-1]) else 0.0
         mansfield_5w_ago = float(mansfield_series.iloc[-6]) if (len(mansfield_series) >= 6 and not pd.isna(mansfield_series.iloc[-6])) else curr_mansfield
         mansfield_slope = round(curr_mansfield - mansfield_5w_ago, 2)
-        
-        # RS Blue Dot Pivots: RS Line at 52-week new high while stock price is STILL below its 52-week high!
-        is_blue_dot = (rs_vs_high >= 99.0) and (price_vs_high < 98.0)
-        blue_dot_lead_pct = round(high_52_price / current_price * 100 - 100, 1) if is_blue_dot else 0.0
 
         # Multi-benchmark divergence vs QQQ
         qqq_aligned = qqq_weekly.reindex(weekly_52.index).ffill()
@@ -270,7 +271,8 @@ def run_rs_scanner():
 
         rs_results.append({
             "ticker": ticker,
-            "rs_raw_return": (rs_ratio_normalized.iloc[-1] - 1.0) * 100, # Used for RS Rating percentile
+            "ibd_perf": ibd_perf,
+            "rs_raw_return": (rs_ratio_normalized.iloc[-1] - 1.0) * 100,
             "rs_vs_high": round(rs_vs_high, 1),
             "rs_qqq_vs_high": rs_qqq_vs_high,
             "rs_badge": rs_badge,
@@ -295,20 +297,21 @@ def run_rs_scanner():
         
     print(f"Scanned {len(rs_results)} stocks with 52-week histories.")
     
-    # Calculate RS Rating Percentile (1-99)
-    rs_raw_returns = [r['rs_raw_return'] for r in rs_results]
+    # Calculate Official IBD RS Rating Percentile (1-99) using 1-Year Weighted Return
+    ibd_perfs = [r['ibd_perf'] for r in rs_results]
     
     from scipy import stats
-    percentiles = [stats.percentileofscore(rs_raw_returns, r) for r in rs_raw_returns]
+    percentiles = [stats.percentileofscore(ibd_perfs, r['ibd_perf']) for r in rs_results]
     
     candidates = []
     zacks_query_list = []
     
     for i, r in enumerate(rs_results):
-        r['rs_rating'] = int(percentiles[i])
+        # Scale to integer 1 to 99 range
+        r['rs_rating'] = max(1, min(99, int(round(percentiles[i]))))
         
-        # Only keep interesting setups to save bandwidth on the Bulk Query
-        if r['rs_rating'] >= 50 and (r['rs_badge'] != "None" or r['pattern_status'] != "none"):
+        # Keep high-performance IBD setups (RS Rating >= 50, Blue Dot, RS Badge or Base Pattern)
+        if r['rs_rating'] >= 50 or r['is_blue_dot'] or r['rs_badge'] != "None" or r['pattern_status'] != "none":
             candidates.append(r)
             zacks_query_list.append(r['ticker'])
             
