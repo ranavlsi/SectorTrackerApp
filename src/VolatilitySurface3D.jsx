@@ -41,7 +41,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedExpiry, setSelectedExpiry] = useState('All');
-  const [activeViewMode, setActiveViewMode] = useState('3d_surface'); // '3d_surface' | '2d_skew' | 'term_structure' | 'heatmap'
+  const [activeViewMode, setActiveViewMode] = useState('heatmap'); // 'heatmap' | '3d_surface' | '2d_skew' | 'term_structure'
   const [surfaceColor, setSurfaceColor] = useState('Plasma');
   const [surfaceBg, setSurfaceBg] = useState('#060910');
   const [cameraPreset, setCameraPreset] = useState('iso');
@@ -812,16 +812,16 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         x: hmXValues,
         y: expirations,
         type: 'heatmap',
-        colorscale: surfaceColor,
-        zsmooth: 'best',
+        colorscale: surfaceColor === 'HedgingRegimes' ? 'Viridis' : surfaceColor,
+        zsmooth: false, // Disables blur smoothing for crisp matrix grid cells!
         hoverongaps: false,
         colorbar: {
-          title: { text: 'Implied Vol (%)', font: { color: currentBg.text, family: 'monospace', size: 11 } },
-          tickfont: { color: currentBg.text, family: 'monospace', size: 10 },
+          title: { text: 'Implied Vol (%)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' } },
+          tickfont: { color: '#f8fafc', family: "'JetBrains Mono', monospace", size: 11 },
           thickness: 16,
-          len: 0.85
+          len: 0.90
         },
-        hovertemplate: `<b>${strikeMode === 'moneyness' ? 'Moneyness' : 'Strike'}:</b> %{x}<br><b>Tenor:</b> %{y}<br><b>Implied Vol:</b> %{z:.1f}%<extra></extra>`
+        hovertemplate: `<b>Strike Price:</b> %{x}<br><b>Expiration:</b> %{y}<br><b>Implied Volatility:</b> %{z:.1f}%<extra></extra>`
       }];
 
       // Overlay Air Pocket Pinpoints directly onto the Heatmap
@@ -835,10 +835,10 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           y: visibleAirPockets.map(p => p.expiry),
           type: 'scatter',
           mode: 'markers+text',
-          name: '🕳️ Air Pocket (Cheap Vega)',
+          name: '🕳️ Vol Air Pocket (Cheap Vega)',
           text: visibleAirPockets.map(p => `🕳️ $${p.strike} (${p.iv}%)`),
           textposition: 'top center',
-          textfont: { color: '#00F0FF', family: 'monospace', size: 11, weight: 'bold' },
+          textfont: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' },
           marker: {
             size: 16,
             color: '#00F0FF',
@@ -859,7 +859,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           name: '🎯 Target Focus',
           text: ['🎯 FOCUS LOCK'],
           textposition: 'bottom center',
-          textfont: { color: '#00E676', family: 'monospace', size: 11, weight: 'bold' },
+          textfont: { color: '#00E676', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' },
           marker: {
             size: 20,
             color: '#00E676',
@@ -871,22 +871,22 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
 
       const layout = {
         autosize: true,
-        height: 540,
-        margin: { l: 80, r: 40, b: 60, t: 50 },
+        height: 580,
+        margin: { l: 90, r: 40, b: 60, t: 50 },
         paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
-        title: { text: `Implied Volatility Heatmap Matrix · Strike vs Expiration`, font: { color: currentBg.text, family: 'monospace', size: 14 } },
+        plot_bgcolor: '#090d16',
+        title: { text: `Implied Volatility Heatmap Matrix · Strike Price vs Expiration Tenor`, font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 14, weight: 'bold' } },
         xaxis: { 
-          title: { text: hmXTitle, font: { color: currentBg.text, size: 12 } }, 
-          gridcolor: currentBg.grid, 
-          color: currentBg.text, 
-          tickfont: { family: 'monospace', color: currentBg.text } 
+          title: { text: hmXTitle, font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+          gridcolor: 'rgba(255, 255, 255, 0.12)', 
+          color: '#f8fafc', 
+          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 } 
         },
         yaxis: { 
-          title: { text: 'Expiration Tenor', font: { color: currentBg.text, size: 12 } }, 
-          gridcolor: currentBg.grid, 
-          color: currentBg.text, 
-          tickfont: { family: 'monospace', color: currentBg.text },
+          title: { text: 'Expiration Tenor', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+          gridcolor: 'rgba(255, 255, 255, 0.12)', 
+          color: '#f8fafc', 
+          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
           type: 'category'
         },
         shapes: spot ? [{
@@ -897,17 +897,17 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           x1: spotX,
           y0: 0,
           y1: 1,
-          line: { color: '#00F0FF', width: 2, dash: 'dash' }
+          line: { color: '#00F0FF', width: 2.5, dash: 'dash' }
         }] : [],
         annotations: spot ? [{
           xref: 'x',
           yref: 'paper',
           x: spotX,
           y: 1.05,
-          text: strikeMode === 'moneyness' ? 'ATM Spot (1.00x)' : `Spot $${spot.toFixed(2)}`,
+          text: strikeMode === 'moneyness' ? 'ATM Spot (1.00x)' : `Spot Price $${spot.toFixed(2)}`,
           showarrow: false,
-          font: { color: '#00F0FF', family: 'monospace', size: 11 },
-          bgcolor: surfaceBg === '#f8fafc' ? '#e2e8f0' : 'rgba(10, 14, 28, 0.9)',
+          font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
+          bgcolor: 'rgba(15, 23, 42, 0.95)',
           bordercolor: '#00F0FF',
           borderwidth: 1,
           borderpad: 4
