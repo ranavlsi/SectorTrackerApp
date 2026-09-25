@@ -180,13 +180,15 @@ def evaluate_deepvue_launchpad(ticker, df=None, spy_series=None):
         today_range = curr_h - curr_l
         range_tightness = (today_range / atr14) if atr14 > 0 else 1.0
 
-        # Entry Pivot: 3-day high prior to today
-        entry_pivot = round(float(high.iloc[-4:-1].max()) if len(high) >= 4 else float(high.iloc[-2]), 2)
+        # Entry Pivot: True Base High / Pivot (Highest High of the prior 10 sessions before today)
+        # Guarantees LAUNCHING is triggered when breaking out of a 10-day structural base ceiling
+        entry_pivot = round(float(high.iloc[-11:-1].max()) if len(high) >= 11 else float(high.iloc[-2]), 2)
         stop_loss = round(ma_min * 0.98, 2)
         risk_pct = round(((curr_c - stop_loss) / curr_c) * 100, 1) if curr_c > stop_loss else 2.0
 
-        # State 1: LAUNCHING (Breaching 3-day pivot today on volume)
-        is_launching = (curr_c >= entry_pivot * 0.995 or curr_h >= entry_pivot) and (vol_ratio >= 0.75)
+        # State 1: LAUNCHING (Breaching 10-day base high pivot TODAY on heavy volume expansion)
+        # Requires current Close or High to breach the 10-day base high, accompanied by volume expansion (vol_ratio >= 1.20)
+        is_launching = (curr_c >= entry_pivot * 0.998 or curr_h >= entry_pivot) and (vol_ratio >= 1.20)
 
         # State 2: DNB PIVOT (Down-Narrow-Breakout / Coiled Ready)
         # Authentic Minervini / TraderLion Rule:

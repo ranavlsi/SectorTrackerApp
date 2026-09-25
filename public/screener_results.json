@@ -3231,36 +3231,6 @@
   ],
   "deepvue_launchpad": [
     {
-      "ticker": "SPYM",
-      "metric": "\ud83d\ude80 LAUNCHING | \ud83d\udd25 RS High \u00b7 MA Pinch 0.7% \u00b7 VDU +1% \u00b7 Risk 3.3%",
-      "score": 138.7,
-      "price": 90.8,
-      "state": "LAUNCHING",
-      "state_label": "\ud83d\ude80 LAUNCHING",
-      "state_color": "#10b981",
-      "has_pocket_pivot": false,
-      "has_rs_high": true,
-      "entry_pivot": 91.22,
-      "stop_loss": 87.83,
-      "risk_pct": 3.3,
-      "ma_spread_pct": 0.694783527937612
-    },
-    {
-      "ticker": "BMY",
-      "metric": "\ud83d\ude80 LAUNCHING | \u26a1 Pocket Pivot (6d ago) \u00b7 MA Pinch 2.4% \u00b7 VDU -7% \u00b7 Risk 2.1%",
-      "score": 130.5,
-      "price": 62.86,
-      "state": "LAUNCHING",
-      "state_label": "\ud83d\ude80 LAUNCHING",
-      "state_color": "#10b981",
-      "has_pocket_pivot": true,
-      "has_rs_high": false,
-      "entry_pivot": 63.08,
-      "stop_loss": 61.56,
-      "risk_pct": 2.1,
-      "ma_spread_pct": 2.4096042359242156
-    },
-    {
       "ticker": "SHOP",
       "metric": "\ud83d\udfe1 COILING | \u26a1 Pocket Pivot (5d ago) \u00b7 MA Pinch 0.9% \u00b7 VDU -40% \u00b7 Risk 5.0%",
       "score": 126.7,
@@ -3315,25 +3285,10 @@
       "state_color": "#3b82f6",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 10.9,
+      "entry_pivot": 11.17,
       "stop_loss": 9.86,
       "risk_pct": 5.1,
       "ma_spread_pct": 4.317450036900822
-    },
-    {
-      "ticker": "CCC",
-      "metric": "\ud83d\ude80 LAUNCHING \u00b7 MA Pinch 1.0% \u00b7 VDU +32% \u00b7 Risk 4.2%",
-      "score": 125.2,
-      "price": 6.9,
-      "state": "LAUNCHING",
-      "state_label": "\ud83d\ude80 LAUNCHING",
-      "state_color": "#10b981",
-      "has_pocket_pivot": false,
-      "has_rs_high": false,
-      "entry_pivot": 6.96,
-      "stop_loss": 6.61,
-      "risk_pct": 4.2,
-      "ma_spread_pct": 1.0033393262735888
     },
     {
       "ticker": "KO",
@@ -3345,7 +3300,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 89.36,
+      "entry_pivot": 90.36,
       "stop_loss": 85.73,
       "risk_pct": 2.4,
       "ma_spread_pct": 0.8138306749034395
@@ -3360,7 +3315,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 86.62,
+      "entry_pivot": 91.99,
       "stop_loss": 84.11,
       "risk_pct": 2.0,
       "ma_spread_pct": 1.3133964512401497
@@ -3375,7 +3330,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 5.58,
+      "entry_pivot": 5.95,
       "stop_loss": 5.42,
       "risk_pct": 2.0,
       "ma_spread_pct": 1.3836817043776795
@@ -3390,7 +3345,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 25.8,
+      "entry_pivot": 26.93,
       "stop_loss": 24.26,
       "risk_pct": 4.4,
       "ma_spread_pct": 2.952658337713504
@@ -3405,7 +3360,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 164.91,
+      "entry_pivot": 169.64,
       "stop_loss": 156.24,
       "risk_pct": 2.7,
       "ma_spread_pct": 1.453018409287587
@@ -3420,25 +3375,25 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 259.0,
+      "entry_pivot": 259.49,
       "stop_loss": 248.64,
       "risk_pct": 0.4,
       "ma_spread_pct": 0.9640936225030591
     },
     {
-      "ticker": "RDW",
-      "metric": "\ud83d\ude80 LAUNCHING \u00b7 MA Pinch 3.6% \u00b7 VDU -10% \u00b7 Risk 8.0%",
-      "score": 118.1,
-      "price": 11.62,
-      "state": "LAUNCHING",
-      "state_label": "\ud83d\ude80 LAUNCHING",
-      "state_color": "#10b981",
+      "ticker": "SPYM",
+      "metric": "\ud83d\udfe1 COILING | \ud83d\udd25 RS High \u00b7 MA Pinch 0.7% \u00b7 VDU +1% \u00b7 Risk 3.3%",
+      "score": 118.7,
+      "price": 90.8,
+      "state": "COILING",
+      "state_label": "\ud83d\udfe1 COILING",
+      "state_color": "#fbbf24",
       "has_pocket_pivot": false,
-      "has_rs_high": false,
-      "entry_pivot": 11.9,
-      "stop_loss": 10.69,
-      "risk_pct": 8.0,
-      "ma_spread_pct": 3.6321565270263583
+      "has_rs_high": true,
+      "entry_pivot": 91.22,
+      "stop_loss": 87.83,
+      "risk_pct": 3.3,
+      "ma_spread_pct": 0.694783527937612
     },
     {
       "ticker": "HIMS",
@@ -3465,7 +3420,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 160.71,
+      "entry_pivot": 168.82,
       "stop_loss": 149.72,
       "risk_pct": 4.5,
       "ma_spread_pct": 1.0896154870559978
@@ -3480,7 +3435,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 17.99,
+      "entry_pivot": 18.2,
       "stop_loss": 17.85,
       "risk_pct": 2.0,
       "ma_spread_pct": 3.081770634896647
@@ -3495,7 +3450,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 12.94,
+      "entry_pivot": 13.11,
       "stop_loss": 11.47,
       "risk_pct": 5.8,
       "ma_spread_pct": 3.6979478894453153
@@ -3540,7 +3495,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 47.79,
+      "entry_pivot": 51.66,
       "stop_loss": 47.02,
       "risk_pct": 0.1,
       "ma_spread_pct": 1.2141625517547086
@@ -3555,7 +3510,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 20.45,
+      "entry_pivot": 20.75,
       "stop_loss": 18.44,
       "risk_pct": 3.0,
       "ma_spread_pct": 3.8271991686762186
@@ -3570,7 +3525,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 110.43,
+      "entry_pivot": 112.22,
       "stop_loss": 107.02,
       "risk_pct": 2.0,
       "ma_spread_pct": 2.9225674500084264
@@ -3585,7 +3540,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 14.71,
+      "entry_pivot": 14.96,
       "stop_loss": 14.11,
       "risk_pct": 2.1,
       "ma_spread_pct": 0.8786791341692444
@@ -3600,7 +3555,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 53.21,
+      "entry_pivot": 56.87,
       "stop_loss": 51.44,
       "risk_pct": 0.2,
       "ma_spread_pct": 1.5581933404910653
@@ -3615,7 +3570,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 19.29,
+      "entry_pivot": 20.7,
       "stop_loss": 17.68,
       "risk_pct": 2.8,
       "ma_spread_pct": 4.836532205378352
@@ -3660,25 +3615,10 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": true,
       "has_rs_high": false,
-      "entry_pivot": 366.55,
+      "entry_pivot": 366.78,
       "stop_loss": 351.5,
       "risk_pct": 0.4,
       "ma_spread_pct": 4.855660571505383
-    },
-    {
-      "ticker": "TSLA",
-      "metric": "\ud83d\ude80 LAUNCHING \u00b7 MA Pinch 4.7% \u00b7 VDU +15% \u00b7 Risk 8.3%",
-      "score": 109.6,
-      "price": 372.11,
-      "state": "LAUNCHING",
-      "state_label": "\ud83d\ude80 LAUNCHING",
-      "state_color": "#10b981",
-      "has_pocket_pivot": false,
-      "has_rs_high": false,
-      "entry_pivot": 386.7,
-      "stop_loss": 341.28,
-      "risk_pct": 8.3,
-      "ma_spread_pct": 4.706568829528817
     },
     {
       "ticker": "CRWV",
@@ -3690,7 +3630,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 91.12,
+      "entry_pivot": 91.99,
       "stop_loss": 84.05,
       "risk_pct": 4.0,
       "ma_spread_pct": 1.11661343841555
@@ -3720,7 +3660,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 15.69,
+      "entry_pivot": 16.81,
       "stop_loss": 15.37,
       "risk_pct": 0.6,
       "ma_spread_pct": 1.855590553048691
@@ -3780,7 +3720,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 47.59,
+      "entry_pivot": 49.65,
       "stop_loss": 47.53,
       "risk_pct": 2.0,
       "ma_spread_pct": 2.7144487405343916
@@ -3795,7 +3735,7 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 8.33,
+      "entry_pivot": 8.68,
       "stop_loss": 7.64,
       "risk_pct": 6.8,
       "ma_spread_pct": 4.104550390201882
@@ -3810,10 +3750,25 @@
       "state_color": "#fbbf24",
       "has_pocket_pivot": false,
       "has_rs_high": false,
-      "entry_pivot": 5.84,
+      "entry_pivot": 6.07,
       "stop_loss": 5.15,
       "risk_pct": 5.0,
       "ma_spread_pct": 4.786651278552158
+    },
+    {
+      "ticker": "RDW",
+      "metric": "\ud83d\udfe1 COILING \u00b7 MA Pinch 3.6% \u00b7 VDU -10% \u00b7 Risk 8.0%",
+      "score": 98.1,
+      "price": 11.62,
+      "state": "COILING",
+      "state_label": "\ud83d\udfe1 COILING",
+      "state_color": "#fbbf24",
+      "has_pocket_pivot": false,
+      "has_rs_high": false,
+      "entry_pivot": 11.9,
+      "stop_loss": 10.69,
+      "risk_pct": 8.0,
+      "ma_spread_pct": 3.6321565270263583
     },
     {
       "ticker": "MRK",
@@ -3829,6 +3784,21 @@
       "stop_loss": 137.58,
       "risk_pct": 7.5,
       "ma_spread_pct": 5.234882699328775
+    },
+    {
+      "ticker": "TSLA",
+      "metric": "\ud83d\udfe1 COILING \u00b7 MA Pinch 4.7% \u00b7 VDU +15% \u00b7 Risk 8.3%",
+      "score": 89.6,
+      "price": 372.11,
+      "state": "COILING",
+      "state_label": "\ud83d\udfe1 COILING",
+      "state_color": "#fbbf24",
+      "has_pocket_pivot": false,
+      "has_rs_high": false,
+      "entry_pivot": 386.7,
+      "stop_loss": 341.28,
+      "risk_pct": 8.3,
+      "ma_spread_pct": 4.706568829528817
     }
   ],
   "hve_volume": [
