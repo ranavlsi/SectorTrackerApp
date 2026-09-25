@@ -384,8 +384,6 @@ def chart_data():
                     })
                     
                     # Multi-Timeframe Blue Dot Pivot Detection:
-                    # An RS Blue Dot occurs whenever the RS Line makes a New High over 1-month (20D), 3-month (60D), 6-month (120D), or 12-month (252D) lookback
-                    # WHILE the stock price is still below its corresponding period high (> 1.5% below high)
                     if d_str in rs_norm and d_str in comb.index.strftime('%Y-%m-%d'):
                         curr_rs = rs_dict[d_str]
                         curr_stock = comb.loc[comb.index.strftime('%Y-%m-%d') == d_str, 'stock'].values[0]
@@ -393,7 +391,6 @@ def chart_data():
                         
                         if len(sub_comb) >= 10:
                             is_blue_dot_pivot = False
-                            # Evaluate 20D (1M), 60D (3M), 120D (6M), and full 252D (12M) windows
                             for window in [20, 60, 120, len(sub_comb)]:
                                 window_sub = sub_comb.tail(window)
                                 sub_rs = (window_sub['stock'] / window_sub['spy'])
@@ -403,7 +400,6 @@ def chart_data():
                                 max_stock_win = window_sub['stock'].max()
                                 curr_stock_win = window_sub['stock'].iloc[-1]
                                 
-                                # RS Line at/near new high for window (>= 98.5%) AND price still below its peak (< 98.5%)
                                 if (curr_rs_win >= max_rs_win * 0.985) and (curr_stock_win < max_stock_win * 0.985):
                                     is_blue_dot_pivot = True
                                     break
@@ -414,6 +410,88 @@ def chart_data():
                                     "price": price_c,
                                     "rs_value": val
                                 })
+
+        # Calculate VCP (Volatility Contraction Pattern) Waves (T1, T2, T3) for Chart Overlay
+        vcp_waves = []
+        try:
+            if len(df) >= 40:
+                recent_df = df.tail(120).copy()
+                high_idx = recent_df['High'].values.argmax()
+                base_high = float(recent_df['High'].iloc[high_idx])
+                high_date = recent_df['date_str'].iloc[high_idx]
+                
+                # Check if base high is established (at least 12 sessions ago)
+                days_since_high = len(recent_df) - 1 - high_idx
+                if days_since_high >= 12:
+                    post_high = recent_df.iloc[high_idx:]
+                    t1_low_idx = post_high['Low'].values.argmin()
+                    base_low = float(post_high['Low'].iloc[t1_low_idx])
+                    t1_low_date = post_high['date_str'].iloc[t1_low_idx]
+                    t1_depth_pct = round((base_high - base_low) / base_high * 100, 1)
+                    
+                    if 8.0 <= t1_depth_pct <= 45.0:
+                        vcp_waves.append({
+                            "name": "T1 Contraction",
+                            "start_date": high_date,
+                            "start_price": base_high,
+                            "end_date": t1_low_date,
+                            "end_price": base_low,
+                            "depth_pct": t1_depth_pct,
+                            "color": "#ef4444"
+                        })
+                        
+                        # T2 wave (Rally to secondary peak then contraction to higher low)
+                        post_t1 = post_high.iloc[t1_low_idx:]
+                        if len(post_t1) >= 5:
+                            t2_peak_idx = post_t1['High'].values.argmax()
+                            t2_peak = float(post_t1['High'].iloc[t2_peak_idx])
+                            t2_peak_date = post_t1['date_str'].iloc[t2_peak_idx]
+                            
+                            post_t2 = post_t1.iloc[t2_peak_idx:]
+                            if len(post_t2) >= 3:
+                                t2_low = float(post_t2['Low'].min())
+                                t2_low_idx = post_t2['Low'].values.argmin()
+                                t2_low_date = post_t2['date_str'].iloc[t2_low_idx]
+                                t2_depth_pct = round((t2_peak - t2_low) / t2_peak * 100, 1)
+                                
+                                # Contraction rule: T2 low > T1 low and T2 depth < T1 depth
+                                if t2_low > base_low and t2_depth_pct < t1_depth_pct:
+                                    vcp_waves.append({
+                                        "name": "T2 Contraction",
+                                        "start_date": t2_peak_date,
+                                        "start_price": t2_peak,
+                                        "end_date": t2_low_date,
+                                        "end_price": t2_low,
+                                        "depth_pct": t2_depth_pct,
+                                        "color": "#f59e0b"
+                                    })
+                                    
+                                    # T3 wave (Final tight compression before breakout)
+                                    post_t2_low = post_t2.iloc[t2_low_idx:]
+                                    if len(post_t2_low) >= 4:
+                                        t3_peak_idx = post_t2_low['High'].values.argmax()
+                                        t3_peak = float(post_t2_low['High'].iloc[t3_peak_idx])
+                                        t3_peak_date = post_t2_low['date_str'].iloc[t3_peak_idx]
+                                        
+                                        post_t3 = post_t2_low.iloc[t3_peak_idx:]
+                                        if len(post_t3) >= 2:
+                                            t3_low = float(post_t3['Low'].min())
+                                            t3_low_idx = post_t3['Low'].values.argmin()
+                                            t3_low_date = post_t3['date_str'].iloc[t3_low_idx]
+                                            t3_depth_pct = round((t3_peak - t3_low) / t3_peak * 100, 1)
+                                            
+                                            if t3_low > t2_low and t3_depth_pct < t2_depth_pct:
+                                                vcp_waves.append({
+                                                    "name": "T3 Tightening",
+                                                    "start_date": t3_peak_date,
+                                                    "start_price": t3_peak,
+                                                    "end_date": t3_low_date,
+                                                    "end_price": t3_low,
+                                                    "depth_pct": t3_depth_pct,
+                                                    "color": "#10b981"
+                                                })
+        except Exception as vcp_err:
+            print(f"[VCP CALC ERROR]: {vcp_err}")
 
         last_price = ohlc[-1]['close'] if ohlc else 100.0
         
@@ -428,6 +506,7 @@ def chart_data():
             "candles": ohlc,
             "rs_series": rs_series,
             "blue_dots": blue_dots,
+            "vcp_waves": vcp_waves,
             "levels": levels
         })
     except Exception as e:

@@ -138,6 +138,45 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 });
                             }
 
+                            // Add VCP Contraction Wave shapes & depth callout annotations if present
+                            if (data.vcp_waves && Array.isArray(data.vcp_waves) && data.vcp_waves.length > 0) {
+                                data.vcp_waves.forEach(wave => {
+                                    // 1. Vertical pullback line from Wave Start to Low
+                                    shapes.push({
+                                        type: 'line',
+                                        xref: 'x',
+                                        x0: wave.start_date,
+                                        x1: wave.end_date,
+                                        yref: 'y',
+                                        y0: wave.start_price,
+                                        y1: wave.end_price,
+                                        line: {
+                                            color: wave.color,
+                                            width: 2,
+                                            dash: 'dash'
+                                        }
+                                    });
+
+                                    // 2. Depth percentage badge annotation
+                                    annotations.push({
+                                        xref: 'x',
+                                        x: wave.end_date,
+                                        yref: 'y',
+                                        y: wave.end_price,
+                                        text: `<b>${wave.name}: -${wave.depth_pct}%</b>`,
+                                        showarrow: true,
+                                        arrowhead: 2,
+                                        arrowcolor: wave.color,
+                                        ax: 0,
+                                        ay: 25,
+                                        font: { color: wave.color, size: 10, family: "'JetBrains Mono', monospace" },
+                                        bgcolor: 'rgba(15, 23, 42, 0.9)',
+                                        bordercolor: wave.color,
+                                        borderwidth: 1
+                                    });
+                                });
+                            }
+
                             const layout = {
                                 dragmode: 'pan',
                                 paper_bgcolor: '#090d16',
