@@ -803,7 +803,7 @@ function App() {
         setExpertTickerData(json);
       }
     } catch (err) {
-      setSearchError("Backend server is not running. Start server.py");
+      setSearchError(err.message || "Failed to reach backend server. Check server.py connection.");
     } finally {
       setIsSearching(false);
     }
