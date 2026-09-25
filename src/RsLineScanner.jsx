@@ -133,14 +133,24 @@ export default function RsLineScanner({ onTickerClick }) {
         try {
             const res = await fetch('/api/run_rs_scanner', { method: 'POST' });
             if (res.ok) {
-                alert("RS Line Scanner started in the background. Please wait ~1-2 minutes, then refresh the UI.");
+                // Poll every 5 seconds for updated json
+                let attempts = 0;
+                const interval = setInterval(async () => {
+                    attempts++;
+                    await fetchData();
+                    if (attempts >= 24) { // stop polling after 2 minutes
+                        clearInterval(interval);
+                        setLoading(false);
+                    }
+                }, 5000);
             } else {
                 alert("Failed to start scanner (server returned error).");
+                setLoading(false);
             }
         } catch (err) {
             alert("Failed to start scanner: " + err.message);
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const toggleWatchlist = (item) => {
