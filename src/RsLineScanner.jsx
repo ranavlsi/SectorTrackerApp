@@ -131,10 +131,14 @@ export default function RsLineScanner({ onTickerClick }) {
     const runScanner = async () => {
         setLoading(true);
         try {
-            await fetch('http://localhost:5001/api/run_rs_scanner', { method: 'POST' });
-            alert("RS Line Scanner started in the background. Please wait ~1-2 minutes, then refresh the UI.");
+            const res = await fetch('/api/run_rs_scanner', { method: 'POST' });
+            if (res.ok) {
+                alert("RS Line Scanner started in the background. Please wait ~1-2 minutes, then refresh the UI.");
+            } else {
+                alert("Failed to start scanner (server returned error).");
+            }
         } catch (err) {
-            alert("Failed to start scanner.");
+            alert("Failed to start scanner: " + err.message);
         }
         setLoading(false);
     };
