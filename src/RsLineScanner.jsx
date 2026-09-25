@@ -19,8 +19,9 @@ const TickerCell = ({ ticker, onClick }) => {
             renderAbove 
         });
         
-        if (!healthData && !loading && !errorMsg) {
+        if (!healthData && !loading) {
             setLoading(true);
+            setErrorMsg(null);
             fetch(`/api/search?ticker=${ticker}&t=${new Date().getTime()}`)
                 .then(res => res.json())
                 .then(data => {
@@ -28,8 +29,8 @@ const TickerCell = ({ ticker, onClick }) => {
                     else setHealthData(data);
                     setLoading(false);
                 })
-                .catch(() => {
-                    setErrorMsg("Network error");
+                .catch(err => {
+                    setErrorMsg(err.message || "Network error");
                     setLoading(false);
                 });
         }
