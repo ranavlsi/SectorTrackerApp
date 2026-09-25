@@ -189,11 +189,15 @@ def evaluate_deepvue_launchpad(ticker, df=None, spy_series=None):
         is_launching = (curr_c >= entry_pivot * 0.995 or curr_h >= entry_pivot) and (vol_ratio >= 0.75)
 
         # State 2: DNB PIVOT (Down-Narrow-Breakout / Coiled Ready)
+        # Authentic Minervini / TraderLion Rule:
+        # Prior day was down on light volume, and today MUST be an Inside Bar (High <= High[-1] and Low >= Low[-1]) 
+        # with ATR range contraction (<= 0.85 * ATR14).
         is_dnb = False
         if len(close) >= 4:
             prior_day_down = (close.iloc[-2] < close.iloc[-3]) and (vol.iloc[-2] <= avg_vol50 * 0.92)
-            narrow_range = (today_range <= atr14 * 0.85) or (curr_h <= float(high.iloc[-2]) and curr_l >= float(low.iloc[-2]))
-            if prior_day_down and narrow_range:
+            is_inside_bar = (curr_h <= float(high.iloc[-2]) * 1.002) and (curr_l >= float(low.iloc[-2]) * 0.998)
+            is_narrow_range = (today_range <= atr14 * 0.85)
+            if prior_day_down and is_inside_bar and is_narrow_range:
                 is_dnb = True
 
         if not (has_vdu or is_launching or is_dnb):
