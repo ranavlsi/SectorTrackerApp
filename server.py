@@ -1280,8 +1280,9 @@ def search_stock():
             except Exception:
                 if not hasattr(search_stock, '_spy_cache') or search_stock._spy_cache is None:
                     search_stock._spy_cache = df # fallback
-        spy = search_stock._spy_cache
+        spy = search_stock._spy_cache.dropna(subset=["Close"])
         
+        df = df.dropna(subset=['Close'])
         close = df['Close']
         spy_close = spy['Close']
         
