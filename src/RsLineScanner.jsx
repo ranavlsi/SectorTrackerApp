@@ -25,8 +25,15 @@ const TickerCell = ({ ticker, onClick }) => {
             fetch(`/api/search?ticker=${ticker}&t=${new Date().getTime()}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.error) setErrorMsg(data.error);
-                    else setHealthData(data);
+                    if (data.error) {
+                        if (typeof data.error === 'string' && (data.error.includes('Rate limited') || data.error.includes('Too Many Requests'))) {
+                            setErrorMsg("Yahoo Finance Rate Limited. Retry in a few seconds.");
+                        } else {
+                            setErrorMsg(data.error);
+                        }
+                    } else {
+                        setHealthData(data);
+                    }
                     setLoading(false);
                 })
                 .catch(err => {

@@ -273,7 +273,10 @@ def analyze_earnings():
             return jsonify(data), 500
         return jsonify(data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        err_msg = str(e)
+        if "Rate limited" in err_msg or "429" in err_msg or "Too Many Requests" in err_msg:
+            return jsonify({"error": "Yahoo Finance rate limited. Re-trying with cached data..."}), 429
+        return jsonify({"error": err_msg}), 500
 
 @app.route('/api/seasonality_radar', methods=['GET', 'POST'])
 def get_seasonality_radar():
@@ -1269,7 +1272,15 @@ def search_stock():
         if len(df) < 200:
             return jsonify({"error": "Insufficient price data for Stage Analysis"}), 400
             
-        spy = yf.Ticker("SPY").history(period="2y")
+        # Cache SPY baseline in local memory to avoid repetitive rate-limited calls
+        if not hasattr(search_stock, '_spy_cache') or search_stock._spy_cache is None or (time.time() - search_stock._spy_cache_time > 3600):
+            try:
+                search_stock._spy_cache = yf.Ticker("SPY").history(period="2y")
+                search_stock._spy_cache_time = time.time()
+            except Exception:
+                if not hasattr(search_stock, '_spy_cache') or search_stock._spy_cache is None:
+                    search_stock._spy_cache = df # fallback
+        spy = search_stock._spy_cache
         
         close = df['Close']
         spy_close = spy['Close']
@@ -1289,8 +1300,11 @@ def search_stock():
         if len(close) >= 20 and len(spy_close) >= 20:
              rs_spy = ((close.iloc[-1] / spy_close.iloc[-1]) / (close.iloc[-20] / spy_close.iloc[-20]) - 1) * 100
         
-        # Fundamentals
-        info = t.info
+        # Fundamentals (safe fallback to prevent yfinance rate limit errors)
+        try:
+            info = t.info or {}
+        except Exception:
+            info = {}
         rev_growth = info.get('revenueGrowth', 0) * 100 if info.get('revenueGrowth') else 0
         profit_margin = info.get('profitMargins', 0) * 100 if info.get('profitMargins') else 0
         roe = info.get('returnOnEquity', 0) * 100 if info.get('returnOnEquity') else 0
