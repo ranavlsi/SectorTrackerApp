@@ -383,21 +383,32 @@ def chart_data():
                         "value": val
                     })
                     
-                    # Check Blue Dot condition on this historical date
+                    # Multi-Timeframe Blue Dot Pivot Detection:
+                    # An RS Blue Dot occurs whenever the RS Line makes a New High over 1-month (20D), 3-month (60D), 6-month (120D), or 12-month (252D) lookback
+                    # WHILE the stock price is still below its corresponding period high (> 1.5% below high)
                     if d_str in rs_norm and d_str in comb.index.strftime('%Y-%m-%d'):
                         curr_rs = rs_dict[d_str]
                         curr_stock = comb.loc[comb.index.strftime('%Y-%m-%d') == d_str, 'stock'].values[0]
-                        
-                        # Lookback slice up to this date
                         sub_comb = comb.loc[comb.index.strftime('%Y-%m-%d') <= d_str]
+                        
                         if len(sub_comb) >= 10:
-                            sub_rs = (sub_comb['stock'] / sub_comb['spy'])
-                            sub_rs_norm = (sub_rs / sub_rs.iloc[0]) * 100
-                            max_rs_so_far = sub_rs_norm.max()
-                            max_stock_so_far = sub_comb['stock'].max()
-                            
-                            # RS at or within 1.5% of max while stock is > 2% below max
-                            if (curr_rs >= max_rs_so_far * 0.985) and (curr_stock < max_stock_so_far * 0.98):
+                            is_blue_dot_pivot = False
+                            # Evaluate 20D (1M), 60D (3M), 120D (6M), and full 252D (12M) windows
+                            for window in [20, 60, 120, len(sub_comb)]:
+                                window_sub = sub_comb.tail(window)
+                                sub_rs = (window_sub['stock'] / window_sub['spy'])
+                                sub_rs_norm = (sub_rs / sub_rs.iloc[0]) * 100
+                                max_rs_win = sub_rs_norm.max()
+                                curr_rs_win = sub_rs_norm.iloc[-1]
+                                max_stock_win = window_sub['stock'].max()
+                                curr_stock_win = window_sub['stock'].iloc[-1]
+                                
+                                # RS Line at/near new high for window (>= 98.5%) AND price still below its peak (< 98.5%)
+                                if (curr_rs_win >= max_rs_win * 0.985) and (curr_stock_win < max_stock_win * 0.985):
+                                    is_blue_dot_pivot = True
+                                    break
+                                    
+                            if is_blue_dot_pivot:
                                 blue_dots.append({
                                     "time": d_str,
                                     "price": price_c,
