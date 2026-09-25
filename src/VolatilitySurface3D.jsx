@@ -324,7 +324,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         });
       });
 
-      // Base 3D Surface with Floor & Mesh Contour Projections for Maximum Visual Clarity
+      // Base 3D Surface with HD Mesh Lighting & Crisp Contour Lines
       const baseSurfaceTrace = {
         type: 'surface',
         z: zData,
@@ -332,26 +332,26 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         y: expirations,
         colorscale: surfaceColorscale,
         showscale: true,
-        opacity: 0.88,
+        opacity: 0.90,
         lighting: {
-          ambient: 0.75,
-          diffuse: 0.85,
-          fresnel: 0.35,
-          specular: 0.5,
-          roughness: 0.4
+          ambient: 0.82,
+          diffuse: 0.90,
+          fresnel: 0.20,
+          specular: 0.40,
+          roughness: 0.35
         },
         hoverinfo: 'text',
         text: hoverTextMatrix,
         colorbar: { 
           title: { text: colorbarTitle, font: { color: currentBg.text, family: 'monospace', size: 11 } }, 
           tickfont: { color: currentBg.text, family: 'monospace', size: 10 },
-          len: 0.75,
+          len: 0.8,
           thickness: 14,
           xpad: 10
         },
         contours: {
-          x: { show: true, color: 'rgba(255, 255, 255, 0.15)', width: 1 },
-          y: { show: true, color: 'rgba(255, 255, 255, 0.15)', width: 1 },
+          x: { show: true, color: 'rgba(255, 255, 255, 0.20)', width: 1 },
+          y: { show: true, color: 'rgba(255, 255, 255, 0.20)', width: 1 },
           z: { show: true, usecolormap: true, highlightcolor: '#00F0FF', project: { z: true }, width: 2 }
         }
       };
