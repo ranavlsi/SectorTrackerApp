@@ -791,9 +791,7 @@ function App() {
     setSearchError(null);
     setExpertTickerData(null);
     setModalData(null);
-    if (activeTab !== 'deepfundamentals' && activeTab !== 'zacks' && activeTab !== 'earnings') {
-      setActiveTab('chart');
-    }
+    setActiveTab('chart');
     setIsRightDrawerOpen(true);
     
     try {
