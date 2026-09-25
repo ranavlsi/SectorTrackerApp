@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Mail, Star, AlertCircle, Coffee, ChevronDown, ChevronUp, Loader } from 'lucide-react';
+import { RefreshCw, Mail, Star, AlertCircle, Coffee, ChevronDown, ChevronUp, Loader, BarChart2, X } from 'lucide-react';
 import RsSparkline from './RsSparkline';
+import UnifiedPlotlyChart from './UnifiedPlotlyChart';
 
 const TickerCell = ({ ticker, onClick }) => {
     const [hoverInfo, setHoverInfo] = useState(null);
@@ -88,6 +89,7 @@ export default function RsLineScanner({ onTickerClick }) {
     const [showWatchlist, setShowWatchlist] = useState(false);
     const [hoverInfo, setHoverInfo] = useState(null);
     const [liveAlerts, setLiveAlerts] = useState([]);
+    const [activeModalTicker, setActiveModalTicker] = useState(null);
     
     // Filters
     const [minRating, setMinRating] = useState(80);
@@ -362,8 +364,9 @@ export default function RsLineScanner({ onTickerClick }) {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8' }}>
-                                <th style={{ padding: '10px' }}>★</th>
+                                 <th style={{ padding: '10px' }}>★</th>
                                 <th style={{ padding: '10px' }}>Ticker</th>
+                                <th style={{ padding: '10px' }}>Chart</th>
                                 <th style={{ padding: '10px' }}>RS Rating</th>
                                 <th style={{ padding: '10px' }}>RS Pivot & Status</th>
                                 <th style={{ padding: '10px' }}>Mansfield RS Slope</th>
@@ -398,6 +401,27 @@ export default function RsLineScanner({ onTickerClick }) {
                                             <Star size={16} fill={isSaved ? '#f59e0b' : 'none'} />
                                         </td>
                                         <TickerCell ticker={item.ticker} onClick={onTickerClick} />
+                                        <td style={{ padding: '10px' }}>
+                                            <button 
+                                                onClick={() => setActiveModalTicker(item.ticker)}
+                                                title={`Open Interactive RS Chart for ${item.ticker}`}
+                                                style={{ 
+                                                    background: 'rgba(96, 165, 250, 0.15)', 
+                                                    border: '1px solid rgba(96, 165, 250, 0.4)', 
+                                                    color: '#60a5fa', 
+                                                    borderRadius: '6px', 
+                                                    padding: '4px 8px', 
+                                                    cursor: 'pointer', 
+                                                    display: 'inline-flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '4px',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: '600'
+                                                }}
+                                            >
+                                                <BarChart2 size={14} /> Chart
+                                            </button>
+                                        </td>
                                         <td style={{ padding: '10px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 <span style={{ color: rsColor, fontWeight: 'bold', width: '25px' }}>{item.rs_rating}</span>
@@ -522,6 +546,106 @@ export default function RsLineScanner({ onTickerClick }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '5px', borderTop: '1px solid #334155', paddingTop: '5px' }}>
                         <span style={{ color: '#94a3b8' }}>Current:</span>
                         <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{hoverInfo.item.sparkline[hoverInfo.item.sparkline.length-1].toFixed(3)}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* RS Line Interactive Chart Modal */}
+            {activeModalTicker && (
+                <div 
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                        backdropFilter: 'blur(8px)',
+                        zIndex: 99999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justify: 'center',
+                        padding: '1.5rem'
+                    }}
+                    onClick={() => setActiveModalTicker(null)}
+                >
+                    <div 
+                        style={{
+                            background: '#0f172a',
+                            border: '1px solid #334155',
+                            borderRadius: '16px',
+                            width: '95vw',
+                            maxWidth: '1350px',
+                            height: '88vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+                            overflow: 'hidden'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{
+                            padding: '1rem 1.5rem',
+                            borderBottom: '1px solid #1e293b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            background: '#1e293b'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                    background: 'rgba(0, 230, 118, 0.15)',
+                                    color: '#00E676',
+                                    border: '1px solid #00E676',
+                                    borderRadius: '8px',
+                                    padding: '6px 12px',
+                                    fontWeight: 'bold',
+                                    fontSize: '1.1rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                }}>
+                                    <BarChart2 size={18} />
+                                    <span>{activeModalTicker}</span>
+                                </div>
+                                <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                                    Interactive Price Chart with <strong>IBD Relative Strength (RS) Line</strong> Overlay
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setActiveModalTicker(null)}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    color: '#94a3b8',
+                                    borderRadius: '8px',
+                                    padding: '6px 12px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                                    e.currentTarget.style.color = '#ef4444';
+                                    e.currentTarget.style.borderColor = '#ef4444';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                    e.currentTarget.style.color = '#94a3b8';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                }}
+                            >
+                                <X size={18} /> Close
+                            </button>
+                        </div>
+
+                        <div style={{ flex: 1, padding: '1rem', overflow: 'hidden', background: '#090d16' }}>
+                            <UnifiedPlotlyChart ticker={activeModalTicker} />
+                        </div>
                     </div>
                 </div>
             )}
