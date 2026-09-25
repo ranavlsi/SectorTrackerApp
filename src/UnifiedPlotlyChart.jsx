@@ -140,8 +140,19 @@ export default function UnifiedPlotlyChart({ ticker }) {
                             fetch('/api/search?ticker=PLOTLY_ERR_' + encodeURIComponent(plotErr.message));
                         }
                     } else if (!window.Plotly) {
-                        setError("Plotly library failed to load globally.");
-                        fetch('/api/search?ticker=PLOTLY_MISSING');
+                        const script = document.createElement("script");
+                        script.src = "https://cdn.plot.ly/plotly-2.32.0.min.js";
+                        script.onload = () => {
+                            if (plotRef.current && window.Plotly) {
+                                try {
+                                    window.Plotly.newPlot(plotRef.current, plotData, layout, config);
+                                } catch (e) {
+                                    setError("Plotly error: " + e.message);
+                                }
+                            }
+                        };
+                        script.onerror = () => setError("Plotly library failed to load globally.");
+                        document.head.appendChild(script);
                     }
                 }, 100);
 
