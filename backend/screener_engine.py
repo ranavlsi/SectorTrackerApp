@@ -861,12 +861,22 @@ def run_screener(custom_universe=None):
                 
                 # Condition 1: Holds at least HVE candle LOW (allow slight 2% wick buffer)
                 if post_hve_lows.min() >= hve_l * 0.98:
-                    # Condition 2: Tight consolidation range in the last 4 days (max 10% range spread)
-                    recent_tightness = (high.iloc[-4:].max() - low.iloc[-4:].min()) / low.iloc[-4:].min()
+                    # Condition 2: Must NOT be an active runaway trend expanding > 7.5% above the HVE candle high
+                    # True consolidation rests within/near the HVE bar (Close <= HVE High * 1.075)
+                    is_consolidating_near_hve = close.iloc[-1] <= hve_h * 1.075 and high.iloc[-4:].max() <= hve_h * 1.095
                     
-                    # Condition 3: Volume drying up or reasonable (< 1.5x 50-day average volume)
+                    # Condition 3: Tight consolidation range in the last 4 days (max 10% range spread)
+                    recent_high = high.iloc[-4:].max()
+                    recent_low = low.iloc[-4:].min()
+                    recent_tightness = (recent_high - recent_low) / recent_low
+                    
+                    # Condition 4: Must be actually resting/consolidating (current price within 5.5% of post-HVE peak, not breaking out into new highs today)
+                    post_hve_peak = high.iloc[hve_idx:].max()
+                    is_resting_in_flag = curr_c <= post_hve_peak * 0.985 or (recent_high <= post_hve_peak * 1.01 and curr_c <= post_hve_peak * 0.975)
+                    
+                    # Condition 5: Volume drying up or reasonable (< 1.5x 50-day average volume)
                     avg_v = vol.iloc[-65:-15].mean()
-                    if recent_tightness <= 0.10 and vol.iloc[-3:].mean() <= avg_v * 1.5:
+                    if is_consolidating_near_hve and is_resting_in_flag and recent_tightness <= 0.10 and vol.iloc[-3:].mean() <= avg_v * 1.5:
                         # Score mathematically by how tight the consolidation is (lower tightness = higher score)
                         results["hve_consolidation"].append({"ticker": ticker, "metric": f"Tight Post-HVE ({days_since}d)", "score": -float(recent_tightness)})
                 
