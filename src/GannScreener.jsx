@@ -33,6 +33,7 @@ export default function GannScreener() {
   const [modalTab, setModalTab] = useState('CHART');
   const [sq9Tab, setSq9Tab] = useState('ALL'); // 'ALL' | 'RESISTANCE' | 'SUPPORT'
   const [selectedMatrixCell, setSelectedMatrixCell] = useState(null);
+  const [showInfoGuide, setShowInfoGuide] = useState(false);
 
   // Fetch summary on load
   const loadSummary = async (force = false) => {
@@ -129,14 +130,37 @@ export default function GannScreener() {
               <span>Square of 9 Concentric Matrix & Multi-Harmonic Confluence</span>
             </div>
           </div>
-          <button 
-            className="gann-refresh-btn" 
-            onClick={() => loadSummary(true)} 
-            disabled={loading || refreshing}
-          >
-            <RefreshCw size={15} className={refreshing ? "spin-animation" : ""} />
-            {refreshing ? "Recalculating Mathematical Spheres..." : "Rescan Gann Universe"}
-          </button>
+          <div className="gann-header-actions" style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+            <button 
+              className="gann-guide-btn" 
+              onClick={() => setShowInfoGuide(true)}
+              style={{
+                background: 'rgba(56, 189, 248, 0.12)',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                color: '#38bdf8',
+                padding: '0.55rem 1.1rem',
+                borderRadius: '8px',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Info size={15} />
+              Gann Master Guide & Tutorial 📖
+            </button>
+            <button 
+              className="gann-refresh-btn" 
+              onClick={() => loadSummary(true)} 
+              disabled={loading || refreshing}
+            >
+              <RefreshCw size={15} className={refreshing ? "spin-animation" : ""} />
+              {refreshing ? "Recalculating Mathematical Spheres..." : "Rescan Gann Universe"}
+            </button>
+          </div>
         </div>
 
         {/* Market Posture Matrix */}
@@ -399,6 +423,11 @@ export default function GannScreener() {
           </table>
         )}
       </div>
+
+      {/* Educational Guide Modal */}
+      {showInfoGuide && (
+        <GannInfoGuideModal onClose={() => setShowInfoGuide(false)} />
+      )}
 
       {/* Deep Gann Terminal Interactive Modal */}
       {activeStock && (
@@ -1754,6 +1783,207 @@ function GannSvgChart({
         <span className="slider-dates-info">
           {candles[0]?.date} ➔ {candles[candles.length - 1]?.date} ({candles.length} bars, {zoomLevel.toFixed(1)}x Zoom)
         </span>
+      </div>
+    </div>
+  );
+}
+
+// Master W.D. Gann Educational & Reference Guide Modal
+function GannInfoGuideModal({ onClose }) {
+  const [activeTab, setActiveTab] = useState('CONCEPTS');
+
+  return (
+    <div className="gann-modal-overlay" onClick={onClose}>
+      <div className="gann-modal-content gann-guide-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="gann-modal-header" style={{ borderBottom: '1px solid rgba(251, 191, 36, 0.3)' }}>
+          <div className="modal-header-left">
+            <div className="modal-ticker-group">
+              <span className="modal-ticker" style={{ color: '#fbbf24', fontSize: '1.4rem' }}>📐 W.D. Gann Master Educational Guide</span>
+              <span className="gann-setup-badge badge-second_square_breakout">Complete Terminal Reference</span>
+            </div>
+          </div>
+          <button className="modal-close-btn" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="modal-sub-nav" style={{ margin: '1rem 0' }}>
+          <button className={`modal-sub-tab ${activeTab === 'CONCEPTS' ? 'active' : ''}`} onClick={() => setActiveTab('CONCEPTS')}>
+            💡 Core Principles
+          </button>
+          <button className={`modal-sub-tab ${activeTab === 'SQ9' ? 'active' : ''}`} onClick={() => setActiveTab('SQ9')}>
+            🎯 Square of 9 (Spiral)
+          </button>
+          <button className={`modal-sub-tab ${activeTab === 'ANGLES' ? 'active' : ''}`} onClick={() => setActiveTab('ANGLES')}>
+            📐 1x1 & Fan Angles
+          </button>
+          <button className={`modal-sub-tab ${activeTab === 'CYCLES' ? 'active' : ''}`} onClick={() => setActiveTab('CYCLES')}>
+            ⏰ Time & Calendar Cycles
+          </button>
+          <button className={`modal-sub-tab ${activeTab === 'SETUPS' ? 'active' : ''}`} onClick={() => setActiveTab('SETUPS')}>
+            🚀 Terminal Setups & Rules
+          </button>
+        </div>
+
+        <div className="gann-modal-body" style={{ padding: '1rem', lineHeight: '1.6', color: '#cbd5e1' }}>
+          {activeTab === 'CONCEPTS' && (
+            <div className="guide-section">
+              <h3 style={{ color: '#fbbf24', fontSize: '1.2rem', marginBottom: '0.8rem' }}>What is W.D. Gann Theory?</h3>
+              <p>
+                William Delbert Gann (1878–1955) was a legendary financial trader who discovered that financial markets operate according to 
+                <strong> mathematical harmonics, geometric angles, and fixed time cycles</strong>. Unlike modern technical indicators that lag price, Gann's methods are <em>predictive</em>—projecting exact price targets and time windows where trend pivots must occur.
+              </p>
+              
+              <div className="guide-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.2rem' }}>
+                <div className="guide-card" style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <h4 style={{ color: '#38bdf8', margin: '0 0 0.5rem 0' }}>1. Time & Price Equivalence</h4>
+                  <p style={{ fontSize: '0.88rem', margin: 0 }}>
+                    Gann believed time and price are interchangeable. When a stock advances by 50 points over 50 days (or 50 bars), price and time are <strong>"Squared"</strong>. At this exact junction, a trend change or powerful breakout occurs.
+                  </p>
+                </div>
+                <div className="guide-card" style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <h4 style={{ color: '#10b981', margin: '0 0 0.5rem 0' }}>2. Geometric Angles (1x1 Master Line)</h4>
+                  <p style={{ fontSize: '0.88rem', margin: 0 }}>
+                    The 1x1 angle represents 1 unit of price per 1 unit of time (45° angle). As long as a stock stays <strong>above the 1x1 Master Angle</strong>, it is in a strong institutional bull market. Falling below signals defensive distribution.
+                  </p>
+                </div>
+                <div className="guide-card" style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <h4 style={{ color: '#f59e0b', margin: '0 0 0.5rem 0' }}>3. Square of 9 (Spiral Matrix)</h4>
+                  <p style={{ fontSize: '0.88rem', margin: 0 }}>
+                    A mathematical wheel where prices radiate outward in a square spiral. Key price levels occur at cardinal angular rotations (45°, 90°, 180°, 270°, 360°).
+                  </p>
+                </div>
+                <div className="guide-card" style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <h4 style={{ color: '#ec4899', margin: '0 0 0.5rem 0' }}>4. Mechanical Swing System</h4>
+                  <p style={{ fontSize: '0.88rem', margin: 0 }}>
+                    Gann used objective 2-day and 3-day swing rules to eliminate emotions. A 2-day consecutive higher high confirms an UPTREND, while a 2-day consecutive lower low confirms a DOWNTREND.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'SQ9' && (
+            <div className="guide-section">
+              <h3 style={{ color: '#fbbf24', fontSize: '1.2rem', marginBottom: '0.8rem' }}>Understanding the Square of 9 (Sq9)</h3>
+              <p>
+                The <strong>Square of 9</strong> is a square root calculator arranged as a spiral matrix starting from 1 at the center. Gann discovered that stock prices naturally stop and reverse at exact angular steps along this wheel.
+              </p>
+
+              <div style={{ background: 'rgba(15, 23, 42, 0.9)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.2)', margin: '1rem 0' }}>
+                <h4 style={{ color: '#fbbf24', marginTop: 0 }}>Key Angular Harmonics:</h4>
+                <ul style={{ paddingLeft: '1.2rem', margin: 0, fontSize: '0.9rem' }}>
+                  <li><strong style={{ color: '#38bdf8' }}>45° / 135° / 225° / 315° (Diagonal Cross)</strong>: Minor intra-swing support and resistance targets.</li>
+                  <li><strong style={{ color: '#10b981' }}>90° / 270° (Cardinal Cross)</strong>: Major inflection points where trend speed accelerates.</li>
+                  <li><strong style={{ color: '#f43f5e' }}>180° (Opposite Pole)</strong>: Critical reversal target (half-cycle rotation).</li>
+                  <li><strong style={{ color: '#a855f7' }}>360° (Full Solar Orbit)</strong>: Complete price-time square completion (1 full rotation around the wheel).</li>
+                </ul>
+              </div>
+              <p style={{ fontSize: '0.88rem', color: '#94a3b8' }}>
+                *In our Gann Terminal, click on the <strong>Square of 9 Matrix</strong> tab inside any stock modal to view its real-time 360° grid!
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'ANGLES' && (
+            <div className="guide-section">
+              <h3 style={{ color: '#fbbf24', fontSize: '1.2rem', marginBottom: '0.8rem' }}>Gann Fan Angles (Geometric Slopes)</h3>
+              <p>
+                Gann Fans are drawn from major swing lows (Bullish Anchor) or swing highs (Bearish Anchor). The angles measure the velocity of price relative to time:
+              </p>
+
+              <table className="gann-table" style={{ width: '100%', marginTop: '1rem', fontSize: '0.88rem' }}>
+                <thead>
+                  <tr style={{ background: '#1e293b', color: '#fbbf24' }}>
+                    <th style={{ padding: '8px' }}>Angle</th>
+                    <th style={{ padding: '8px' }}>Ratio (Price : Time)</th>
+                    <th style={{ padding: '8px' }}>Meaning & Market Posture</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '8px', color: '#ec4899', fontWeight: 'bold' }}>1x8 / 1x4</td>
+                    <td style={{ padding: '8px' }}>1 point per 8/4 bars</td>
+                    <td style={{ padding: '8px' }}>Parabolic / Hyper-bullish momentum (Unstable extreme)</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', color: '#38bdf8', fontWeight: 'bold' }}>1x2</td>
+                    <td style={{ padding: '8px' }}>1 point per 2 bars</td>
+                    <td style={{ padding: '8px' }}>Strong Momentum Trend (Outperforming baseline)</td>
+                  </tr>
+                  <tr style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
+                    <td style={{ padding: '8px', color: '#10b981', fontWeight: 'bold' }}>1x1 (Master)</td>
+                    <td style={{ padding: '8px' }}>1 point per 1 bar (45°)</td>
+                    <td style={{ padding: '8px' }}><strong>The True Bull/Bear Divider</strong> (Institutional equilibrium)</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', color: '#f59e0b', fontWeight: 'bold' }}>2x1 / 4x1</td>
+                    <td style={{ padding: '8px' }}>2/4 points per 1 bar</td>
+                    <td style={{ padding: '8px' }}>Sluggish / Pullback Support Zone</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {activeTab === 'CYCLES' && (
+            <div className="guide-section">
+              <h3 style={{ color: '#fbbf24', fontSize: '1.2rem', marginBottom: '0.8rem' }}>Gann Time Cycles & Natural Dates</h3>
+              <p>
+                W.D. Gann famously said: <em>"Time is the most important element in forecasting."</em> When a time cycle expires, the market MUST change direction or accelerate.
+              </p>
+
+              <div className="guide-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '1rem', borderRadius: '8px' }}>
+                  <h4 style={{ color: '#38bdf8', marginTop: 0 }}>Fixed Calendar Cycles</h4>
+                  <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.85rem' }}>
+                    <li><strong>30 Days / 45 Days</strong>: Short-term swing exhaustion.</li>
+                    <li><strong>90 Days (1/4 Year)</strong>: Major seasonal pivot window.</li>
+                    <li><strong>180 Days (1/2 Year)</strong>: Counter-trend reversal cycle.</li>
+                    <li><strong>365 Days (1 Year / Solar Orbit)</strong>: Master Anniversary Pivot.</li>
+                  </ul>
+                </div>
+                <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '1rem', borderRadius: '8px' }}>
+                  <h4 style={{ color: '#10b981', marginTop: 0 }}>Gann / Fibonacci Bar Counts</h4>
+                  <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.85rem' }}>
+                    <li><strong>7 / 9 / 13 / 21 Bars</strong>: Immediate reaction pivots.</li>
+                    <li><strong>49 Bars (7 x 7)</strong>: The "Fatal Number" / Square of 7 Reversal.</li>
+                    <li><strong>90 Bars / 144 Bars</strong>: Major institutional accumulation/distribution end.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'SETUPS' && (
+            <div className="guide-section">
+              <h3 style={{ color: '#fbbf24', fontSize: '1.2rem', marginBottom: '0.8rem' }}>Terminal Setups & Trading Rules</h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', borderLeft: '4px solid #10b981', padding: '0.8rem 1rem', borderRadius: '0 8px 8px 0' }}>
+                  <h4 style={{ color: '#10b981', margin: '0 0 0.3rem 0' }}>1. Gann Second Square Breakout 📦</h4>
+                  <p style={{ fontSize: '0.85rem', margin: 0 }}>
+                    When a stock consolidates inside a Gann Box and breaks out above the top edge ($100\rightarrow\$200$), it enters the <strong>"Second Square"</strong> ($200\rightarrow\$300$). This triggers explosive momentum expansion.
+                  </p>
+                </div>
+                
+                <div style={{ background: 'rgba(56, 189, 248, 0.1)', borderLeft: '4px solid #38bdf8', padding: '0.8rem 1rem', borderRadius: '0 8px 8px 0' }}>
+                  <h4 style={{ color: '#38bdf8', margin: '0 0 0.3rem 0' }}>2. 1x1 Master Angle Bounce 📐</h4>
+                  <p style={{ fontSize: '0.85rem', margin: 0 }}>
+                    A pull-back to the rising 1x1 Master Angle that finds support on low volume. This offers an A+ low-risk entry aligned with institutional trend velocity.
+                  </p>
+                </div>
+
+                <div style={{ background: 'rgba(245, 158, 11, 0.1)', borderLeft: '4px solid #f59e0b', padding: '0.8rem 1rem', borderRadius: '0 8px 8px 0' }}>
+                  <h4 style={{ color: '#f59e0b', margin: '0 0 0.3rem 0' }}>3. Square of 9 Confluence Reversal 🎯</h4>
+                  <p style={{ fontSize: '0.85rem', margin: 0 }}>
+                    Occurs when price touches a major Sq9 Cardinal Cross level (e.g. 180° or 360°) at the exact same time a Gann Time Cycle (e.g. 90 days) expires. High probability trend change!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
