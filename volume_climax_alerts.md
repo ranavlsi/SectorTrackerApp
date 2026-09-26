@@ -1,3 +1,23 @@
+## 🌋 Volume Climax Consolidation Scanner - September 25, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### FPS
+- **Current Price:** $38.97
+- **Climax Date:** 2026-09-15 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 4.1x avg | MCap: $12.4B | AvgVol: 8.5M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - September 24, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### FPS
+- **Current Price:** $38.95
+- **Climax Date:** 2026-09-15 (Held the 50% midpoint since this date)
+- **Status:** Inside Day setup | Climax Vol: 4.1x avg | MCap: $12.4B | AvgVol: 8.6M
+
+---
+
 ## 🌋 Volume Climax Consolidation Scanner - September 23, 2026
 Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
 

@@ -859,14 +859,14 @@ def run_screener(custom_universe=None):
             if days_since >= 3: # Need at least 3 days of consolidation
                 post_hve_lows = low.iloc[hve_idx+1:]
                 
-                # Condition 1: Holds UPPER HALF of the HVE candle (No major breakdown)
-                if post_hve_lows.min() >= hve_mid * 0.98: # Allow slight wick below midpoint
-                    # Condition 2: Tight consolidation in the last 4 days
+                # Condition 1: Holds at least HVE candle LOW (allow slight 2% wick buffer)
+                if post_hve_lows.min() >= hve_l * 0.98:
+                    # Condition 2: Tight consolidation range in the last 4 days (max 10% range spread)
                     recent_tightness = (high.iloc[-4:].max() - low.iloc[-4:].min()) / low.iloc[-4:].min()
                     
-                    # Condition 3: Volume dry up
+                    # Condition 3: Volume drying up or reasonable (< 1.5x 50-day average volume)
                     avg_v = vol.iloc[-65:-15].mean()
-                    if recent_tightness < 0.06 and vol.iloc[-3:].mean() < avg_v * 1.2:
+                    if recent_tightness <= 0.10 and vol.iloc[-3:].mean() <= avg_v * 1.5:
                         # Score mathematically by how tight the consolidation is (lower tightness = higher score)
                         results["hve_consolidation"].append({"ticker": ticker, "metric": f"Tight Post-HVE ({days_since}d)", "score": -float(recent_tightness)})
                 
