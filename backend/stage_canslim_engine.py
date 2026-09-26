@@ -1183,10 +1183,9 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
         else:
             is_testing_from_above = True
     else:
-        if below_count_last4 >= 2 and (rebounded_from_low or ma10_slope_pct < 0):
-            is_testing_from_underneath = True
-        else:
-            is_testing_from_above = True
+        # Price is strictly ABOVE 10w MA -> 10w MA is UPSIDE SUPPORT
+        is_testing_from_above = True
+        is_testing_from_underneath = False
 
     ma10_test_label = "UNDERNEATH_RESISTANCE" if is_testing_from_underneath else "UPSIDE_SUPPORT"
 
