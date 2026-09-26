@@ -61,7 +61,7 @@ def run_deepvue_scan():
             if current_price < 10: continue
             
             avg_vol_20 = hist['Volume'].rolling(20).mean().iloc[-1]
-            if (avg_vol_20 * current_price) < 5000000: continue
+            if avg_vol_20 < 5000000 or (avg_vol_20 * current_price) < 5000000: continue
             
             ema_21 = hist['Close'].ewm(span=21, adjust=False).mean()
             sma_50 = hist['Close'].rolling(50).mean()
