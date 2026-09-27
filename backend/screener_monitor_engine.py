@@ -147,6 +147,28 @@ def get_all_screener_candidates() -> Dict[str, Dict[str, Any]]:
         except Exception as e:
             logger.error(f"Error reading squeeze_results.json: {e}")
 
+    # 4. Emerging Leaders Results
+    EMERGING_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'emerging_leaders.json')
+    if os.path.exists(EMERGING_FILE):
+        try:
+            with open(EMERGING_FILE, 'r') as f:
+                data = json.load(f)
+            for item in data.get('candidates', []):
+                t = item.get('ticker', '').upper().strip()
+                if t:
+                    label = f"Emerging Leader ({item.get('tier_label', 'Coiling')})"
+                    if t not in candidates:
+                        candidates[t] = {
+                            'ticker': t,
+                            'screeners': [label],
+                            'raw_metric': item.get('summary_metric', ''),
+                            'score': float(item.get('score', 60))
+                        }
+                    elif label not in candidates[t]['screeners']:
+                        candidates[t]['screeners'].append(label)
+        except Exception as e:
+            logger.error(f"Error reading emerging_leaders.json: {e}")
+
     return candidates
 
 
