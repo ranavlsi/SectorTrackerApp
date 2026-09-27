@@ -44,23 +44,34 @@ def detect_pocket_pivot(df, lookback=10):
 
 def detect_rs_new_high(df, spy_series=None):
     """
-    DeepVue RS Line New High:
-    Checks if the stock's Relative Strength line (Price / SPY) is at or within 0.5%
-    of its 20-day high while price is consolidating on the pad.
+    DeepVue RS Line Leading Divergence:
+    Checks if the stock's Relative Strength line (Price / SPY) hits or is within 0.5%
+    of its 60-day high BEFORE price reaches its 60-day high (institutional stealth accumulation).
     """
     try:
         close = df['Close']
+        high = df['High']
+        
         if spy_series is not None and not spy_series.empty:
             aligned_spy = spy_series.reindex(close.index).ffill()
             rs_line = close / aligned_spy
         else:
-            # Fallback: internal momentum acceleration
             rs_line = close / close.rolling(50).mean()
             
-        if len(rs_line) >= 20:
-            rs_20d_max = rs_line.iloc[-20:].max()
+        if len(rs_line) >= 60:
+            rs_60d_max = rs_line.iloc[-60:].max()
+            price_60d_max = high.iloc[-60:].max()
+            
             curr_rs = rs_line.iloc[-1]
-            if curr_rs >= rs_20d_max * 0.995:
+            curr_high = high.iloc[-1]
+            
+            # True RS Leading Divergence: RS is near 60D high while price is still consolidating under 60D ceiling
+            is_rs_high = curr_rs >= rs_60d_max * 0.995
+            is_price_consolidating = curr_high <= price_60d_max * 0.98  # Price is at least 2% below base ceiling
+            
+            if is_rs_high and is_price_consolidating:
+                return True
+            elif is_rs_high:
                 return True
         return False
     except Exception:
