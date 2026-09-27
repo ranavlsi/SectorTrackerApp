@@ -35,8 +35,12 @@ UNIVERSE = [
     'META', 'GOOGL', 'GOOG', 'NFLX', 'DIS', 'TSM', 'ASML', 'AMD', 'CRM', 'ORCL',
     'VRTX', 'REGN', 'AMGN', 'GILD', 'BIIB', 'DHI', 'LEN', 'NVR', 'PHM', 'TOL',
     'FSLR', 'ENPH', 'SEDG', 'RUN', 'IONQ', 'QBTS', 'RGTI', 'IBM', 'COIN', 'ROKU',
-    # Recent high momentum / IPO names
-    'PLTR', 'ASTS', 'HOOD', 'RDDT', 'ALAB', 'ARM', 'CAVA', 'SMCI', 'CELH'
+    # High Growth Mid-Cap / Emerging Leaders Universe ($2B - $20B)
+    'PLTR', 'ASTS', 'HOOD', 'RDDT', 'ALAB', 'ARM', 'CAVA', 'SMCI', 'CELH',
+    'NET', 'CRWD', 'DDOG', 'SNOW', 'MDB', 'TWLO', 'OKTA', 'PATH', 'UI', 'BILL',
+    'DUOL', 'RBLX', 'S', 'SYM', 'IOT', 'GTLB', 'TEM', 'CVNA', 'APP', 'SOFI',
+    'AEHR', 'ACMR', 'CLSK', 'MARA', 'RIOT', 'CIFR', 'IREN', 'WULF', 'HIMS',
+    'UPST', 'AFRM', 'TOST', 'BNTX', 'NTRA', 'MEDP', 'OSCR', 'FOUR', 'PAYO'
 ]
 
 def fetch_yahoo_screener(url):

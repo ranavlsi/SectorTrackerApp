@@ -38,6 +38,18 @@ def evaluate_emerging_leader_setup(ticker, df=None, spy_series=None):
         if curr_c < 5.0:
             return None
             
+        # Market Cap Gate for Emerging Leaders ($2B <= Market Cap <= $20B)
+        mcap_b = 0.0
+        try:
+            info = yf.Ticker(ticker).fast_info
+            mcap = getattr(info, 'market_cap', 0)
+            if mcap and mcap > 0:
+                mcap_b = mcap / 1e9
+                if mcap_b < 2.0 or mcap_b > 20.0:
+                    return None
+        except Exception:
+            pass
+            
         # Moving Averages
         ema10 = close.ewm(span=10, adjust=False).mean()
         ema21 = close.ewm(span=21, adjust=False).mean()
@@ -77,14 +89,14 @@ def evaluate_emerging_leader_setup(ticker, df=None, spy_series=None):
         is_tight = base_tightness_pct <= 7.0
         
         # Reject Stage 3 Distribution (Down Vol > Up Vol * 1.25 over last 20 days)
-        recent_20_c = close.iloc[-20:]
-        recent_20_o = open_s.iloc[-20:]
-        recent_20_v = vol.iloc[-20:]
+        recent_20_c = close.iloc[-20:].to_numpy()
+        recent_20_o = open_s.iloc[-20:].to_numpy()
+        recent_20_v = vol.iloc[-20:].to_numpy()
         up_mask = recent_20_c > recent_20_o
         down_mask = recent_20_c < recent_20_o
         
-        up_vol_avg = float(recent_20_v[up_mask].mean()) if up_mask.any() else 1.0
-        down_vol_avg = float(recent_20_v[down_mask].mean()) if down_mask.any() else 1.0
+        up_vol_avg = float(recent_20_v[up_mask].mean()) if np.any(up_mask) else 1.0
+        down_vol_avg = float(recent_20_v[down_mask].mean()) if np.any(down_mask) else 1.0
         
         is_stage3_distribution = down_vol_avg > (up_vol_avg * 1.25)
         if is_stage3_distribution:
@@ -221,7 +233,7 @@ def evaluate_emerging_leader_setup(ticker, df=None, spy_series=None):
             "has_pocket_pivot": has_pocket_pivot,
             "is_vdu": is_vdu,
             "badges": badges,
-            "summary_metric": f"{tier_label} ({total_score}/100) · " + " · ".join(badges[:3])
+            "summary_metric": f"{tier_label} ({total_score}/100) · Market Cap: ${mcap_b:.1f}B · " + " · ".join(badges[:3])
         }
     except Exception as e:
         return None
@@ -250,7 +262,7 @@ def run_emerging_leader_scanner(universe=None):
             if len(tdf) < 80: continue
             
             res = evaluate_emerging_leader_setup(ticker, tdf, spy_series=spy_series)
-            if res and res['score'] >= 55:
+            if res and res['score'] >= 25:
                 candidates.append(res)
         except Exception:
             pass
