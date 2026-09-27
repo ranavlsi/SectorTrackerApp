@@ -353,6 +353,9 @@ function App() {
   
   // Emerging Leaders State
   const [emergingLeadersData, setEmergingLeadersData] = useState(null)
+  
+  // Global Live Alerts State
+  const [globalLiveAlerts, setGlobalLiveAlerts] = useState([])
 
   useEffect(() => {
     const fetchAllData = () => {
