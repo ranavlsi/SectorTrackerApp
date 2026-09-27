@@ -88,7 +88,7 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 }
                             ];
 
-                            // Add RS Line vs SPY overlay if present
+                            // Add RS Line vs SPY in separate bottom sub-panel (y2) or overlay cleanly
                             if (data.rs_series && Array.isArray(data.rs_series) && data.rs_series.length > 0) {
                                 plotData.push({
                                     x: data.rs_series.map(r => r.time),
@@ -96,12 +96,13 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                     type: 'scatter',
                                     mode: 'lines',
                                     name: 'IBD RS Line (vs SPY)',
-                                    line: { color: '#00E676', width: 2.5 },
-                                    yaxis: 'y2'
+                                    line: { color: '#00E676', width: 2 },
+                                    yaxis: 'y2',
+                                    hovertemplate: '<b>IBD RS Line</b><br>Date: %{x}<br>RS Rating: %{y:.2f}<extra></extra>'
                                 });
                             }
 
-                            // Add Blue Dot markers overlay on BOTH Price and RS Line if present
+                            // Add Blue Dot markers overlay on Price and RS Line
                             if (data.blue_dots && Array.isArray(data.blue_dots) && data.blue_dots.length > 0) {
                                 // 1. Blue Dots on Price Candles
                                 plotData.push({
@@ -112,15 +113,15 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                     name: '🔵 RS Blue Dot (Price)',
                                     marker: {
                                         color: '#38bdf8',
-                                        size: 11,
+                                        size: 10,
                                         symbol: 'circle',
-                                        line: { color: '#ffffff', width: 2 }
+                                        line: { color: '#ffffff', width: 1.5 }
                                     },
                                     yaxis: 'y',
                                     hovertemplate: '<b>🔵 RS Blue Dot Pivot (Price)</b><br>Date: %{x}<br>Price: $%{y:.2f}<extra></extra>'
                                 });
 
-                                // 2. Blue Dots on RS Line
+                                // 2. Blue Dots on RS Line (Pane 2)
                                 plotData.push({
                                     x: data.blue_dots.map(b => b.time),
                                     y: data.blue_dots.map(b => b.rs_value),
@@ -129,9 +130,9 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                     name: '🔵 RS Blue Dot (RS Line)',
                                     marker: {
                                         color: '#00E676',
-                                        size: 11,
+                                        size: 10,
                                         symbol: 'circle',
-                                        line: { color: '#ffffff', width: 2 }
+                                        line: { color: '#ffffff', width: 1.5 }
                                     },
                                     yaxis: 'y2',
                                     hovertemplate: '<b>🔵 RS Blue Dot Pivot (RS Line)</b><br>Date: %{x}<br>RS Level: %{y:.2f}<extra></extra>'
@@ -141,7 +142,6 @@ export default function UnifiedPlotlyChart({ ticker }) {
                             // Add VCP Contraction Wave shapes & depth callout annotations if present
                             if (data.vcp_waves && Array.isArray(data.vcp_waves) && data.vcp_waves.length > 0) {
                                 data.vcp_waves.forEach(wave => {
-                                    // 1. Vertical pullback line from Wave Start to Low
                                     shapes.push({
                                         type: 'line',
                                         xref: 'x',
@@ -157,7 +157,6 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                         }
                                     });
 
-                                    // 2. Depth percentage badge annotation
                                     annotations.push({
                                         xref: 'x',
                                         x: wave.end_date,
@@ -177,6 +176,8 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 });
                             }
 
+                            const hasRsSeries = data.rs_series && Array.isArray(data.rs_series) && data.rs_series.length > 0;
+
                             const layout = {
                                 dragmode: 'pan',
                                 paper_bgcolor: '#090d16',
@@ -193,8 +194,8 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 },
                                 xaxis: {
                                     rangeslider: { visible: false },
-                                    type: 'category', // Removes Weekend/Holiday blank gap distortions!
-                                    gridcolor: 'rgba(255,255,255,0.06)',
+                                    type: 'category', // Removes Weekend/Holiday blank gap distortions
+                                    gridcolor: 'rgba(255,255,255,0.05)',
                                     tickfont: { color: '#94a3b8', size: 11 },
                                     showspikes: true,
                                     spikemode: 'across',
@@ -205,7 +206,7 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                 },
                                 yaxis: {
                                     title: { text: 'Stock Price ($)', font: { color: '#94a3b8', size: 12 } },
-                                    gridcolor: 'rgba(255,255,255,0.06)',
+                                    gridcolor: 'rgba(255,255,255,0.05)',
                                     tickfont: { color: '#94a3b8', size: 11 },
                                     side: 'right',
                                     showspikes: true,
@@ -214,16 +215,22 @@ export default function UnifiedPlotlyChart({ ticker }) {
                                     spikecolor: '#64748b',
                                     spikethickness: 1,
                                     fixedrange: false,
-                                    autorange: true
+                                    autorange: true,
+                                    domain: hasRsSeries ? [0.28, 1.0] : [0.0, 1.0] // Upper Pane (Price)
                                 },
                                 yaxis2: {
-                                    title: { text: 'IBD Relative Strength Line', font: { color: '#00E676', size: 12 } },
-                                    tickfont: { color: '#00E676', size: 11 },
-                                    overlaying: 'y',
-                                    side: 'left',
-                                    showgrid: false,
+                                    title: { text: 'IBD RS Line', font: { color: '#00E676', size: 11 } },
+                                    tickfont: { color: '#00E676', size: 10 },
+                                    gridcolor: 'rgba(0,230,118,0.08)',
+                                    side: 'right',
+                                    showspikes: true,
+                                    spikemode: 'across',
+                                    spikedash: 'dot',
+                                    spikecolor: '#00E676',
+                                    spikethickness: 1,
                                     fixedrange: false,
-                                    autorange: true
+                                    autorange: true,
+                                    domain: hasRsSeries ? [0.0, 0.22] : [0.0, 0.0] // Separate Dedicated Lower Sub-Panel Pane!
                                 },
                                 shapes: shapes,
                                 annotations: annotations,
