@@ -51,6 +51,7 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 const ScreenerCategories = {
+  emerging_leaders: { title: "⚡ Emerging Market Leaders (Early Coiling)", icon: <Flame color="#3b82f6" />, desc: "4-Pillar Discovery Engine: Multi-agent quantitative model identifying early-stage market leaders coiling in tight bases with RS Line leading divergence, MA pinch (<5%), Pocket Pivots, and Volume Dry-Up (VDU)." },
   deepvue_launchpad: { title: "DeepVue: Launchpad Setup", icon: <Rocket color="#f43f5e" />, desc: "TraderLion / Deepvue: Moving average convergence (21 SMA, 50 SMA, and 65 EMA pinch within 2.5%) with tight price action and Volume Dry-Up (VDU). Early low-risk entry inside bases." },
   chop_incubation_leaders: { title: "Next Leg Leaders (Chop Incubation)", icon: <ShieldCheck color="#10b981" />, desc: "William O'Neil's 5 Market Chop Rules: Stocks holding above their 50-day line with top-tier Relative Strength, tight base depth (<25%), and Volume Dry-Up (VDU) while the broader market consolidates." },
   relative_strength: { title: "Highest Relative Strength", icon: <TrendingUp color="#10b981" />, desc: "Top momentum stocks exhibiting the highest relative strength vs the S&P 500." },
@@ -350,39 +351,8 @@ function App() {
   // Seasonality Radar State
   const [seasonalityData, setSeasonalityData] = useState(null)
   
-  // DeepVue State
-  const [deepvueData, setDeepvueData] = useState(null)
-  
-  // Advanced Analytics State
-  const [correlationData, setCorrelationData] = useState(null)
-  const [gexSearch, setGexSearch] = useState('')
-  const [searchedGex, setSearchedGex] = useState(null)
-  const [gexLoading, setGexLoading] = useState(false)
-  const [gexError, setGexError] = useState('')
-  
-  // Historical DNA State
-  const [dnaData, setDnaData] = useState(null)
-  const [loadingDna, setLoadingDna] = useState(false)
-  
-  const fetchDNA = async (ticker) => {
-    setLoadingDna(true);
-    setDnaData(null);
-    try {
-      const res = await fetch(`/api/dna?ticker=${ticker}`);
-      const data = await res.json();
-      setDnaData(data);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoadingDna(false);
-  };
-  
-  // Playbook State
-  const [playbookContent, setPlaybookContent] = useState('')
-  const [weeklyPlaybook, setWeeklyPlaybook] = useState(null)
-  
-  // Global Live Alerts State
-  const [globalLiveAlerts, setGlobalLiveAlerts] = useState([])
+  // Emerging Leaders State
+  const [emergingLeadersData, setEmergingLeadersData] = useState(null)
 
   useEffect(() => {
     const fetchAllData = () => {
@@ -395,6 +365,11 @@ function App() {
         .then(res => res.json())
         .then(data => setScreenerData(data))
         .catch(err => console.error("Error loading screener data:", err))
+        
+      fetch('/emerging_leaders.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setEmergingLeadersData(data))
+        .catch(err => console.error("Error loading emerging leaders data:", err))
         
       fetch('/market_health.json?t=' + new Date().getTime())
         .then(res => {
@@ -1461,44 +1436,58 @@ function App() {
                 )}
                 
                 {!collapsedCategories[key] && (
-                  screenerData[key] && screenerData[key].length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                      {screenerData[key]
-                        .slice(0, expandedCategories[key] ? 20 : 5)
-                        .map((item, idx) => (
-                        <ScreenerPill key={item.ticker} item={item} rank={idx + 1} onClick={() => fetchTickerData(item.ticker)} />
-                      ))}
-                      {screenerData[key].length > 5 && (
-                        <button 
-                          onClick={() => setExpandedCategories(prev => ({ ...prev, [key]: !prev[key] }))}
-                          style={{ 
-                            background: 'rgba(79, 172, 254, 0.05)', 
-                            border: '1px dashed rgba(79, 172, 254, 0.3)', 
-                            color: '#4facfe', 
-                            padding: '0.5rem', 
-                            borderRadius: '4px', 
-                            cursor: 'pointer', 
-                            marginTop: '0.5rem',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(79, 172, 254, 0.15)'; e.currentTarget.style.borderColor = '#4facfe'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(79, 172, 254, 0.05)'; e.currentTarget.style.borderColor = 'rgba(79, 172, 254, 0.3)'; }}
-                        >
-                          {expandedCategories[key] ? (
-                            <><ChevronUp size={16}/> Fold Up</>
-                          ) : (
-                            <><ChevronDown size={16}/> Show Next 15 Stocks (Rank 6-20)</>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <p style={{ color: '#64748b', fontStyle: 'italic', marginTop: '1rem' }}>No setups found today.</p>
-                  )
+                  (() => {
+                    const items = (key === 'emerging_leaders' && emergingLeadersData?.candidates)
+                      ? emergingLeadersData.candidates.map(c => ({
+                          ticker: c.ticker,
+                          metric: `${c.tier_label} (${c.score}/100) · Pivot: $${c.entry_pivot} · ${c.badges ? c.badges.join(' ') : ''}`,
+                          score: c.score,
+                          state_label: c.tier_label,
+                          state_color: c.tier_color,
+                          has_pocket_pivot: c.has_pocket_pivot,
+                          has_rs_high: c.is_rs_leading
+                        }))
+                      : (screenerData && screenerData[key] ? screenerData[key] : []);
+
+                    return items.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                        {items
+                          .slice(0, expandedCategories[key] ? 20 : 5)
+                          .map((item, idx) => (
+                          <ScreenerPill key={item.ticker} item={item} rank={idx + 1} onClick={() => fetchTickerData(item.ticker)} />
+                        ))}
+                        {items.length > 5 && (
+                          <button 
+                            onClick={() => setExpandedCategories(prev => ({ ...prev, [key]: !prev[key] }))}
+                            style={{ 
+                              background: 'rgba(79, 172, 254, 0.05)', 
+                              border: '1px dashed rgba(79, 172, 254, 0.3)', 
+                              color: '#4facfe', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              cursor: 'pointer', 
+                              marginTop: '0.5rem',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              gap: '5px'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(79, 172, 254, 0.15)'; e.currentTarget.style.borderColor = '#4facfe'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(79, 172, 254, 0.05)'; e.currentTarget.style.borderColor = 'rgba(79, 172, 254, 0.3)'; }}
+                          >
+                            {expandedCategories[key] ? (
+                              <><ChevronUp size={16}/> Fold Up</>
+                            ) : (
+                              <><ChevronDown size={16}/> Show Next 15 Stocks (Rank 6-20)</>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <p style={{ color: '#64748b', fontStyle: 'italic', marginTop: '1rem' }}>No setups found today.</p>
+                    );
+                  })()
                 )}
               </div>
             ))}
