@@ -1207,9 +1207,9 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
             stage_score = 70
             action_directive = "TRIM / HOLD (DO NOT CHASE)"
             key_characteristics = [
-                f"Extended +{dist_ma30_pct:.1f}% above 30-week MA",
-                f"Climax run into 52-week highs (${curr_close:.2f})",
-                "Reward/Risk unfavorable for fresh entry; tighten trailing stops"
+                f"Extended +{dist_ma30_pct:.1f}% above 30-week MA baseline (${curr_ma30:.2f})",
+                f"Parabolic extension (-{pct_from_52w_high:.1f}% from 52w high ${high_52w:.2f})",
+                "Reward/Risk unfavorable for fresh buying; raise trailing stop loss"
             ]
         elif is_testing_from_underneath and curr_close < curr_ma10:
             # Crucial Fix: Testing 10w MA from underneath as overhead resistance (e.g. DDOG)
