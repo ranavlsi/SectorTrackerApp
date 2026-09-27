@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-09-27T17:36:56.219741",
-  "count": 1,
+  "updated_at": "2026-09-27T17:37:35.855261",
+  "count": 5,
   "candidates": [
     {
       "ticker": "PAYO",
@@ -25,6 +25,97 @@
         "\ud83d\udcca U/D Vol 1.59x"
       ],
       "summary_metric": "\u26a1 High Conviction Coiling (70/100) \u00b7 Market Cap: $2.4B \u00b7 \ud83d\udcd0 MA Pinch (0.2%) \u00b7 \u26a1 Pocket Pivot \u00b7 \ud83d\udcca U/D Vol 1.59x"
+    },
+    {
+      "ticker": "AEHR",
+      "score": 35,
+      "tier": "WATCHLIST_DEVELOPING",
+      "tier_label": "\ud83d\udfe1 Developing Watchlist",
+      "tier_color": "#f59e0b",
+      "price": 104.39,
+      "entry_pivot": 102.79,
+      "stop_loss": 92.27,
+      "risk_pct": 11.6,
+      "pinch_spread_pct": 1.6,
+      "base_tightness_pct": 23.3,
+      "ud_vol_ratio": 1.1,
+      "vol_ratio": 1.05,
+      "is_rs_leading": false,
+      "has_pocket_pivot": false,
+      "is_vdu": false,
+      "badges": [
+        "\ud83d\udcd0 MA Pinch (1.6%)"
+      ],
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (35/100) \u00b7 Market Cap: $3.4B \u00b7 \ud83d\udcd0 MA Pinch (1.6%)"
+    },
+    {
+      "ticker": "ACMR",
+      "score": 30,
+      "tier": "WATCHLIST_DEVELOPING",
+      "tier_label": "\ud83d\udfe1 Developing Watchlist",
+      "tier_color": "#f59e0b",
+      "price": 77.3,
+      "entry_pivot": 82.78,
+      "stop_loss": 72.55,
+      "risk_pct": 6.1,
+      "pinch_spread_pct": 4.3,
+      "base_tightness_pct": 24.2,
+      "ud_vol_ratio": 1.21,
+      "vol_ratio": 0.61,
+      "is_rs_leading": false,
+      "has_pocket_pivot": true,
+      "is_vdu": false,
+      "badges": [
+        "\ud83d\udcd0 MA Pinch (4.3%)",
+        "\u26a1 Pocket Pivot"
+      ],
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (30/100) \u00b7 Market Cap: $5.4B \u00b7 \ud83d\udcd0 MA Pinch (4.3%) \u00b7 \u26a1 Pocket Pivot"
+    },
+    {
+      "ticker": "HIMS",
+      "score": 25,
+      "tier": "WATCHLIST_DEVELOPING",
+      "tier_label": "\ud83d\udfe1 Developing Watchlist",
+      "tier_color": "#f59e0b",
+      "price": 29.42,
+      "entry_pivot": 31.81,
+      "stop_loss": 28.33,
+      "risk_pct": 3.7,
+      "pinch_spread_pct": 2.5,
+      "base_tightness_pct": 14.7,
+      "ud_vol_ratio": 0.97,
+      "vol_ratio": 0.65,
+      "is_rs_leading": false,
+      "has_pocket_pivot": true,
+      "is_vdu": false,
+      "badges": [
+        "\ud83d\udcd0 MA Pinch (2.5%)",
+        "\u26a1 Pocket Pivot"
+      ],
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (25/100) \u00b7 Market Cap: $6.9B \u00b7 \ud83d\udcd0 MA Pinch (2.5%) \u00b7 \u26a1 Pocket Pivot"
+    },
+    {
+      "ticker": "OSCR",
+      "score": 25,
+      "tier": "WATCHLIST_DEVELOPING",
+      "tier_label": "\ud83d\udfe1 Developing Watchlist",
+      "tier_color": "#f59e0b",
+      "price": 29.6,
+      "entry_pivot": 34.48,
+      "stop_loss": 30.08,
+      "risk_pct": 2.5,
+      "pinch_spread_pct": 1.5,
+      "base_tightness_pct": 17.9,
+      "ud_vol_ratio": 1.18,
+      "vol_ratio": 0.87,
+      "is_rs_leading": false,
+      "has_pocket_pivot": true,
+      "is_vdu": false,
+      "badges": [
+        "\ud83d\udcd0 MA Pinch (1.5%)",
+        "\u26a1 Pocket Pivot"
+      ],
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (25/100) \u00b7 Market Cap: $9.1B \u00b7 \ud83d\udcd0 MA Pinch (1.5%) \u00b7 \u26a1 Pocket Pivot"
     }
   ]
 }
