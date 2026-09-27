@@ -118,5 +118,5 @@ def macro_outlook():
     return jsonify(get_macro_outlook(ticker.upper()))
 
 if __name__ == '__main__':
-    print("Starting SectorTracker API server on port 5001...")
-    app.run(port=5001, debug=True)
+    print("Starting SectorTracker API server on port 5000...")
+    app.run(port=5000, debug=True)
