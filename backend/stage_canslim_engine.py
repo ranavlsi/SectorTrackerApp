@@ -1249,7 +1249,7 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
                 f"Mansfield RS crossed into bullish zone ({curr_rs:+.1f}%)",
                 "Institutionally sponsored primary expansion"
             ]
-        elif curr_close > curr_ma10 and curr_ma10 > curr_ma30 and ma30_slope_pct > 0.8:
+        elif curr_close > curr_ma10 and curr_ma10 > curr_ma30 and ma30_slope_pct >= 0.2:
             sub_stage = "2C"
             sub_stage_name = "Stage 2C: Mature Compounder"
             stage_category = "Stage 2: Advancing"
