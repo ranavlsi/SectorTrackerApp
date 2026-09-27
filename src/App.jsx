@@ -723,46 +723,59 @@ function App() {
     return playbooks;
   };
   const getRotationSummary = () => {
-    const freshMoney = [];
-    const profitTaking = [];
-    const deadMoney = [];
+    const freshMoney = [];       // Dominant Trend Expansion (Leading)
+    const earlyRotation = [];     // Early Trend Ignition (Improving + Rising RS-Momentum)
+    const profitTaking = [];      // Distribution / Exhaustion Warning (Weakening / Hooking Down)
+    const deadMoney = [];         // Capitulation / Structural Drag (Lagging)
 
     rrgData.forEach(sec => {
       if (!sec.trail || sec.trail.length === 0) return;
       const current = sec.trail[sec.trail.length - 1];
-      // Look back a few periods for direction
-      const prev = sec.trail.length > 3 ? sec.trail[sec.trail.length - 3] : sec.trail[0];
+      const prev = sec.trail.length > 2 ? sec.trail[sec.trail.length - 2] : sec.trail[0];
 
-      const isImproving = current.x < 100 && current.y >= 100;
       const isLeading = current.x >= 100 && current.y >= 100;
+      const isImproving = current.x < 100 && current.y >= 100;
       const isWeakening = current.x >= 100 && current.y < 100;
       const isLagging = current.x < 100 && current.y < 100;
 
       const momRising = current.y > prev.y;
-      
+      const rsRising = current.x > prev.x;
+
       const rank = tableData.findIndex(s => s.name === sec.name) + 1;
-      const sectorObj = { name: sec.name, rank, improving: momRising };
-      
-      // 1. Fresh Money / Leaders (Aggressive rotation IN or Current Leaders)
-      if (isLeading || (isImproving && momRising)) {
+      const topStocksStr = (sec.top_stocks || []).slice(0, 3).map(s => s.ticker).join(', ');
+
+      const sectorObj = {
+        name: sec.name,
+        ticker: sec.ticker,
+        rank: rank > 0 ? rank : 99,
+        momRising,
+        rsRising,
+        topStocks: topStocksStr,
+        x: current.x,
+        y: current.y
+      };
+
+      if (isImproving && momRising) {
+        // 1. Early Trend Ignition: Turning up from oversold/base
+        earlyRotation.push(sectorObj);
+      } else if (isLeading) {
+        // 2. Dominant Trend Expansion: Active market leaders
         freshMoney.push(sectorObj);
-      } 
-      // 2. Profit Taking (Rotation OUT)
-      else if (isWeakening) {
+      } else if (isWeakening || (isLeading && !momRising)) {
+        // 3. Distribution & Exhaustion Warning: Leaders losing velocity or rolling over
         profitTaking.push(sectorObj);
-      } 
-      // 3. Dead Money (Trapped, or Failed Breakouts)
-      else if (isLagging || (isImproving && !momRising)) {
+      } else {
+        // 4. Capitulation & Structural Drag: Trapped underperformance
         deadMoney.push(sectorObj);
       }
     });
-    // Sort all arrays by rank (ascending, so #1 is first)
+
+    earlyRotation.sort((a, b) => b.y - a.y);
     freshMoney.sort((a, b) => a.rank - b.rank);
     profitTaking.sort((a, b) => a.rank - b.rank);
-    // Dead money sorted descending (so highest rank number/worst sector is first)
-    deadMoney.sort((a, b) => b.rank - a.rank);
+    deadMoney.sort((a, b) => a.rank - b.rank);
 
-    return { freshMoney, profitTaking, deadMoney };
+    return { earlyRotation, freshMoney, profitTaking, deadMoney };
   };
   const moneyFlow = getRotationSummary();
 
@@ -2292,51 +2305,135 @@ function App() {
             })()}
           </div>
 
-          {/* Automated Money Flow Summary */}
+          {/* Institutional Sector & Industry Money Flow Dashboard */}
           <div className="glass-card" style={{ marginTop: '20px' }}>
-            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
-              <Zap color="#f59e0b" /> Automated Money Flow Summary ({timeframe})
+            <h2 style={{ textAlign: 'left', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
+              <Zap color="#f59e0b" /> Institutional Sector & Industry Money Flow ({timeframe})
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.25rem', textAlign: 'left' }}>
+              Real-time capital flow matrix tracking sector rotation phases, early trend ignition signals, and momentum exhaustion traps.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px' }}>
               
-              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                <h3 style={{ color: '#10b981', marginTop: 0 }}>🟢 Fresh Money Inflow</h3>
-                <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Institutional capital is actively rotating INTO these sectors (Momentum is rising).</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {/* Card 1: Early Trend Ignition */}
+              <div style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h3 style={{ color: '#60a5fa', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🌱 Early Trend Ignition
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>EARLY SIGNAL</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '12px' }}>
+                  Smart money quiet accumulation. Momentum ($Y$-axis) turning UP from oversold bases before public breakout.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {moneyFlow.earlyRotation.map(sec => (
+                    <div key={sec.name} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <strong style={{ color: '#fff' }}>{sec.name} <span style={{ color: '#60a5fa', fontSize: '0.75rem' }}>({sec.ticker})</span></strong>
+                        <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.75rem' }}>📈 RS-Mom ↑</span>
+                      </div>
+                      {sec.topStocks && (
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px' }}>
+                          Key Anchors: <strong style={{ color: '#cbd5e1' }}>{sec.topStocks}</strong>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {moneyFlow.earlyRotation.length === 0 && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No sectors in early ignition phase.</span>}
+                </div>
+              </div>
+
+              {/* Card 2: Dominant Trend Expansion */}
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h3 style={{ color: '#10b981', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🚀 Dominant Trend Expansion
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>LEADING</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '12px' }}>
+                  Established market leaders in top-right Leading Quadrant (RS-Ratio &gt; 100, RS-Mom &gt; 100). Ride breakout momentum.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {moneyFlow.freshMoney.map(sec => (
-                    <span key={sec.name} style={{ background: '#10b981', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                      #{sec.rank} {sec.name} {sec.improving ? '📈' : '📉'}
-                    </span>
+                    <div key={sec.name} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <strong style={{ color: '#fff' }}>#{sec.rank} {sec.name} <span style={{ color: '#10b981', fontSize: '0.75rem' }}>({sec.ticker})</span></strong>
+                        <span style={{ color: sec.momRising ? '#10b981' : '#f59e0b', fontWeight: 'bold', fontSize: '0.75rem' }}>
+                          {sec.momRising ? '🔥 High Velocity' : '⏸️ Consolidating'}
+                        </span>
+                      </div>
+                      {sec.topStocks && (
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px' }}>
+                          Key Anchors: <strong style={{ color: '#cbd5e1' }}>{sec.topStocks}</strong>
+                        </span>
+                      )}
+                    </div>
                   ))}
-                  {moneyFlow.freshMoney.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
+                  {moneyFlow.freshMoney.length === 0 && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No sectors in dominant expansion.</span>}
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                <h3 style={{ color: '#f59e0b', marginTop: 0 }}>🟡 Profit Taking</h3>
-                <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Money is moving OUT of these previous leaders (Momentum is falling).</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {/* Card 3: Distribution & Exhaustion Warning */}
+              <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h3 style={{ color: '#f59e0b', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    ⚠️ Distribution & Exhaustion
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>EXHAUSTION</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '12px' }}>
+                  Institutional profit taking. Former leaders losing momentum (RS-Mom falling into Weakening quadrant).
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {moneyFlow.profitTaking.map(sec => (
-                    <span key={sec.name} style={{ background: '#f59e0b', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                      #{sec.rank} {sec.name} {sec.improving ? '📈' : '📉'}
-                    </span>
+                    <div key={sec.name} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <strong style={{ color: '#fff' }}>#{sec.rank} {sec.name} <span style={{ color: '#f59e0b', fontSize: '0.75rem' }}>({sec.ticker})</span></strong>
+                        <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.75rem' }}>📉 Mom Fading</span>
+                      </div>
+                      {sec.topStocks && (
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px' }}>
+                          Caution Stocks: <strong style={{ color: '#cbd5e1' }}>{sec.topStocks}</strong>
+                        </span>
+                      )}
+                    </div>
                   ))}
-                  {moneyFlow.profitTaking.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
+                  {moneyFlow.profitTaking.length === 0 && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No sectors showing distribution.</span>}
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                <h3 style={{ color: '#ef4444', marginTop: 0 }}>🔴 Dead Money</h3>
-                <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '10px' }}>Sectors trapped in structural downtrends (Lagging quadrant).</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {moneyFlow.deadMoney.map(sec => (
-                    <span key={sec.name} style={{ background: '#ef4444', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                      #{sec.rank} {sec.name} {sec.improving ? '📈' : '📉'}
-                    </span>
+              {/* Card 4: Capitulation & Structural Drag */}
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h3 style={{ color: '#ef4444', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🔴 Structural Drag & Dead Money
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>LAGGING</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '12px' }}>
+                  Trapped in multi-month relative downtrends (RS-Ratio &lt; 100, RS-Mom &lt; 100). Avoid long positions until ignition.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {moneyFlow.deadMoney.slice(0, 5).map(sec => (
+                    <div key={sec.name} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <strong style={{ color: '#fff' }}>#{sec.rank} {sec.name} <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>({sec.ticker})</span></strong>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Lagging</span>
+                      </div>
+                      {sec.topStocks && (
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px' }}>
+                          Lagging Stocks: <strong style={{ color: '#94a3b8' }}>{sec.topStocks}</strong>
+                        </span>
+                      )}
+                    </div>
                   ))}
-                  {moneyFlow.deadMoney.length === 0 && <span style={{ color: '#888', fontSize: '0.9rem' }}>No sectors detected.</span>}
+                  {moneyFlow.deadMoney.length === 0 && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No sectors in structural drag.</span>}
                 </div>
               </div>
+
             </div>
           </div>
 
