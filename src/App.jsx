@@ -381,28 +381,12 @@ function App() {
           const data = JSON.parse(sanitized);
           setMarketHealth(data);
         })
-        .catch(err => {
-          console.warn("Retrying market health from API fallback...", err);
-          fetch('/api/market_health')
-            .then(r => r.json())
-            .then(data => {
-              if (data && !data.error) setMarketHealth(data);
-            })
-            .catch(apiErr => console.error("Error loading market health data:", apiErr));
-        })
+        .catch(err => console.warn("Market health data unavailable", err))
 
       fetch('/weekly_playbook.json?t=' + new Date().getTime())
         .then(res => res.json())
         .then(data => setWeeklyPlaybook(data))
-        .catch(err => {
-          console.warn("Retrying weekly playbook from API fallback...", err);
-          fetch('/api/weekly_playbook')
-            .then(r => r.json())
-            .then(data => {
-              if (data && !data.error) setWeeklyPlaybook(data);
-            })
-            .catch(apiErr => console.error("Error loading weekly playbook:", apiErr));
-        })
+        .catch(err => console.warn("Weekly playbook unavailable", err))
         
       fetch('/squeeze_results.json?t=' + new Date().getTime())
         .then(res => res.json())

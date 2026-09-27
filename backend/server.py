@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_caching import Cache
 import yfinance as yf
 import pandas as pd
+import json
 from earnings_engine import analyze_single_ticker
 from fundamentals_engine import get_fundamentals
 from fundamental_data_api import get_fundamental_history
@@ -116,6 +117,17 @@ def macro_outlook():
     ticker = request.args.get('ticker')
     if not ticker: return jsonify({"error": "No ticker provided"}), 400
     return jsonify(get_macro_outlook(ticker.upper()))
+
+@app.route('/api/stream', methods=['GET'])
+def sse_stream():
+    def event_generator():
+        import time
+        while True:
+            # Heartbeat stream keepalive
+            yield f"data: {json.dumps({'type': 'keepalive', 'timestamp': time.time()})}\n\n"
+            time.sleep(15)
+    from flask import Response
+    return Response(event_generator(), mimetype='text/event-stream')
 
 if __name__ == '__main__':
     print("Starting SectorTracker API server on port 5000...")
