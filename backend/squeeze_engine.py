@@ -33,6 +33,21 @@ def run_squeeze_engine():
             l = ticker_df['Low']
             v = ticker_df['Volume']
             
+            # Apply Strict Noise & Liquidity Filters:
+            # 1. Market Cap >= $2 Billion
+            # 2. Average Daily Volume >= 10 Million shares OR Dollar Volume >= $50 Million
+            info = t.info
+            mcap = info.get('marketCap', 0) or 0
+            avg_vol = float(v.rolling(20).mean().iloc[-1]) if len(v) >= 20 else float(v.mean())
+            curr_price = float(c.iloc[-1])
+            dollar_vol = avg_vol * curr_price
+
+            if mcap < 2000000000 and ticker not in UNIVERSE:
+                continue
+
+            if avg_vol < 10000000 and dollar_vol < 50000000:
+                continue
+
             # 1. Bollinger Bands (20-period SMA, 2.0 Std Dev)
             sma20 = c.rolling(20).mean()
             std20 = c.rolling(20).std()
@@ -57,11 +72,7 @@ def run_squeeze_engine():
             
             # Volume Dry-Up (VDU)
             curr_v = float(v.iloc[-1])
-            avg_v20 = float(v.rolling(20).mean().iloc[-1])
-            is_vdu = curr_v < (avg_v20 * 0.80) if avg_v20 > 0 else False
-            
-            t = yf.Ticker(ticker)
-            info = t.info
+            is_vdu = curr_v < (avg_vol * 0.80) if avg_vol > 0 else False
             
             short_pct = info.get('shortPercentOfFloat', 0) or 0
             short_ratio = info.get('shortRatio', 0) or 0
@@ -79,9 +90,9 @@ def run_squeeze_engine():
             }
 
             # -----------------------------------------------------------------
-            # CATEGORY 1: PENDING TTM KELTNER SQUEEZE (Pending Breakout Before Surge!)
+            # CATEGORY 1: PENDING TTM KELTNER SQUEEZE (Must be strictly contracting: ratio < 0.95 or Active Squeeze)
             # -----------------------------------------------------------------
-            if is_ttm_squeeze or compression_ratio < 0.95:
+            if is_ttm_squeeze or compression_ratio <= 0.95:
                 res = base_data.copy()
                 status_text = "⚡ TTM Keltner Squeeze Active" if is_ttm_squeeze else "🔥 Near Squeeze Coiling"
                 vdu_text = " | VDU Dry-Up" if is_vdu else ""
