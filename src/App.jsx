@@ -348,9 +348,37 @@ function App() {
   // Squeeze State
   const [squeezeData, setSqueezeData] = useState(null)
   
-  // Seasonality Radar State
-  const [seasonalityData, setSeasonalityData] = useState(null)
+  // DeepVue State
+  const [deepvueData, setDeepvueData] = useState(null)
   
+  // Advanced Analytics State
+  const [correlationData, setCorrelationData] = useState(null)
+  const [gexSearch, setGexSearch] = useState('')
+  const [searchedGex, setSearchedGex] = useState(null)
+  const [gexLoading, setGexLoading] = useState(false)
+  const [gexError, setGexError] = useState('')
+  
+  // Historical DNA State
+  const [dnaData, setDnaData] = useState(null)
+  const [loadingDna, setLoadingDna] = useState(false)
+  
+  const fetchDNA = async (ticker) => {
+    setLoadingDna(true);
+    setDnaData(null);
+    try {
+      const res = await fetch(`/api/dna?ticker=${ticker}`);
+      const data = await res.json();
+      setDnaData(data);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoadingDna(false);
+  };
+  
+  // Playbook State
+  const [playbookContent, setPlaybookContent] = useState('')
+  const [weeklyPlaybook, setWeeklyPlaybook] = useState(null)
+
   // Emerging Leaders State
   const [emergingLeadersData, setEmergingLeadersData] = useState(null)
   
