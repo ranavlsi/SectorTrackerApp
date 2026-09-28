@@ -348,6 +348,9 @@ function App() {
   // Squeeze State
   const [squeezeData, setSqueezeData] = useState(null)
   
+  // Seasonality Radar State
+  const [seasonalityData, setSeasonalityData] = useState(null)
+  
   // DeepVue State
   const [deepvueData, setDeepvueData] = useState(null)
   

@@ -33,19 +33,19 @@ def run_squeeze_engine():
             l = ticker_df['Low']
             v = ticker_df['Volume']
             
-            # Apply Strict Noise & Liquidity Filters:
-            # 1. Market Cap >= $2 Billion
-            # 2. Average Daily Volume >= 10 Million shares OR Dollar Volume >= $50 Million
-            info = t.info
-            mcap = info.get('marketCap', 0) or 0
+            # Apply Liquidity & Volume Filters:
+            # Average Daily Volume >= 1.0M shares OR Dollar Volume >= $15M
+            try:
+                info = yf.Ticker(ticker).fast_info
+                mcap = getattr(info, 'market_cap', 0) or 0
+            except Exception:
+                mcap = 0
+
             avg_vol = float(v.rolling(20).mean().iloc[-1]) if len(v) >= 20 else float(v.mean())
             curr_price = float(c.iloc[-1])
             dollar_vol = avg_vol * curr_price
 
-            if mcap < 2000000000 and ticker not in UNIVERSE:
-                continue
-
-            if avg_vol < 10000000 and dollar_vol < 50000000:
+            if avg_vol < 1_000_000 and dollar_vol < 15_000_000:
                 continue
 
             # 1. Bollinger Bands (20-period SMA, 2.0 Std Dev)
@@ -90,61 +90,23 @@ def run_squeeze_engine():
             }
 
             # -----------------------------------------------------------------
-            # CATEGORY 1: PENDING TTM KELTNER SQUEEZE (Must be strictly contracting: ratio < 0.95 or Active Squeeze)
+            # CATEGORY 1: PENDING TTM KELTNER SQUEEZE
             # -----------------------------------------------------------------
-            if is_ttm_squeeze or compression_ratio <= 0.95:
+            if is_ttm_squeeze or compression_ratio <= 1.15:
                 res = base_data.copy()
                 status_text = "⚡ TTM Keltner Squeeze Active" if is_ttm_squeeze else "🔥 Near Squeeze Coiling"
                 vdu_text = " | VDU Dry-Up" if is_vdu else ""
                 res["metric"] = f"{status_text} ({compression_ratio:.2f}x Ratio{vdu_text})"
                 results["ttm_keltner_squeeze"].append(res)
 
-            # Check Options Flow for Short/Gamma Squeeze filters
-            if (short_pct and short_pct > 0.05) or (short_ratio and short_ratio > 3):
-                options = t.options
-                call_vol = 0
-                put_vol = 0
-                cp_ratio = 0
-                avg_iv = 0
-                
-                if len(options) > 0:
-                    try:
-                        chain = t.option_chain(options[0])
-                        call_vol = chain.calls['volume'].sum()
-                        put_vol = chain.puts['volume'].sum()
-                        if 'impliedVolatility' in chain.calls.columns:
-                            avg_iv = chain.calls['impliedVolatility'].mean()
-                        if put_vol > 0:
-                            cp_ratio = call_vol / put_vol
-                    except:
-                        pass
-                
-                base_data["cp_ratio"] = round(cp_ratio, 2)
-                
-                # Squeeze Started Logic
-                curr_c = float(c.iloc[-1])
-                prev_c = float(c.iloc[-2])
-                price_jump = (curr_c / prev_c) - 1
-                vol_mult = curr_v / avg_v20 if avg_v20 > 0 else 0
-                
-                if price_jump > 0.04 and vol_mult > 1.5 and cp_ratio > 1.2:
-                    res = base_data.copy()
-                    res["metric"] = f"+{price_jump*100:.1f}% on {vol_mult:.1f}x Vol"
-                    results["squeeze_started"].append(res)
-                
-                elif cp_ratio > 2.0:
-                    res = base_data.copy()
-                    res["metric"] = f"Heavy Calls ({cp_ratio:.1f}x Puts)"
-                    results["gamma_squeeze_setup"].append(res)
-                    
-                else:
-                    res = base_data.copy()
-                    powder_keg_score = (short_ratio * 10) + (avg_iv * 100) + (put_vol / 1000)
-                    if pd.isna(powder_keg_score): powder_keg_score = 0
-                    
-                    res["powder_keg_score"] = powder_keg_score
-                    res["metric"] = f"Short: {short_str} | IV: {avg_iv*100:.0f}% | Puts: {int(put_vol)}"
-                    results["high_short_interest"].append(res)
+            # -----------------------------------------------------------------
+            # CATEGORY 2 & 3: SHORT / GAMMA SQUEEZE RADAR
+            # -----------------------------------------------------------------
+            powder_keg_score = (short_ratio * 10) + (short_pct * 100) + (100.0 / max(0.1, compression_ratio))
+            res = base_data.copy()
+            res["powder_keg_score"] = powder_keg_score
+            res["metric"] = f"Short Float: {short_str} | Ratio: {short_ratio}d | Compression: {compression_ratio:.2f}x"
+            results["high_short_interest"].append(res)
                     
         except Exception as e:
             pass
