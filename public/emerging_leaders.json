@@ -1,52 +1,53 @@
 {
-  "updated_at": "2026-09-27T17:37:35.855261",
-  "count": 5,
+  "updated_at": "2026-09-28T17:46:07.825445",
+  "count": 6,
   "candidates": [
     {
       "ticker": "PAYO",
-      "score": 70,
+      "score": 65,
       "tier": "HIGH_CONVICTION_COILING",
       "tier_label": "\u26a1 High Conviction Coiling",
       "tier_color": "#3b82f6",
-      "price": 7.17,
-      "entry_pivot": 7.18,
+      "price": 7.14,
+      "entry_pivot": 7.19,
       "stop_loss": 6.98,
-      "risk_pct": 2.6,
+      "risk_pct": 2.2,
       "pinch_spread_pct": 0.2,
       "base_tightness_pct": 1.3,
       "ud_vol_ratio": 1.59,
-      "vol_ratio": 0.92,
-      "is_rs_leading": false,
-      "has_pocket_pivot": true,
-      "is_vdu": false,
-      "badges": [
-        "\ud83d\udcd0 MA Pinch (0.2%)",
-        "\u26a1 Pocket Pivot",
-        "\ud83d\udcca U/D Vol 1.59x"
-      ],
-      "summary_metric": "\u26a1 High Conviction Coiling (70/100) \u00b7 Market Cap: $2.4B \u00b7 \ud83d\udcd0 MA Pinch (0.2%) \u00b7 \u26a1 Pocket Pivot \u00b7 \ud83d\udcca U/D Vol 1.59x"
-    },
-    {
-      "ticker": "AEHR",
-      "score": 35,
-      "tier": "WATCHLIST_DEVELOPING",
-      "tier_label": "\ud83d\udfe1 Developing Watchlist",
-      "tier_color": "#f59e0b",
-      "price": 104.39,
-      "entry_pivot": 102.79,
-      "stop_loss": 92.27,
-      "risk_pct": 11.6,
-      "pinch_spread_pct": 1.6,
-      "base_tightness_pct": 23.3,
-      "ud_vol_ratio": 1.1,
-      "vol_ratio": 1.05,
+      "vol_ratio": 0.69,
       "is_rs_leading": false,
       "has_pocket_pivot": false,
       "is_vdu": false,
       "badges": [
-        "\ud83d\udcd0 MA Pinch (1.6%)"
+        "\ud83d\udcd0 MA Pinch (0.2%)",
+        "\ud83d\udcca U/D Vol 1.59x"
       ],
-      "summary_metric": "\ud83d\udfe1 Developing Watchlist (35/100) \u00b7 Market Cap: $3.4B \u00b7 \ud83d\udcd0 MA Pinch (1.6%)"
+      "summary_metric": "\u26a1 High Conviction Coiling (65/100) \u00b7 Market Cap: $2.4B \u00b7 \ud83d\udcd0 MA Pinch (0.2%) \u00b7 \ud83d\udcca U/D Vol 1.59x"
+    },
+    {
+      "ticker": "HIMS",
+      "score": 35,
+      "tier": "WATCHLIST_DEVELOPING",
+      "tier_label": "\ud83d\udfe1 Developing Watchlist",
+      "tier_color": "#f59e0b",
+      "price": 28.78,
+      "entry_pivot": 31.81,
+      "stop_loss": 28.3,
+      "risk_pct": 1.7,
+      "pinch_spread_pct": 2.3,
+      "base_tightness_pct": 14.1,
+      "ud_vol_ratio": 1.0,
+      "vol_ratio": 0.52,
+      "is_rs_leading": false,
+      "has_pocket_pivot": true,
+      "is_vdu": true,
+      "badges": [
+        "\ud83d\udcd0 MA Pinch (2.3%)",
+        "\ud83d\udca7 Vol Dry-Up (-48%)",
+        "\u26a1 Pocket Pivot"
+      ],
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (35/100) \u00b7 Market Cap: $6.7B \u00b7 \ud83d\udcd0 MA Pinch (2.3%) \u00b7 \ud83d\udca7 Vol Dry-Up (-48%) \u00b7 \u26a1 Pocket Pivot"
     },
     {
       "ticker": "ACMR",
@@ -54,45 +55,67 @@
       "tier": "WATCHLIST_DEVELOPING",
       "tier_label": "\ud83d\udfe1 Developing Watchlist",
       "tier_color": "#f59e0b",
-      "price": 77.3,
+      "price": 75.95,
       "entry_pivot": 82.78,
-      "stop_loss": 72.55,
-      "risk_pct": 6.1,
-      "pinch_spread_pct": 4.3,
+      "stop_loss": 72.72,
+      "risk_pct": 4.3,
+      "pinch_spread_pct": 3.9,
       "base_tightness_pct": 24.2,
       "ud_vol_ratio": 1.21,
-      "vol_ratio": 0.61,
+      "vol_ratio": 0.83,
       "is_rs_leading": false,
       "has_pocket_pivot": true,
       "is_vdu": false,
       "badges": [
-        "\ud83d\udcd0 MA Pinch (4.3%)",
+        "\ud83d\udcd0 MA Pinch (3.9%)",
         "\u26a1 Pocket Pivot"
       ],
-      "summary_metric": "\ud83d\udfe1 Developing Watchlist (30/100) \u00b7 Market Cap: $5.4B \u00b7 \ud83d\udcd0 MA Pinch (4.3%) \u00b7 \u26a1 Pocket Pivot"
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (30/100) \u00b7 Market Cap: $5.3B \u00b7 \ud83d\udcd0 MA Pinch (3.9%) \u00b7 \u26a1 Pocket Pivot"
     },
     {
-      "ticker": "HIMS",
+      "ticker": "MARA",
+      "score": 30,
+      "tier": "WATCHLIST_DEVELOPING",
+      "tier_label": "\ud83d\udfe1 Developing Watchlist",
+      "tier_color": "#f59e0b",
+      "price": 12.11,
+      "entry_pivot": 13.98,
+      "stop_loss": 11.09,
+      "risk_pct": 8.4,
+      "pinch_spread_pct": 9.6,
+      "base_tightness_pct": 23.0,
+      "ud_vol_ratio": 1.21,
+      "vol_ratio": 0.58,
+      "is_rs_leading": false,
+      "has_pocket_pivot": true,
+      "is_vdu": true,
+      "badges": [
+        "\ud83d\udca7 Vol Dry-Up (-41%)",
+        "\u26a1 Pocket Pivot"
+      ],
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (30/100) \u00b7 Market Cap: $4.7B \u00b7 \ud83d\udca7 Vol Dry-Up (-41%) \u00b7 \u26a1 Pocket Pivot"
+    },
+    {
+      "ticker": "CLSK",
       "score": 25,
       "tier": "WATCHLIST_DEVELOPING",
       "tier_label": "\ud83d\udfe1 Developing Watchlist",
       "tier_color": "#f59e0b",
-      "price": 29.42,
-      "entry_pivot": 31.81,
-      "stop_loss": 28.33,
-      "risk_pct": 3.7,
-      "pinch_spread_pct": 2.5,
-      "base_tightness_pct": 14.7,
-      "ud_vol_ratio": 0.97,
-      "vol_ratio": 0.65,
+      "price": 13.34,
+      "entry_pivot": 15.27,
+      "stop_loss": 12.86,
+      "risk_pct": 3.6,
+      "pinch_spread_pct": 5.5,
+      "base_tightness_pct": 19.0,
+      "ud_vol_ratio": 1.23,
+      "vol_ratio": 0.58,
       "is_rs_leading": false,
-      "has_pocket_pivot": true,
-      "is_vdu": false,
+      "has_pocket_pivot": false,
+      "is_vdu": true,
       "badges": [
-        "\ud83d\udcd0 MA Pinch (2.5%)",
-        "\u26a1 Pocket Pivot"
+        "\ud83d\udca7 Vol Dry-Up (-42%)"
       ],
-      "summary_metric": "\ud83d\udfe1 Developing Watchlist (25/100) \u00b7 Market Cap: $6.9B \u00b7 \ud83d\udcd0 MA Pinch (2.5%) \u00b7 \u26a1 Pocket Pivot"
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (25/100) \u00b7 Market Cap: $3.4B \u00b7 \ud83d\udca7 Vol Dry-Up (-42%)"
     },
     {
       "ticker": "OSCR",
@@ -100,22 +123,22 @@
       "tier": "WATCHLIST_DEVELOPING",
       "tier_label": "\ud83d\udfe1 Developing Watchlist",
       "tier_color": "#f59e0b",
-      "price": 29.6,
+      "price": 29.65,
       "entry_pivot": 34.48,
-      "stop_loss": 30.08,
+      "stop_loss": 29.98,
       "risk_pct": 2.5,
-      "pinch_spread_pct": 1.5,
-      "base_tightness_pct": 17.9,
+      "pinch_spread_pct": 1.4,
+      "base_tightness_pct": 17.1,
       "ud_vol_ratio": 1.18,
-      "vol_ratio": 0.87,
+      "vol_ratio": 0.73,
       "is_rs_leading": false,
       "has_pocket_pivot": true,
       "is_vdu": false,
       "badges": [
-        "\ud83d\udcd0 MA Pinch (1.5%)",
+        "\ud83d\udcd0 MA Pinch (1.4%)",
         "\u26a1 Pocket Pivot"
       ],
-      "summary_metric": "\ud83d\udfe1 Developing Watchlist (25/100) \u00b7 Market Cap: $9.1B \u00b7 \ud83d\udcd0 MA Pinch (1.5%) \u00b7 \u26a1 Pocket Pivot"
+      "summary_metric": "\ud83d\udfe1 Developing Watchlist (25/100) \u00b7 Market Cap: $9.2B \u00b7 \ud83d\udcd0 MA Pinch (1.4%) \u00b7 \u26a1 Pocket Pivot"
     }
   ]
 }
