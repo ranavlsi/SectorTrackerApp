@@ -23,6 +23,7 @@ from volume_profile_scanner import evaluate_volume_profile_rejections, evaluate_
 from divergence_reversal_scanner import evaluate_divergence_reversal
 from deepvue_launchpad_scanner import evaluate_deepvue_launchpad
 from chop_incubation_scanner import scan_chop_incubation_leaders
+from emerging_leader_engine import run_emerging_leader_scanner, evaluate_emerging_leader_setup
 
 warnings.filterwarnings('ignore')
 
@@ -1118,6 +1119,28 @@ def run_screener(custom_universe=None):
         print(f"Added {len(results['chop_incubation_leaders'])} Next-Leg Incubation Leaders.")
     except Exception as e:
         print(f"Failed to scan chop incubation leaders: {e}")
+
+    # -----------------------------------
+    # 4-PILLAR EMERGING MARKET LEADERS
+    # -----------------------------------
+    try:
+        print("Post-Scan Optimization: Running 4-Pillar Emerging Market Leaders scan...")
+        em_results = run_emerging_leader_scanner(universe=unique_tickers)
+        results["emerging_leaders"] = [
+            {
+                "ticker": c["ticker"],
+                "metric": c["summary_metric"],
+                "score": c["score"],
+                "state_label": c.get("tier_label"),
+                "state_color": c.get("tier_color"),
+                "has_pocket_pivot": c.get("has_pocket_pivot"),
+                "has_rs_high": c.get("is_rs_leading")
+            }
+            for c in em_results
+        ]
+        print(f"Added {len(results['emerging_leaders'])} Emerging Market Leaders.")
+    except Exception as e:
+        print(f"Failed to scan emerging market leaders: {e}")
         
     # -----------------------------------
     # POST-SCAN MARKET CAP ENFORCEMENT
@@ -1153,8 +1176,8 @@ def run_screener(custom_universe=None):
         
     for key in results:
         # 1. Filter out anything that mathematically failed the 1B market cap check
-        # EXCEPT for Qullamaggie setups, which explicitly target explosive small caps
-        if "qullamaggie" in key.lower():
+        # EXCEPT for Qullamaggie, Emerging Leaders, and DeepVue Launchpad setups (which have their own dedicated mid-cap/small-cap rules)
+        if "qullamaggie" in key.lower() or "emerging_leaders" in key.lower() or "deepvue_launchpad" in key.lower():
             filtered_mcap = results[key]
         else:
             filtered_mcap = [r for r in results[key] if r["ticker"] in valid_market_caps]
