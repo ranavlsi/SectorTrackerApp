@@ -1147,7 +1147,7 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
         term_structure = []
         for exp_key, val in term_structure_dict.items():
             iv_samples = val.get("atm_iv_samples", [])
-            avg_atm_iv = round(float(np.mean(iv_samples)) * 100, 1) if iv_samples else round(overall_atm_iv * 100, 1)
+            avg_atm_iv_exp = round(float(np.mean(iv_samples)) * 100, 1) if iv_samples else round(avg_atm_iv * 100, 1)
             call_oi_val = int(val["call_oi"])
             put_oi_val = int(val["put_oi"])
             tot_oi_val = call_oi_val + put_oi_val
@@ -1157,7 +1157,7 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             term_structure.append({
                 "expiry": exp_key,
                 "dte": val["dte"],
-                "atm_iv": avg_atm_iv,
+                "atm_iv": avg_atm_iv_exp,
                 "net_gex": net_gex_val,
                 "net_gex_millions": round(net_gex_val / 1e6, 2),
                 "call_gex": round(val["call_gex"], 2),
