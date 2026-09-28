@@ -1120,6 +1120,8 @@ def run_screener(custom_universe=None):
     except Exception as e:
         print(f"Failed to scan chop incubation leaders: {e}")
 
+    unique_tickers = list(set([r["ticker"] for key in results for r in results[key]]))
+
     # -----------------------------------
     # 4-PILLAR EMERGING MARKET LEADERS
     # -----------------------------------
@@ -1148,7 +1150,6 @@ def run_screener(custom_universe=None):
     # To strictly enforce >$1B Market Cap without crashing due to rate limits on 12,000 stocks,
     # we bulk query the final surviving candidates using yahooquery.
     print("Post-Scan Optimization: Enforcing strict $1B Market Cap requirement on survivors...")
-    unique_tickers = list(set([r["ticker"] for key in results for r in results[key]]))
     
     valid_market_caps = set(unique_tickers) # Default to keeping them all if API fails
     try:
