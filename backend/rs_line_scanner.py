@@ -147,13 +147,14 @@ def run_rs_scanner():
     all_stocks = duckdb.query(weekly_query).df()
     all_stocks['date'] = pd.to_datetime(all_stocks['date'])
     
-    print("Loading Daily Data for 3-Day Blue Dot Detection...")
+    print("Loading Daily Data for 3-Day Blue Dot Detection & Daily Trading Volume Constraints...")
     daily_query = f"""
     SELECT 
         d.Ticker as ticker,
         d.Date as date,
         d.Close as close,
         d.High as high,
+        d.Volume as volume,
         s.Close as spy_close
     FROM '{LAKEHOUSE_PATH}' d
     JOIN '{LAKEHOUSE_PATH}' s ON d.Date = s.Date AND s.Ticker = 'SPY'
@@ -164,11 +165,24 @@ def run_rs_scanner():
     daily_df['date'] = pd.to_datetime(daily_df['date'])
     daily_df['rs'] = daily_df['close'] / daily_df['spy_close']
 
-    # Pre-compute 3-day Blue Dot metadata per ticker
+    # Pre-compute 3-day Blue Dot metadata & Daily Trading Volume stats per ticker
     blue_dot_map = {}
+    daily_vol_map = {}
     for t, g in daily_df.groupby('ticker'):
-        if len(g) < 100: continue
+        if len(g) < 50: continue
         g_sorted = g.sort_values('date')
+        d_vol = int(round(float(g_sorted['volume'].iloc[-1] or 0)))
+        avg_50d = int(round(float(g_sorted['volume'].iloc[-50:].mean() or 0)))
+        avg_20d = int(round(float(g_sorted['volume'].iloc[-20:].mean() or 0)))
+        daily_rvol = round(d_vol / avg_50d, 2) if avg_50d > 0 else 1.0
+        daily_vol_map[t] = {
+            "daily_volume": d_vol,
+            "avg_daily_vol_50d": avg_50d,
+            "avg_daily_vol_20d": avg_20d,
+            "daily_rvol": daily_rvol
+        }
+
+        if len(g) < 100: continue
         rs_52w_max = g_sorted['rs'].rolling(250, min_periods=40).max()
         high_52w_price = g_sorted['high'].rolling(250, min_periods=40).max()
         
@@ -324,11 +338,55 @@ def run_rs_scanner():
         rs_qqq_peak_12m = rs_qqq_normalized.max()
         rs_qqq_vs_high = round((rs_qqq_current / rs_qqq_peak_12m) * 100, 1)
 
+        vol_20w_avg = float(weekly_52['volume'].iloc[-20:].mean())
+        curr_vol = float(weekly_52['volume'].iloc[-1])
+        vol_ratio = round(curr_vol / vol_20w_avg, 2) if vol_20w_avg > 0 else 1.0
+
+        dv_info = daily_vol_map.get(ticker, {})
+        avg_daily_vol_50d = int(dv_info.get("avg_daily_vol_50d", round(vol_20w_avg / 5.0)))
+        avg_daily_vol_20d = int(dv_info.get("avg_daily_vol_20d", round(vol_20w_avg / 5.0)))
+        daily_volume = int(dv_info.get("daily_volume", round(curr_vol / 5.0)))
+        daily_rvol = float(dv_info.get("daily_rvol", vol_ratio))
+        dollar_vol_m = round((avg_daily_vol_50d * float(current_price)) / 1e6, 2)
+
+        # Official MarketSurge Buy Point (Pivot)
+        trigger_px = ch_analysis.get('details', {}).get('breakout_trigger')
+        buy_point = round(float(trigger_px if (trigger_px and trigger_px > 0) else high_52_price), 2)
+        buy_zone_high = round(buy_point * 1.05, 2)
+        stop_loss = round(buy_point * 0.925, 2)
+        dist_to_pivot_pct = round(((float(current_price) / buy_point) - 1.0) * 100.0, 2) if buy_point > 0 else 0.0
+        pct_off_52w_high = round(((float(current_price) / float(high_52_price)) - 1.0) * 100.0, 2) if high_52_price > 0 else 0.0
+
+        sma_4w = weekly_52['close'].rolling(4).mean().iloc[-1]
+        sma_30w = weekly_52['close'].rolling(30).mean().iloc[-1]
+        sma_10_prev = weekly_52['close'].rolling(10).mean().iloc[-5] if len(weekly_52) >= 15 else sma_10
+        sma_40_prev = weekly_52['close'].rolling(40).mean().iloc[-5] if len(weekly_52) >= 45 else sma_40
+        low_52_price = weekly_52['low'].min()
+
+        above_21d = bool(not pd.isna(sma_4w) and current_price >= sma_4w)
+        above_10w = bool(not pd.isna(sma_10) and current_price >= sma_10)
+        above_30w = bool(not pd.isna(sma_30w) and current_price >= sma_30w)
+        above_40w = bool(not pd.isna(sma_40) and current_price >= sma_40)
+        ma_stack_bullish = bool(
+            (pd.isna(sma_4w) or pd.isna(sma_10) or sma_4w >= sma_10)
+            and (pd.isna(sma_10) or pd.isna(sma_40) or sma_10 >= sma_40)
+        )
+        s50_rising = bool(pd.isna(sma_10_prev) or sma_10 >= sma_10_prev)
+        s200_rising = bool(pd.isna(sma_40_prev) or sma_40 >= sma_40_prev)
+        dist_50sma_pct = round(((float(current_price) / float(sma_10)) - 1.0) * 100.0, 1) if (not pd.isna(sma_10) and sma_10 > 0) else 0.0
+
+        if above_10w and above_40w and (pd.isna(sma_40) or sma_10 >= sma_40):
+            stage_tag = "Stage 2 Markup" if dist_to_pivot_pct < -5.0 else "Stage 2A Pivot"
+        elif above_40w:
+            stage_tag = "Stage 2 Pullback"
+        else:
+            stage_tag = "Stage 1 Basing"
+
         rs_results.append({
             "ticker": ticker,
             "ibd_perf": ibd_perf,
-            "rs_raw_return": (rs_ratio_normalized.iloc[-1] - 1.0) * 100,
-            "rs_vs_high": round(rs_vs_high, 1),
+            "rs_raw_return": round(float((rs_ratio_normalized.iloc[-1] - 1.0) * 100), 2),
+            "rs_vs_high": round(float(rs_vs_high), 1),
             "rs_qqq_vs_high": rs_qqq_vs_high,
             "rs_badge": rs_badge,
             "is_blue_dot": is_blue_dot,
@@ -341,15 +399,40 @@ def run_rs_scanner():
             "pattern_status": ch_analysis['status'],
             "pattern_score": ch_analysis['score'],
             "pattern_details": ch_analysis['details'],
-            "adr_pct": adr_pct,
+            "buy_point": buy_point,
+            "buy_zone_high": buy_zone_high,
+            "stop_loss": stop_loss,
+            "dist_to_pivot_pct": dist_to_pivot_pct,
+            "high_52w": round(float(high_52_price), 2),
+            "low_52w": round(float(low_52_price), 2),
+            "price_vs_high": round(float(price_vs_high), 1),
+            "pct_off_52w_high": pct_off_52w_high,
+            "stage_tag": stage_tag,
+            "above_10w": above_10w,
+            "above_40w": above_40w,
+            "above_21d": above_21d,
+            "above_50d": above_10w,
+            "above_150d": above_30w,
+            "above_200d": above_40w,
+            "ma_stack_bullish": ma_stack_bullish,
+            "s50_rising": s50_rising,
+            "s200_rising": s200_rising,
+            "dist_50sma_pct": dist_50sma_pct,
+            "adr_pct": round(float(adr_pct), 2),
             "personality_tier": pers['tier'],
             "personality_label": pers['tier_label'],
             "personality_color": pers['tier_color'],
             "personality_sizing": pers['sizing_recommendation'],
             "sparkline": rs_ratio_normalized.round(3).tolist(),
-            "price": float(weekly_52['close'].iloc[-1]),
-            "volume_20w_avg": float(weekly_52['volume'].iloc[-20:].mean()),
-            "current_volume": float(weekly_52['volume'].iloc[-1])
+            "price": round(float(weekly_52['close'].iloc[-1]), 2),
+            "volume_20w_avg": vol_20w_avg,
+            "current_volume": curr_vol,
+            "vol_ratio": vol_ratio,
+            "daily_volume": daily_volume,
+            "avg_daily_vol_50d": avg_daily_vol_50d,
+            "avg_daily_vol_20d": avg_daily_vol_20d,
+            "daily_rvol": daily_rvol,
+            "dollar_vol_m": dollar_vol_m
         })
         
     print(f"Scanned {len(rs_results)} stocks with 52-week histories.")
@@ -366,6 +449,52 @@ def run_rs_scanner():
     for i, r in enumerate(rs_results):
         # Scale to integer 1 to 99 range
         r['rs_rating'] = max(1, min(99, int(round(percentiles[i]))))
+        # Compute Composite RS Alpha Score (0-100)
+        alpha = (
+            (r['rs_rating'] * 0.38)
+            + (min(100.0, r['rs_vs_high']) * 0.25)
+            + (14.0 if r['is_blue_dot'] else (8.0 if r['rs_badge'] == '12M RS High' else 4.0 if r['rs_badge'] == '6M RS High' else 0.0))
+            + (min(12.0, max(0.0, (r['mansfield_rs'] + 10.0) * 0.35 + (r['mansfield_slope'] * 1.2))))
+            + (r['pattern_score'] * 0.11)
+        )
+        r['rs_alpha_score'] = int(min(99, max(1, round(alpha))))
+
+        # Compute Trend Strength Meter (0-100)
+        t_score = 0.0
+        if r.get('above_21d'): t_score += 7.0
+        if r.get('above_50d'): t_score += 8.0
+        if r.get('above_150d'): t_score += 6.0
+        if r.get('above_200d'): t_score += 6.0
+        if r.get('ma_stack_bullish'): t_score += 8.0
+        if r.get('s50_rising'): t_score += 10.0
+        if r.get('s200_rising'): t_score += 8.0
+        if r.get('above_50d') and r.get('above_150d') and r.get('above_200d'): t_score += 7.0
+        if r.get('low_52w', 0) > 0 and (r['price'] / r['low_52w']) >= 1.25: t_score += 8.0
+        pvh = float(r.get('price_vs_high', 85.0))
+        if pvh >= 90.0: t_score += 12.0
+        elif pvh >= 80.0: t_score += 8.0
+        elif pvh >= 70.0: t_score += 4.0
+        if r.get('mansfield_rs', 0) > 0: t_score += 8.0
+        if r.get('mansfield_slope', 0) > 0: t_score += 6.0
+        if r['rs_rating'] >= 85: t_score += 6.0
+        elif r['rs_rating'] >= 70: t_score += 3.0
+
+        t_int = int(min(99, max(5, round(t_score))))
+        if t_int >= 85:
+            t_label, t_bars, t_color = "POWER UPTREND", 5, "#00E676"
+        elif t_int >= 70:
+            t_label, t_bars, t_color = "STRONG UPTREND", 4, "#10b981"
+        elif t_int >= 55:
+            t_label, t_bars, t_color = "DEVELOPING", 3, "#38bdf8"
+        elif t_int >= 40:
+            t_label, t_bars, t_color = "CONSOLIDATING", 2, "#f59e0b"
+        else:
+            t_label, t_bars, t_color = "WEAK / LAGGING", 1, "#ef4444"
+
+        r['trend_strength_score'] = t_int
+        r['trend_meter_label'] = t_label
+        r['trend_meter_bars'] = t_bars
+        r['trend_meter_color'] = t_color
         
         # Keep high-performance IBD setups (RS Rating >= 50, Blue Dot, RS Badge or Base Pattern)
         if r['rs_rating'] >= 50 or r['is_blue_dot'] or r['rs_badge'] != "None" or r['pattern_status'] != "none":

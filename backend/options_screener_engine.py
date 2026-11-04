@@ -237,16 +237,299 @@ def get_options_screener_summary(force_refresh=False):
             "unusual_contracts": json.loads(r[16]) if r[16] else []
         })
         
+    # Load DuckDB Lakehouse technicals for confluence screening & 1-3W Bottom-Fisher Cohort Progression
+    lakehouse_path = os.path.join(os.path.dirname(__file__), 'data', 'daily_ohlcv.parquet')
+    tech_map = {}
+    bf_progression_map = {}
+    if os.path.exists(lakehouse_path):
+        try:
+            import duckdb
+            import pandas as pd
+            con_l = duckdb.connect()
+
+            # 1. Fast vectorized SQL window query for current technicals + historical daily technicals
+            opt_cand_rows = []
+            for sym_k, hist_k in by_ticker.items():
+                for h_row in hist_k:
+                    if (h_row["total_vol"] or 0) >= 150 and ((h_row["call_vol_pct"] or 0) >= 55.0 or (h_row["pcr_vol"] or 9.9) <= 0.85):
+                        opt_cand_rows.append((
+                            h_row["date"],
+                            sym_k.upper(),
+                            float(h_row["total_vol"] or 0.0),
+                            float(h_row["call_vol_pct"] or 50.0),
+                            float(h_row["pcr_vol"] or 1.0),
+                            float(h_row["total_call_oi"] or 0.0),
+                            float(h_row["total_oi"] or 0.0)
+                        ))
+            df_opt_cands = pd.DataFrame(
+                opt_cand_rows,
+                columns=["date", "ticker", "sig_vol", "sig_call_pct", "sig_pcr_vol", "sig_call_oi", "sig_total_oi"]
+            )
+            con_l.register("opt_cands_tbl", df_opt_cands)
+
+            q_latest = f"""
+            WITH ohlcv_win AS (
+                SELECT 
+                    UPPER(Ticker) AS sym,
+                    strftime(CAST(Date AS DATE), '%Y-%m-%d') AS d_str,
+                    Close,
+                    High,
+                    Low,
+                    AVG(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 19 PRECEDING AND CURRENT ROW) AS sma20,
+                    AVG(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) AS sma50,
+                    AVG(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 199 PRECEDING AND CURRENT ROW) AS sma200,
+                    MAX(High) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 59 PRECEDING AND CURRENT ROW) AS high_60d,
+                    MAX(High) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 251 PRECEDING AND CURRENT ROW) AS high_252d,
+                    LAG(Close, 4) OVER (PARTITION BY Ticker ORDER BY Date) AS close_5d_ago,
+                    COUNT(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING) AS bars_from_end,
+                    COUNT(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 59 PRECEDING AND CURRENT ROW) AS hist_bars
+                FROM '{lakehouse_path}'
+                WHERE Date >= CURRENT_DATE - INTERVAL 360 DAY
+            )
+            SELECT sym, Close, sma20, sma50, sma200, high_60d, high_252d, close_5d_ago
+            FROM ohlcv_win
+            WHERE bars_from_end = 0 AND hist_bars >= 60
+            """
+            df_latest = con_l.execute(q_latest).df()
+
+            for row_t in df_latest.itertuples(index=False):
+                sym_t = row_t.sym
+                c_last = float(row_t.Close or 0.0)
+                s20_last = float(row_t.sma20 or c_last)
+                s50_last = float(row_t.sma50 or c_last)
+                s200_last = float(row_t.sma200 or c_last)
+                high_60d = float(row_t.high_60d or c_last)
+                high_252d = float(row_t.high_252d or high_60d)
+                c_5d = float(row_t.close_5d_ago or c_last)
+
+                is_stage2 = (c_last > s50_last) and (s50_last > s200_last)
+                dist_to_60d = ((high_60d - c_last) / high_60d) * 100.0 if high_60d > 0 else 0.0
+                drawdown_252d = ((high_252d - c_last) / high_252d) * 100.0 if high_252d > 0 else 0.0
+                ret_5d = ((c_last - c_5d) / c_5d) * 100.0 if c_5d > 0 else 0.0
+
+                is_sound = (dist_to_60d <= 15.0) and (c_last >= s20_last * 0.98)
+                is_oversold_drawdown = drawdown_252d >= 25.0
+                is_reclaiming_support = (c_last >= s20_last * 0.98) or (ret_5d >= 3.0)
+                is_tech_bottoming = (not is_stage2) and is_oversold_drawdown and is_reclaiming_support
+
+                tech_map[sym_t] = {
+                    "is_stage2": bool(is_stage2),
+                    "is_sound_setup": bool(is_stage2 and is_sound),
+                    "dist_to_60d_high": round(dist_to_60d, 1),
+                    "drawdown_252d": round(drawdown_252d, 1),
+                    "ret_5d": round(ret_5d, 1),
+                    "is_tech_bottoming": bool(is_tech_bottoming),
+                    "real_close": float(round(c_last, 2)),
+                    "sma20": float(round(s20_last, 2)),
+                    "sma50": float(round(s50_last, 2)),
+                    "sma200": float(round(s200_last, 2))
+                }
+
+            # 2. Historical 1-3 Week Sector Bottom-Fisher Cohort Progression Query
+            if not df_opt_cands.empty:
+                q_bf = f"""
+                WITH ohlcv_win AS (
+                    SELECT 
+                        UPPER(Ticker) AS sym,
+                        strftime(CAST(Date AS DATE), '%Y-%m-%d') AS d_str,
+                        Close,
+                        High,
+                        Low,
+                        AVG(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 19 PRECEDING AND CURRENT ROW) AS sma20,
+                        AVG(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) AS sma50,
+                        AVG(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 199 PRECEDING AND CURRENT ROW) AS sma200,
+                        MAX(High) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 251 PRECEDING AND CURRENT ROW) AS high_252d,
+                        MIN(Low) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 10 PRECEDING AND CURRENT ROW) AS low_10d,
+                        LAG(Close, 4) OVER (PARTITION BY Ticker ORDER BY Date) AS close_5d_ago,
+                        LEAD(Close, 5) OVER (PARTITION BY Ticker ORDER BY Date) AS close_plus_5d,
+                        LEAD(Close, 10) OVER (PARTITION BY Ticker ORDER BY Date) AS close_plus_10d,
+                        LEAD(Close, 15) OVER (PARTITION BY Ticker ORDER BY Date) AS close_plus_15d,
+                        MAX(High) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 1 FOLLOWING AND 21 FOLLOWING) AS fwd_max_high,
+                        MIN(Low) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 1 FOLLOWING AND 21 FOLLOWING) AS fwd_min_low,
+                        COUNT(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING) AS bars_since_signal,
+                        COUNT(Close) OVER (PARTITION BY Ticker ORDER BY Date ROWS BETWEEN 59 PRECEDING AND CURRENT ROW) AS hist_bars
+                    FROM '{lakehouse_path}'
+                    WHERE Date >= CURRENT_DATE - INTERVAL 360 DAY
+                )
+                SELECT 
+                    o.date AS signal_date,
+                    o.ticker,
+                    w.Close AS signal_price,
+                    w.sma20 AS sig_sma20,
+                    w.sma50 AS sig_sma50,
+                    w.sma200 AS sig_sma200,
+                    w.high_252d,
+                    w.low_10d AS sig_pivot_low,
+                    w.close_plus_5d,
+                    w.close_plus_10d,
+                    w.close_plus_15d,
+                    w.fwd_max_high,
+                    w.fwd_min_low,
+                    w.bars_since_signal,
+                    o.sig_vol,
+                    o.sig_call_pct,
+                    o.sig_pcr_vol,
+                    o.sig_call_oi,
+                    o.sig_total_oi
+                FROM opt_cands_tbl o
+                JOIN ohlcv_win w ON o.ticker = w.sym AND o.date = w.d_str
+                WHERE w.hist_bars >= 60
+                  AND NOT (w.Close > w.sma50 AND w.sma50 > w.sma200)
+                  AND ((w.high_252d - w.Close) / NULLIF(w.high_252d, 0)) * 100.0 >= 25.0
+                  AND (w.Close >= w.sma20 * 0.98 OR ((w.Close - w.close_5d_ago) / NULLIF(w.close_5d_ago, 0)) * 100.0 >= 3.0)
+                ORDER BY o.ticker, o.date ASC
+                """
+                df_bf = con_l.execute(q_bf).df()
+
+                for sym_bf, grp_bf in df_bf.groupby("ticker"):
+                    repeat_cnt = int(len(grp_bf))
+                    # Prefer earliest signal in the 1-3 week (5..21 trading days) window; fallback to 1..4d or >21d
+                    in_1_3w = grp_bf[grp_bf["bars_since_signal"].between(5, 21)]
+                    if not in_1_3w.empty:
+                        anchor_row = in_1_3w.iloc[0]
+                        is_1_3w_cohort = True
+                    else:
+                        in_recent = grp_bf[grp_bf["bars_since_signal"].between(1, 4)]
+                        if not in_recent.empty:
+                            anchor_row = in_recent.iloc[0]
+                        else:
+                            anchor_row = grp_bf.iloc[0]
+                        is_1_3w_cohort = False
+
+                    t_curr = tech_map.get(sym_bf, {})
+                    curr_c = float(t_curr.get("real_close") or anchor_row["signal_price"] or 0.0)
+                    curr_s20 = float(t_curr.get("sma20") or curr_c)
+                    curr_s50 = float(t_curr.get("sma50") or curr_c)
+                    curr_s200 = float(t_curr.get("sma200") or curr_c)
+
+                    sig_p = float(anchor_row["signal_price"] or curr_c or 1.0)
+                    sig_low = float(anchor_row["sig_pivot_low"] or (sig_p * 0.94))
+                    bars_ago = int(anchor_row["bars_since_signal"] or 0)
+
+                    ret_now = round(((curr_c - sig_p) / max(sig_p, 0.01)) * 100.0, 2)
+                    c_p5 = anchor_row["close_plus_5d"]
+                    c_p10 = anchor_row["close_plus_10d"]
+                    c_p15 = anchor_row["close_plus_15d"]
+
+                    ret_1w = round(((float(c_p5) - sig_p) / max(sig_p, 0.01)) * 100.0, 2) if pd.notna(c_p5) else (ret_now if bars_ago >= 3 else None)
+                    ret_2w = round(((float(c_p10) - sig_p) / max(sig_p, 0.01)) * 100.0, 2) if pd.notna(c_p10) else (ret_now if bars_ago >= 8 else None)
+                    ret_3w = round(((float(c_p15) - sig_p) / max(sig_p, 0.01)) * 100.0, 2) if pd.notna(c_p15) else (ret_now if bars_ago >= 13 else None)
+
+                    fwd_hi = float(anchor_row["fwd_max_high"]) if pd.notna(anchor_row["fwd_max_high"]) else max(sig_p, curr_c)
+                    fwd_lo = float(anchor_row["fwd_min_low"]) if pd.notna(anchor_row["fwd_min_low"]) else min(sig_p, curr_c)
+                    max_gain_pct = round(max(0.0, ((max(fwd_hi, curr_c) - sig_p) / max(sig_p, 0.01)) * 100.0), 2)
+                    max_dd_pct = round(min(0.0, ((min(fwd_lo, curr_c) - sig_p) / max(sig_p, 0.01)) * 100.0), 2)
+
+                    dist_to_sma50_pct = round(((curr_c - curr_s50) / max(curr_s50, 0.01)) * 100.0, 1)
+                    dist_to_sma200_pct = round(((curr_c - curr_s200) / max(curr_s200, 0.01)) * 100.0, 1)
+
+                    if bars_ago >= 15:
+                        week_bucket = "3W_AGO"
+                        week_label = f"3W Ago ({bars_ago}d)"
+                    elif bars_ago >= 10:
+                        week_bucket = "2W_AGO"
+                        week_label = f"2W Ago ({bars_ago}d)"
+                    elif bars_ago >= 5:
+                        week_bucket = "1W_AGO"
+                        week_label = f"1W Ago ({bars_ago}d)"
+                    else:
+                        week_bucket = "NEW_THIS_WEEK"
+                        week_label = f"New ({bars_ago}d)" if bars_ago > 0 else "Today (0d)"
+
+                    # Classify 1-3 Week Post-Signal Stage Progression Outcome
+                    if curr_c > curr_s50 and curr_c > curr_s200 and (curr_s50 > curr_s200 or curr_s20 >= curr_s50):
+                        outcome_key = "STAGE2_GRADUATED"
+                        outcome_badge = "🚀 Graduated to Stage 2"
+                        outcome_stage = "Stage 2 Uptrend (>50 & 200 SMA)"
+                        outcome_color = "#10b981"
+                        outcome_desc = f"Full Stage 2 graduation: Cleared both 50-SMA (${curr_s50:.2f}) & 200-SMA (${curr_s200:.2f}) ({ret_now:+.1f}% since signal)."
+                    elif curr_c > curr_s50 and curr_c >= curr_s20 * 0.99 and ret_now > 0.0:
+                        outcome_key = "STAGE2A_BREAKOUT"
+                        outcome_badge = "🟢 Stage 2A (>50-SMA)"
+                        outcome_stage = "Stage 2A Recovery (>50-SMA)"
+                        outcome_color = "#34d399"
+                        outcome_desc = f"Early Stage 2A breakout: Reclaimed 50-SMA (${curr_s50:.2f}) & 20-SMA (${curr_s20:.2f}) with {ret_now:+.1f}% gain; next hurdle 200-SMA (${curr_s200:.2f})."
+                    elif curr_c >= curr_s20 * 0.99 and ret_now >= 1.5:
+                        outcome_key = "STAGE1B_ADVANCING"
+                        outcome_badge = "📈 Stage 1B Advancing"
+                        outcome_stage = "Stage 1B Markup"
+                        outcome_color = "#38bdf8"
+                        outcome_desc = f"Advancing off bottom ({ret_now:+.1f}%), holding above 20-SMA (${curr_s20:.2f}) and marching toward 50-SMA (${curr_s50:.2f})."
+                    elif curr_c >= sig_low * 0.985 and ret_now > -5.0:
+                        outcome_key = "BASE_DIGESTION"
+                        outcome_badge = "⏳ Stage 1 Base Retest"
+                        outcome_stage = "Stage 1 Base"
+                        outcome_color = "#f59e0b"
+                        outcome_desc = f"Constructive base digestion ({ret_now:+.1f}%) near 20-SMA (${curr_s20:.2f}), holding above pivot low (${sig_low:.2f})."
+                    else:
+                        outcome_key = "FAILED_BREAKDOWN"
+                        outcome_badge = "❌ Failed (Stage 4)"
+                        outcome_stage = "Stage 4 Breakdown"
+                        outcome_color = "#ef4444"
+                        outcome_desc = f"Turnaround failed ({ret_now:+.1f}%): Lost 20-SMA (${curr_s20:.2f}) / undercut support (${sig_low:.2f}), resuming Stage 4 decline."
+
+                    bf_progression_map[sym_bf] = {
+                        "has_1_3w_signal": bool(is_1_3w_cohort),
+                        "first_signal_date": str(anchor_row["signal_date"]),
+                        "bars_since_signal": bars_ago,
+                        "week_bucket": week_bucket,
+                        "week_label": week_label,
+                        "signal_price": round(sig_p, 2),
+                        "sig_pivot_low": round(sig_low, 2),
+                        "sig_call_pct": round(float(anchor_row["sig_call_pct"] or 50.0), 1),
+                        "sig_vol": int(anchor_row["sig_vol"] or 0),
+                        "sig_call_oi": float(anchor_row["sig_call_oi"] or 0.0),
+                        "repeat_signals": repeat_cnt,
+                        "ret_1w_pct": ret_1w,
+                        "ret_2w_pct": ret_2w,
+                        "ret_3w_pct": ret_3w,
+                        "ret_since_signal_pct": ret_now,
+                        "max_gain_pct": max_gain_pct,
+                        "max_dd_pct": max_dd_pct,
+                        "curr_sma20": round(curr_s20, 2),
+                        "curr_sma50": round(curr_s50, 2),
+                        "curr_sma200": round(curr_s200, 2),
+                        "dist_to_sma50_pct": dist_to_sma50_pct,
+                        "dist_to_sma200_pct": dist_to_sma200_pct,
+                        "outcome_key": outcome_key,
+                        "outcome_badge": outcome_badge,
+                        "outcome_stage": outcome_stage,
+                        "outcome_color": outcome_color,
+                        "outcome_desc": outcome_desc
+                    }
+
+            con_l.close()
+        except Exception as e:
+            print(f"Technical cross-reference warning: {e}")
+
     results = []
-    
+
     for ticker, history in by_ticker.items():
         if not history:
             continue
-            
+
+        # Sanitize historical skew_25d gaps (forward-fill / backfill)
+        last_valid_sk = None
+        valid_sks = [h["skew_25d"] for h in history if h.get("skew_25d") not in (0.0, None)]
+        fallback_sk = float(np.median(valid_sks)) if valid_sks else None
+        for h in history:
+            sk = h.get("skew_25d")
+            if sk is None or sk == 0.0:
+                if last_valid_sk is not None:
+                    h["skew_25d"] = last_valid_sk
+                elif fallback_sk is not None:
+                    h["skew_25d"] = fallback_sk
+                else:
+                    h["skew_25d"] = round((h["atm_iv_30d"] or 0.35) * 0.075 * 100.0, 2)
+            else:
+                last_valid_sk = sk
+
         today_row = history[-1]
         # Only include if today's date matches latest available or active
         N = len(history)
-        
+
+        tech_info = tech_map.get(ticker.upper(), {})
+
         # Historical metrics
         curr_oi = today_row["total_oi"]
         curr_call_oi = today_row["total_call_oi"]
@@ -256,7 +539,7 @@ def get_options_screener_summary(force_refresh=False):
         curr_skew = today_row["skew_25d"]
         curr_pcr_vol = today_row["pcr_vol"]
         call_vol_pct = today_row["call_vol_pct"]
-        spot_price = today_row["spot_price"]
+        spot_price = tech_info.get("real_close") or today_row["spot_price"]
         
         # 1. OI Trend (1D, 5D, 30D)
         oi_chg_1d = 0.0
@@ -328,64 +611,133 @@ def get_options_screener_summary(force_refresh=False):
         top_unusual_contract = unusual_contracts[0] if unusual_contracts else None
         has_whale_sweep = any(c.get("vol_oi_ratio", 0) >= 2.0 and c.get("volume", 0) >= 1000 for c in unusual_contracts)
         
-        # 6. Institutional Archetype Classification
-        signal = "NEUTRAL"
-        signal_badge = "⚖️ Neutral Rebalancing"
-        signal_desc = "Normal options flow and delta distribution."
-        signal_color = "#94a3b8"
-        priority = 5
-        
-        # 0. Market Open Options Tailwind (Call Vol % >= 60, Vol Ratio >= 1.2)
+        # 6. Technical Setup Confluence & Institutional Archetype Classification
+        tech_info = tech_map.get(ticker.upper(), {"is_stage2": False, "is_sound_setup": False, "dist_to_60d_high": 0.0, "drawdown_252d": 0.0, "is_tech_bottoming": False})
+        is_sound_setup = tech_info.get("is_sound_setup", False)
+        is_stage2 = tech_info.get("is_stage2", False)
+        is_tech_bottoming = tech_info.get("is_tech_bottoming", False)
+        drawdown_252d = tech_info.get("drawdown_252d", 0.0)
+
+        is_clean_bullish = bool(is_sound_setup and call_vol_pct >= 60.0 and curr_vol >= 300)
+        is_bottom_fisher = bool(is_tech_bottoming and (call_vol_pct >= 55.0 or curr_pcr_vol <= 0.85) and curr_vol >= 150)
+
         curr_gex = today_row.get("net_gex", 0.0)
-        if (call_vol_pct >= 60.0 and vol_ratio >= 1.2 and (curr_gex >= 0 or (today_row.get("spot_price") and abs(today_row.get("spot_price", 0) - today_row.get("max_pain", 0)) < 10))):
-            signal = "OPTIONS_TAILWIND"
-            signal_badge = "🚀 Options Tailwind"
-            signal_desc = "Intraday buying pressure backed by strong call volume dominance and positive dealer delta alignment."
-            signal_color = "#00E676"
-            priority = 1
-        # 1. Vol Squeeze / Expansion (IV Rank >= 75 and expanding 5d IV)
-        elif iv_rank >= 75 and iv_chg_5d > 0 and curr_vol >= 50:
-            signal = "VOL_SQUEEZE"
-            signal_badge = "💥 Vol Squeeze / Expansion"
-            signal_desc = "Implied volatility exploding to 30-day highs alongside elevated options activity."
-            signal_color = "#a855f7"
-            priority = 1
+        is_tailwind = bool(call_vol_pct >= 60.0 and vol_ratio >= 1.2 and (curr_gex >= 0 or (today_row.get("spot_price") and abs(today_row.get("spot_price", 0) - today_row.get("max_pain", 0)) < 10)))
+        is_vol_squeeze = bool(iv_rank >= 75 and iv_chg_5d > 0 and curr_vol >= 50)
+        is_call_acc = bool(net_call_acc_5d > 500 and call_vol_pct >= 58 and oi_chg_5d_pct > 0.5)
+        is_put_hedge = bool(put_oi_chg_5d > call_oi_chg_5d and skew_rank >= 70 and curr_pcr_vol >= 1.05)
+        is_vol_crush = bool(iv_rank <= 25 and iv_chg_5d < -0.01)
+        is_bull_bias = bool(call_vol_pct >= 65 and oi_chg_5d_pct > 0)
+        is_bear_bias = bool(curr_pcr_vol >= 1.3)
+
+        # Evaluate pure Options Flow Signal (never hidden by Technical Confluence Archetypes)
+        flow_signal = "NEUTRAL"
+        flow_signal_badge = "⚖️ Neutral Rebalancing"
+        flow_signal_desc = "Normal options flow and delta distribution."
+        flow_signal_color = "#94a3b8"
+        flow_priority = 5
+
+        if is_tailwind:
+            flow_signal = "OPTIONS_TAILWIND"
+            flow_signal_badge = "🚀 Options Tailwind"
+            flow_signal_desc = "Intraday buying pressure backed by strong call volume dominance and positive dealer delta alignment."
+            flow_signal_color = "#00E676"
+            flow_priority = 1
+        elif is_vol_squeeze:
+            flow_signal = "VOL_SQUEEZE"
+            flow_signal_badge = "💥 Vol Squeeze / Expansion"
+            flow_signal_desc = "Implied volatility exploding to 30-day highs alongside elevated options activity."
+            flow_signal_color = "#a855f7"
+            flow_priority = 1
         elif has_whale_sweep:
-            signal = "WHALE_SWEEPS"
-            signal_badge = "🐋 Whale Sweeps"
-            signal_desc = "Block institutional orders aggressively exceeding existing open interest."
-            signal_color = "#f59e0b"
-            priority = 1
-        elif net_call_acc_5d > 500 and call_vol_pct >= 58 and oi_chg_5d_pct > 0.5:
-            signal = "CALL_ACCUMULATION"
-            signal_badge = "🚀 Call Accumulation"
-            signal_desc = "Persistent multi-session call OI accumulation with expanding open interest."
+            flow_signal = "WHALE_SWEEPS"
+            flow_signal_badge = "🐋 Whale Sweeps"
+            flow_signal_desc = "Block institutional orders aggressively exceeding existing open interest."
+            flow_signal_color = "#f59e0b"
+            flow_priority = 1
+        elif is_call_acc:
+            flow_signal = "CALL_ACCUMULATION"
+            flow_signal_badge = "🚀 Call Accumulation"
+            flow_signal_desc = "Persistent multi-session call OI accumulation with expanding open interest."
+            flow_signal_color = "#10b981"
+            flow_priority = 2
+        elif is_put_hedge:
+            flow_signal = "PUT_HEDGING"
+            flow_signal_badge = "🛡️ Institutional Put Hedge"
+            flow_signal_desc = "Spike in put open interest and elevated 25-delta downside crash protection skew."
+            flow_signal_color = "#ef4444"
+            flow_priority = 2
+        elif is_vol_crush:
+            flow_signal = "VOL_CRUSH"
+            flow_signal_badge = "📉 Vol Crush / Decay"
+            flow_signal_desc = "IV compressed near 30-day lows, optimal premium harvesting or cheap debit buying."
+            flow_signal_color = "#38bdf8"
+            flow_priority = 3
+        elif is_bull_bias:
+            flow_signal = "BULLISH_BIAS"
+            flow_signal_badge = "📈 Bullish Call Dominance"
+            flow_signal_desc = "Call volume outstripping puts with positive net OI expansion."
+            flow_signal_color = "#06b6d4"
+            flow_priority = 3
+        elif is_bear_bias:
+            flow_signal = "BEARISH_BIAS"
+            flow_signal_badge = "📉 Bearish Put Flow"
+            flow_signal_desc = "Put volume heavily favored over calls."
+            flow_signal_color = "#f43f5e"
+            flow_priority = 4
+
+        # Build complete list of all active signals & badges for multi-signal visibility
+        active_signals = []
+        signal_tags = []
+        if is_clean_bullish:
+            active_signals.append("CLEAN_BULLISH_SETUPS")
+            signal_tags.append({"id": "CLEAN_BULLISH_SETUPS", "badge": "🎯 Clean Bullish Setup", "color": "#10b981", "desc": "High-conviction bullish call flow aligned with Stage 2 uptrend & sound base structure."})
+        if is_bottom_fisher:
+            active_signals.append("BOTTOM_FISHER")
+            signal_tags.append({"id": "BOTTOM_FISHER", "badge": "🎣 Sector Bottom-Fisher", "color": "#38bdf8", "desc": "Oversold equity down >25% reclaiming support alongside bullish call flow accumulation."})
+        if is_tailwind:
+            active_signals.append("OPTIONS_TAILWIND")
+            signal_tags.append({"id": "OPTIONS_TAILWIND", "badge": "🚀 Options Tailwind", "color": "#00E676", "desc": "Intraday buying pressure backed by strong call volume dominance and positive dealer delta alignment."})
+        if is_vol_squeeze:
+            active_signals.append("VOL_SQUEEZE")
+            signal_tags.append({"id": "VOL_SQUEEZE", "badge": "💥 Vol Squeeze", "color": "#a855f7", "desc": "Implied volatility exploding to 30-day highs alongside elevated options activity."})
+        if has_whale_sweep:
+            active_signals.append("WHALE_SWEEPS")
+            signal_tags.append({"id": "WHALE_SWEEPS", "badge": "🐋 Whale Sweeps", "color": "#f59e0b", "desc": "Block institutional orders aggressively exceeding existing open interest."})
+        if is_call_acc:
+            active_signals.append("CALL_ACCUMULATION")
+            signal_tags.append({"id": "CALL_ACCUMULATION", "badge": "🚀 Call Accumulation", "color": "#10b981", "desc": "Persistent multi-session call OI accumulation with expanding open interest."})
+        if is_put_hedge:
+            active_signals.append("PUT_HEDGING")
+            signal_tags.append({"id": "PUT_HEDGING", "badge": "🛡️ Put Hedge", "color": "#ef4444", "desc": "Spike in put open interest and elevated 25-delta downside crash protection skew."})
+        if is_vol_crush:
+            active_signals.append("VOL_CRUSH")
+            signal_tags.append({"id": "VOL_CRUSH", "badge": "📉 Vol Crush / Decay", "color": "#38bdf8", "desc": "IV compressed near 30-day lows, optimal premium harvesting or cheap debit buying."})
+        if is_bull_bias:
+            active_signals.append("BULLISH_BIAS")
+            signal_tags.append({"id": "BULLISH_BIAS", "badge": "📈 Call Dominance", "color": "#06b6d4", "desc": "Call volume outstripping puts with positive net OI expansion."})
+        if is_bear_bias:
+            active_signals.append("BEARISH_BIAS")
+            signal_tags.append({"id": "BEARISH_BIAS", "badge": "📉 Bearish Put Flow", "color": "#f43f5e", "desc": "Put volume heavily favored over calls."})
+
+        if is_clean_bullish:
+            signal = "CLEAN_BULLISH_SETUPS"
+            signal_badge = "🎯 Clean Bullish Setup"
+            signal_desc = "High-conviction bullish call flow aligned with Stage 2 uptrend & sound base structure."
             signal_color = "#10b981"
-            priority = 2
-        elif put_oi_chg_5d > call_oi_chg_5d and skew_rank >= 70 and curr_pcr_vol >= 1.05:
-            signal = "PUT_HEDGING"
-            signal_badge = "🛡️ Institutional Put Hedge"
-            signal_desc = "Spike in put open interest and elevated 25-delta downside crash protection skew."
-            signal_color = "#ef4444"
-            priority = 2
-        elif iv_rank <= 25 and iv_chg_5d < -0.01:
-            signal = "VOL_CRUSH"
-            signal_badge = "📉 Vol Crush / Decay"
-            signal_desc = "IV compressed near 30-day lows, optimal premium harvesting or cheap debit buying."
+            priority = 1
+        elif is_bottom_fisher:
+            signal = "BOTTOM_FISHER"
+            signal_badge = "🎣 Sector Bottom-Fisher"
+            signal_desc = "Oversold equity down >25% reclaiming support alongside sector turnaround & bullish call flow accumulation."
             signal_color = "#38bdf8"
-            priority = 3
-        elif call_vol_pct >= 65 and oi_chg_5d_pct > 0:
-            signal = "BULLISH_BIAS"
-            signal_badge = "📈 Bullish Call Dominance"
-            signal_desc = "Call volume outstripping puts with positive net OI expansion."
-            signal_color = "#06b6d4"
-            priority = 3
-        elif curr_pcr_vol >= 1.3:
-            signal = "BEARISH_BIAS"
-            signal_badge = "📉 Bearish Put Flow"
-            signal_desc = "Put volume heavily favored over calls."
-            signal_color = "#f43f5e"
-            priority = 4
+            priority = 1
+        else:
+            signal = flow_signal
+            signal_badge = flow_signal_badge
+            signal_desc = flow_signal_desc
+            signal_color = flow_signal_color
+            priority = flow_priority
 
         # 7. Options Flow Impact Calculation
         flow_res = calculate_flow_impact(
@@ -399,6 +751,15 @@ def get_options_screener_summary(force_refresh=False):
             net_gex=today_row.get("net_gex", 0.0)
         )
 
+        bf_prog = bf_progression_map.get(ticker.upper())
+        if bf_prog:
+            sig_c_oi = float(bf_prog.get("sig_call_oi") or 0.0)
+            call_oi_chg_sig_pct = round(((curr_call_oi - sig_c_oi) / max(sig_c_oi, 1.0)) * 100.0, 1) if sig_c_oi > 0 else 0.0
+            bf_prog = {
+                **bf_prog,
+                "call_oi_chg_since_sig_pct": call_oi_chg_sig_pct
+            }
+
         results.append({
             "ticker": ticker,
             "spot_price": spot_price,
@@ -406,6 +767,12 @@ def get_options_screener_summary(force_refresh=False):
             "signal_badge": signal_badge,
             "signal_desc": signal_desc,
             "signal_color": signal_color,
+            "flow_signal": flow_signal,
+            "flow_signal_badge": flow_signal_badge,
+            "flow_signal_desc": flow_signal_desc,
+            "flow_signal_color": flow_signal_color,
+            "active_signals": active_signals,
+            "signal_tags": signal_tags,
             "priority": priority,
             "flow_impact_score": flow_res["score"],
             "flow_impact_level": flow_res["level"],
@@ -442,6 +809,12 @@ def get_options_screener_summary(force_refresh=False):
             "max_pain": today_row["max_pain"],
             "top_unusual_contract": top_unusual_contract,
             "unusual_contracts_count": len(unusual_contracts),
+            "is_sound_setup": is_sound_setup,
+            "is_stage2": is_stage2,
+            "is_bottom_fisher": is_bottom_fisher,
+            "bf_progression": bf_prog,
+            "drawdown_252d": drawdown_252d,
+            "sector": today_row.get("sector", "Technology"),
             "oi_sparkline": oi_sparkline,
             "iv_sparkline": iv_sparkline,
             "history_depth": N
@@ -457,6 +830,57 @@ def get_options_screener_summary(force_refresh=False):
     mkt_tot_notional = sum(r["notional_flow"] for r in results)
     high_impact_cnt = sum(1 for r in results if r["flow_impact_score"] >= 55.0)
     extreme_impact_cnt = sum(1 for r in results if r["flow_impact_score"] >= 70.0)
+
+    # Calculate Sector Bottom-Fisher 1-3 Week Post-Signal Cohort Scorecard
+    bf_1_3w_recs = [r["bf_progression"] for r in results if r.get("bf_progression") and r["bf_progression"].get("has_1_3w_signal")]
+    bf_all_recs = [r["bf_progression"] for r in results if r.get("bf_progression")]
+    tot_1_3w = len(bf_1_3w_recs)
+
+    def _cnt_out(key):
+        return sum(1 for b in bf_1_3w_recs if b.get("outcome_key") == key)
+
+    s2_grad_cnt = _cnt_out("STAGE2_GRADUATED")
+    s2a_brk_cnt = _cnt_out("STAGE2A_BREAKOUT")
+    s1b_adv_cnt = _cnt_out("STAGE1B_ADVANCING")
+    base_dig_cnt = _cnt_out("BASE_DIGESTION")
+    fail_brk_cnt = _cnt_out("FAILED_BREAKDOWN")
+    pos_win_cnt = sum(1 for b in bf_1_3w_recs if (b.get("ret_since_signal_pct") or 0.0) > 0.0)
+
+    r1w_vals = [b["ret_1w_pct"] for b in bf_1_3w_recs if b.get("ret_1w_pct") is not None]
+    r2w_vals = [b["ret_2w_pct"] for b in bf_1_3w_recs if b.get("ret_2w_pct") is not None]
+    r3w_vals = [b["ret_3w_pct"] for b in bf_1_3w_recs if b.get("ret_3w_pct") is not None]
+    rtot_vals = [b["ret_since_signal_pct"] for b in bf_1_3w_recs if b.get("ret_since_signal_pct") is not None]
+    mfe_vals = [b["max_gain_pct"] for b in bf_1_3w_recs if b.get("max_gain_pct") is not None]
+
+    bottom_fisher_cohort = {
+        "total_1_3w_signals": tot_1_3w,
+        "total_tracked_signals": len(bf_all_recs),
+        "active_today_count": sum(1 for r in results if r.get("signal") == "BOTTOM_FISHER" or (r.get("is_bottom_fisher") and not r.get("is_stage2"))),
+        "stage2_graduated_count": s2_grad_cnt,
+        "stage2_graduated_pct": round((s2_grad_cnt / max(tot_1_3w, 1)) * 100.0, 1),
+        "stage2a_breakout_count": s2a_brk_cnt,
+        "stage2a_breakout_pct": round((s2a_brk_cnt / max(tot_1_3w, 1)) * 100.0, 1),
+        "total_stage2_advance_count": s2_grad_cnt + s2a_brk_cnt,
+        "total_stage2_advance_pct": round(((s2_grad_cnt + s2a_brk_cnt) / max(tot_1_3w, 1)) * 100.0, 1),
+        "stage1b_advancing_count": s1b_adv_cnt,
+        "stage1b_advancing_pct": round((s1b_adv_cnt / max(tot_1_3w, 1)) * 100.0, 1),
+        "base_digestion_count": base_dig_cnt,
+        "base_digestion_pct": round((base_dig_cnt / max(tot_1_3w, 1)) * 100.0, 1),
+        "failed_breakdown_count": fail_brk_cnt,
+        "failed_breakdown_pct": round((fail_brk_cnt / max(tot_1_3w, 1)) * 100.0, 1),
+        "positive_win_rate_pct": round((pos_win_cnt / max(tot_1_3w, 1)) * 100.0, 1),
+        "avg_ret_1w_pct": round(float(np.mean(r1w_vals)), 2) if r1w_vals else 0.0,
+        "avg_ret_2w_pct": round(float(np.mean(r2w_vals)), 2) if r2w_vals else 0.0,
+        "avg_ret_3w_pct": round(float(np.mean(r3w_vals)), 2) if r3w_vals else 0.0,
+        "avg_ret_total_pct": round(float(np.mean(rtot_vals)), 2) if rtot_vals else 0.0,
+        "avg_max_gain_pct": round(float(np.mean(mfe_vals)), 2) if mfe_vals else 0.0,
+        "vintages": {
+            "1W_AGO": sum(1 for b in bf_1_3w_recs if b.get("week_bucket") == "1W_AGO"),
+            "2W_AGO": sum(1 for b in bf_1_3w_recs if b.get("week_bucket") == "2W_AGO"),
+            "3W_AGO": sum(1 for b in bf_1_3w_recs if b.get("week_bucket") == "3W_AGO"),
+            "NEW_THIS_WEEK": sum(1 for b in bf_all_recs if b.get("week_bucket") == "NEW_THIS_WEEK")
+        }
+    }
     
     payload = {
         "latest_date": latest_date,
@@ -471,6 +895,7 @@ def get_options_screener_summary(force_refresh=False):
             "avg_pcr_vol": mkt_avg_pcr,
             "rolling_days": len(all_dates)
         },
+        "bottom_fisher_cohort": bottom_fisher_cohort,
         "records": results
     }
     
@@ -539,6 +964,24 @@ def get_ticker_30d_history(ticker):
                 latest_unusual = json.loads(r[15])
             except Exception:
                 pass
+
+    # Sanitize historical skew_25d: forward-fill and backfill any 0.0 gaps
+    last_valid_sk = None
+    valid_sks = [h["skew_25d"] for h in history if h.get("skew_25d") not in (0.0, None)]
+    fallback_sk = float(np.median(valid_sks)) if valid_sks else None
+
+    for h in history:
+        sk = h.get("skew_25d")
+        if sk is None or sk == 0.0:
+            if last_valid_sk is not None:
+                h["skew_25d"] = last_valid_sk
+            elif fallback_sk is not None:
+                h["skew_25d"] = fallback_sk
+            else:
+                # Modeled from ATM IV
+                h["skew_25d"] = round((h["atm_iv_30d"] / 100.0) * 0.075 * 100.0, 2)
+        else:
+            last_valid_sk = sk
                 
     return {
         "ticker": ticker.upper().strip(),
@@ -625,9 +1068,10 @@ def get_deep_options_analytics(ticker):
     pcr_oi = totals.get("put_call_oi_ratio", history[-1].get("pcr_oi", 1.0) if history else 1.0)
     pcr_vol = totals.get("put_call_vol_ratio", history[-1].get("pcr_vol", 1.0) if history else 1.0)
     
-    # Expected move
+    # Expected move & 25D Skew
     exp_move = gex_data.get("expected_move", {})
     atm_iv = exp_move.get("atm_iv_pct") or (history[-1]["atm_iv_30d"] if history else 35.0)
+    live_skew_25d = exp_move.get("skew_25d")
     move_1d = exp_move.get("move_1d", round(spot_price * (atm_iv / 100.0) / 16.0, 2))
     move_1d_pct = exp_move.get("move_1d_pct", round((atm_iv / 16.0), 1))
     move_5d = exp_move.get("move_5d", round(spot_price * (atm_iv / 100.0) * math.sqrt(5/252), 2))
@@ -636,7 +1080,12 @@ def get_deep_options_analytics(ticker):
     # 3. Multi-Session Trend Calculation (30-day baseline)
     N = len(history)
     iv_history = [h["atm_iv_30d"] for h in history] if history else [atm_iv]
-    skew_history = [h["skew_25d"] for h in history] if history else [0.0]
+    
+    # Extract historical skews, filtering out unseeded 0.0 values if valid non-zero skews exist
+    raw_skew_history = [h["skew_25d"] for h in history] if history else [0.0]
+    valid_skews = [s for s in raw_skew_history if s != 0.0]
+    skew_history = valid_skews if valid_skews else raw_skew_history
+    
     oi_history = [h["total_oi"] for h in history] if history else [call_oi_tot + put_oi_tot]
     vol_history = [h["total_vol"] for h in history] if history else [call_vol_tot + put_vol_tot]
     
@@ -645,7 +1094,9 @@ def get_deep_options_analytics(ticker):
     iv_rank = max(0.0, min(100.0, iv_rank))
     
     skew_min, skew_max = min(skew_history), max(skew_history)
-    curr_skew = skew_history[-1] if skew_history else 0.0
+    curr_skew = live_skew_25d if (live_skew_25d is not None and live_skew_25d != 0.0) else (skew_history[-1] if skew_history else 0.0)
+    if history and curr_skew != 0.0:
+        history[-1]["skew_25d"] = curr_skew
     skew_rank = round(((curr_skew - skew_min) / max(skew_max - skew_min, 0.1)) * 100, 1) if (skew_max - skew_min) > 0.2 else 50.0
     skew_rank = max(0.0, min(100.0, skew_rank))
     
@@ -956,10 +1407,21 @@ def get_deep_options_analytics(ticker):
     slope_3d = round(back_3d - front_3d, 1)
     slope_delta = round(slope_today - slope_3d, 1)
 
+    # Check for Event / Post-Earnings Backwardation (intermediate peak with downward forward slope)
+    peak_cycle = max(term_structure, key=lambda c: c.get('atm_iv', 0)) if term_structure else None
+    peak_iv = peak_cycle.get('atm_iv', front_today) if peak_cycle else front_today
+    post_peak_cycles = [c for c in term_structure if c.get('dte', 0) > peak_cycle.get('dte', 0)] if peak_cycle else []
+    min_post_iv = min((c.get('atm_iv', peak_iv) for c in post_peak_cycles), default=peak_iv)
+    post_peak_drop = round(peak_iv - min_post_iv, 1)
+
     if front_today > back_today + 3.0:
         regime_badge = "INVERTED BACKWARDATION 🚨"
         regime_color = "#f43f5e"
         regime_desc = f"Front-month IV ({front_today}%) is sharply inverted above back-month ({back_today}%). Market aggressively bidding near-term tail risk protection."
+    elif peak_cycle and peak_cycle.get('dte', 0) <= 60 and post_peak_drop >= 3.5:
+        regime_badge = "EVENT BACKWARDATION 🚨"
+        regime_color = "#f43f5e"
+        regime_desc = f"Earnings/catalyst spike on {peak_cycle.get('expiry')} ({peak_iv}%) drives steep backwardation: forward IV drops by -{post_peak_drop}% down to {min_post_iv}% as market prices post-event IV crush."
     elif front_delta < -3.0 and back_delta < -1.5:
         regime_badge = "VOLATILITY CRUSH 📉"
         regime_color = "#38bdf8"

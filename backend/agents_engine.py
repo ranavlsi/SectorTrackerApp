@@ -766,24 +766,44 @@ def synthesize_council(ticker: str, spot: float, change_pct: float,
 
     # Entry Zone: Pullback to EMA10 or AVWAP
     p_ema10 = tech_comp.get('ema10', spot * 0.99)
-    entry_min = round(min(spot * 0.992, p_ema10, avwap), 2)
-    entry_max = round(max(spot, p_ema10 * 1.005), 2)
+    if spot >= p_ema10:
+        # Bullish trend: buy pullback between 10-EMA and spot
+        entry_min = round(min(spot * 0.992, p_ema10, avwap), 2)
+        entry_max = round(max(spot, p_ema10 * 1.005), 2)
+    else:
+        # Price is trading below 10-EMA (pullback / deep base): anchor entry around spot and shelf support
+        entry_min = round(min(spot * 0.992, shelf_sup), 2)
+        entry_max = round(min(spot * 1.01, p_ema10 * 0.995), 2)
     if entry_min > entry_max:
         entry_min, entry_max = entry_max, entry_min
 
-    # Stop Loss: Capped strictly between 1.5% and 3.2% max risk
+    # Stop Loss: Structural Stop anchored below 21-EMA, Shelf Support, or Put Wall
     raw_stop = max(shelf_sup - (atr * 0.1), ema21 - (atr * 0.1), put_wall * 0.99)
-    max_risk_price = spot * 0.968  # 3.2% max risk floor
+    max_risk_price = spot * 0.968  # 3.2% max risk floor from spot
     min_risk_price = spot * 0.985  # 1.5% min risk buffer
     stop_loss = round(max(min(raw_stop, min_risk_price), max_risk_price), 2)
+
+    # CRITICAL INVARIANT: The invalidation stop MUST be strictly below the entry corridor!
+    # A trader cannot enter at entry_min if the invalidation stop is higher than entry_min.
+    buffer = max(atr * 0.15, entry_min * 0.01)
+    if stop_loss >= entry_min:
+        if raw_stop < entry_min:
+            stop_loss = round(raw_stop, 2)
+        else:
+            stop_loss = round(entry_min - buffer, 2)
+
     stop_pct = round(((stop_loss - spot) / spot) * 100, 2)
     risk_dollars = max(spot - stop_loss, 0.01)
 
     # Targets: Asymmetric 2.5R Target 1, 4.5R Target 2
     target_1 = round(spot + max(2.5 * risk_dollars, spot * 0.05), 2)
+    if target_1 <= entry_max:
+        target_1 = round(entry_max * 1.04, 2)
     target_1_pct = round(((target_1 - spot) / spot) * 100, 2)
 
     target_2 = round(spot + max(4.5 * risk_dollars, spot * 0.10), 2)
+    if target_2 <= target_1:
+        target_2 = round(target_1 * 1.05, 2)
     target_2_pct = round(((target_2 - spot) / spot) * 100, 2)
 
     reward_dollars = max(target_1 - spot, 0.01)

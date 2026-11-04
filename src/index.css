@@ -217,6 +217,13 @@ h1 {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.right-pane.folded {
+  width: 52px;
+  min-width: 52px;
+  overflow: hidden;
 }
 .drawer-header {
   position: sticky;

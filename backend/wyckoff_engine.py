@@ -51,10 +51,10 @@ CORE_UNIVERSE = [
     "COST", "WMT", "TGT", "HD", "LOW", "TJX", "ROST", "NKE", "SBUX", "CMG",
     "DIS", "BKNG", "ABNB", "MAR", "HLT", "RCL", "CCL", "LVS", "WYNN", "DKNG",
     "FCX", "NEM", "SCCO", "AA", "CLF", "STLD", "NUE", "X", "ALB", "SQM",
-    "SPY", "QQQ", "IWM", "SMH", "XBI", "XLE", "XLF", "XLK", "XLI", "XLV"
+    "SOFI", "HOOD", "SPY", "QQQ", "IWM", "SMH", "XBI", "XLE", "XLF", "XLK", "XLI", "XLV"
 ]
 
-def fetch_ohlcv_from_lakehouse(ticker, lookback_days=150):
+def fetch_ohlcv_from_lakehouse(ticker, lookback_days=320):
     """Fetches daily OHLCV bars from local DuckDB Parquet lakehouse."""
     if not os.path.exists(LAKEHOUSE_PATH):
         return None
@@ -84,13 +84,13 @@ def fetch_ohlcv_from_lakehouse(ticker, lookback_days=150):
         pass
     return None
 
-def fetch_ohlcv_from_yfinance(ticker, lookback_days=150):
+def fetch_ohlcv_from_yfinance(ticker, lookback_days=320):
     """Fetches daily OHLCV bars from Yahoo Finance if lakehouse doesn't have it."""
     if yf is None:
         return None
     try:
         t = yf.Ticker(ticker)
-        df = t.history(period="1y")
+        df = t.history(period="2y")
         if df is not None and not df.empty and len(df) >= 30:
             df = df.reset_index()
             date_col = 'Date' if 'Date' in df.columns else 'Datetime'
@@ -105,7 +105,7 @@ def fetch_ohlcv_from_yfinance(ticker, lookback_days=150):
         return None
     return None
 
-def get_stock_data(ticker, lookback_days=150):
+def get_stock_data(ticker, lookback_days=320):
     """Retrieves OHLCV data with fallback."""
     df = fetch_ohlcv_from_lakehouse(ticker, lookback_days=lookback_days)
     if df is None or len(df) < 30:
@@ -261,10 +261,22 @@ def identify_trading_range(df):
         if lows[i] <= np.min(lows[max(0, i-look):i]) and lows[i] <= np.min(lows[i+1:min(len(df), i+look+1)]):
             swing_lows.append((i, lows[i], float(df.iloc[i].get('RVOL', 1.0)), dates[i]))
             
-    # Search for the structural base anchor: deepest structural test within last 14 to 90 bars
-    recent_swings = [s for s in swing_lows if 14 <= (last_idx - s[0]) <= 90]
+    # Search for the structural base anchor: deepest structural test within last 14 to 200 bars
+    max_base_lookback = min(200, len(df) - 15)
+    recent_swings = [s for s in swing_lows if 14 <= (last_idx - s[0]) <= max_base_lookback]
     if recent_swings:
-        deepest = min(recent_swings, key=lambda x: x[1])
+        min_swing = min(recent_swings, key=lambda x: x[1])
+        min_low = min_swing[1]
+        # Anchor at the earliest swing low in the horizontal support band (within 3.5% of min_low)
+        # that halted the prior markdown (true Phase A Selling Climax SC), rather than a later
+        # Phase B Secondary Test (ST) that retested or marginally undercut the same support floor.
+        support_band_swings = [
+            s for s in recent_swings
+            if s[0] <= min_swing[0]
+            and s[1] <= min_low * 1.035
+            and np.max(highs[s[0]:min_swing[0] + 1]) <= min_low * 1.65
+        ]
+        deepest = support_band_swings[0] if support_band_swings else min_swing
         base_bars = last_idx - deepest[0]
         base_start_date = pd.to_datetime(deepest[3]).strftime('%Y-%m-%d')
         cal_days = (pd.to_datetime(dates[-1]) - pd.to_datetime(deepest[3])).days
@@ -589,7 +601,7 @@ def detect_wyckoff_setups(ticker, df):
     # =========================================================================
     # 2. DISTRIBUTION: UTAD (Upthrust After Distribution) (Phase C Trap)
     # =========================================================================
-    spiked_creek = max_recent_high > creek * 1.012
+    spiked_creek = max_recent_high >= creek * 1.005
     failed_rejection = current_close < creek * 0.998 and (clv <= 0.40 or float(prev1['CLV']) <= 0.35)
     is_distribution_location = (pos_in_52w >= 50.0) or (dd_from_high > -22.0)
     has_heavy_supply = (up_down_vol <= 0.88) or (current_close < sma50 and up_down_vol <= 1.0)
@@ -787,12 +799,12 @@ def detect_wyckoff_setups(ticker, df):
 
     # Prior SOS Jump across Creek in recent 25 bars
     prior_sos = any(df.iloc[-25:]['Close'] >= creek * 0.995) or any(df.iloc[-25:]['High'] >= creek * 1.005)
-    near_creek_support = (abs(current_close - creek) / (creek + 1e-6) <= 0.045) or (current_close >= creek * 0.955 and current_close <= creek * 1.045)
-    volume_digesting = (rvol <= 1.35 and spread_ratio <= 1.50) or (clv >= 0.35) or (current_close >= creek * 0.98)
+    near_creek_support = (current_close >= creek * 0.985 and current_close <= creek * 1.035)
+    volume_digesting = (rvol <= 1.25 and clv >= 0.35) or (vdu_index <= 0.95)
     is_pulling_back_from_sos = max_recent_high >= creek * 1.005 and current_close < max_recent_high * 0.99
 
     # Case D2: Back-Up to the Edge of the Creek (BUEC / LPS) - Stock jumped Creek and is retesting support
-    if has_sufficient_cause and prior_sos and near_creek_support and is_pulling_back_from_sos and not detected_setups:
+    if has_sufficient_cause and prior_sos and near_creek_support and is_pulling_back_from_sos and volume_digesting and not detected_setups:
         confidence = 90
         entry = round(current_close, 2)
         stop_loss = round(creek * 0.95, 2)
@@ -1392,7 +1404,12 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
     closes = df['Close'].values
     
     # 1. Base Window & Phase A Stopping Action Detection
-    onset_idx = max(0, len(df) - base_bars)
+    cause_start_date = tr.get('cause_start_date', '')
+    onset_matches = df[df['Date'].astype(str).str.startswith(cause_start_date)] if cause_start_date else []
+    if len(onset_matches) > 0:
+        onset_idx = int(df.index.get_loc(onset_matches.index[0]))
+    else:
+        onset_idx = max(0, len(df) - 1 - base_bars)
     base_window = df.iloc[onset_idx:].reset_index(drop=True)
     if len(base_window) >= 6:
         if is_distribution:
@@ -1488,9 +1505,16 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
 
         else:
             # ACCUMULATION: Phase A stops the prior downtrend (PS -> SC -> AR -> ST)
-            # Find Selling Climax (SC) in early window of base (avoiding Phase C Springs)
+            # Find Selling Climax (SC) in early window of base (avoiding Phase C Springs & Phase B Secondary Tests)
             sc_search_len = max(6, int(len(base_window) * 0.50))
-            sc_local_idx = int(base_window.iloc[:sc_search_len]['Low'].idxmin())
+            early_window = base_window.iloc[:sc_search_len]
+            min_early_low = float(early_window['Low'].min())
+            climax_cluster_len = min(6, len(early_window))
+            cluster_min_idx = int(early_window.iloc[:climax_cluster_len]['Low'].idxmin())
+            if float(early_window.iloc[cluster_min_idx]['Low']) <= min_early_low * 1.035:
+                sc_local_idx = cluster_min_idx
+            else:
+                sc_local_idx = int(early_window['Low'].idxmin())
             sc_global_idx = onset_idx + sc_local_idx
             sc_date = df.iloc[sc_global_idx]['Date'].strftime('%Y-%m-%d')
             sc_price = round(float(lows[sc_global_idx]), 2)
@@ -1520,12 +1544,16 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
                 
             # Preliminary Support (PS) before SC:
             # ENFORCE: SC MUST be a lower low than PS (i.e. PS low > SC low)
-            ps_search_start = max(0, sc_global_idx - 20)
-            ps_search_end = max(0, sc_global_idx - 1)
+            ps_search_start = max(0, sc_global_idx - 25)
+            ps_search_end = max(0, sc_global_idx - 3)
+            if ps_search_end <= ps_search_start:
+                ps_search_end = max(0, sc_global_idx - 1)
             if ps_search_end > ps_search_start:
                 pre_window = df.iloc[ps_search_start:ps_search_end]
                 # ENFORCE STRICT RULE: PS low must be strictly greater than SC low
-                valid_ps_bars = pre_window[pre_window['Low'] > sc_price]
+                valid_ps_bars = pre_window[pre_window['Low'] > sc_price * 1.015]
+                if valid_ps_bars.empty:
+                    valid_ps_bars = pre_window[pre_window['Low'] > sc_price]
                 if not valid_ps_bars.empty:
                     # Pick high RVOL bar or swing low where initial demand emerged before SC
                     high_vol = valid_ps_bars[valid_ps_bars['RVOL'] >= 1.15]
@@ -1563,7 +1591,7 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
                 # Secondary Test (ST) following AR:
                 # ST tests supply by pulling back from AR towards SC
                 st_search_start = ar_idx + 1
-                st_search_end = min(len(df) - 1, ar_idx + 20)
+                st_search_end = min(len(df) - 1, ar_idx + 25)
                 if st_search_end > st_search_start:
                     post_ar = df.iloc[st_search_start:st_search_end]
                     st_idx = int(post_ar['Low'].idxmin())
@@ -1855,7 +1883,7 @@ def run_wyckoff_screener(symbols=None, force_refresh=False):
     print(f"[Wyckoff Engine] Scanning {len(symbols)} liquid tickers for Wyckoff setups...")
     for sym in symbols:
         try:
-            df = get_stock_data(sym, lookback_days=260)
+            df = get_stock_data(sym, lookback_days=320)
             if df is None or len(df) < 30:
                 continue
             res = detect_wyckoff_setups(sym, df)
@@ -1954,7 +1982,7 @@ def run_wyckoff_screener(symbols=None, force_refresh=False):
 
     return payload
 
-def get_detailed_stock_wyckoff(ticker, lookback_bars=260):
+def get_detailed_stock_wyckoff(ticker, lookback_bars=260, force_refresh=False, **kwargs):
     """Returns deep analysis, multi-timeframe chart candles (up to 1-year), Creek/Ice lines, markers, and trade plan for a single stock."""
     df = get_stock_data(ticker, lookback_days=320)
     if df is None or len(df) < 25:

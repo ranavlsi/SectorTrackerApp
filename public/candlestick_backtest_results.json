@@ -1,0 +1,62 @@
+{
+  "Bullish Engulfing": {
+    "total_signals": 98710,
+    "win_rate_5d": 47.3,
+    "win_rate_10d": 49.1,
+    "win_rate_20d": 51.4,
+    "avg_return_5d_pct": 1.41,
+    "avg_return_10d_pct": 3.28,
+    "avg_return_20d_pct": 7.27,
+    "expectancy_rating": "B"
+  },
+  "Morning Star": {
+    "total_signals": 102701,
+    "win_rate_5d": 50.7,
+    "win_rate_10d": 50.8,
+    "win_rate_20d": 51.6,
+    "avg_return_5d_pct": 1.21,
+    "avg_return_10d_pct": 2.51,
+    "avg_return_20d_pct": 4.79,
+    "expectancy_rating": "B"
+  },
+  "Bullish Harami (Inside Bar)": {
+    "total_signals": 126822,
+    "win_rate_5d": 50.5,
+    "win_rate_10d": 51.6,
+    "win_rate_20d": 51.6,
+    "avg_return_5d_pct": 2.36,
+    "avg_return_10d_pct": 5.4,
+    "avg_return_20d_pct": 9.5,
+    "expectancy_rating": "B"
+  },
+  "Three White Soldiers": {
+    "total_signals": 18164,
+    "win_rate_5d": 46.7,
+    "win_rate_10d": 47.3,
+    "win_rate_20d": 49.1,
+    "avg_return_5d_pct": 0.68,
+    "avg_return_10d_pct": 2.77,
+    "avg_return_20d_pct": 5.16,
+    "expectancy_rating": "B"
+  },
+  "Bullish Hikkake": {
+    "total_signals": 35521,
+    "win_rate_5d": 48.4,
+    "win_rate_10d": 50.9,
+    "win_rate_20d": 51.9,
+    "avg_return_5d_pct": 1.37,
+    "avg_return_10d_pct": 2.56,
+    "avg_return_20d_pct": 5.57,
+    "expectancy_rating": "B"
+  },
+  "Hammer": {
+    "total_signals": 289541,
+    "win_rate_5d": 50.0,
+    "win_rate_10d": 49.9,
+    "win_rate_20d": 51.1,
+    "avg_return_5d_pct": 2.82,
+    "avg_return_10d_pct": 4.93,
+    "avg_return_20d_pct": 8.32,
+    "expectancy_rating": "B"
+  }
+}

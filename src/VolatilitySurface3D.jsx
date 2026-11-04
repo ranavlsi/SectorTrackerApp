@@ -138,6 +138,10 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
       setError(null);
       try {
         const response = await fetch(`/api/volatility_surface?ticker=${ticker}`);
+        if (!response.ok) {
+          const errData = await response.json().catch(() => null);
+          throw new Error(errData?.error || `HTTP ${response.status}: Failed to load volatility surface for ${ticker}`);
+        }
         const result = await response.json();
         if (result.surface) {
           setData(result);
@@ -919,6 +923,233 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
       } catch (err) {
         console.error("Plotly heatmap render error:", err);
       }
+
+    } else if (activeViewMode === 'spot_vol_scatter') {
+      // 5. BUILD SPOT-VOL CORRELATION 2D SCATTER PLOT & TRENDLINE
+      const scatterPts = data.spot_vol_scatter || [];
+      const spotVolCorr = data.desk_metrics?.spot_vol_corr ?? -0.65;
+
+      // Group points by quadrant for crisp color markers
+      const putPanic = scatterPts.filter(p => p.spot_return_pct < 0 && p.vol_change_pct > 0);
+      const callSqueeze = scatterPts.filter(p => p.spot_return_pct > 0 && p.vol_change_pct > 0);
+      const volCrushRally = scatterPts.filter(p => p.spot_return_pct > 0 && p.vol_change_pct <= 0);
+      const sinkingDrift = scatterPts.filter(p => p.spot_return_pct <= 0 && p.vol_change_pct <= 0);
+
+      // Compute Linear Regression OLS Trendline
+      let trendX = [-3, 3];
+      let trendY = [3 * spotVolCorr, -3 * spotVolCorr];
+      if (scatterPts.length >= 5) {
+        const xVals = scatterPts.map(p => p.spot_return_pct);
+        const yVals = scatterPts.map(p => p.vol_change_pct);
+        const minX = Math.min(...xVals);
+        const maxX = Math.max(...xVals);
+        const meanX = xVals.reduce((a, b) => a + b, 0) / xVals.length;
+        const meanY = yVals.reduce((a, b) => a + b, 0) / yVals.length;
+        let num = 0, den = 0;
+        for (let i = 0; i < xVals.length; i++) {
+          num += (xVals[i] - meanX) * (yVals[i] - meanY);
+          den += (xVals[i] - meanX) ** 2;
+        }
+        const beta = den !== 0 ? num / den : 0;
+        const alpha = meanY - beta * meanX;
+        trendX = [minX * 1.1, maxX * 1.1];
+        trendY = [alpha + beta * trendX[0], alpha + beta * trendX[1]];
+      }
+
+      const plotData = [
+        {
+          x: putPanic.map(p => p.spot_return_pct),
+          y: putPanic.map(p => p.vol_change_pct),
+          type: 'scatter',
+          mode: 'markers',
+          name: `🚨 Put Panic (${putPanic.length} days)`,
+          marker: { size: 10, color: '#ef4444', symbol: 'circle', line: { color: '#ffffff', width: 1 } },
+          text: putPanic.map(p => `${p.date}: Spot ${p.spot_return_pct}% | Vol ${p.vol_change_pct > 0 ? '+' : ''}${p.vol_change_pct}%`),
+          hoverinfo: 'text'
+        },
+        {
+          x: callSqueeze.map(p => p.spot_return_pct),
+          y: callSqueeze.map(p => p.vol_change_pct),
+          type: 'scatter',
+          mode: 'markers',
+          name: `🚀 Call Squeeze (${callSqueeze.length} days)`,
+          marker: { size: 11, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 1 } },
+          text: callSqueeze.map(p => `${p.date}: Spot +${p.spot_return_pct}% | Vol +${p.vol_change_pct}%`),
+          hoverinfo: 'text'
+        },
+        {
+          x: volCrushRally.map(p => p.spot_return_pct),
+          y: volCrushRally.map(p => p.vol_change_pct),
+          type: 'scatter',
+          mode: 'markers',
+          name: `🟢 Normal Rally (${volCrushRally.length} days)`,
+          marker: { size: 9, color: '#38bdf8', symbol: 'circle', line: { color: '#ffffff', width: 1 } },
+          text: volCrushRally.map(p => `${p.date}: Spot +${p.spot_return_pct}% | Vol ${p.vol_change_pct}%`),
+          hoverinfo: 'text'
+        },
+        {
+          x: sinkingDrift.map(p => p.spot_return_pct),
+          y: sinkingDrift.map(p => p.vol_change_pct),
+          type: 'scatter',
+          mode: 'markers',
+          name: `📉 Sinking Drift (${sinkingDrift.length} days)`,
+          marker: { size: 8, color: '#94a3b8', symbol: 'square', line: { color: '#ffffff', width: 1 } },
+          text: sinkingDrift.map(p => `${p.date}: Spot ${p.spot_return_pct}% | Vol ${p.vol_change_pct}%`),
+          hoverinfo: 'text'
+        },
+        {
+          x: trendX,
+          y: trendY,
+          type: 'scatter',
+          mode: 'lines',
+          name: `OLS Slope (ρ = ${spotVolCorr > 0 ? '+' : ''}${spotVolCorr})`,
+          line: { color: spotVolCorr >= 0.15 ? '#10b981' : (spotVolCorr <= -0.15 ? '#38bdf8' : '#fbbf24'), width: 3, dash: 'dash' },
+          hoverinfo: 'none'
+        }
+      ];
+
+      // Calculate quadrant percentages & day counts for on-chart overlay badges
+      const totalScatterDays = scatterPts.length || 1;
+      const q1Pct = ((putPanic.length / totalScatterDays) * 100).toFixed(1);
+      const q2Pct = ((callSqueeze.length / totalScatterDays) * 100).toFixed(1);
+      const q3Pct = ((sinkingDrift.length / totalScatterDays) * 100).toFixed(1);
+      const q4Pct = ((volCrushRally.length / totalScatterDays) * 100).toFixed(1);
+
+      // Quant regime text title
+      let regimeSummaryTitle = 'NORMAL EQUITY REGIME';
+      let regimeColor = '#38bdf8';
+      if (spotVolCorr >= 0.15) {
+        regimeSummaryTitle = '🔥 POSITIVE SPOT-VOL REGIME (Call Squeeze Heavy)';
+        regimeColor = '#10b981';
+      } else if (spotVolCorr <= -0.15) {
+        regimeSummaryTitle = '🛡️ CLASSIC EQUITY HEDGING REGIME (Strong Inverse Correlation)';
+        regimeColor = '#38bdf8';
+      } else {
+        regimeSummaryTitle = '⚡ DECOUPLED / SKEW BREAKDOWN REGIME';
+        regimeColor = '#fbbf24';
+      }
+
+      const layout = {
+        autosize: true,
+        height: 560,
+        margin: { l: 60, r: 40, b: 60, t: 60 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: '#090d16',
+        title: { 
+          text: `Spot-Vol Correlation Scatter Plot · ${ticker} (ρ = ${spotVolCorr > 0 ? '+' : ''}${spotVolCorr})`, 
+          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 14, weight: 'bold' } 
+        },
+        xaxis: { 
+          title: { text: 'Daily Underlying Spot Return (%)', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+          gridcolor: 'rgba(255, 255, 255, 0.12)', 
+          color: '#f8fafc', 
+          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
+          zerolinecolor: '#cbd5e1',
+          zerolinewidth: 1.5
+        },
+        yaxis: { 
+          title: { text: 'Daily Volatility Change (%)', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+          gridcolor: 'rgba(255, 255, 255, 0.12)', 
+          color: '#f8fafc', 
+          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
+          zerolinecolor: '#cbd5e1',
+          zerolinewidth: 1.5
+        },
+        legend: {
+          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 11 },
+          bgcolor: 'rgba(15, 23, 42, 0.85)',
+          bordercolor: 'rgba(255, 255, 255, 0.15)',
+          borderwidth: 1
+        },
+        annotations: [
+          // Top-Center Regime Summary Banner
+          {
+            xref: 'paper',
+            yref: 'paper',
+            x: 0.50,
+            y: 1.08,
+            text: `<b>${regimeSummaryTitle}</b> | Pearson Correlation (ρ): <b>${spotVolCorr > 0 ? '+' : ''}${spotVolCorr}</b>`,
+            showarrow: false,
+            xanchor: 'center',
+            yanchor: 'bottom',
+            font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 11 },
+            bgcolor: 'rgba(15, 23, 42, 0.95)',
+            bordercolor: regimeColor,
+            borderwidth: 1.5,
+            borderpad: 5
+          },
+          // Quadrant 1 (Top-Left): Put Panic (Spot < 0, Vol > 0)
+          {
+            xref: 'paper',
+            yref: 'paper',
+            x: 0.02,
+            y: 0.96,
+            text: `<b>🚨 Q1: PUT PANIC ZONE</b><br>Spot ↓ / Vol ↑<br><b>${putPanic.length} days (${q1Pct}%)</b>`,
+            showarrow: false,
+            xanchor: 'left',
+            yanchor: 'top',
+            font: { color: '#ef4444', family: "'JetBrains Mono', monospace", size: 10 },
+            bgcolor: 'rgba(239, 68, 68, 0.12)',
+            bordercolor: 'rgba(239, 68, 68, 0.4)',
+            borderwidth: 1,
+            borderpad: 5
+          },
+          // Quadrant 2 (Top-Right): Call Squeeze (Spot > 0, Vol > 0)
+          {
+            xref: 'paper',
+            yref: 'paper',
+            x: 0.98,
+            y: 0.96,
+            text: `<b>🚀 Q2: CALL SQUEEZE ZONE</b><br>Spot ↑ / Vol ↑<br><b>${callSqueeze.length} days (${q2Pct}%)</b>`,
+            showarrow: false,
+            xanchor: 'right',
+            yanchor: 'top',
+            font: { color: '#10b981', family: "'JetBrains Mono', monospace", size: 10 },
+            bgcolor: 'rgba(16, 185, 129, 0.12)',
+            bordercolor: 'rgba(16, 185, 129, 0.4)',
+            borderwidth: 1,
+            borderpad: 5
+          },
+          // Quadrant 3 (Bottom-Left): Sinking Drift (Spot < 0, Vol < 0)
+          {
+            xref: 'paper',
+            yref: 'paper',
+            x: 0.02,
+            y: 0.04,
+            text: `<b>📉 Q3: SINKING DRIFT ZONE</b><br>Spot ↓ / Vol ↓<br><b>${sinkingDrift.length} days (${q3Pct}%)</b>`,
+            showarrow: false,
+            xanchor: 'left',
+            yanchor: 'bottom',
+            font: { color: '#94a3b8', family: "'JetBrains Mono', monospace", size: 10 },
+            bgcolor: 'rgba(148, 163, 184, 0.12)',
+            bordercolor: 'rgba(148, 163, 184, 0.4)',
+            borderwidth: 1,
+            borderpad: 5
+          },
+          // Quadrant 4 (Bottom-Right): Vol-Crush Rally (Spot > 0, Vol < 0)
+          {
+            xref: 'paper',
+            yref: 'paper',
+            x: 0.98,
+            y: 0.04,
+            text: `<b>🟢 Q4: NORMAL RALLYS / VOL CRUSH</b><br>Spot ↑ / Vol ↓<br><b>${volCrushRally.length} days (${q4Pct}%)</b>`,
+            showarrow: false,
+            xanchor: 'right',
+            yanchor: 'bottom',
+            font: { color: '#38bdf8', family: "'JetBrains Mono', monospace", size: 10 },
+            bgcolor: 'rgba(56, 189, 248, 0.12)',
+            bordercolor: 'rgba(56, 189, 248, 0.4)',
+            borderwidth: 1,
+            borderpad: 5
+          }
+        ]
+      };
+
+      try {
+        window.Plotly.newPlot(plotRef.current, plotData, layout, { responsive: true, displayModeBar: false });
+      } catch (err) {
+        console.error("Plotly scatter render error:", err);
+      }
     }
   }, [data, selectedExpiry, activeViewMode, focusedHotspot, plotlyReady, detectedAirPockets, surfaceColor, surfaceBg, cameraPreset, strikeMode, heatmapFilter, showHvPlane]);
 
@@ -1665,6 +1896,19 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             </span>
             <span className="vol-kpi-sub emerald">Put Skew Premium</span>
           </div>
+
+          {/* SPOT-VOL CORRELATION */}
+          <div className="vol-kpi-tile">
+            <span className="vol-kpi-label">Spot-Vol Corr</span>
+            <span className={`vol-kpi-val ${
+              (desk_metrics?.spot_vol_corr ?? -0.65) >= 0.15 ? 'emerald' : ((desk_metrics?.spot_vol_corr ?? -0.65) <= -0.15 ? 'purple' : 'amber')
+            }`}>
+              {(desk_metrics?.spot_vol_corr ?? -0.65) > 0 ? `+${(desk_metrics?.spot_vol_corr ?? -0.65).toFixed(2)}` : (desk_metrics?.spot_vol_corr ?? -0.65).toFixed(2)}
+            </span>
+            <span className="vol-kpi-sub">
+              {desk_metrics?.spot_vol_badge || 'Equity Leverage'}
+            </span>
+          </div>
         </div>
 
         {/* View Mode Selector & Canvas Controls */}
@@ -1715,6 +1959,12 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
               className={`vol-view-btn ${activeViewMode === 'heatmap' ? 'active' : ''}`}
             >
               Vol Heatmap
+            </button>
+            <button
+              onClick={() => setActiveViewMode('spot_vol_scatter')}
+              className={`vol-view-btn ${activeViewMode === 'spot_vol_scatter' ? 'active' : ''}`}
+            >
+              📊 Spot-Vol Scatter
             </button>
           </div>
 
@@ -1990,6 +2240,193 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         >
           <div ref={plotRef} style={{ width: '100%', minHeight: '560px' }} />
         </div>
+
+        {/* REGIME RATIONALE BREAKDOWN DECK (Rendered exclusively in Spot-Vol Scatter view) */}
+        {activeViewMode === 'spot_vol_scatter' && (() => {
+          const scatterPts = data?.spot_vol_scatter || [];
+          const spotVolCorr = data.desk_metrics?.spot_vol_corr ?? -0.65;
+          const isDecoupled = spotVolCorr > -0.15 && spotVolCorr < 0.15;
+          const isCallSqueeze = spotVolCorr >= 0.15;
+          const isInverse = spotVolCorr <= -0.15;
+
+          return (
+            <div 
+              style={{
+                background: 'rgba(15, 23, 42, 0.90)',
+                border: `1px solid ${isDecoupled ? '#fbbf24' : (isCallSqueeze ? '#10b981' : '#38bdf8')}`,
+                borderRadius: '12px',
+                padding: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+                marginTop: '12px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={16} color={isDecoupled ? '#fbbf24' : (isCallSqueeze ? '#10b981' : '#38bdf8')} />
+                  <strong style={{ color: '#ffffff', fontSize: '14px', fontFamily: "'JetBrains Mono', monospace" }}>
+                    Why is {ticker}'s Spot-Vol Relationship {isDecoupled ? 'DECOUPLED (ρ ≈ 0.00)' : (isCallSqueeze ? 'POSITIVE (Call Squeeze Heavy)' : 'INVERSE / HEDGED (Classic Equity)')}?
+                  </strong>
+                </div>
+                <span 
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    background: isDecoupled ? 'rgba(251, 191, 36, 0.15)' : (isCallSqueeze ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.15)'),
+                    color: isDecoupled ? '#fbbf24' : (isCallSqueeze ? '#10b981' : '#38bdf8'),
+                    border: `1px solid ${isDecoupled ? 'rgba(251, 191, 36, 0.3)' : (isCallSqueeze ? 'rgba(16, 185, 129, 0.3)' : 'rgba(56, 189, 248, 0.3)')}`
+                  }}
+                >
+                  ρ = {spotVolCorr > 0 ? '+' : ''}{spotVolCorr}
+                </span>
+              </div>
+
+              {isDecoupled && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #fbbf24' }}>
+                    <strong style={{ color: '#fbbf24', fontSize: '12px', display: 'block', marginBottom: '4px' }}>1. Binary Event / Catalyst Waiting</strong>
+                    <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                      Option IV stays bid or fixed regardless of small price fluctuations because market participants are waiting for an imminent macro event, earnings announcement, or regulatory approval.
+                    </span>
+                  </div>
+
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #fbbf24' }}>
+                    <strong style={{ color: '#fbbf24', fontSize: '12px', display: 'block', marginBottom: '4px' }}>2. Dealer Gamma Neutralization</strong>
+                    <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                      Market makers are holding balanced long/short delta positions, preventing volatility from expanding when the stock dips or contracting when it rallies.
+                    </span>
+                  </div>
+
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #fbbf24' }}>
+                    <strong style={{ color: '#fbbf24', fontSize: '12px', display: 'block', marginBottom: '4px' }}>3. Consolidation & Microstructure Drift</strong>
+                    <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                      The stock is drifting within a range without clear institutional panics or aggressive FOMO call buying, keeping options vega demand flat across price moves.
+                    </span>
+                  </div>
+
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #fbbf24' }}>
+                    <strong style={{ color: '#fbbf24', fontSize: '12px', display: 'block', marginBottom: '4px' }}>💡 Trader Takeaway</strong>
+                    <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                      Standard put hedges may not spike as expected during sell-offs. Consider gamma-neutral calendar spreads or multi-leg butterflies to exploit static IV pricing.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {isCallSqueeze && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+                    <strong style={{ color: '#10b981', fontSize: '12px', display: 'block', marginBottom: '4px' }}>1. Aggressive Upside Call Buying (FOMO)</strong>
+                    <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                      Retail and institutional traders are aggressively buying OTM call options as the stock surges, driving up call IV alongside spot price.
+                    </span>
+                  </div>
+
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+                    <strong style={{ color: '#10b981', fontSize: '12px', display: 'block', marginBottom: '4px' }}>2. Dealer Short Gamma Acceleration</strong>
+                    <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                      Dealers who are short upside calls must buy underlying shares as the stock rises to stay delta-neutral, creating a self-reinforcing upward melt-up.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* VOLATILITY EXHAUSTION & PRICE IMPACT BOUNDARY CORRIDOR */}
+              {(() => {
+                const currentSpot = spot || 100;
+                // Compute linear regression slope (Beta) & Volatility Exhaustion Boundaries
+                const xVals = scatterPts.map(p => p.spot_return_pct);
+                const yVals = scatterPts.map(p => p.vol_change_pct);
+                let beta = 0;
+                if (xVals.length >= 5) {
+                  const meanX = xVals.reduce((a, b) => a + b, 0) / xVals.length;
+                  const meanY = yVals.reduce((a, b) => a + b, 0) / yVals.length;
+                  let num = 0, den = 0;
+                  for (let i = 0; i < xVals.length; i++) {
+                    num += (xVals[i] - meanX) * (yVals[i] - meanY);
+                    den += (xVals[i] - meanX) ** 2;
+                  }
+                  beta = den !== 0 ? num / den : 0;
+                }
+
+                // Compute 90th percentile historical upside/downside moves for robust baseline boundary
+                const upsideMoves = xVals.filter(x => x > 0).sort((a, b) => a - b);
+                const downsideMoves = xVals.filter(x => x < 0).sort((a, b) => a - b);
+
+                const getPercentile = (arr, p) => {
+                  if (!arr.length) return 2.5;
+                  const idx = Math.floor(arr.length * p);
+                  return arr[Math.min(idx, arr.length - 1)];
+                };
+
+                const robustUpsidePct = upsideMoves.length ? getPercentile(upsideMoves, 0.90) : 3.0;
+                const robustDownsidePct = downsideMoves.length ? getPercentile(downsideMoves, 0.10) : -3.0;
+
+                const volCapUpsidePrice = +(currentSpot * (1 + robustUpsidePct / 100)).toFixed(2);
+                const volExhaustionDownsidePrice = +(currentSpot * (1 + robustDownsidePct / 100)).toFixed(2);
+
+                const ivChangePer1PctMove = (Math.abs(beta) < 0.01 && beta !== 0) 
+                  ? beta.toFixed(3) 
+                  : beta.toFixed(2);
+
+                return (
+                  <div 
+                    style={{
+                      background: 'rgba(6, 182, 212, 0.06)',
+                      border: '1px solid rgba(0, 240, 255, 0.25)',
+                      borderRadius: '10px',
+                      padding: '14px',
+                      marginTop: '6px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                      <Activity size={15} color="#00F0FF" />
+                      <strong style={{ color: '#ffffff', fontSize: '13px', fontFamily: "'JetBrains Mono', monospace" }}>
+                        📊 Volatility Sensitivity & Terminal Price Impact Boundaries:
+                      </strong>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                      <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '11px', display: 'block', fontFamily: 'monospace' }}>1% Spot Sensitivity (Beta)</span>
+                        <span style={{ color: beta < 0 ? '#38bdf8' : '#10b981', fontSize: '14px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                          {beta > 0 ? `+${ivChangePer1PctMove}%` : `${ivChangePer1PctMove}%`} IV
+                        </span>
+                        <span style={{ color: '#64748b', fontSize: '10px', display: 'block', marginTop: '2px' }}>
+                          Expected IV shift per 1% stock return
+                        </span>
+                      </div>
+
+                      <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                        <span style={{ color: '#10b981', fontSize: '11px', display: 'block', fontFamily: 'monospace' }}>Upside Vol-Crush Cap (90th Pct)</span>
+                        <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                          ${volCapUpsidePrice} <span style={{ fontSize: '11px', color: '#10b981' }}>(+{robustUpsidePct.toFixed(1)}%)</span>
+                        </span>
+                        <span style={{ color: '#94a3b8', fontSize: '10px', display: 'block', marginTop: '2px' }}>
+                          Beyond ${volCapUpsidePrice}, IV expansion saturates / crushes
+                        </span>
+                      </div>
+
+                      <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                        <span style={{ color: '#ef4444', fontSize: '11px', display: 'block', fontFamily: 'monospace' }}>Downside Vol Panic Floor (90th Pct)</span>
+                        <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                          ${volExhaustionDownsidePrice} <span style={{ fontSize: '11px', color: '#ef4444' }}>({robustDownsidePct.toFixed(1)}%)</span>
+                        </span>
+                        <span style={{ color: '#94a3b8', fontSize: '10px', display: 'block', marginTop: '2px' }}>
+                          Below ${volExhaustionDownsidePrice}, put panic saturates / flattens
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          );
+        })()}
 
         {/* AIR POCKET RADAR & DIRECTIVES (Rendered exclusively in Vol Heatmap view) */}
         {activeViewMode === 'heatmap' && detectedAirPockets.length > 0 && (

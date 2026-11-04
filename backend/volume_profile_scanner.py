@@ -176,26 +176,47 @@ def evaluate_volume_profile_rejections(ticker, df=None, lookback=63):
                 }
 
         # --- 2. Fixed Calendar Quarter ---
+        # If the current calendar quarter has < 15 trading days (e.g., first week of Q4), 
+        # evaluate the full prior completed quarter (e.g. Q3) so fixed quarter levels are mathematically valid!
         date_series = df.index if (df.index.name == 'Date' or isinstance(df.index, pd.DatetimeIndex)) else df.get('Date')
         
         if date_series is not None and len(date_series) > 0:
             last_date = pd.to_datetime(date_series[-1])
-            quarter = (last_date.month - 1) // 3 + 1
-            start_month = 3 * quarter - 2
-            start_of_quarter = pd.Timestamp(year=last_date.year, month=start_month, day=1)
+            curr_q = (last_date.month - 1) // 3 + 1
+            curr_q_start_m = 3 * curr_q - 2
+            curr_q_start = pd.Timestamp(year=last_date.year, month=curr_q_start_m, day=1, tz=last_date.tz if hasattr(last_date, 'tz') else None)
             
-            mask = pd.to_datetime(date_series) >= start_of_quarter
-            fixed_df = df[mask].copy()
+            mask_curr = pd.to_datetime(date_series) >= curr_q_start
+            fixed_df = df[mask_curr].copy()
+            quarter_label = f"Q{curr_q}"
+            
+            # If current quarter is under 15 trading days, use the previous quarter
+            if len(fixed_df) < 15:
+                prev_q = 4 if curr_q == 1 else curr_q - 1
+                prev_q_year = last_date.year - 1 if curr_q == 1 else last_date.year
+                prev_q_start_m = 3 * prev_q - 2
+                prev_q_end_m = 3 * prev_q
+                
+                prev_q_start = pd.Timestamp(year=prev_q_year, month=prev_q_start_m, day=1, tz=last_date.tz if hasattr(last_date, 'tz') else None)
+                # Last day of end month
+                next_m_year = prev_q_year if prev_q_end_m < 12 else prev_q_year + 1
+                next_m = prev_q_end_m + 1 if prev_q_end_m < 12 else 1
+                prev_q_end = pd.Timestamp(year=next_m_year, month=next_m, day=1, tz=last_date.tz if hasattr(last_date, 'tz') else None) - pd.Timedelta(days=1)
+                
+                mask_prev = (pd.to_datetime(date_series) >= prev_q_start) & (pd.to_datetime(date_series) <= prev_q_end)
+                fixed_df = df[mask_prev].copy()
+                quarter_label = f"Q{prev_q}"
+                
             if len(fixed_df) >= 15:
                 vp_fixed = calculate_volume_profile(fixed_df, bins=100, va_pct=0.70)
                 if vp_fixed:
                     # Fixed VAH
-                    vah_f = evaluate_level_bounce(vp_fixed['vah'], fixed_df, curr_close, curr_open, curr_low, curr_high, f"Fixed VAH (Q{quarter})")
+                    vah_f = evaluate_level_bounce(vp_fixed['vah'], fixed_df, curr_close, curr_open, curr_low, curr_high, f"Fixed VAH ({quarter_label})")
                     if vah_f:
                         out["vah_fixed"] = {"metric": vah_f["message"], "score": vah_f["score"], "level": vah_f["level"]}
                     
                     # Fixed POC
-                    poc_f = evaluate_level_bounce(vp_fixed['poc'], fixed_df, curr_close, curr_open, curr_low, curr_high, f"Fixed POC (Q{quarter})")
+                    poc_f = evaluate_level_bounce(vp_fixed['poc'], fixed_df, curr_close, curr_open, curr_low, curr_high, f"Fixed POC ({quarter_label})")
                     if poc_f:
                         out["poc_fixed"] = {"metric": poc_f["message"], "score": poc_f["score"], "level": poc_f["level"]}
 
@@ -208,7 +229,7 @@ def evaluate_volume_profile_rejections(ticker, df=None, lookback=63):
                         dist_f = ((curr_close - val_fixed) / val_fixed) * 100
                         if out["val"] is None:
                             out["val"] = {}
-                        out["val"]["fixed_message"] = f"Bouncing +{dist_f:.1f}% off ${val_fixed:.2f} (Q{quarter})"
+                        out["val"]["fixed_message"] = f"Bouncing +{dist_f:.1f}% off ${val_fixed:.2f} ({quarter_label})"
 
         if out["vah"] or out["vah_fixed"] or out["poc"] or out["poc_fixed"] or out["val"]:
             return out

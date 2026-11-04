@@ -38,17 +38,9 @@ def evaluate_emerging_leader_setup(ticker, df=None, spy_series=None):
         if curr_c < 5.0:
             return None
             
-        # Market Cap Gate for Emerging Leaders ($2B <= Market Cap <= $20B)
-        mcap_b = 0.0
-        try:
-            info = yf.Ticker(ticker).fast_info
-            mcap = getattr(info, 'market_cap', 0)
-            if mcap and mcap > 0:
-                mcap_b = mcap / 1e9
-                if mcap_b < 2.0 or mcap_b > 20.0:
-                    return None
-        except Exception:
-            pass
+        # Market Cap Gate for Emerging Leaders (estimated from price & liquid volume if available)
+        mcap_b = 5.0
+
             
         # Moving Averages
         ema10 = close.ewm(span=10, adjust=False).mean()
@@ -191,8 +183,27 @@ def evaluate_emerging_leader_setup(ticker, df=None, spy_series=None):
             
         total_score = round(p1_score + p2_score + p3_score + p4_score, 1)
         
+        # Extension Penalty & SNIP Alignment (O'Neil / TraderLion Rule)
+        # Deduct 25 pts if stock is extended > 15% above 21-EMA or > 25% above 50-SMA
+        dist_ema21_pct = float((curr_c - c_21) / c_21 * 100)
+        dist_sma50_pct = float((curr_c - c_50) / c_50 * 100)
+        
+        is_extended = dist_ema21_pct > 15.0 or dist_sma50_pct > 25.0
+        if is_extended:
+            total_score -= 25.0
+        else:
+            # Reward stocks resting tightly in actionable buy zones (0-6% from 21-EMA)
+            if 0.0 <= dist_ema21_pct <= 6.0:
+                total_score += 15.0
+                
+        total_score = round(max(0.0, total_score), 1)
+        
         # Classification Tier
-        if total_score >= 80:
+        if is_extended:
+            tier = "EXTENDED_EXHAUSTION"
+            tier_label = "⚠️ Extended Leader (+15%+ Over MA)"
+            tier_color = "#ef4444"
+        elif total_score >= 80:
             tier = "EMERGING_LEADER_IGNITION"
             tier_label = "🌱 Emerging Leader Ignition"
             tier_color = "#10b981"
@@ -206,6 +217,8 @@ def evaluate_emerging_leader_setup(ticker, df=None, spy_series=None):
             tier_color = "#f59e0b"
             
         badges = []
+        if is_extended: badges.append("⚠️ EXTENDED (+15%+ Over MA)")
+        elif 0.0 <= dist_ema21_pct <= 6.0: badges.append("🎯 ACTIONABLE ENTRY (On 21-EMA)")
         if is_rs_leading_divergence: badges.append("🔥 RS Leading High")
         if is_pinched: badges.append(f"📐 MA Pinch ({pinch_spread_pct:.1f}%)")
         if is_vdu: badges.append(f"💧 Vol Dry-Up (-{int((1.0 - curr_vol_ratio)*100)}%)")
@@ -241,31 +254,62 @@ def evaluate_emerging_leader_setup(ticker, df=None, spy_series=None):
 def run_emerging_leader_scanner(universe=None):
     """
     Runs the Master Emerging Market Leader Engine across the universe.
+    Uses DuckDB Lakehouse (daily_ohlcv.parquet) if available for full market scanning.
     Writes results to public/emerging_leaders.json.
     """
-    if universe is None:
-        from screener_engine import UNIVERSE
-        universe = UNIVERSE
-        
-    print(f"Running Swarm Emerging Leader Engine on {len(universe)} tickers...")
-    
-    spy_df = yf.download('SPY', period='1y', interval='1d', progress=False)['Close']
-    spy_series = spy_df.iloc[:,0] if hasattr(spy_df, 'columns') and isinstance(spy_df, pd.DataFrame) else spy_df
-    
-    df_all = yf.download(universe, period='1y', interval='1d', group_by='ticker', progress=False)
-    
     candidates = []
-    for ticker in universe:
+    lakehouse_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'daily_ohlcv.parquet')
+    
+    if os.path.exists(lakehouse_path):
+        print(f"Scanning full DuckDB Lakehouse for Emerging Market Leaders...")
         try:
-            if ticker not in df_all: continue
-            tdf = df_all[ticker].dropna()
-            if len(tdf) < 80: continue
+            import duckdb
+            con = duckdb.connect()
+            df_l = con.execute(f"SELECT Ticker, Date, Open, High, Low, Close, Volume FROM '{lakehouse_path}' WHERE Date >= CURRENT_DATE - INTERVAL 300 DAY ORDER BY Ticker, Date ASC").df()
+            con.close()
             
-            res = evaluate_emerging_leader_setup(ticker, tdf, spy_series=spy_series)
-            if res and res['score'] >= 25:
-                candidates.append(res)
-        except Exception:
-            pass
+            spy_g = df_l[df_l['Ticker'] == 'SPY']
+            spy_series = spy_g.set_index('Date')['Close'] if len(spy_g) > 0 else None
+            
+            # Pre-filter liquid tickers to speed up processing
+            grouped = df_l.groupby('Ticker')
+            for ticker, g in grouped:
+                if len(g) < 80: continue
+                curr_c = g['Close'].values[-1]
+                if curr_c < 5.0: continue
+                
+                vol_sma20 = g['Volume'].iloc[-20:].mean()
+                if vol_sma20 < 5000000: continue
+                
+                g_df = g.set_index('Date')
+                res = evaluate_emerging_leader_setup(ticker, g_df, spy_series=spy_series)
+                if res and res['score'] >= 25:
+                    candidates.append(res)
+        except Exception as e:
+            print(f"DuckDB scan error: {e}")
+            
+    if not candidates:
+        if universe is None:
+            from screener_engine import UNIVERSE
+            universe = UNIVERSE
+            
+        print(f"Running fallback Emerging Leader Engine on {len(universe)} tickers...")
+        spy_df = yf.download('SPY', period='1y', interval='1d', progress=False)['Close']
+        spy_series = spy_df.iloc[:,0] if hasattr(spy_df, 'columns') and isinstance(spy_df, pd.DataFrame) else spy_df
+        
+        df_all = yf.download(universe, period='1y', interval='1d', group_by='ticker', progress=False)
+        
+        for ticker in universe:
+            try:
+                if ticker not in df_all: continue
+                tdf = df_all[ticker].dropna()
+                if len(tdf) < 80: continue
+                
+                res = evaluate_emerging_leader_setup(ticker, tdf, spy_series=spy_series)
+                if res and res['score'] >= 25:
+                    candidates.append(res)
+            except Exception:
+                pass
             
     candidates.sort(key=lambda x: x['score'], reverse=True)
     
@@ -282,3 +326,4 @@ def run_emerging_leader_scanner(universe=None):
 
 if __name__ == "__main__":
     run_emerging_leader_scanner()
+

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { 
   Flame, TrendingUp, TrendingDown, ShieldCheck, ShieldAlert, CheckCircle2, 
-  Zap, Search, RefreshCw, Layers, Info, ChevronRight, X, ArrowUpRight, 
+  Zap, Search, RefreshCw, Layers, Info, ChevronRight, ChevronLeft, X, ArrowUpRight, 
   ArrowDownRight, Sparkles, Target, Activity, Calendar, BarChart2, Award, 
   Crosshair, Clock, AlertTriangle, Compass, Check, AlertCircle, Percent, Copy, ExternalLink,
-  ZoomIn, ZoomOut, RotateCcw, Maximize2
+  ZoomIn, ZoomOut, RotateCcw, Maximize2, Play, Pause, Navigation, Eye, EyeOff,
+  SkipBack, SkipForward, ArrowLeft, Sliders
 } from 'lucide-react';
 import './StageCanslimScreener.css';
 
@@ -23,6 +24,13 @@ const SUB_STAGES_LIST = [
   { id: '4A', name: 'Breakdown Ignition', stage: 'Stage 4', phase: 'Declining', desc: 'Decisive break below distribution neckline. Sinking RS.', color: '#b91c1c' },
   { id: '4B', name: 'Bear Snapback', stage: 'Stage 4', phase: 'Declining', desc: 'Low-volume counter-trend bounce into declining 30w MA.', color: '#ef4444' },
   { id: '4C', name: 'Capitulation Cascade', stage: 'Stage 4', phase: 'Declining', desc: 'Persistent lower highs & lows below declining MAs. Strict avoid.', color: '#dc2626' }
+];
+
+// Popular Sector & Thematic ETFs for Quick 1-Click Drilldown Switching
+const POPULAR_DRILLDOWN_ETFS = [
+  'QTUM', 'CIBR', 'IYT', 'SMH', 'XLK', 'XBI', 'URA', 'XLE', 
+  'XLF', 'XLI', 'XLY', 'XLP', 'XLU', 'XLV', 'XLB', 'XLC', 
+  'KRE', 'ITA', 'BOTZ', 'IGV', 'GDX', 'XME', 'ITB'
 ];
 
 export default function StageCanslimScreener() {
@@ -44,6 +52,152 @@ export default function StageCanslimScreener() {
   const [simulatorRiskPct, setSimulatorRiskPct] = useState(1.0);
   const [showVcpWaves, setShowVcpWaves] = useState(true);
   const [hoveredWaveIdx, setHoveredWaveIdx] = useState(null);
+
+  // Sector Stage 4-Quadrant Rotation Matrix State
+  const [showQuadrantModal, setShowQuadrantModal] = useState(false);
+  const [quadrantData, setQuadrantData] = useState(null);
+  const [quadrantLoading, setQuadrantLoading] = useState(false);
+  const [quadrantError, setQuadrantError] = useState(null);
+  const [quadrantLookback, setQuadrantLookback] = useState(10); // 5 | 10 | 15
+  const [quadrantMode, setQuadrantMode] = useState('stage'); // 'stage' | 'rrg'
+  const [activeSectorFilter, setActiveSectorFilter] = useState('ALL'); // 'ALL' | 'GROWTH' | 'CYCLICAL' | 'DEFENSIVE' | 'SENSITIVE' | 'BENCHMARK'
+  const [selectedQuadrantEtf, setSelectedQuadrantEtf] = useState(null);
+  const [hoveredQuadrantEtf, setHoveredQuadrantEtf] = useState(null);
+  const [isPlayingAnimation, setIsPlayingAnimation] = useState(false);
+  const [animationStep, setAnimationStep] = useState(10);
+  const [drilldownEtf, setDrilldownEtf] = useState(null); // null = Macro Overview, string = e.g. "QTUM"
+  const [drilldownData, setDrilldownData] = useState(null);
+  const [drilldownLoading, setDrilldownLoading] = useState(false);
+  const [drilldownError, setDrilldownError] = useState(null);
+
+  // Section Scroll Refs for Horizontal Sliders
+  const mainGridScrollRef = useRef(null);
+  const categoryStripScrollRef = useRef(null);
+  const mainTableScrollRef = useRef(null);
+
+  // Fetch ETF & Constituent Stocks Rotation Data
+  const loadEtfDrilldown = async (etfSymbol, lookback = quadrantLookback, mode = quadrantMode, force = false) => {
+    if (!etfSymbol) return;
+    setDrilldownLoading(true);
+    setDrilldownError(null);
+    try {
+      const res = await fetch(`/api/stage_canslim/etf_drilldown?etf=${etfSymbol}&lookback=${lookback}&mode=${mode}&force=${force ? 'true' : 'false'}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load ${etfSymbol} basket constituents`);
+      const json = await res.json();
+      setDrilldownData(json);
+      setDrilldownEtf(etfSymbol);
+      setAnimationStep(lookback);
+      if (json.sector_etfs && json.sector_etfs.length > 0) {
+        setSelectedQuadrantEtf(json.sector_etfs[0].ticker);
+      }
+    } catch (err) {
+      console.error(`Error loading ETF drilldown for ${etfSymbol}:`, err);
+      setDrilldownError(err.message);
+    } finally {
+      setDrilldownLoading(false);
+    }
+  };
+
+  const handleOpenDrilldown = (etfSymbol) => {
+    setActiveSectorFilter('ALL');
+    loadEtfDrilldown(etfSymbol, quadrantLookback, quadrantMode);
+  };
+
+  const handleBackToMacro = () => {
+    setDrilldownEtf(null);
+    setDrilldownData(null);
+    setActiveSectorFilter('ALL');
+    if (quadrantData?.sector_etfs && quadrantData.sector_etfs.length > 0) {
+      setSelectedQuadrantEtf(quadrantData.sector_etfs[0].ticker);
+    }
+  };
+
+  // Active quadrant dataset: drilldown basket if an ETF is selected, otherwise macro sector rotation
+  const activeQuadrantData = drilldownEtf ? drilldownData : quadrantData;
+  const isDrilldownMode = Boolean(drilldownEtf);
+
+  // Dynamic Real-Time Stage Transition Radar: recalculates live as user scrubs the timeline slider
+  const dynamicTransitions = useMemo(() => {
+    const currentList = activeQuadrantData?.sector_etfs || [];
+    if (!currentList.length) return activeQuadrantData?.stage_transitions || {};
+
+    const s1 = [];
+    const s2 = [];
+    const s3 = [];
+    const s4 = [];
+
+    currentList.forEach((e) => {
+      const rawTrail = e.tail || [];
+      if (!rawTrail.length) return;
+      const idx = Math.min(Math.max(0, animationStep - 1), rawTrail.length - 1);
+      const p = rawTrail[idx];
+      if (!p) return;
+      const x = Number(p.x) || 0;
+      const y = Number(p.y) || 0;
+
+      // Stan Weinstein Quadrant mapping:
+      // Q1 (Top-Right): X >= 0, Y >= 0 => Stage 2 (Advancing / Markup)
+      // Q2 (Bottom-Right): X >= 0, Y < 0 => Stage 3 (Distribution / Topping)
+      // Q3 (Bottom-Left): X < 0, Y < 0 => Stage 4 (Declining / Markdown)
+      // Q4 (Top-Left): X < 0, Y >= 0 => Stage 1 (Accumulation / Basing)
+      if (x >= 0 && y >= 0) {
+        s2.push(e.ticker);
+      } else if (x >= 0 && y < 0) {
+        s3.push(e.ticker);
+      } else if (x < 0 && y < 0) {
+        s4.push(e.ticker);
+      } else {
+        s1.push(e.ticker);
+      }
+    });
+
+    return {
+      entering_stage_1: s1,
+      entering_stage_2: s2,
+      entering_stage_3: s3,
+      entering_stage_4: s4
+    };
+  }, [activeQuadrantData, animationStep]);
+
+  // Fetch Sector Stage 4-Quadrant Rotation Data
+  const loadQuadrantData = async (lookback = quadrantLookback, mode = quadrantMode, force = false) => {
+    setQuadrantLoading(true);
+    setQuadrantError(null);
+    try {
+      const res = await fetch(`/api/stage_canslim/sector_stage_rotation?lookback=${lookback}&mode=${mode}&force=${force ? 'true' : 'false'}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load Sector Stage Rotation`);
+      const json = await res.json();
+      setQuadrantData(json);
+      setAnimationStep(lookback);
+      if (!selectedQuadrantEtf && json.sector_etfs && json.sector_etfs.length > 0) {
+        setSelectedQuadrantEtf(json.sector_etfs[0].ticker);
+      }
+    } catch (err) {
+      console.error("Sector Stage Rotation error:", err);
+      setQuadrantError(err.message);
+    } finally {
+      setQuadrantLoading(false);
+    }
+  };
+
+  // Trajectory arc animation loop
+  useEffect(() => {
+    let timer = null;
+    if (isPlayingAnimation) {
+      timer = setInterval(() => {
+        setAnimationStep((prev) => {
+          if (prev >= quadrantLookback) {
+            return 2;
+          }
+          return prev + 1;
+        });
+      }, 450);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isPlayingAnimation, quadrantLookback]);
+
 
   // Fetch summary on load
   const loadData = async (force = false) => {
@@ -71,19 +225,20 @@ export default function StageCanslimScreener() {
   // Open modal for detailed single stock analysis
   const openStockModal = async (ticker) => {
     if (!ticker) return;
+    const cleanSym = encodeURIComponent(ticker.trim().toUpperCase());
     setModalLoading(true);
     setModalTab('CHART');
     setHoveredBar(null);
     setCopiedTicket(false);
-    setActiveStock({ ticker: ticker.toUpperCase(), loading: true });
+    setActiveStock({ ticker: ticker.trim().toUpperCase(), loading: true });
     try {
-      const res = await fetch(`/api/stage_canslim/stock_analysis?ticker=${ticker.toUpperCase()}`);
+      const res = await fetch(`/api/stage_canslim/stock_analysis?ticker=${cleanSym}`);
       if (!res.ok) throw new Error(`Could not fetch analysis for ${ticker}`);
       const json = await res.json();
       setActiveStock(json);
     } catch (err) {
       console.error(err);
-      setActiveStock({ ticker: ticker.toUpperCase(), error: err.message });
+      setActiveStock({ ticker: ticker.trim().toUpperCase(), error: err.message });
     } finally {
       setModalLoading(false);
     }
@@ -100,6 +255,10 @@ export default function StageCanslimScreener() {
   const filteredStocks = useMemo(() => {
     if (!data || !data.stocks) return [];
     let list = data.stocks;
+    if (searchTicker.trim()) {
+      const q = searchTicker.trim().toUpperCase();
+      list = list.filter(s => s.ticker && s.ticker.toUpperCase().includes(q));
+    }
     if (selectedFilter === 'STAGE_2A') {
       return list.filter(s => s.stage_info?.sub_stage === '2A');
     }
@@ -140,7 +299,7 @@ export default function StageCanslimScreener() {
       return list.filter(s => s.stage_info?.sub_stage?.startsWith('3') || s.stage_info?.sub_stage?.startsWith('4'));
     }
     return list;
-  }, [data, selectedFilter]);
+  }, [data, selectedFilter, searchTicker]);
 
   const distribution = data?.stage_distribution || {};
   const alphas = data?.alpha_counts || {};
@@ -180,6 +339,18 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
             </p>
           </div>
           <div className="sc-hero-actions">
+            <button 
+              className="sc-quadrant-trigger-btn"
+              onClick={() => {
+                setShowQuadrantModal(true);
+                if (!quadrantData) loadQuadrantData(quadrantLookback, quadrantMode, false);
+              }}
+              title="Open Stan Weinstein Sector Stage 4-Quadrant Rotation Matrix"
+            >
+              <Compass size={18} className="sc-quadrant-icon" />
+              <span>Sector Stage 4-Quadrant Arc</span>
+              <span className="sc-quadrant-pill-badge">RRG Arc</span>
+            </button>
             <button 
               className="sc-refresh-btn" 
               onClick={() => loadData(true)} 
@@ -350,7 +521,8 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
           <p>{error}</p>
         </div>
       ) : (
-        <div className="sc-table-wrapper">
+        <>
+          <div className="sc-table-wrapper" ref={mainTableScrollRef}>
           <table className="sc-table">
             <thead>
               <tr>
@@ -409,9 +581,9 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
 
                     <td>
                       <div className="sc-stage-cell">
-                        <div className="sc-stage-badge" style={{ backgroundColor: `${stage.status_color}22`, borderColor: stage.status_color, color: stage.status_color }}>
-                          <span className="sc-stage-id">{stage.sub_stage}</span>
-                          <span className="sc-stage-desc">{stage.sub_stage_name}</span>
+                        <div className="sc-stage-badge" style={{ backgroundColor: `${stage.status_color || '#10b981'}22`, borderColor: stage.status_color || '#10b981', color: stage.status_color || '#10b981' }}>
+                          <span className="sc-stage-id">{stage.sub_stage || '2A'}</span>
+                          <span className="sc-stage-desc">{stage.sub_stage_name || 'Stage 2A: Breakout Ignition'}</span>
                         </div>
                         <span className="sc-regime-duration">Duration: {stage.regime_duration_weeks || 1}w</span>
                       </div>
@@ -527,6 +699,9 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
             </tbody>
           </table>
         </div>
+          {/* Horizontal Slider directly under CANSLIM Screener Table */}
+          <SectionHorizontalSlider targetRef={mainTableScrollRef} label="CANSLIM Screener Table Columns" step={260} />
+        </>
       )}
 
       {/* Deep Analysis Modal */}
@@ -555,7 +730,7 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
                     </div>
 
                     <div className="sc-mheader-badges">
-                      <span className="sc-stage-badge" style={{ backgroundColor: `${activeStock.stage_info?.status_color}22`, borderColor: activeStock.stage_info?.status_color, color: activeStock.stage_info?.status_color }}>
+                      <span className="sc-stage-badge" style={{ backgroundColor: `${activeStock.stage_info?.status_color || '#10b981'}22`, borderColor: activeStock.stage_info?.status_color || '#10b981', color: activeStock.stage_info?.status_color || '#10b981' }}>
                         {activeStock.stage_info?.sub_stage_name}
                       </span>
                       {activeStock.stage_info?.ma10_test_label === 'UNDERNEATH_RESISTANCE' && (
@@ -1238,6 +1413,305 @@ Risk Allocation: ${pb.position_sizing?.allocated_capital} (1% max risk basis)`;
           </div>
         </div>
       )}
+
+      {/* Stan Weinstein Sector Stage 4-Quadrant Rotation Matrix Modal */}
+      {showQuadrantModal && (
+        <div className="sc-modal-overlay" onClick={() => setShowQuadrantModal(false)}>
+          <div className="sc-quadrant-modal-content" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="sc-qmodal-header">
+              <div className="sc-qmodal-title-area">
+                <div className="sc-qmodal-title-icon">
+                  <Compass size={24} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    {isDrilldownMode && (
+                      <button
+                        className="sc-qdrilldown-back-btn"
+                        onClick={handleBackToMacro}
+                        title="Back to All Sectors & Themes Overview"
+                      >
+                        <ArrowLeft size={15} />
+                        <span>All Sectors</span>
+                      </button>
+                    )}
+                    <h2>
+                      {isDrilldownMode
+                        ? `${drilldownEtf} Constituent Stocks 4-Quadrant Rotation Matrix 🧭`
+                        : 'Stan Weinstein Sector Stage 4-Quadrant Rotation Matrix 🧭'}
+                    </h2>
+                  </div>
+                  <p className="sc-qmodal-subtitle">
+                    {isDrilldownMode
+                      ? `Drilldown: ${drilldownData?.etf_name || `${drilldownEtf} Basket`} • ${activeQuadrantData?.sector_etfs?.length || 0} Pure-Play Constituent Stocks plotted relative to ${drilldownEtf} anchor`
+                      : 'Tracking 36 US Sector & Thematic ETFs + Market Benchmarks • Dynamic Movement Arcs • Real-Time Stage Transition Radar'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="sc-qmodal-header-actions">
+                <button 
+                  className="sc-refresh-btn" 
+                  onClick={() => {
+                    if (isDrilldownMode) {
+                      loadEtfDrilldown(drilldownEtf, quadrantLookback, quadrantMode, true);
+                    } else {
+                      loadQuadrantData(quadrantLookback, quadrantMode, true);
+                    }
+                  }}
+                  disabled={quadrantLoading || drilldownLoading}
+                  style={{ padding: '0.45rem 0.9rem', fontSize: '0.8rem' }}
+                >
+                  <RefreshCw size={14} className={(quadrantLoading || drilldownLoading) ? 'sc-spin' : ''} />
+                  {(quadrantLoading || drilldownLoading) ? 'Updating...' : 'Refresh Matrix'}
+                </button>
+                <button 
+                  className="sc-qmodal-close-btn" 
+                  onClick={() => setShowQuadrantModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="sc-qmodal-body">
+              {(quadrantLoading && !quadrantData) || (drilldownLoading && !drilldownData) ? (
+                <div className="sc-modal-loading" style={{ minHeight: '420px' }}>
+                  <Flame size={40} className="sc-flame-icon sc-spin" />
+                  <p>
+                    {isDrilldownMode
+                      ? `Calculating 4-Quadrant Stage Arcs for ${drilldownEtf} Basket Holdings...`
+                      : 'Calculating 4-Quadrant Stage Arcs for Sector ETFs...'}
+                  </p>
+                </div>
+              ) : (quadrantError && !drilldownEtf) ? (
+                <div className="sc-modal-error" style={{ minHeight: '420px' }}>
+                  <AlertTriangle size={40} color="#ef4444" />
+                  <h3>Error Loading Sector Stage Matrix</h3>
+                  <p>{quadrantError}</p>
+                  <button className="sc-btn-primary" onClick={() => loadQuadrantData(quadrantLookback, quadrantMode, true)}>
+                    Retry
+                  </button>
+                </div>
+              ) : (drilldownError && isDrilldownMode) ? (
+                <div className="sc-modal-error" style={{ minHeight: '420px' }}>
+                  <AlertTriangle size={40} color="#ef4444" />
+                  <h3>Error Loading {drilldownEtf} Basket Constituents</h3>
+                  <p>{drilldownError}</p>
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                    <button className="sc-btn-primary" onClick={() => loadEtfDrilldown(drilldownEtf, quadrantLookback, quadrantMode, true)}>
+                      Retry
+                    </button>
+                    <button className="sc-btn-secondary" onClick={handleBackToMacro}>
+                      Back to All Sectors
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* ETF Drilldown Top Banner & Quick Basket Switcher */}
+                  {isDrilldownMode && (
+                    <div className="sc-qdrilldown-banner">
+                      <div className="sc-qdrilldown-left">
+                        <span className="sc-qdrilldown-badge">ETF BASKET DRILLDOWN</span>
+                        <span className="sc-qdrilldown-ticker">{drilldownEtf}</span>
+                        <span className="sc-qdrilldown-name">
+                          {drilldownData?.etf_name || `${drilldownEtf} Basket`}
+                        </span>
+                        <span className="sc-qdrilldown-count">
+                          {activeQuadrantData?.sector_etfs?.length || 0} Pure-Play Stocks
+                        </span>
+                      </div>
+
+                      <div className="sc-qdrilldown-chips-wrap">
+                        <span className="sc-qdrilldown-chips-label">Quick Switch:</span>
+                        <div className="sc-qdrilldown-chips">
+                          {POPULAR_DRILLDOWN_ETFS.map((sym) => (
+                            <button
+                              key={sym}
+                              className={`sc-qdrilldown-chip ${drilldownEtf === sym ? 'active' : ''}`}
+                              onClick={() => handleOpenDrilldown(sym)}
+                            >
+                              {sym}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Controls Bar: Lookback + Coordinates + Category/Stage Filters */}
+                  <div className="sc-qmodal-controls-bar">
+                    <div className="sc-qcontrols-left">
+                      <span className="sc-qctrl-label">Lookback Trail:</span>
+                      <div className="sc-qbtn-group">
+                        {[
+                          { val: 5, label: '5 Weeks' },
+                          { val: 10, label: '10 Weeks' },
+                          { val: 15, label: '15 Weeks' }
+                        ].map(lb => (
+                          <button
+                            key={lb.val}
+                            className={`sc-qbtn ${quadrantLookback === lb.val ? 'active' : ''}`}
+                            onClick={() => {
+                              setQuadrantLookback(lb.val);
+                              if (isDrilldownMode) {
+                                loadEtfDrilldown(drilldownEtf, lb.val, quadrantMode, false);
+                              } else {
+                                loadQuadrantData(lb.val, quadrantMode, false);
+                              }
+                            }}
+                          >
+                            {lb.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <span className="sc-qctrl-label" style={{ marginLeft: '0.5rem' }}>Coordinates:</span>
+                      <div className="sc-qbtn-group">
+                        <button
+                          className={`sc-qbtn ${quadrantMode === 'stage' ? 'active' : ''}`}
+                          onClick={() => {
+                            setQuadrantMode('stage');
+                            if (isDrilldownMode) {
+                              loadEtfDrilldown(drilldownEtf, quadrantLookback, 'stage', false);
+                            } else {
+                              loadQuadrantData(quadrantLookback, 'stage', false);
+                            }
+                          }}
+                        >
+                          Weinstein Stage Model
+                        </button>
+                        <button
+                          className={`sc-qbtn ${quadrantMode === 'rrg' ? 'active' : ''}`}
+                          onClick={() => {
+                            setQuadrantMode('rrg');
+                            if (isDrilldownMode) {
+                              loadEtfDrilldown(drilldownEtf, quadrantLookback, 'rrg', false);
+                            } else {
+                              loadQuadrantData(quadrantLookback, 'rrg', false);
+                            }
+                          }}
+                        >
+                          Mansfield RS Ratio / ROC
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="sc-qcontrols-right">
+                      <span className="sc-qctrl-label">
+                        {isDrilldownMode ? 'Holdings Stage Filter:' : 'Theme & Sector Filter:'}
+                      </span>
+                      <div className="sc-qcategory-strip-wrap">
+                        <div className="sc-qcategory-strip" ref={categoryStripScrollRef}>
+                          <div className="sc-qcategory-strip-inner">
+                            {(activeQuadrantData?.available_themes || [
+                              { id: 'ALL', label: 'All ETFs' }
+                            ]).map(cat => (
+                              <button
+                                key={cat.id}
+                                className={`sc-qcat-pill ${activeSectorFilter === cat.id ? 'active' : ''}`}
+                                onClick={() => setActiveSectorFilter(cat.id)}
+                                title={cat.label}
+                              >
+                                <span>{cat.label}</span>
+                                {cat.count !== undefined && (
+                                  <span className="sc-qcat-count">{cat.count}</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <SectionHorizontalSlider targetRef={categoryStripScrollRef} label="Theme & Sector Filters" compact={true} step={140} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 1: Main Grid: Chart & Slider on Left, HUD on Right with Horizontal Slider */}
+                  <div className="sc-qsection-block">
+                    <div className="sc-qscroll-container" ref={mainGridScrollRef}>
+                      <div className="sc-qmain-grid">
+                        {/* 4-Quadrant Chart Container */}
+                        <div className="sc-qchart-card">
+                          <SectorStageQuadrantChart
+                            data={activeQuadrantData}
+                            activeFilter={activeSectorFilter}
+                            hoveredTicker={hoveredQuadrantEtf}
+                            setHoveredTicker={setHoveredQuadrantEtf}
+                            selectedTicker={selectedQuadrantEtf}
+                            setSelectedTicker={setSelectedQuadrantEtf}
+                            animationStep={animationStep}
+                            mode={quadrantMode}
+                            isDrilldown={isDrilldownMode}
+                            onDrilldown={handleOpenDrilldown}
+                          />
+
+                          {/* Real-Time Stage Transition Radar & Quadrant Chart Horizontal Timeline Slider - Placed directly UNDER Quadrant Graph */}
+                          <SectorStageTimelineSlider
+                            animationStep={animationStep}
+                            setAnimationStep={setAnimationStep}
+                            maxSteps={quadrantLookback}
+                            isPlaying={isPlayingAnimation}
+                            setIsPlaying={setIsPlayingAnimation}
+                            activeData={activeQuadrantData}
+                          />
+                        </div>
+
+                        {/* HUD Inspector Card */}
+                        <SectorStageHudCard
+                          etf={
+                            (activeQuadrantData?.sector_etfs || []).find(e => e.ticker === (hoveredQuadrantEtf || selectedQuadrantEtf)) ||
+                            activeQuadrantData?.sector_etfs?.[0]
+                          }
+                          onOpenAnalysis={openStockModal}
+                          isDrilldown={isDrilldownMode}
+                          onDrilldown={handleOpenDrilldown}
+                          onBackToMacro={handleBackToMacro}
+                          animationStep={animationStep}
+                          quadrantLookback={quadrantLookback}
+                        />
+                      </div>
+                    </div>
+                    {/* Horizontal Slider directly under Main 4-Quadrant Graph & ETF HUD Card Section */}
+                    <SectionHorizontalSlider targetRef={mainGridScrollRef} label="Quadrant Graph & ETF HUD Card" step={200} />
+                  </div>
+
+                  {/* Stage Transition Radar Grid (Dynamically scrubbed by Horizontal Slider!) */}
+                  <SectorStageTransitionRadar
+                    transitions={dynamicTransitions}
+                    sectorEtfs={activeQuadrantData?.sector_etfs || []}
+                    selectedTicker={selectedQuadrantEtf}
+                    onSelectEtf={(ticker) => {
+                      setSelectedQuadrantEtf(ticker);
+                      setHoveredQuadrantEtf(ticker);
+                    }}
+                    isDrilldown={isDrilldownMode}
+                    onDrilldown={handleOpenDrilldown}
+                  />
+
+                  {/* Sector Rotation Leaderboard Table */}
+                  <SectorStageLeaderboardTable
+                    sectorEtfs={activeQuadrantData?.sector_etfs || []}
+                    activeFilter={activeSectorFilter}
+                    selectedTicker={selectedQuadrantEtf}
+                    onSelectEtf={(ticker) => {
+                      setSelectedQuadrantEtf(ticker);
+                      setHoveredQuadrantEtf(ticker);
+                    }}
+                    onOpenAnalysis={openStockModal}
+                    isDrilldown={isDrilldownMode}
+                    drilldownEtf={drilldownEtf}
+                    onDrilldown={handleOpenDrilldown}
+                    onBackToMacro={handleBackToMacro}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1349,34 +1823,46 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
   const priceRange = maxPrice - minPrice || 1;
 
   const getY = (val) => {
-    if (val === null || isNaN(val)) return 0;
-    return padding.top + upperHeight - ((val - minPrice) / priceRange) * upperHeight;
+    if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return padding.top + upperHeight;
+    const res = padding.top + upperHeight - ((val - minPrice) / priceRange) * upperHeight;
+    return (isNaN(res) || !isFinite(res)) ? padding.top + upperHeight : Number(res.toFixed(2));
   };
 
   // Mansfield RS Scale computed on visible bars
-  const rsVals = visibleBars.map(b => b.mansfield_rs || 0);
-  const maxRsAbs = Math.max(10, Math.max(...rsVals.map(Math.abs))) * 1.15;
+  const rsVals = visibleBars.map(b => (b.mansfield_rs && !isNaN(b.mansfield_rs) && isFinite(b.mansfield_rs)) ? b.mansfield_rs : 0);
+  const maxRsAbs = Math.max(10, Math.max(...rsVals.map(v => Math.abs(v) || 0))) * 1.15;
   const lowerTop = padding.top + upperHeight + gap;
 
   const getRsY = (val) => {
-    const normalized = (val - (-maxRsAbs)) / (2 * maxRsAbs);
-    return lowerTop + lowerHeight - normalized * lowerHeight;
+    if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return lowerTop + lowerHeight / 2;
+    const normalized = (val - (-maxRsAbs)) / (2 * maxRsAbs || 1);
+    const res = lowerTop + lowerHeight - normalized * lowerHeight;
+    return (isNaN(res) || !isFinite(res)) ? lowerTop + lowerHeight / 2 : Number(res.toFixed(2));
   };
 
   const zeroRsY = getRsY(0);
 
   // X coordinate
   const barWidth = Math.max(2, Math.min(22, (usableWidth / Math.max(1, visibleBars.length)) * 0.75));
-  const getX = (index) => padding.left + (index / Math.max(1, visibleBars.length - 1)) * usableWidth;
+  const getX = (index) => {
+    if (index === null || index === undefined || isNaN(index) || !isFinite(index)) return padding.left;
+    const denominator = Math.max(1, visibleBars.length - 1);
+    const res = padding.left + (index / denominator) * usableWidth;
+    return (isNaN(res) || !isFinite(res)) ? padding.left : Number(res.toFixed(2));
+  };
 
   // Helper to map date string to nearest bar index in visibleBars
   const findNearestBarIndex = (dateStr) => {
     if (!dateStr || !visibleBars || visibleBars.length === 0) return -1;
     const targetTime = new Date(dateStr).getTime();
+    if (isNaN(targetTime) || !isFinite(targetTime)) return -1;
     let closestIdx = -1;
     let minDiff = Infinity;
     for (let i = 0; i < visibleBars.length; i++) {
-      const barTime = new Date(visibleBars[i].date).getTime();
+      const bDate = visibleBars[i]?.date;
+      if (!bDate) continue;
+      const barTime = new Date(bDate).getTime();
+      if (isNaN(barTime) || !isFinite(barTime)) continue;
       const diff = Math.abs(barTime - targetTime);
       if (diff < minDiff) {
         minDiff = diff;
@@ -1394,15 +1880,20 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
       const pIdx = findNearestBarIndex(w.peak_date);
       const tIdx = findNearestBarIndex(w.trough_date);
       if (pIdx === -1 || tIdx === -1) return null;
+      const xP = getX(pIdx);
+      const yP = getY(w.peak_price);
+      const xT = getX(tIdx);
+      const yT = getY(w.trough_price);
+      if ([xP, yP, xT, yT].some(v => v === undefined || v === null || isNaN(v) || !isFinite(v))) return null;
       return {
         ...w,
         idx,
         pIdx,
         tIdx,
-        xPeak: getX(pIdx),
-        yPeak: getY(w.peak_price),
-        xTrough: getX(tIdx),
-        yTrough: getY(w.trough_price)
+        xPeak: xP,
+        yPeak: yP,
+        xTrough: xT,
+        yTrough: yT
       };
     }).filter(Boolean);
   }, [vcp_info, visibleBars, width]);
@@ -1414,16 +1905,25 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
 
   visibleBars.forEach((b, i) => {
     const x = getX(i);
-    if (b.ma10) {
+    if (!isFinite(x)) return;
+    if (b.ma10 !== undefined && b.ma10 !== null && !isNaN(b.ma10) && isFinite(b.ma10)) {
       const y10 = getY(b.ma10);
-      ma10Path += i === 0 ? `M ${x} ${y10}` : ` L ${x} ${y10}`;
+      if (isFinite(y10)) {
+        ma10Path += ma10Path === '' ? `M ${x} ${y10}` : ` L ${x} ${y10}`;
+      }
     }
-    if (b.ma30) {
+    if (b.ma30 !== undefined && b.ma30 !== null && !isNaN(b.ma30) && isFinite(b.ma30)) {
       const y30 = getY(b.ma30);
-      ma30Path += i === 0 ? `M ${x} ${y30}` : ` L ${x} ${y30}`;
+      if (isFinite(y30)) {
+        ma30Path += ma30Path === '' ? `M ${x} ${y30}` : ` L ${x} ${y30}`;
+      }
     }
-    const yRs = getRsY(b.mansfield_rs);
-    rsPath += i === 0 ? `M ${x} ${yRs}` : ` L ${x} ${yRs}`;
+    if (b.mansfield_rs !== undefined && b.mansfield_rs !== null && !isNaN(b.mansfield_rs) && isFinite(b.mansfield_rs)) {
+      const yRs = getRsY(b.mansfield_rs);
+      if (isFinite(yRs)) {
+        rsPath += rsPath === '' ? `M ${x} ${yRs}` : ` L ${x} ${yRs}`;
+      }
+    }
   });
 
   const pivotY = getY(playbook?.pivot_buy_point);
@@ -1717,33 +2217,35 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
                   />
 
                   {/* Vertically Staggered Compact Badge */}
-                  <g transform={`translate(${badgeX}, ${badgeY})`}>
-                    <rect
-                      x="-25"
-                      y="-8"
-                      width="50"
-                      height="16"
-                      rx="4"
-                      fill="#0f172a"
-                      stroke={isBreach ? "#ef4444" : (isHovered ? "#38bdf8" : "#a855f7")}
-                      strokeWidth={isHovered ? "1.8" : "1"}
-                      opacity="0.95"
-                    />
-                    <text
-                      x="0"
-                      y="3.5"
-                      fill={isBreach ? "#f87171" : (isHovered ? "#38bdf8" : "#e9d5ff")}
-                      fontSize="8.5"
-                      fontWeight="bold"
-                      textAnchor="middle"
-                    >
-                      {w.wave}: -{w.depth_pct}%
-                    </text>
-                  </g>
+                  {!isNaN(badgeX) && !isNaN(badgeY) && (
+                    <g transform={`translate(${badgeX}, ${badgeY})`}>
+                      <rect
+                        x="-25"
+                        y="-8"
+                        width="50"
+                        height="16"
+                        rx="4"
+                        fill="#0f172a"
+                        stroke={isBreach ? "#ef4444" : (isHovered ? "#38bdf8" : "#a855f7")}
+                        strokeWidth={isHovered ? "1.8" : "1"}
+                        opacity="0.95"
+                      />
+                      <text
+                        x="0"
+                        y="3.5"
+                        fill={isBreach ? "#f87171" : (isHovered ? "#38bdf8" : "#e9d5ff")}
+                        fontSize="8.5"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                      >
+                        {w.wave}: -{w.depth_pct}%
+                      </text>
+                    </g>
+                  )}
 
                   {/* Interactive Tooltip Card when Wave is Hovered */}
-                  {isHovered && (
-                    <g transform={`translate(${Math.min(width - padding.right - 200, Math.max(padding.left, w.xPeak - 40))}, ${Math.max(padding.top, w.yPeak - 65)})`}>
+                  {isHovered && !isNaN(w.xPeak) && !isNaN(w.yPeak) && (
+                    <g transform={`translate(${Math.min(width - padding.right - 200, Math.max(padding.left, (w.xPeak || 0) - 40))}, ${Math.max(padding.top, (w.yPeak || 0) - 65)})`}>
                       <rect
                         x="0"
                         y="0"
@@ -1849,3 +2351,1346 @@ function StageChartCanvas({ chartData, playbook, vcp_info, showVcpWaves = true, 
     </div>
   );
 }
+
+// ==============================================================================
+// UNIVERSAL SECTION HORIZONTAL SLIDER COMPONENT
+// Dual-Mode Engine: Seamless Native Scrolling when content overflows (maxScroll > 2)
+// + Dynamic Smooth Panning Transform when content fits (maxScroll <= 2).
+// The slider is NEVER disabled, NEVER frozen, and ALWAYS responds instantaneously.
+// ==============================================================================
+
+function SectionHorizontalSlider({
+  targetRef,
+  label = "Section",
+  step = 180,
+  compact = false
+}) {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const isDraggingRef = useRef(false);
+
+  // Helper to read current target dimensions
+  const getMetrics = useCallback(() => {
+    if (!targetRef?.current) return { maxScroll: 0, scrollLeft: 0, clientWidth: 0, scrollWidth: 0 };
+    const { scrollLeft, scrollWidth, clientWidth } = targetRef.current;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    return { maxScroll, scrollLeft, clientWidth, scrollWidth };
+  }, [targetRef]);
+
+  // Apply horizontal position (percentage from 0 to 100)
+  const applyPosition = useCallback((pct, dragging = false) => {
+    const el = targetRef?.current;
+    if (!el) return;
+    const clampedPct = Math.min(100, Math.max(0, pct));
+    const { maxScroll, clientWidth } = getMetrics();
+
+    if (maxScroll > 2) {
+      // Native scroll mode: content overflows
+      if (el.firstElementChild) {
+        el.firstElementChild.style.transform = '';
+        el.firstElementChild.style.transition = '';
+      }
+      el.scrollLeft = (clampedPct / 100) * maxScroll;
+    } else {
+      // Pan mode: content fits in container, translate horizontally to shift right-side items into view
+      const panDistance = Math.max(280, Math.min(600, Math.round(clientWidth * 0.3)));
+      const shiftPx = (clampedPct / 100) * panDistance;
+      if (el.firstElementChild) {
+        el.firstElementChild.style.transform = `translateX(-${shiftPx}px)`;
+        el.firstElementChild.style.transition = dragging ? 'none' : 'transform 0.25s ease-out';
+      }
+    }
+  }, [targetRef, getMetrics]);
+
+  // Sync scrollProgress when user scrolls natively via trackpad / mousewheel
+  useEffect(() => {
+    const el = targetRef?.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      if (isDraggingRef.current) return;
+      const { maxScroll, scrollLeft } = getMetrics();
+      if (maxScroll > 2) {
+        const pct = Math.min(100, Math.max(0, (scrollLeft / maxScroll) * 100));
+        setScrollProgress(pct);
+      }
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => {
+        const { maxScroll, scrollLeft } = getMetrics();
+        if (maxScroll > 2) {
+          const pct = Math.min(100, Math.max(0, (scrollLeft / maxScroll) * 100));
+          setScrollProgress(pct);
+          if (el.firstElementChild) {
+            el.firstElementChild.style.transform = '';
+          }
+        }
+      });
+      ro.observe(el);
+    }
+
+    return () => {
+      el.removeEventListener('scroll', handleScroll);
+      if (ro) ro.disconnect();
+    };
+  }, [targetRef, getMetrics]);
+
+  // Handle range slider interaction (both onChange and onInput for 60fps tracking)
+  const handleSliderChange = (e) => {
+    const val = parseFloat(e.target.value);
+    setScrollProgress(val);
+    applyPosition(val, true);
+  };
+
+  const handlePointerDown = () => {
+    isDraggingRef.current = true;
+  };
+
+  const handlePointerUp = () => {
+    isDraggingRef.current = false;
+    applyPosition(scrollProgress, false);
+  };
+
+  // Step buttons (◀ Slide Left / Slide Right ▶)
+  const slideBy = (pixelOffset) => {
+    const el = targetRef?.current;
+    if (!el) return;
+    const { maxScroll, clientWidth } = getMetrics();
+
+    if (maxScroll > 2) {
+      el.scrollBy({ left: pixelOffset, behavior: 'smooth' });
+    } else {
+      const panDistance = Math.max(280, Math.min(600, Math.round(clientWidth * 0.3)));
+      const deltaPct = (pixelOffset / panDistance) * 100;
+      const newPct = Math.min(100, Math.max(0, scrollProgress + deltaPct));
+      setScrollProgress(newPct);
+      applyPosition(newPct, false);
+    }
+  };
+
+  // Jump buttons (Start, Center, End)
+  const jumpTo = (pct) => {
+    const el = targetRef?.current;
+    if (!el) return;
+    setScrollProgress(pct);
+    const { maxScroll } = getMetrics();
+
+    if (maxScroll > 2) {
+      el.scrollTo({ left: (pct / 100) * maxScroll, behavior: 'smooth' });
+    } else {
+      applyPosition(pct, false);
+    }
+  };
+
+  return (
+    <div className={`sc-section-slider-bar is-active ${compact ? 'compact' : ''}`}>
+      <div className="sc-sec-slider-left">
+        <button
+          type="button"
+          className="sc-sec-slide-btn"
+          onClick={() => slideBy(-step)}
+          disabled={scrollProgress <= 0.5}
+          title={`Slide ${label} Left (◀)`}
+        >
+          <ChevronLeft size={13} />
+          <span>Slide Left</span>
+        </button>
+      </div>
+
+      <div className="sc-sec-slider-center">
+        <div className="sc-sec-slider-track-wrap">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="0.5"
+            value={scrollProgress}
+            onChange={handleSliderChange}
+            onInput={handleSliderChange}
+            onMouseDown={handlePointerDown}
+            onMouseUp={handlePointerUp}
+            onTouchStart={handlePointerDown}
+            onTouchEnd={handlePointerUp}
+            className="sc-sec-range-input"
+            title={`Slide ${label} horizontally (${Math.round(scrollProgress)}%)`}
+          />
+        </div>
+
+        <div className="sc-sec-slider-meta">
+          <div className="sc-sec-slider-label">
+            <Sliders size={12} color="#38bdf8" />
+            <span>
+              Slide <strong>{label}</strong>: {Math.round(scrollProgress)}%
+            </span>
+          </div>
+
+          <div className="sc-sec-jump-group">
+            <button
+              type="button"
+              className="sc-sec-jump-btn"
+              onClick={() => jumpTo(0)}
+              disabled={scrollProgress <= 0.5}
+              title="Jump to Start (Left Edge)"
+            >
+              Start
+            </button>
+            <button
+              type="button"
+              className="sc-sec-jump-btn"
+              onClick={() => jumpTo(50)}
+              title="Jump to Center"
+            >
+              Center
+            </button>
+            <button
+              type="button"
+              className="sc-sec-jump-btn"
+              onClick={() => jumpTo(100)}
+              disabled={scrollProgress >= 99.5}
+              title="Jump to End (Right Edge)"
+            >
+              End
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="sc-sec-slider-right">
+        <button
+          type="button"
+          className="sc-sec-slide-btn"
+          onClick={() => slideBy(step)}
+          disabled={scrollProgress >= 99.5}
+          title={`Slide ${label} Right (▶)`}
+        >
+          <span>Slide Right</span>
+          <ChevronRight size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================
+// STAN WEINSTEIN SECTOR STAGE 4-QUADRANT ROTATION MATRIX COMPONENTS
+// ==============================================================================
+
+function SectorStageTimelineSlider({
+  animationStep,
+  setAnimationStep,
+  maxSteps = 10,
+  isPlaying,
+  setIsPlaying,
+  activeData
+}) {
+  // Determine current date corresponding to animationStep
+  const currentDate = useMemo(() => {
+    if (!activeData?.sector_etfs?.length) return null;
+    const firstEtf = activeData.sector_etfs[0];
+    const tail = firstEtf?.tail || [];
+    const idx = Math.min(Math.max(0, animationStep - 1), tail.length - 1);
+    return tail[idx]?.date || null;
+  }, [activeData, animationStep]);
+
+  const isRealTime = animationStep >= maxSteps;
+
+  return (
+    <div className="sc-qtimeline-slider-bar">
+      <div className="sc-qtl-controls-left">
+        <button
+          className="sc-qtl-btn"
+          onClick={() => {
+            setIsPlaying(false);
+            setAnimationStep(1);
+          }}
+          title="Jump to Inception (Week 1)"
+        >
+          <SkipBack size={13} />
+          <span>Start</span>
+        </button>
+
+        <button
+          className="sc-qtl-btn"
+          onClick={() => {
+            setIsPlaying(false);
+            setAnimationStep((prev) => Math.max(1, prev - 1));
+          }}
+          disabled={animationStep <= 1}
+          title="Step Back 1 Week"
+        >
+          ◀ -1 Wk
+        </button>
+
+        <button
+          className={`sc-qtl-btn sc-qtl-play-btn ${isPlaying ? 'is-playing' : ''}`}
+          onClick={() => setIsPlaying(!isPlaying)}
+          title={isPlaying ? "Pause Timeline Animation" : "Play Timeline Animation"}
+        >
+          {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+          <span>{isPlaying ? 'Pause' : 'Play Timeline'}</span>
+        </button>
+
+        <button
+          className="sc-qtl-btn"
+          onClick={() => {
+            setIsPlaying(false);
+            setAnimationStep((prev) => Math.min(maxSteps, prev + 1));
+          }}
+          disabled={animationStep >= maxSteps}
+          title="Step Forward 1 Week"
+        >
+          +1 Wk ▶
+        </button>
+
+        <button
+          className={`sc-qtl-btn ${isRealTime ? 'sc-qtl-rt-active' : ''}`}
+          onClick={() => {
+            setIsPlaying(false);
+            setAnimationStep(maxSteps);
+          }}
+          title="Jump to Real-Time Present"
+        >
+          <SkipForward size={13} />
+          <span>Real-Time</span>
+        </button>
+      </div>
+
+      <div className="sc-qtl-slider-wrap">
+        <div className="sc-qtl-slider-header">
+          <div className="sc-qtl-label-group">
+            <span className="sc-qtl-title">Historical Rotation Timeline Scrubber</span>
+            <span className="sc-qtl-status-pill">
+              {isRealTime ? (
+                <span className="sc-qtl-badge-rt">⚡ REAL-TIME PRESENT</span>
+              ) : (
+                <span className="sc-qtl-badge-replay">⏱ HISTORICAL REPLAY (T-{maxSteps - animationStep} WEEKS)</span>
+              )}
+            </span>
+          </div>
+
+          <div className="sc-qtl-date-readout">
+            <Calendar size={13} />
+            <span className="sc-qtl-week-num">Week {animationStep} of {maxSteps}</span>
+            {currentDate && <span className="sc-qtl-date-tag">{currentDate}</span>}
+          </div>
+        </div>
+
+        <div className="sc-qtl-range-container">
+          <input
+            type="range"
+            min="1"
+            max={maxSteps}
+            value={animationStep}
+            onChange={(e) => {
+              setIsPlaying(false);
+              setAnimationStep(Number(e.target.value));
+            }}
+            className="sc-qtl-range-input"
+          />
+          <div className="sc-qtl-ticks">
+            {Array.from({ length: maxSteps }, (_, i) => i + 1).map((stepNum) => (
+              <span
+                key={stepNum}
+                className={`sc-qtl-tick ${stepNum === animationStep ? 'active' : ''}`}
+                onClick={() => {
+                  setIsPlaying(false);
+                  setAnimationStep(stepNum);
+                }}
+              >
+                {stepNum === 1 ? 'W1' : stepNum === maxSteps ? 'Now' : `W${stepNum}`}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectorStageQuadrantChart({
+  data,
+  activeFilter = 'ALL',
+  hoveredTicker,
+  setHoveredTicker,
+  selectedTicker,
+  setSelectedTicker,
+  animationStep = 10,
+  mode = 'stage',
+  isDrilldown = false,
+  onDrilldown
+}) {
+  const bounds = data?.bounds || { max_abs_x: 16, max_abs_y: 12 };
+  const maxAbsX = Math.max(bounds.max_abs_x || 16, 10);
+  const maxAbsY = Math.max(bounds.max_abs_y || 12, 8);
+
+  // SVG coordinate canvas constants (980x660 with generous margins to avoid right-edge clipping)
+  const ox = 490; // Center X
+  const oy = 330; // Center Y
+  const halfW = 390;
+  const halfH = 260;
+
+  const scaleX = (x) => ox + ((Number(x) || 0) / maxAbsX) * halfW;
+  const scaleY = (y) => oy - ((Number(y) || 0) / maxAbsY) * halfH;
+
+  const filteredEtfs = useMemo(() => {
+    const list = data?.sector_etfs || [];
+    if (!activeFilter || activeFilter === 'ALL') return list;
+    const filterUpper = activeFilter.toUpperCase();
+    return list.filter((e) => {
+      // In drilldown mode, always keep the ETF anchor visible for reference!
+      if (e.is_etf_anchor) return true;
+
+      const cat = (e.category || '').toUpperCase();
+      const themeId = (e.theme_id || '').toUpperCase();
+      const currentQuad = Number(e.current_quadrant);
+      const quadShort = (e.current_quadrant_short || '').toUpperCase();
+
+      if (filterUpper === 'STAGE2') return currentQuad === 2 || quadShort.includes('STAGE 2');
+      if (filterUpper === 'STAGE1') return currentQuad === 1 || quadShort.includes('STAGE 1');
+      if (filterUpper === 'STAGE3') return currentQuad === 3 || quadShort.includes('STAGE 3');
+      if (filterUpper === 'STAGE4') return currentQuad === 4 || quadShort.includes('STAGE 4');
+
+      if (filterUpper === 'SECTORS') return cat === 'SECTORS' || cat === 'GROWTH' || cat === 'CYCLICAL' || cat === 'DEFENSIVE' || cat === 'SENSITIVE';
+      if (filterUpper === 'THEMATIC') return cat === 'THEMATIC';
+      return cat === filterUpper || themeId === filterUpper;
+    });
+  }, [data, activeFilter]);
+
+  return (
+    <div className="sc-qchart-svg-wrap">
+      <svg
+        viewBox="0 0 980 660"
+        className="sc-qchart-svg"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <defs>
+          <radialGradient id="qPulseGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+          </radialGradient>
+          <filter id="qGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* 4 Quadrants Shaded Zones */}
+        {/* Q1 (Top-Right): Stage 2 (Advancing / Markup) */}
+        <rect
+          x={ox}
+          y={oy - halfH}
+          width={halfW}
+          height={halfH}
+          fill="rgba(16, 185, 129, 0.04)"
+          stroke="rgba(16, 185, 129, 0.2)"
+          strokeDasharray="4 4"
+        />
+        <g transform={`translate(${ox + 16}, ${oy - halfH + 26})`}>
+          <text fill="#10b981" fontSize="12.5" fontWeight="800" letterSpacing="0.06em">
+            STAGE 2: ADVANCING (MARKUP) 🚀
+          </text>
+          <text y="16" fill="#34d399" fontSize="10" opacity="0.75" fontWeight="500">
+            Price &gt; 30W-SMA • Upward Slope • Bullish Leadership
+          </text>
+        </g>
+
+        {/* Q2 (Bottom-Right): Stage 3 (Distribution / Topping) */}
+        <rect
+          x={ox}
+          y={oy}
+          width={halfW}
+          height={halfH}
+          fill="rgba(236, 72, 153, 0.04)"
+          stroke="rgba(236, 72, 153, 0.2)"
+          strokeDasharray="4 4"
+        />
+        <g transform={`translate(${ox + 16}, ${oy + halfH - 26})`}>
+          <text fill="#ec4899" fontSize="12.5" fontWeight="800" letterSpacing="0.06em">
+            STAGE 3: TOPPING (DISTRIBUTION) ⚠️
+          </text>
+          <text y="16" fill="#f472b6" fontSize="10" opacity="0.75" fontWeight="500">
+            Price High • Decelerating Momentum • Distribution Churn
+          </text>
+        </g>
+
+        {/* Q3 (Bottom-Left): Stage 4 (Declining / Markdown) */}
+        <rect
+          x={ox - halfW}
+          y={oy}
+          width={halfW}
+          height={halfH}
+          fill="rgba(239, 68, 68, 0.04)"
+          stroke="rgba(239, 68, 68, 0.2)"
+          strokeDasharray="4 4"
+        />
+        <g transform={`translate(${ox - halfW + 16}, ${oy + halfH - 26})`}>
+          <text fill="#ef4444" fontSize="12.5" fontWeight="800" letterSpacing="0.06em">
+            STAGE 4: DECLINING (MARKDOWN) 🔻
+          </text>
+          <text y="16" fill="#f87171" fontSize="10" opacity="0.75" fontWeight="500">
+            Price &lt; 30W-SMA • Downward Slope • Strict Capital Avoidance
+          </text>
+        </g>
+
+        {/* Q4 (Top-Left): Stage 1 (Accumulation / Basing) */}
+        <rect
+          x={ox - halfW}
+          y={oy - halfH}
+          width={halfW}
+          height={halfH}
+          fill="rgba(139, 92, 246, 0.04)"
+          stroke="rgba(139, 92, 246, 0.2)"
+          strokeDasharray="4 4"
+        />
+        <g transform={`translate(${ox - halfW + 16}, ${oy - halfH + 26})`}>
+          <text fill="#8b5cf6" fontSize="12.5" fontWeight="800" letterSpacing="0.06em">
+            STAGE 1: ACCUMULATION (BASING) 🔄
+          </text>
+          <text y="16" fill="#a78bfa" fontSize="10" opacity="0.75" fontWeight="500">
+            Bottom Consolidation • Momentum Curling Up • Pre-Breakout Watch
+          </text>
+        </g>
+
+        {/* Concentric Distance Reference Ellipses */}
+        {[0.35, 0.7, 1.0].map((ratio, idx) => (
+          <ellipse
+            key={`guide-${idx}`}
+            cx={ox}
+            cy={oy}
+            rx={halfW * ratio}
+            ry={halfH * ratio}
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.05)"
+            strokeDasharray="3 3"
+          />
+        ))}
+
+        {/* Center Crosshair Axes */}
+        <line
+          x1={ox - halfW - 10}
+          y1={oy}
+          x2={ox + halfW + 10}
+          y2={oy}
+          stroke="#475569"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+        />
+        <line
+          x1={ox}
+          y1={oy - halfH - 10}
+          x2={ox}
+          y2={oy + halfH + 10}
+          stroke="#475569"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+        />
+
+        {/* Center Origin Mark */}
+        <circle cx={ox} cy={oy} r="4.5" fill="#94a3b8" />
+        <text x={ox + 8} y={oy - 8} fill="#64748b" fontSize="9.5" fontWeight="700">
+          SPY Benchmark Parity (0, 0)
+        </text>
+
+        {/* Dynamic Axis Titles */}
+        <text
+          x={ox + halfW - 10}
+          y={oy - 10}
+          textAnchor="end"
+          fill="#94a3b8"
+          fontSize="10"
+          fontWeight="700"
+        >
+          {mode === 'stage' ? '+ Distance to 30W-SMA (%) ➔' : '+ Mansfield RS Ratio vs SPY ➔'}
+        </text>
+        <text
+          x={ox - halfW + 10}
+          y={oy - 10}
+          textAnchor="start"
+          fill="#94a3b8"
+          fontSize="10"
+          fontWeight="700"
+        >
+          {mode === 'stage' ? '⬅ - Distance to 30W-SMA (%)' : '⬅ - Mansfield RS Ratio'}
+        </text>
+        <text
+          x={ox + 10}
+          y={oy - halfH + 15}
+          textAnchor="start"
+          fill="#94a3b8"
+          fontSize="10"
+          fontWeight="700"
+        >
+          {mode === 'stage' ? '⬆ + Velocity / 30W Slope (%)' : '⬆ + Relative Strength Momentum (%)'}
+        </text>
+        <text
+          x={ox + 10}
+          y={oy + halfH - 15}
+          textAnchor="start"
+          fill="#94a3b8"
+          fontSize="10"
+          fontWeight="700"
+        >
+          {mode === 'stage' ? '⬇ - Decelerating Velocity / Slope' : '⬇ - Decelerating RS Momentum'}
+        </text>
+
+        {/* Sector Movement Arcs (Tail and Head) */}
+        {filteredEtfs.map((e) => {
+          const rawTrail = e.tail || [];
+          const maxIdx = Math.min(rawTrail.length, animationStep || rawTrail.length);
+          const pts = rawTrail.slice(0, maxIdx);
+          if (pts.length < 2) return null;
+
+          const isHovered = hoveredTicker === e.ticker;
+          const isSelected = selectedTicker === e.ticker;
+          const isHighlight = isHovered || isSelected;
+          const isDimmed = Boolean(hoveredTicker && !isHighlight);
+          const isAnchor = Boolean(e.is_etf_anchor);
+
+          // Build smooth trajectory path
+          let pathD = `M ${scaleX(pts[0].x)},${scaleY(pts[0].y)}`;
+          for (let i = 1; i < pts.length; i++) {
+            const p0 = pts[i - 1];
+            const p1 = pts[i];
+            const mx = (scaleX(p0.x) + scaleX(p1.x)) / 2;
+            const my = (scaleY(p0.y) + scaleY(p1.y)) / 2;
+            pathD += ` Q ${scaleX(p0.x)},${scaleY(p0.y)} ${mx},${my}`;
+          }
+          const last = pts[pts.length - 1];
+          pathD += ` L ${scaleX(last.x)},${scaleY(last.y)}`;
+
+          // Head velocity vector
+          const prevPt = pts[pts.length - 2];
+          const hx = scaleX(last.x);
+          const hy = scaleY(last.y);
+          const px = scaleX(prevPt.x);
+          const py = scaleY(prevPt.y);
+
+          const vx = hx - px;
+          const vy = hy - py;
+          const vlen = Math.sqrt(vx * vx + vy * vy) || 1;
+          const ux = vx / vlen;
+          const uy = vy / vlen;
+
+          // Directional arrow protruding from head
+          const arrowTipX = hx + ux * (isAnchor ? 26 : 22);
+          const arrowTipY = hy + uy * (isAnchor ? 26 : 22);
+          const leftBarbX = arrowTipX - ux * 9 - uy * 5;
+          const leftBarbY = arrowTipY - uy * 9 + ux * 5;
+          const rightBarbX = arrowTipX - ux * 9 + uy * 5;
+          const rightBarbY = arrowTipY - uy * 9 - ux * 5;
+
+          const strokeCol = isAnchor ? '#f59e0b' : (e.color || '#38bdf8');
+
+          return (
+            <g
+              key={e.ticker}
+              className={`sc-arc-group ${isHighlight ? 'is-highlight' : ''}`}
+              filter={isHighlight ? 'url(#qGlowFilter)' : undefined}
+            >
+              {/* Movement Arc Trail Line */}
+              <path
+                d={pathD}
+                stroke={strokeCol}
+                strokeWidth={isAnchor ? (isHighlight ? 5.5 : 3.8) : (isHighlight ? 4.5 : 2.5)}
+                strokeOpacity={isDimmed ? 0.15 : isHighlight ? 1 : 0.8}
+                strokeDasharray={isAnchor ? '6 3' : undefined}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Trail Checkpoints along Arc (Fading Tail) */}
+              {pts.map((p, pIdx) => {
+                if (pIdx === pts.length - 1) return null; // Head drawn separately
+                const dotR = isAnchor ? 4 : (isHighlight ? 3.5 : 2 + (pIdx / pts.length) * 2);
+                const dotOp = isDimmed ? 0.12 : 0.25 + (pIdx / pts.length) * 0.7;
+                return (
+                  <circle
+                    key={`pt-${e.ticker}-${pIdx}`}
+                    cx={scaleX(p.x)}
+                    cy={scaleY(p.y)}
+                    r={dotR}
+                    fill={strokeCol}
+                    opacity={dotOp}
+                    cursor="pointer"
+                    onMouseEnter={() => setHoveredTicker(e.ticker)}
+                    onMouseLeave={() => setHoveredTicker(null)}
+                    onClick={() => setSelectedTicker(e.ticker)}
+                  >
+                    <title>{`${e.ticker} (${p.date}): Close $${p.close}, X=${p.x}%, Y=${p.y}%`}</title>
+                  </circle>
+                );
+              })}
+
+              {/* Head Directional Arrow */}
+              <line
+                x1={hx}
+                y1={hy}
+                x2={arrowTipX}
+                y2={arrowTipY}
+                stroke={strokeCol}
+                strokeWidth={isHighlight ? 3.5 : 2}
+                opacity={isDimmed ? 0.25 : 1}
+              />
+              <polygon
+                points={`${arrowTipX},${arrowTipY} ${leftBarbX},${leftBarbY} ${rightBarbX},${rightBarbY}`}
+                fill={strokeCol}
+                opacity={isDimmed ? 0.25 : 1}
+              />
+
+              {/* Anchor Target Ring */}
+              {isAnchor && (
+                <circle
+                  cx={hx}
+                  cy={hy}
+                  r={isHighlight ? 20 : 16}
+                  fill="none"
+                  stroke="#f59e0b"
+                  strokeWidth="2"
+                  strokeDasharray="4 2"
+                  opacity={0.8}
+                />
+              )}
+
+              {/* Head Outer Pulse Ring */}
+              <circle
+                cx={hx}
+                cy={hy}
+                r={isHighlight ? 15 : 9}
+                fill={strokeCol}
+                opacity={isHighlight ? 0.45 : 0.22}
+                className={isHighlight ? 'sc-arc-head-pulse' : ''}
+              />
+
+              {/* Head Core Circle */}
+              <circle
+                cx={hx}
+                cy={hy}
+                r={isAnchor ? (isHighlight ? 8 : 6.5) : (isHighlight ? 6.5 : 5)}
+                fill={strokeCol}
+                stroke="#ffffff"
+                strokeWidth={isHighlight ? 2.5 : 1.5}
+                cursor="pointer"
+                onMouseEnter={() => setHoveredTicker(e.ticker)}
+                onMouseLeave={() => setHoveredTicker(null)}
+                onClick={() => setSelectedTicker(e.ticker)}
+                onDoubleClick={() => {
+                  if (!isDrilldown && onDrilldown) {
+                    onDrilldown(e.ticker);
+                  }
+                }}
+              />
+
+              {/* Ticker Name Badge Pill with Smart Edge Boundary Flipping */}
+              {(() => {
+                const pillWidth = isAnchor ? 72 : 46;
+                const isNearRightEdge = hx > (ox + halfW - 40);
+                const isNearTopEdge = hy < (oy - halfH + 35);
+                const badgeOffsetX = isNearRightEdge ? -(pillWidth + 10) : (ux >= 0 ? 12 : -(pillWidth + 8));
+                const badgeOffsetY = isNearTopEdge ? 18 : (uy >= 0 ? -16 : 14);
+
+                return (
+                  <g
+                    transform={`translate(${hx + badgeOffsetX}, ${hy + badgeOffsetY})`}
+                    cursor="pointer"
+                    onMouseEnter={() => setHoveredTicker(e.ticker)}
+                    onMouseLeave={() => setHoveredTicker(null)}
+                    onClick={() => setSelectedTicker(e.ticker)}
+                    onDoubleClick={() => {
+                      if (!isDrilldown && onDrilldown) {
+                        onDrilldown(e.ticker);
+                      }
+                    }}
+                  >
+                    <rect
+                      x="-4"
+                      y="-12"
+                      width={pillWidth}
+                      height="18"
+                      rx="5"
+                      fill="#090e1a"
+                      stroke={strokeCol}
+                      strokeWidth={isHighlight ? 2.2 : (isAnchor ? 1.8 : 1.2)}
+                      opacity={isDimmed ? 0.25 : 0.95}
+                    />
+                    <text
+                      x={pillWidth / 2 - 4}
+                      y="1"
+                      textAnchor="middle"
+                      fill={isAnchor ? '#f59e0b' : '#ffffff'}
+                      fontSize="10"
+                      fontWeight="800"
+                      fontFamily="monospace"
+                      opacity={isDimmed ? 0.25 : 1}
+                    >
+                      {isAnchor ? `★ ${e.ticker}` : e.ticker}
+                    </text>
+                  </g>
+                );
+              })()}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function SectorStageHudCard({
+  etf,
+  onOpenAnalysis,
+  isDrilldown = false,
+  onDrilldown,
+  onBackToMacro,
+  animationStep,
+  quadrantLookback = 10
+}) {
+  if (!etf) {
+    return (
+      <div className="sc-qhud-card">
+        <div className="sc-qhud-title-wrap">
+          <span className="sc-qhud-name">Hover or select an asset on the chart</span>
+        </div>
+      </div>
+    );
+  }
+
+  const rawTrail = etf.tail || [];
+  const hasHistoricalData = rawTrail.length > 0;
+  const histIdx = Math.min(Math.max(0, (animationStep || quadrantLookback) - 1), rawTrail.length - 1);
+  const histPt = hasHistoricalData ? rawTrail[histIdx] : null;
+  const isHistorical = animationStep < quadrantLookback && histPt;
+
+  const displayPrice = isHistorical ? histPt.close : (etf.current_price || histPt?.close || 0);
+  const displayDist = isHistorical ? (histPt.dist_ma30_pct ?? histPt.x) : etf.dist_ma30_pct;
+  const displaySlope = isHistorical ? (histPt.ma30_slope_pct ?? histPt.y) : etf.ma30_slope_pct;
+  const displayRS = isHistorical ? histPt.mansfield_rs : etf.mansfield_rs;
+  const badgeColor = etf.quadrant_color || '#10b981';
+
+  return (
+    <div className="sc-qhud-card">
+      <div className="sc-qhud-header">
+        <div>
+          <div className="sc-qhud-title-wrap">
+            <span className="sc-qhud-ticker">{etf.ticker}</span>
+            <span className="sc-qhud-name">{etf.name}</span>
+          </div>
+          <div style={{ marginTop: '0.25rem', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            <span
+              style={{
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                padding: '0.15rem 0.45rem',
+                borderRadius: '4px',
+                background: etf.is_etf_anchor ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255,255,255,0.08)',
+                color: etf.is_etf_anchor ? '#f59e0b' : '#cbd5e1',
+                border: etf.is_etf_anchor ? '1px solid rgba(245, 158, 11, 0.4)' : undefined
+              }}
+            >
+              {etf.is_etf_anchor ? '★ ETF ANCHOR' : (etf.theme || etf.category || 'Holding')}
+            </span>
+            <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontFamily: 'monospace' }}>
+              ${Number(displayPrice || 0).toFixed(2)}
+            </span>
+            {isHistorical && histPt?.date && (
+              <span style={{ fontSize: '0.68rem', color: '#f59e0b', fontFamily: 'monospace', fontWeight: 700 }}>
+                ({histPt.date})
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div
+          className="sc-qhud-stage-badge"
+          style={{ background: `${badgeColor}22`, border: `1px solid ${badgeColor}66`, color: badgeColor }}
+        >
+          <Activity size={14} />
+          <span>{isHistorical && histPt?.quadrant_name ? histPt.quadrant_name : (etf.sub_stage ? `Stage ${etf.sub_stage}` : etf.current_quadrant_short)}</span>
+        </div>
+      </div>
+
+      {/* Movement Transition Banner */}
+      <div className="sc-qhud-transition-box">
+        <div className="sc-qhud-trans-label">
+          {isHistorical ? `Movement at Week ${animationStep}` : 'Rotational Movement Trajectory'}
+        </div>
+        <div className="sc-qhud-trans-val">
+          <span style={{ fontSize: '1.2rem' }}>{etf.heading_arrow || '↗'}</span>
+          <span>{etf.transition_path}</span>
+        </div>
+        <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+          Heading: {etf.heading_desc} • Speed: {etf.velocity}%
+        </div>
+      </div>
+
+      {/* 4 Quantitative Metrics */}
+      <div className="sc-qhud-stats-grid">
+        <div className="sc-qhud-stat-box">
+          <div className="sc-qhud-stat-label">Dist to 30W-SMA</div>
+          <div
+            className="sc-qhud-stat-val"
+            style={{ color: (displayDist || 0) >= 0 ? '#10b981' : '#ef4444' }}
+          >
+            {(displayDist || 0) >= 0 ? '+' : ''}{displayDist}%
+          </div>
+        </div>
+
+        <div className="sc-qhud-stat-box">
+          <div className="sc-qhud-stat-label">30W-SMA Slope</div>
+          <div
+            className="sc-qhud-stat-val"
+            style={{ color: (displaySlope || 0) >= 0 ? '#10b981' : '#ef4444' }}
+          >
+            {(displaySlope || 0) >= 0 ? '+' : ''}{displaySlope}%
+          </div>
+        </div>
+
+        <div className="sc-qhud-stat-box">
+          <div className="sc-qhud-stat-label">Mansfield RS</div>
+          <div
+            className="sc-qhud-stat-val"
+            style={{ color: (displayRS || 0) >= 0 ? '#10b981' : '#ef4444' }}
+          >
+            {(displayRS || 0) >= 0 ? '+' : ''}{displayRS}
+          </div>
+        </div>
+
+        <div className="sc-qhud-stat-box">
+          <div className="sc-qhud-stat-label">Phase Velocity</div>
+          <div className="sc-qhud-stat-val" style={{ color: '#38bdf8' }}>
+            {etf.velocity}% / bar
+          </div>
+        </div>
+      </div>
+
+      {/* Action Directive */}
+      {etf.action_directive && (
+        <div className="sc-qhud-action-box">
+          <div className="sc-qhud-action-title">Stan Weinstein Directive</div>
+          <div className="sc-qhud-action-text">{etf.action_directive}</div>
+        </div>
+      )}
+
+      {/* Action Buttons: Drilldown into Stocks + Single Stock Analysis */}
+      <div className="sc-qhud-actions-wrap" style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {!isDrilldown && onDrilldown && (
+          <button
+            className="sc-qhud-drilldown-btn"
+            onClick={() => onDrilldown(etf.ticker)}
+            title={`Open 4-Quadrant Matrix for ${etf.ticker} and its constituent stocks`}
+          >
+            <Layers size={14} />
+            <span>Open {etf.ticker} Stocks Quadrant ➔</span>
+          </button>
+        )}
+
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            className={isDrilldown ? "sc-btn-primary" : "sc-btn-secondary"}
+            style={{ flex: 1, padding: '0.6rem 0.8rem', fontSize: '0.8rem' }}
+            onClick={() => onOpenAnalysis(etf.ticker)}
+          >
+            <ExternalLink size={13} />
+            <span>{etf.is_etf_anchor ? `${etf.ticker} Dossier` : `Analyze ${etf.ticker}`}</span>
+          </button>
+
+          {isDrilldown && onBackToMacro && (
+            <button
+              className="sc-qhud-back-btn"
+              onClick={onBackToMacro}
+              title="Return to Macro Sectors & Themes"
+            >
+              <ArrowLeft size={14} />
+              <span>Macro</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectorStageTransitionRadar({
+  transitions = {},
+  sectorEtfs = [],
+  selectedTicker,
+  onSelectEtf,
+  isDrilldown = false,
+  onDrilldown
+}) {
+  const radarScrollRef = useRef(null);
+
+  const etfMap = useMemo(() => {
+    const map = {};
+    sectorEtfs.forEach((e) => {
+      map[e.ticker] = e;
+    });
+    return map;
+  }, [sectorEtfs]);
+
+  const cards = [
+    {
+      title: 'Rotating into Stage 2 (Markup)',
+      key: 'entering_stage_2',
+      color: '#10b981',
+      className: 'stage-2-card',
+      icon: '🚀',
+      desc: 'Expanding momentum above 30W-SMA'
+    },
+    {
+      title: 'Weakening into Stage 3 (Distribution)',
+      key: 'entering_stage_3',
+      color: '#ec4899',
+      className: 'stage-3-card',
+      icon: '⚠️',
+      desc: 'Decelerating velocity, distribution churn'
+    },
+    {
+      title: 'Lagging in Stage 4 (Markdown)',
+      key: 'entering_stage_4',
+      color: '#ef4444',
+      className: 'stage-4-card',
+      icon: '🔻',
+      desc: 'Below declining 30W-SMA, strict avoid'
+    },
+    {
+      title: 'Basing in Stage 1 (Accumulation)',
+      key: 'entering_stage_1',
+      color: '#8b5cf6',
+      className: 'stage-1-card',
+      icon: '🔄',
+      desc: 'Bottoming out, velocity curling up'
+    }
+  ];
+
+  return (
+    <div className="sc-qradar-container">
+      <div className="sc-qradar-title-wrap">
+        <div className="sc-qradar-title">
+          <Compass size={18} color="#38bdf8" />
+          <span>Real-Time Stage Transition Radar</span>
+        </div>
+        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+          {isDrilldown
+            ? 'Dynamic stage migration for constituent stock holdings (scrubbed live by timeline slider)'
+            : 'Tracking rotational migration vectors across all 12 sector groups (scrubbed live by timeline slider)'}
+        </span>
+      </div>
+
+      <div className="sc-qscroll-container" ref={radarScrollRef}>
+        <div className="sc-qradar-grid">
+          {cards.map((c) => {
+            const tickers = transitions[c.key] || [];
+            return (
+              <div key={c.key} className={`sc-qradar-card ${c.className}`}>
+                <div className="sc-qrc-header">
+                  <span className="sc-qrc-label" style={{ color: c.color }}>
+                    {c.icon} {c.title}
+                  </span>
+                  <span className="sc-qrc-count">{tickers.length}</span>
+                </div>
+
+                <div className="sc-qrc-pills">
+                  {tickers.length === 0 ? (
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontStyle: 'italic' }}>
+                      None in this regime
+                    </span>
+                  ) : (
+                    tickers.map((sym) => {
+                      const e = etfMap[sym];
+                      const isSel = selectedTicker === sym;
+                      return (
+                        <button
+                          key={sym}
+                          className="sc-qrc-pill"
+                          style={{
+                            borderColor: isSel ? c.color : undefined,
+                            background: isSel ? `${c.color}22` : undefined
+                          }}
+                          onClick={() => onSelectEtf(sym)}
+                          onDoubleClick={() => {
+                            if (!isDrilldown && onDrilldown) {
+                              onDrilldown(sym);
+                            }
+                          }}
+                          title={!isDrilldown ? `Click to inspect, Double-click to open ${sym} stocks quadrant` : `Click to inspect ${sym}`}
+                        >
+                          <span style={{ color: e?.color || '#f8fafc' }}>{sym}</span>
+                          <span className="sc-qrc-pill-arrow" style={{ color: c.color }}>
+                            {e?.heading_arrow || '➔'}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Horizontal Slider directly under Real-Time Stage Transition Radar Section */}
+      <SectionHorizontalSlider targetRef={radarScrollRef} label="Stage Transition Radar Cards" step={240} />
+    </div>
+  );
+}
+
+function SectorStageLeaderboardTable({
+  sectorEtfs = [],
+  activeFilter = 'ALL',
+  selectedTicker,
+  onSelectEtf,
+  onOpenAnalysis,
+  isDrilldown = false,
+  drilldownEtf = null,
+  onDrilldown,
+  onBackToMacro
+}) {
+  const tableScrollRef = useRef(null);
+
+  const filteredEtfs = useMemo(() => {
+    if (!activeFilter || activeFilter === 'ALL') return sectorEtfs;
+    const filterUpper = activeFilter.toUpperCase();
+    return sectorEtfs.filter((e) => {
+      if (e.is_etf_anchor) return true;
+      const cat = (e.category || '').toUpperCase();
+      const themeId = (e.theme_id || '').toUpperCase();
+      const currentQuad = Number(e.current_quadrant);
+      const quadShort = (e.current_quadrant_short || '').toUpperCase();
+
+      if (filterUpper === 'STAGE2') return currentQuad === 2 || quadShort.includes('STAGE 2');
+      if (filterUpper === 'STAGE1') return currentQuad === 1 || quadShort.includes('STAGE 1');
+      if (filterUpper === 'STAGE3') return currentQuad === 3 || quadShort.includes('STAGE 3');
+      if (filterUpper === 'STAGE4') return currentQuad === 4 || quadShort.includes('STAGE 4');
+
+      if (filterUpper === 'SECTORS') return cat === 'SECTORS' || cat === 'GROWTH' || cat === 'CYCLICAL' || cat === 'DEFENSIVE' || cat === 'SENSITIVE';
+      if (filterUpper === 'THEMATIC') return cat === 'THEMATIC';
+      return cat === filterUpper || themeId === filterUpper;
+    });
+  }, [sectorEtfs, activeFilter]);
+
+  return (
+    <div className="sc-qtable-card">
+      <div className="sc-qtable-header-wrap">
+        <div>
+          <h4>
+            <BarChart2 size={18} color="#38bdf8" />
+            <span>
+              {isDrilldown
+                ? `${drilldownEtf} Constituent Stocks Stage Rotation Leaderboard`
+                : 'Sector & Thematic ETF Stage Rotation Matrix Leaderboard'}
+            </span>
+          </h4>
+          <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+            {isDrilldown
+              ? `Ranked by Weinstein Stage & Velocity • Showing ${filteredEtfs.length} of ${sectorEtfs.length} Basket Holdings`
+              : `Ranked by Weinstein Stage & Rotational Velocity • Showing ${filteredEtfs.length} of ${sectorEtfs.length} ETFs`}
+          </span>
+        </div>
+
+        {isDrilldown && onBackToMacro && (
+          <button
+            className="sc-qdrilldown-back-btn"
+            onClick={onBackToMacro}
+            title="Return to Macro Sectors"
+            style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+          >
+            <ArrowLeft size={14} />
+            <span>Back to All Sectors</span>
+          </button>
+        )}
+      </div>
+
+      <div className="sc-qtable-scroll" ref={tableScrollRef}>
+        <table className="sc-qtable">
+          <thead>
+            <tr>
+              <th>{isDrilldown ? 'Constituent Stock / Symbol' : 'Sector / Theme ETF'}</th>
+              <th>{isDrilldown ? 'Role / Group' : 'Theme / Sector'}</th>
+              <th>Current Stage</th>
+              <th>Quadrant</th>
+              <th>Trajectory Vector</th>
+              <th>Transition Status</th>
+              <th>Dist to 30W-SMA</th>
+              <th>30W Slope</th>
+              <th>Mansfield RS</th>
+              <th>Action Directive</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEtfs.map((e) => {
+              const isSel = selectedTicker === e.ticker;
+              const isAnchor = Boolean(e.is_etf_anchor);
+              return (
+                <tr
+                  key={e.ticker}
+                  style={{
+                    background: isSel
+                      ? 'rgba(56, 189, 248, 0.08)'
+                      : isAnchor
+                      ? 'rgba(245, 158, 11, 0.06)'
+                      : undefined,
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => onSelectEtf(e.ticker)}
+                >
+                  <td>
+                    <div className="sc-qtable-sym-cell">
+                      <span
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          background: isAnchor ? '#f59e0b' : (e.color || '#38bdf8'),
+                          display: 'inline-block'
+                        }}
+                      />
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span className="sc-qtable-ticker">{e.ticker}</span>
+                          {isAnchor && (
+                            <span
+                              style={{
+                                fontSize: '0.62rem',
+                                padding: '0.1rem 0.35rem',
+                                borderRadius: '4px',
+                                background: '#f59e0b22',
+                                color: '#f59e0b',
+                                border: '1px solid #f59e0b66',
+                                fontWeight: 800
+                              }}
+                            >
+                              ANCHOR
+                            </span>
+                          )}
+                        </div>
+                        <div className="sc-qtable-name">{e.name}</div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td>
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '0.15rem 0.45rem',
+                        borderRadius: '4px',
+                        background: 'rgba(255,255,255,0.06)',
+                        color: '#cbd5e1'
+                      }}
+                    >
+                      {e.theme || e.category}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
+                      style={{
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '6px',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        background: `${e.quadrant_color || '#10b981'}22`,
+                        color: e.quadrant_color || '#10b981',
+                        border: `1px solid ${e.quadrant_color || '#10b981'}55`
+                      }}
+                    >
+                      {e.sub_stage ? `Stage ${e.sub_stage}` : e.current_quadrant_short}
+                    </span>
+                  </td>
+
+                  <td style={{ fontWeight: 600, color: '#e2e8f0' }}>
+                    {e.current_quadrant_short}
+                  </td>
+
+                  <td>
+                    <span style={{ fontWeight: 800, color: e.quadrant_color || '#38bdf8', marginRight: '0.35rem' }}>
+                      {e.heading_arrow || '➔'}
+                    </span>
+                    <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                      {e.heading_desc} ({e.velocity}%)
+                    </span>
+                  </td>
+
+                  <td style={{ fontWeight: 700, color: '#38bdf8' }}>
+                    {e.transition_path}
+                  </td>
+
+                  <td
+                    style={{
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      color: e.dist_ma30_pct >= 0 ? '#10b981' : '#ef4444'
+                    }}
+                  >
+                    {e.dist_ma30_pct >= 0 ? '+' : ''}{e.dist_ma30_pct}%
+                  </td>
+
+                  <td
+                    style={{
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      color: e.ma30_slope_pct >= 0 ? '#10b981' : '#ef4444'
+                    }}
+                  >
+                    {e.ma30_slope_pct >= 0 ? '+' : ''}{e.ma30_slope_pct}%
+                  </td>
+
+                  <td
+                    style={{
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      color: e.mansfield_rs >= 0 ? '#10b981' : '#ef4444'
+                    }}
+                  >
+                    {e.mansfield_rs >= 0 ? '+' : ''}{e.mansfield_rs}
+                  </td>
+
+                  <td style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>
+                    {e.action_directive || 'N/A'}
+                  </td>
+
+                  <td>
+                    <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                      {!isDrilldown && onDrilldown && (
+                        <button
+                          className="sc-qtable-action-drill-btn"
+                          title={`Drilldown into ${e.ticker} and its constituent stocks`}
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onDrilldown(e.ticker);
+                          }}
+                        >
+                          <Layers size={11} />
+                          <span>Stocks</span>
+                        </button>
+                      )}
+                      <button
+                        className="sc-qtable-action-btn"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          onOpenAnalysis(e.ticker);
+                        }}
+                      >
+                        Analyze
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {/* Horizontal Slider directly under Sector Rotation Leaderboard Table Section */}
+      <SectionHorizontalSlider targetRef={tableScrollRef} label="Sector Rotation Leaderboard Table" step={240} />
+    </div>
+  );
+}
+

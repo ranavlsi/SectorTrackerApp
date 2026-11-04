@@ -41,36 +41,41 @@ def evaluate_fvg_sma_confluence(ticker, df):
                 
                 # We want a meaningful gap, e.g., > 0.5%
                 if gap_size_pct > 0.5:
-                    recent_fvg = (gap_bottom, gap_top)
+                    recent_fvg = (gap_bottom, gap_top, i)
                     # We continue the loop so we grab the most recent valid FVG
         
         if not recent_fvg:
             return None
-            
-        gap_bottom, gap_top = recent_fvg
-        
-        # 1. Price Retracement: Is current price testing the gap?
-        # Current low dipped into or near the gap, and close is holding around or above it.
-        testing_gap = (curr_low <= gap_top * 1.01) and (curr_close >= gap_bottom * 0.99)
-        
+
+        gap_bottom, gap_top, gap_idx = recent_fvg
+
+        # Require that the FVG was formed in the last 15 trading days
+        days_ago = abs(gap_idx)
+        if days_ago > 15:
+            return None
+
+        # 1. Active Test Rule: TODAY'S Low MUST dip into the FVG gap zone (Low <= gap_top * 1.005)
+        # AND TODAY'S Close MUST hold above or inside the gap (Close >= gap_bottom * 0.99)
+        testing_gap = (curr_low <= gap_top * 1.005) and (curr_close >= gap_bottom * 0.99)
+
         if not testing_gap:
             return None
-            
+
         # 2. SMA Confluence: Does a key SMA sit inside or right near the gap?
         confluent_sma = None
         smas = {'10-day': sma10, '20-day': sma20, '50-day': sma50}
-        
+
         for name, val in smas.items():
-            if val >= gap_bottom * 0.99 and val <= gap_top * 1.01:
+            if val >= gap_bottom * 0.985 and val <= gap_top * 1.015:
                 confluent_sma = name
                 break
-                
+
         if confluent_sma:
             return {
                 "ticker": ticker,
-                "metric": f"FVG Support (${gap_bottom:.2f}-${gap_top:.2f}) + {confluent_sma} SMA Confluence"
+                "metric": f"FVG Support (${gap_bottom:.2f}-${gap_top:.2f}) + {confluent_sma} SMA Confluence ({days_ago}d ago)"
             }
-            
+
         return None
         
     except Exception as e:

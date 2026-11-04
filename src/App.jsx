@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend, Cell, ComposedChart, Line, Bar, Area, LabelList } from 'recharts'
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target, Landmark, Waves, Flame, Rocket } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, FileText, Activity, Filter, X, BarChart2, ActivitySquare, Compass, Search, Loader, Crosshair, Radio, HeartPulse, Maximize, Minimize, Send, Bot, User, Sun, BookOpen, Zap, Link, Star, List, CheckCircle2, Info, ShieldAlert, ShieldCheck, Target, Landmark, Waves, Flame, Rocket, Layers } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import CustomTradingChart from './CustomTradingChart'
 import UnifiedPlotlyChart from './UnifiedPlotlyChart'
+import DeepChartingTerminal from './DeepChartingTerminal'
 import GexHeatmap from './GexHeatmap'
 import VolatilitySurface3D from './VolatilitySurface3D'
 import TradingViewSync from './TradingViewSync'
@@ -51,6 +52,11 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 const ScreenerCategories = {
+  clean_uptrend_9_13: { title: "🚀 Clean Untangled Uptrend (9/13 SMA Inception)", icon: <TrendingUp color="#10b981" />, desc: "Exhaustive Inception Scanner: Detects uncorrupted, untangled bull stacks (Price >= 9 SMA > 13 SMA > 21 SMA > 50 SMA). Resolves 6-month base see-sawing, strictly weeds out mature trends running since April 2026, enforces 9-SMA respect (zero closes below 13 SMA), and catches clean uptrends that only recently started (4 to 30 days ago)." },
+  wick_supply_absorption: { title: "🕯️ Supply Absorption Inside Prior Wick", icon: <Layers color="#f59e0b" />, desc: "Wyckoff Supply Absorption: Stocks coiling strictly inside the upper wick of 1, 2, or 3 days back without breaking down, absorbing overhead supply in Stage 2 uptrend well above all SMAs (Market Cap >= $2B, Daily Volume >= 5M)." },
+  first_ma_pullback: { title: "🎯 First MA Pullback Rejection (Holy Grail Retest)", icon: <Target color="#10b981" />, desc: "Institutional Retest Engine: Stage 2 market leaders making their FIRST clean pullback back to the 21-EMA or 50-SMA with strong downside rejection, Volume Dry-Up (VDU <= 0.80x), or Pocket Pivot Reclaim." },
+  realsimple_framework: { title: "🛡️ Real Simple Framework (Ariel Hernandez)", icon: <Target color="#38bdf8" />, desc: "Ariel Hernandez's Core System: 3-Line Execution Dashboard (9-EMA / 21-EMA / 50-SMA alignment), Relative Strength Line vs SPY outperformance, Volatility Contraction (VCP), and 3-Tier Progressive Exposure Risk Sizing." },
+  best_acting_stocks: { title: "🔥 Best-Acting Stock Apex Radar", icon: <Star color="#fbbf24" />, desc: "5-Pillar Institutional Scoring System: Ranks top leaders by Welles Wilder ADX Trend Strength, Relative Strength vs SPY, Bullish EMA Stacks, Volume Accumulation Footprints, and 52-Week High Proximity." },
   emerging_leaders: { title: "⚡ Emerging Market Leaders (Early Coiling)", icon: <Flame color="#3b82f6" />, desc: "4-Pillar Discovery Engine: Multi-agent quantitative model identifying early-stage market leaders coiling in tight bases with RS Line leading divergence, MA pinch (<5%), Pocket Pivots, and Volume Dry-Up (VDU)." },
   deepvue_launchpad: { title: "DeepVue: Launchpad Setup", icon: <Rocket color="#f43f5e" />, desc: "TraderLion / Deepvue: Moving average convergence (21 SMA, 50 SMA, and 65 EMA pinch within 2.5%) with tight price action and Volume Dry-Up (VDU). Early low-risk entry inside bases." },
   chop_incubation_leaders: { title: "Next Leg Leaders (Chop Incubation)", icon: <ShieldCheck color="#10b981" />, desc: "William O'Neil's 5 Market Chop Rules: Stocks holding above their 50-day line with top-tier Relative Strength, tight base depth (<25%), and Volume Dry-Up (VDU) while the broader market consolidates." },
@@ -95,6 +101,21 @@ const ScreenerCategories = {
   bull_flag_pending: { title: "Bull Flag Pending Breakout", icon: <ActivitySquare color="#f43f5e" />, desc: "Perfectly formed Bull Flags currently coiling inside the flag structure waiting for the volume trigger." },
   earnings_surge: { title: "Earnings Surge (PEDP)", icon: <TrendingUp color="#ec4899" />, desc: "High Post-Earnings Drift Potential: Massive EPS beats corroborated by heavy upward analyst estimate revisions." }
 }
+
+export const fetchNoCache = (url, options = {}) => {
+  const separator = url.includes('?') ? '&' : '?';
+  return fetch(`${url}${separator}_t=${Date.now()}`, {
+    ...options,
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      ...(options.headers || {})
+    }
+  });
+};
+
 const ScreenerPill = ({ item, rank, onClick }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [healthData, setHealthData] = useState(null);
@@ -249,7 +270,7 @@ function App() {
   const [modalData, setModalData] = useState(null)
   const [expandedCategories, setExpandedCategories] = useState({})
   const [collapsedCategories, setCollapsedCategories] = useState(
-    Object.keys(ScreenerCategories).reduce((acc, key) => ({ ...acc, [key]: true }), {})
+    Object.keys(ScreenerCategories).reduce((acc, key) => ({ ...acc, [key]: key !== 'clean_uptrend_9_13' }), {})
   )
   const [infoVisible, setInfoVisible] = useState({});
   
@@ -354,6 +375,15 @@ function App() {
   // DeepVue State
   const [deepvueData, setDeepvueData] = useState(null)
   
+  // Best Acting Stocks State
+  const [bestActingData, setBestActingData] = useState(null)
+  
+  // Upper Wick Supply Absorption State
+  const [wickAbsorptionData, setWickAbsorptionData] = useState(null)
+  
+  // Clean Untangled Uptrend (9/13 SMA) State
+  const [cleanUptrendData, setCleanUptrendData] = useState(null)
+  
   // Advanced Analytics State
   const [correlationData, setCorrelationData] = useState(null)
   const [gexSearch, setGexSearch] = useState('')
@@ -388,81 +418,220 @@ function App() {
   // Global Live Alerts State
   const [globalLiveAlerts, setGlobalLiveAlerts] = useState([])
 
+  // Foldable Live Market Updates Panel & Banner States
+  const [isLiveUpdatesFolded, setIsLiveUpdatesFolded] = useState(() => {
+    try {
+      const saved = localStorage.getItem('isLiveUpdatesFolded')
+      return saved ? JSON.parse(saved) : false
+    } catch (e) {
+      return false
+    }
+  })
+
+  const [isLiveAlertsBannerFolded, setIsLiveAlertsBannerFolded] = useState(() => {
+    try {
+      const saved = localStorage.getItem('isLiveAlertsBannerFolded')
+      return saved ? JSON.parse(saved) : false
+    } catch (e) {
+      return false
+    }
+  })
+
+  const toggleLiveUpdates = () => {
+    setIsLiveUpdatesFolded(prev => {
+      const next = !prev
+      try {
+        localStorage.setItem('isLiveUpdatesFolded', JSON.stringify(next))
+      } catch (e) {}
+      return next
+    })
+  }
+
+  const toggleLiveAlertsBanner = () => {
+    setIsLiveAlertsBannerFolded(prev => {
+      const next = !prev
+      try {
+        localStorage.setItem('isLiveAlertsBannerFolded', JSON.stringify(next))
+      } catch (e) {}
+      return next
+    })
+  }
+
+  const fetchAllData = useCallback(() => {
+    fetchNoCache('/sector_flow.json')
+      .then(res => res.json())
+      .then(json => setData(json))
+      .catch(err => console.error("Error fetching data:", err))
+      
+    fetchNoCache('/screener_results.json')
+      .then(res => res.json())
+      .then(data => setScreenerData(prev => ({ ...(prev || {}), ...data })))
+      .catch(err => console.error("Error loading screener data:", err))
+      
+    fetchNoCache('/first_ma_pullback_results.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.results) {
+          const formatted = data.results.map(s => ({
+            ticker: s.ticker,
+            metric: `$${s.close} | 1st Retest ${s.ma_tested} ($${s.ma_price}) | Impulse +${s.impulse_gain_pct}% | ${s.volume_footprint}`
+          }));
+          setScreenerData(prev => ({ ...(prev || {}), first_ma_pullback: formatted }));
+        }
+      })
+      .catch(err => console.warn("First MA pullback results unavailable", err))
+      
+    fetchNoCache('/emerging_leaders.json')
+      .then(res => res.json())
+      .then(data => setEmergingLeadersData(data))
+    fetchNoCache('/clean_uptrend_results.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.stocks) {
+          setCleanUptrendData(data);
+          const formatted = data.stocks.map(s => ({
+            ticker: s.ticker,
+            metric: `$${s.close.toFixed(2)} (${s.change_pct > 0 ? '+' : ''}${s.change_pct}%) · Started ${s.streak_days}d ago (${s.trend_start_date}) · 200-SMA: +${s.dist_200sma_pct}% (${s.streak_above_200}d) · 50-SMA: +${s.dist_50sma_pct}% · 9-SMA: ${s.dist_9sma_pct > 0 ? '+' : ''}${s.dist_9sma_pct}% · Respect: ${s.respect_9sma_pct}% · ${s.badges ? s.badges.join(' ') : ''}`,
+            score: s.score,
+            streak_days: s.streak_days,
+            macro_breakout_bars: s.macro_breakout_bars,
+            streak_above_200: s.streak_above_200,
+            trend_start_date: s.trend_start_date,
+            dist_9sma_pct: s.dist_9sma_pct,
+            dist_50sma_pct: s.dist_50sma_pct,
+            dist_200sma_pct: s.dist_200sma_pct,
+            respect_9sma_pct: s.respect_9sma_pct,
+            efficiency_ratio: s.efficiency_ratio,
+            state_label: s.badges ? s.badges[0] : 'UNTANGLED',
+            state_color: s.is_100_pct_rider ? '#10b981' : '#38bdf8',
+            badges: s.badges,
+            desk_notes: s.desk_notes
+          }));
+          setScreenerData(prev => ({ ...(prev || {}), clean_uptrend_9_13: formatted }));
+        }
+      })
+      .catch(err => console.warn("Clean uptrend results unavailable", err))
+
+    fetchNoCache('/wick_absorption_results.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.results) {
+          setWickAbsorptionData(data);
+          const formatted = data.results.map(s => ({
+            ticker: s.ticker,
+            metric: `$${s.close} | ${s.tier_badge} | Wick: ${s.wick_zone} | VDU: ${s.vdu_pct}% | Mcap: $${s.market_cap_b}B | Vol: ${s.avg_vol_20d_m}M`,
+            score: s.score,
+            tier: s.tier
+          }));
+          setScreenerData(prev => ({ ...(prev || {}), wick_supply_absorption: formatted }));
+        }
+      })
+      .catch(err => console.warn("Wick absorption results unavailable", err))
+      
+    fetchNoCache('/best_acting_stocks.json')
+      .then(res => res.json())
+      .then(data => setBestActingData(data))
+      .catch(err => console.error("Error loading best acting stocks data:", err))
+      
+    fetchNoCache('/market_health.json')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
+      .then(text => {
+        const sanitized = text.replace(/:\s*NaN\b/g, ': null').replace(/:\s*undefined\b/g, ': null');
+        const data = JSON.parse(sanitized);
+        setMarketHealth(data);
+      })
+      .catch(err => console.warn("Market health data unavailable", err))
+
+    fetchNoCache('/weekly_playbook.json')
+      .then(res => res.json())
+      .then(data => setWeeklyPlaybook(data))
+      .catch(err => console.warn("Weekly playbook unavailable", err))
+      
+    fetchNoCache('/squeeze_results.json')
+      .then(res => res.json())
+      .then(data => setSqueezeData(data))
+      .catch(err => console.error("Error loading squeeze data:", err))
+      
+    fetchNoCache('/seasonality_results.json')
+      .then(res => res.json())
+      .then(data => setSeasonalityData(data))
+      .catch(err => console.error("Error loading seasonality data:", err))
+      
+    fetchNoCache('/deepvue_results.json')
+      .then(res => res.json())
+      .then(data => setDeepvueData(data))
+      .catch(err => console.error("Error loading deepvue data:", err))
+      
+    fetchNoCache('/api/best_acting_stocks')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.stocks) {
+          const formatted = data.stocks.map(s => ({
+            ticker: s.ticker,
+            metric: `Score ${s.score}/100 | ADX ${s.adx} ${s.badges.join(' ')}`
+          }));
+          setScreenerData(prev => ({ ...(prev || {}), best_acting_stocks: formatted }));
+        }
+      })
+      .catch(err => console.error("Error loading best acting stocks:", err))
+
+    fetchNoCache('/api/realsimple_framework')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.stocks) {
+          const formatted = data.stocks.map(s => ({
+            ticker: s.ticker,
+            metric: `${s.setup_type} | ${s.exposure_action} | RS: +${s.rs_outperformance_pct}%`
+          }));
+          setScreenerData(prev => ({ ...(prev || {}), realsimple_framework: formatted }));
+        }
+      })
+      .catch(err => console.error("Error loading RealSimple framework:", err))
+      
+    fetchNoCache('/first_ma_pullback_results.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.results) {
+          const formatted = data.results.filter(s => s.close >= 5.0).map(s => ({
+            ticker: s.ticker,
+            metric: `Rejection off ${s.ma_tested} ($${s.ma_price}) | +${s.rejection_dist_pct}% | ${s.volume_footprint}`
+          }));
+          setScreenerData(prev => ({ ...(prev || {}), first_ma_pullback: formatted }));
+        }
+      })
+      .catch(err => console.error("Error loading first MA pullback data:", err))
+
+    fetchNoCache('/correlation_results.json')
+      .then(res => res.json())
+      .then(data => setCorrelationData(data))
+      .catch(err => console.error("Error loading correlation data:", err))
+
+    fetchNoCache('/ai_playbook.md')
+      .then(res => res.text())
+      .then(text => setPlaybookContent(text))
+      .catch(err => console.error("Error loading playbook:", err))
+      
+    fetchNoCache('/intraday_results.json')
+      .then(res => res.json())
+      .then(json => setIntradayData(json.results || []))
+      .catch(err => console.error("Error loading intraday data:", err))
+      
+    fetchNoCache('/alerts.json')
+      .then(res => res.json())
+      .then(alerts => {
+        if (Array.isArray(alerts) && alerts.length > 0) {
+          const formatted = alerts.map(formatAlertMessage).filter(Boolean);
+          setChatHistory(prev => mergeAlerts(prev, formatted));
+          setLastSyncTime(new Date().toLocaleTimeString());
+        }
+      })
+      .catch(err => console.debug("Initial alerts history load skipped:", err));
+  }, []);
+
   useEffect(() => {
-    const fetchAllData = () => {
-      fetch('/sector_flow.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(json => setData(json))
-        .catch(err => console.error("Error fetching data:", err))
-        
-      fetch('/screener_results.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => setScreenerData(data))
-        .catch(err => console.error("Error loading screener data:", err))
-        
-      fetch('/emerging_leaders.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => setEmergingLeadersData(data))
-        .catch(err => console.error("Error loading emerging leaders data:", err))
-        
-      fetch('/market_health.json?t=' + new Date().getTime())
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.text();
-        })
-        .then(text => {
-          const sanitized = text.replace(/:\s*NaN\b/g, ': null').replace(/:\s*undefined\b/g, ': null');
-          const data = JSON.parse(sanitized);
-          setMarketHealth(data);
-        })
-        .catch(err => console.warn("Market health data unavailable", err))
-
-      fetch('/weekly_playbook.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => setWeeklyPlaybook(data))
-        .catch(err => console.warn("Weekly playbook unavailable", err))
-        
-      fetch('/squeeze_results.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => setSqueezeData(data))
-        .catch(err => console.error("Error loading squeeze data:", err))
-        
-      fetch('/seasonality_results.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => setSeasonalityData(data))
-        .catch(err => console.error("Error loading seasonality data:", err))
-        
-      fetch('/deepvue_results.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => setDeepvueData(data))
-        .catch(err => console.error("Error loading deepvue data:", err))
-        
-      fetch('/correlation_results.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => setCorrelationData(data))
-        .catch(err => console.error("Error loading correlation data:", err))
-
-      fetch('/ai_playbook.md?t=' + new Date().getTime())
-        .then(res => res.text())
-        .then(text => setPlaybookContent(text))
-        .catch(err => console.error("Error loading playbook:", err))
-        
-      fetch('/intraday_results.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(json => setIntradayData(json.results || []))
-        .catch(err => console.error("Error loading intraday data:", err))
-      fetch('/alerts.json?t=' + Date.now())
-        .then(res => res.json())
-        .then(alerts => {
-          if (Array.isArray(alerts) && alerts.length > 0) {
-            const formatted = alerts.map(formatAlertMessage).filter(Boolean);
-            setChatHistory(prev => mergeAlerts(prev, formatted));
-            setLastSyncTime(new Date().toLocaleTimeString());
-          }
-        })
-        .catch(err => console.debug("Initial alerts history load skipped:", err));
-    };
-
     fetchAllData();
     // Auto-refresh main dashboard data every 1 minute
     const dataInterval = setInterval(fetchAllData, 60000);
@@ -1014,38 +1183,147 @@ function App() {
             </button>
           </form>
 
-          {marketMeter && (
-            <div className="glass-card" style={{ padding: '0.5rem 1rem', borderLeft: `4px solid ${marketMeter.color}`, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-              <Compass size={18} color={marketMeter.color} />
-              <strong style={{ margin: 0, color: marketMeter.color, fontSize: '0.9rem' }}>Market Trend: {marketMeter.status}</strong>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {marketMeter && (
+              <div className="glass-card" style={{ padding: '0.5rem 1rem', borderLeft: `4px solid ${marketMeter.color}`, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                <Compass size={18} color={marketMeter.color} />
+                <strong style={{ margin: 0, color: marketMeter.color, fontSize: '0.9rem' }}>Market Trend: {marketMeter.status}</strong>
+              </div>
+            )}
+
+            {isLiveUpdatesFolded && (
+              <button
+                onClick={toggleLiveUpdates}
+                title="Unfold Live Market Updates panel"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '0.5rem 0.9rem',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  color: '#10b981',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.12)'; }}
+              >
+                <Radio size={14} className={streamStatus === 'live' ? 'pulse' : ''} />
+                <span>Live Market Updates</span>
+                {chatHistory.filter(m => m.isBroadcast).length > 0 && (
+                  <span style={{ fontSize: '0.65rem', background: '#10b981', color: '#000', padding: '1px 5px', borderRadius: '10px', fontWeight: 'bold' }}>
+                    {chatHistory.filter(m => m.isBroadcast).length}
+                  </span>
+                )}
+                <ChevronLeft size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Global Intraday Live Alerts Ticker */}
         {globalLiveAlerts.length > 0 && (
-          <div className="marquee-container" style={{ marginBottom: '1.5rem', padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', borderRadius: '4px' }}>
-              <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap', paddingRight: '15px', zIndex: 10, position: 'relative', background: '#09090b', boxShadow: '10px 0 15px #09090b' }}>
-                  <AlertCircle size={16} /> LIVE ALERTS:
-              </span>
-              <div className="marquee-content">
-                  {[...globalLiveAlerts, ...globalLiveAlerts].map((alert, i) => (
-                      <div key={i} onClick={() => fetchTickerData(alert.ticker)} style={{ cursor: 'pointer', background: 'rgba(15, 23, 42, 0.8)', padding: '4px 10px', borderRadius: '4px', borderLeft: '2px solid #ef4444', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)'}>
-                          <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{alert.ticker}</strong>
-                          {alert.pct_above !== undefined ? (
-                            <>
-                              <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.85rem' }}>+{alert.pct_above.toFixed(2)}%</span>
-                              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                                  Brk: ${alert.trigger_price.toFixed(2)} ➔ <strong style={{color: '#fff'}}>${alert.price.toFixed(2)}</strong>
-                              </span>
-                            </>
-                          ) : (
-                            <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: '500' }}>{alert.msg}</span>
-                          )}
-                      </div>
-                  ))}
+          isLiveAlertsBannerFolded ? (
+            <div 
+              style={{
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 14px',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: '6px',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onClick={toggleLiveAlertsBanner}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)'}
+              title="Click to unfold Live Market Alerts banner"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                  <AlertCircle size={15} /> LIVE MARKET ALERTS ({globalLiveAlerts.length}):
+                </span>
+                <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                  Latest: <strong style={{ color: '#fff' }}>{globalLiveAlerts[0]?.ticker}</strong> {globalLiveAlerts[0]?.msg || (globalLiveAlerts[0]?.pct_above ? `+${globalLiveAlerts[0].pct_above.toFixed(1)}%` : '')}
+                </span>
               </div>
-          </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleLiveAlertsBanner(); }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#94a3b8',
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.74rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>Unfold Banner</span>
+                <ChevronDown size={13} />
+              </button>
+            </div>
+          ) : (
+            <div className="marquee-container" style={{ marginBottom: '1.5rem', padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', borderRadius: '4px' }}>
+                <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap', paddingRight: '15px', zIndex: 10, position: 'relative', background: '#09090b', boxShadow: '10px 0 15px #09090b' }}>
+                    <AlertCircle size={16} /> LIVE ALERTS:
+                </span>
+                <div className="marquee-content">
+                    {[...globalLiveAlerts, ...globalLiveAlerts].map((alert, i) => (
+                        <div key={i} onClick={() => fetchTickerData(alert.ticker)} style={{ cursor: 'pointer', background: 'rgba(15, 23, 42, 0.8)', padding: '4px 10px', borderRadius: '4px', borderLeft: '2px solid #ef4444', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)'}>
+                            <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{alert.ticker}</strong>
+                            {alert.pct_above !== undefined ? (
+                              <>
+                                <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.85rem' }}>+{alert.pct_above.toFixed(2)}%</span>
+                                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                                    Brk: ${alert.trigger_price.toFixed(2)} ➔ <strong style={{color: '#fff'}}>${alert.price.toFixed(2)}</strong>
+                                </span>
+                              </>
+                            ) : (
+                              <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: '500' }}>{alert.msg}</span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+                <button
+                  onClick={toggleLiveAlertsBanner}
+                  title="Fold Live Alerts Banner"
+                  style={{
+                    zIndex: 10,
+                    position: 'relative',
+                    marginLeft: '8px',
+                    background: '#09090b',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#f87171',
+                    borderRadius: '4px',
+                    padding: '3px 8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.72rem',
+                    boxShadow: '-10px 0 15px #09090b',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#09090b'; e.currentTarget.style.color = '#f87171'; }}
+                >
+                  <span>Fold</span>
+                  <ChevronUp size={13} />
+                </button>
+            </div>
+          )
         )}
 
       {activeTab === 'tvsync' && (
@@ -1164,7 +1442,13 @@ function App() {
       {activeTab === 'options_screener' && (
         <OptionsIntelligenceScreener 
           onNavigateTab={(tab, targetTicker) => {
-            if (tab === 'volsurface') {
+            if (tab === 'chart') {
+              if (targetTicker) {
+                fetchTickerData(targetTicker);
+              } else {
+                setActiveTab('chart');
+              }
+            } else if (tab === 'volsurface') {
               if (targetTicker) {
                 setGexSearchInput(targetTicker);
                 fetchGexData(targetTicker);
@@ -1230,9 +1514,7 @@ function App() {
       )}
 
       {activeTab === 'rslinescanner' && (
-        <div className="glass-card" style={{ padding: '2rem' }}>
-            <RsLineScanner onTickerClick={fetchTickerData} />
-        </div>
+        <RsLineScanner onTickerClick={fetchTickerData} />
       )}
 
       {activeTab === 'analysis' && (
@@ -1309,7 +1591,55 @@ function App() {
 
       {activeTab === 'screeners' && screenerData && (
         <div>
-          <h2 style={{ marginBottom: '2rem' }}>Algorithmic Technical Setups</h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem', background: 'rgba(15, 23, 42, 0.6)', padding: '1rem 1.5rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Algorithmic Technical Setups</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', fontSize: '0.85rem', flexWrap: 'wrap' }}>
+                <span style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '0.4rem', 
+                  padding: '3px 10px', 
+                  borderRadius: '12px', 
+                  background: 'rgba(16, 185, 129, 0.15)', 
+                  color: '#10b981', 
+                  fontWeight: 600,
+                  border: '1px solid rgba(16, 185, 129, 0.3)' 
+                }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                  LIVE MARKET DATA ({screenerData._metadata?.lakehouse_date || 'Today'})
+                </span>
+                <span style={{ color: '#94a3b8' }}>
+                  Scan Generated: {screenerData._metadata?.generated_at ? new Date(screenerData._metadata.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live'} · {screenerData._metadata?.total_tickers_scanned || '12,500+'} Tickers Scanned
+                </span>
+                <span style={{ color: '#38bdf8', fontWeight: 500 }}>
+                  ⚡ Zero-Cache Enforced
+                </span>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => fetchAllData()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'rgba(79, 172, 254, 0.12)',
+                border: '1px solid rgba(79, 172, 254, 0.4)',
+                color: '#4facfe',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(79, 172, 254, 0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(79, 172, 254, 0.12)'}
+            >
+              <RefreshCw size={15} /> Force Live Refresh
+            </button>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start', marginBottom: '2rem' }}>
             {/* DeepVue Quantitative Leaders Card */}
             {deepvueData && deepvueData.leaders && (
@@ -1455,17 +1785,53 @@ function App() {
                 
                 {!collapsedCategories[key] && (
                   (() => {
-                    const items = (key === 'emerging_leaders' && emergingLeadersData?.candidates)
-                      ? emergingLeadersData.candidates.map(c => ({
-                          ticker: c.ticker,
-                          metric: `${c.tier_label} (${c.score}/100) · Pivot: $${c.entry_pivot} · ${c.badges ? c.badges.join(' ') : ''}`,
-                          score: c.score,
-                          state_label: c.tier_label,
-                          state_color: c.tier_color,
-                          has_pocket_pivot: c.has_pocket_pivot,
-                          has_rs_high: c.is_rs_leading
-                        }))
-                      : (screenerData && screenerData[key] ? screenerData[key] : []);
+                    let items = [];
+                    if (key === 'clean_uptrend_9_13' && cleanUptrendData?.stocks) {
+                      items = cleanUptrendData.stocks.map(s => ({
+                        ticker: s.ticker,
+                        metric: `$${s.close.toFixed(2)} (${s.change_pct > 0 ? '+' : ''}${s.change_pct}%) · Started ${s.streak_days}d ago (${s.trend_start_date}) · 200-SMA: +${s.dist_200sma_pct}% (${s.streak_above_200}d) · 50-SMA: +${s.dist_50sma_pct}% · 9-SMA: ${s.dist_9sma_pct > 0 ? '+' : ''}${s.dist_9sma_pct}% · Respect: ${s.respect_9sma_pct}% · ${s.badges ? s.badges.join(' ') : ''}`,
+                        score: s.score,
+                        streak_days: s.streak_days,
+                        macro_breakout_bars: s.macro_breakout_bars,
+                        streak_above_200: s.streak_above_200,
+                        trend_start_date: s.trend_start_date,
+                        dist_9sma_pct: s.dist_9sma_pct,
+                        dist_50sma_pct: s.dist_50sma_pct,
+                        dist_200sma_pct: s.dist_200sma_pct,
+                        respect_9sma_pct: s.respect_9sma_pct,
+                        efficiency_ratio: s.efficiency_ratio,
+                        state_label: s.badges ? s.badges[0] : 'UNTANGLED',
+                        state_color: s.is_100_pct_rider ? '#10b981' : '#38bdf8',
+                        badges: s.badges,
+                        desk_notes: s.desk_notes
+                      }));
+                    } else if (key === 'emerging_leaders' && emergingLeadersData?.candidates) {
+                      items = emergingLeadersData.candidates.map(c => ({
+                        ticker: c.ticker,
+                        metric: `${c.tier_label} (${c.score}/100) · Pivot: $${c.entry_pivot} · ${c.badges ? c.badges.join(' ') : ''}`,
+                        score: c.score,
+                        state_label: c.tier_label,
+                        state_color: c.tier_color,
+                        has_pocket_pivot: c.has_pocket_pivot,
+                        has_rs_high: c.is_rs_leading
+                      }));
+                    } else if (key === 'best_acting_stocks' && bestActingData?.stocks) {
+                      items = bestActingData.stocks.map(s => ({
+                        ticker: s.ticker,
+                        metric: `Score: ${s.score}/100 · ADX: ${s.adx} · 21-EMA: ${s.dist_ema21_pct > 0 ? '+' : ''}${s.dist_ema21_pct}% · ${s.badges ? s.badges.join(' ') : ''}`,
+                        score: s.score
+                      }));
+                    } else if (key === 'wick_supply_absorption' && wickAbsorptionData?.results) {
+                      items = wickAbsorptionData.results.map(s => ({
+                        ticker: s.ticker,
+                        metric: `$${s.close} · ${s.tier_badge} (Score: ${s.score}) · Wick: ${s.wick_zone} · VDU: ${s.vdu_pct}% · Mcap: $${s.market_cap_b}B · Vol: ${s.avg_vol_20d_m}M`,
+                        score: s.score,
+                        state_label: s.tier_badge,
+                        state_color: s.tier_color
+                      }));
+                    } else {
+                      items = screenerData && screenerData[key] ? screenerData[key] : [];
+                    }
 
                     return items.length > 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
@@ -2570,248 +2936,15 @@ function App() {
 
       {/* Charting Engine (Center Pane) */}
       {activeTab === 'chart' && (
-        <div style={{ width: '100%', height: 'calc(100vh - 120px)' }}>
-            {expertTickerData ? (
-               <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <div>
-                      <h1 style={{ margin: 0, fontSize: '2.5rem', color: '#fff' }}>{expertTickerData.ticker}</h1>
-                      <h3 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>{expertTickerData.name}</h3>
-                    </div>
-                    
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <div style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', padding: '8px 16px', borderRadius: '4px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <Activity size={16} /> Pro Terminal: Drawing & Dark Pools
-                      </div>
-                    </div>
-                 </div>
-                 <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-                   <div style={{ height: '100%', position: 'relative' }}>
-                     <UnifiedPlotlyChart ticker={expertTickerData.ticker} />
-                   </div>
-                   <div style={{ overflowY: 'auto', paddingRight: '10px' }}>
-                     {expertTickerData.score !== null && (
-                       <div className="glass-card" style={{ marginBottom: '1.5rem', textAlign: 'center', padding: '1.5rem', background: 'rgba(15, 23, 42, 0.6)' }}>
-                         <span style={{ color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Master Algorithm Score</span>
-                         <div style={{ fontSize: '4rem', fontWeight: 'bold', color: expertTickerData.score >= 70 ? '#10b981' : expertTickerData.score >= 40 ? '#f59e0b' : '#ef4444', lineHeight: '1', margin: '0.5rem 0' }}>
-                           {expertTickerData.score}
-                         </div>
-                       </div>
-                     )}
-
-                     {expertTickerData.agent_insight && (
-                       <div className="neo-panel" style={{ marginBottom: '1.5rem', borderLeft: '4px solid #a855f7', background: 'rgba(168, 85, 247, 0.05)' }}>
-                         <h3 style={{ margin: '0 0 0.5rem 0', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                           <Activity size={18} /> AI Agent Observation
-                         </h3>
-                         <p style={{ margin: 0, color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                           {expertTickerData.agent_insight}
-                         </p>
-                       </div>
-                     )}
-
-                      {/* ROSS HABER STOCK PERSONALITY PROFILE */}
-                      {expertTickerData.personality && (
-                        <RossHaberPersonalityPanel personality={expertTickerData.personality} />
-                      )}
-
-                     {/* HISTORICAL DNA PROFILE */}
-                     <div className="neo-panel" style={{ marginBottom: '1.5rem', background: 'rgba(15, 23, 42, 0.4)' }}>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #1e293b', paddingBottom: '0.5rem' }}>
-                         <h3 style={{ margin: 0, color: '#ec4899', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                           <BarChart2 size={18} /> 10-Year Historical DNA
-                         </h3>
-                         <button 
-                           onClick={() => fetchDNA(expertTickerData.ticker)} 
-                           disabled={loadingDna}
-                           style={{ background: '#ec4899', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: loadingDna ? 'not-allowed' : 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-                         >
-                           {loadingDna ? <Loader size={14} className="spin" /> : <Activity size={14} />} 
-                           {loadingDna ? 'Analyzing...' : 'Generate Profile'}
-                         </button>
-                       </div>
-                       
-                       {dnaData && !dnaData.error && (
-                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
-                           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Moving Average Respect Matrix</span>
-                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-                               {Object.entries(dnaData.ma_respect).map(([ma, score]) => (
-                                 <div key={ma} style={{ textAlign: 'center' }}>
-                                   <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{ma}</div>
-                                   <div style={{ fontWeight: 'bold', color: ma === dnaData.best_ma ? '#10b981' : '#e2e8f0' }}>{score}%</div>
-                                 </div>
-                               ))}
-                             </div>
-                             <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#10b981' }}>
-                               ► Highest respect: {dnaData.best_ma}
-                             </div>
-                           </div>
-                           
-                           <div style={{ display: 'flex', gap: '10px' }}>
-                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Max Ext. 50-SMA</span>
-                               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>+{dnaData.max_ext_50}%</div>
-                             </div>
-                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Max Ext. 200-SMA</span>
-                               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>+{dnaData.max_ext_200}%</div>
-                             </div>
-                           </div>
-                           
-                           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Max Streak Potential</span>
-                             <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-                               <div>Consecutive Up Days: <span style={{ color: '#fff', fontWeight: 'bold' }}>{dnaData.max_green_streak}</span></div>
-                               <div>Best Run (&gt;10EMA): <span style={{ color: '#10b981', fontWeight: 'bold' }}>+{dnaData.max_run_above_10ema}%</span></div>
-                             </div>
-                           </div>
-                           
-                           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #3b82f6' }}>
-                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Whale Activity (Trend Verification)</span>
-                             <div style={{ color: '#e2e8f0', fontSize: '0.9rem', marginTop: '0.5rem', lineHeight: '1.4' }}>{dnaData.whale_insight}</div>
-                           </div>
-                           
-                           <div style={{ display: 'flex', gap: '10px' }}>
-                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #a855f7' }}>
-                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Current Structural Pattern</span>
-                               <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e2e8f0', marginTop: '0.5rem' }}>{dnaData.current_pattern}</div>
-                             </div>
-                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #f59e0b' }}>
-                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Consolidation Timing Estimate</span>
-                               <div style={{ fontSize: '0.95rem', color: '#e2e8f0', marginTop: '0.5rem' }}>{dnaData.consolidation_timing}</div>
-                             </div>
-                           </div>
-                           
-                           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Technical Adherence Score</span>
-                             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: dnaData.technical_score >= 60 ? '#10b981' : '#ef4444' }}>
-                               {dnaData.technical_score}/100
-                             </div>
-                           </div>
-                         </div>
-                       )}
-                       {dnaData && dnaData.error && (
-                         <div style={{ color: '#ef4444', padding: '1rem' }}>{dnaData.error}</div>
-                       )}
-                     </div>
-
-
-                     <div className="neo-panel" style={{ marginBottom: '1.5rem' }}>
-                       <h3 style={{ margin: '0 0 1rem 0', color: '#4facfe', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem' }}>Technical Health</h3>
-                       <div style={{ marginBottom: '1rem' }}>
-                         <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Stan Weinstein Phase</p>
-                         <strong style={{ fontSize: '1.1rem', color: expertTickerData.technicals.stage.includes('Stage 2') ? '#10b981' : expertTickerData.technicals.stage.includes('Stage 4') ? '#ef4444' : '#f59e0b' }}>
-                           {expertTickerData.technicals.stage}
-                         </strong>
-                       </div>
-                       <div style={{ marginBottom: '1rem' }}>
-                         <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>MACD / RSI Trajectory</p>
-                         <strong style={{ fontSize: '1rem', color: expertTickerData.technicals.momentum_color === 'bullish' ? '#10b981' : expertTickerData.technicals.momentum_color === 'bearish' ? '#ef4444' : '#f59e0b' }}>
-                           {expertTickerData.technicals.momentum_text}
-                         </strong>
-                       </div>
-                       <div>
-                         <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Relative Strength vs SPY (1 Mo)</p>
-                         <strong style={{ fontSize: '1.1rem', color: expertTickerData.technicals.rs_spy_1mo > 0 ? '#10b981' : '#ef4444' }}>
-                           {expertTickerData.technicals.rs_spy_1mo > 0 ? '+' : ''}{expertTickerData.technicals.rs_spy_1mo.toFixed(2)}%
-                         </strong>
-                       </div>
-                     </div>
-
-                     {expertTickerData.trade_plan && (
-                       <div className="neo-panel" style={{ marginBottom: '1.5rem', borderLeft: '4px solid #10b981' }}>
-                         <h3 style={{ margin: '0 0 1rem 0', color: '#10b981', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem' }}>Algorithmic Trade Plan</h3>
-                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                           <div>
-                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Ideal Entry</p>
-                             <strong style={{ fontSize: '1.1rem', color: '#fff' }}>${expertTickerData.trade_plan.entry.toFixed(2)}</strong>
-                           </div>
-                           <div>
-                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Target (3 ATR)</p>
-                             <strong style={{ fontSize: '1.1rem', color: '#10b981' }}>${expertTickerData.trade_plan.profit_target.toFixed(2)}</strong>
-                           </div>
-                           <div>
-                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Stop Loss (1.5 ATR)</p>
-                             <strong style={{ fontSize: '1.1rem', color: '#ef4444' }}>${expertTickerData.trade_plan.stop_loss.toFixed(2)}</strong>
-                           </div>
-                           <div>
-                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Risk %</p>
-                             <strong style={{ fontSize: '1.1rem', color: '#f59e0b' }}>{expertTickerData.trade_plan.risk_pct.toFixed(1)}%</strong>
-                           </div>
-                         </div>
-                       </div>
-                     )}
-
-                     {expertTickerData.fundamentals && (
-                       <div className="neo-panel">
-                         <h3 style={{ margin: '0 0 1rem 0', color: '#f59e0b', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem' }}>Fundamental Health</h3>
-                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                           <div>
-                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Rev Growth</p>
-                             <strong style={{ fontSize: '1rem', color: expertTickerData.fundamentals.revenue_growth > 20 ? '#10b981' : '#fff' }}>
-                               {expertTickerData.fundamentals.revenue_growth.toFixed(1)}%
-                             </strong>
-                           </div>
-                           <div>
-                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Profit Margin</p>
-                             <strong style={{ fontSize: '1rem', color: expertTickerData.fundamentals.profit_margin > 15 ? '#10b981' : '#fff' }}>
-                               {expertTickerData.fundamentals.profit_margin.toFixed(1)}%
-                             </strong>
-                           </div>
-                           <div>
-                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>ROE</p>
-                             <strong style={{ fontSize: '1rem', color: expertTickerData.fundamentals.roe > 15 ? '#10b981' : '#fff' }}>
-                               {expertTickerData.fundamentals.roe.toFixed(1)}%
-                             </strong>
-                           </div>
-                           <div>
-                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>PEG Ratio</p>
-                             <strong style={{ fontSize: '1rem', color: (expertTickerData.fundamentals.peg_ratio > 0 && expertTickerData.fundamentals.peg_ratio < 1.5) ? '#10b981' : expertTickerData.fundamentals.peg_ratio > 3 ? '#ef4444' : '#fff' }}>
-                               {expertTickerData.fundamentals.peg_ratio ? expertTickerData.fundamentals.peg_ratio.toFixed(2) : 'N/A'}
-                             </strong>
-                           </div>
-                         </div>
-                       </div>
-                     )}
-
-                     {expertTickerData.news && expertTickerData.news.length > 0 && (
-                       <div className="neo-panel" style={{ marginTop: '1.5rem' }}>
-                         <h3 style={{ margin: '0 0 1rem 0', color: '#ec4899', borderBottom: '1px solid #27272a', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                           <Radio size={18} className="pulse" /> Live News Feed
-                         </h3>
-                         <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                           {expertTickerData.news.map((headline, i) => (
-                             <li key={i} style={{ marginBottom: '1rem', color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.4', borderBottom: i !== expertTickerData.news.length - 1 ? '1px dashed rgba(255,255,255,0.1)' : 'none', paddingBottom: i !== expertTickerData.news.length - 1 ? '1rem' : 0 }}>
-                               <span style={{ color: '#ec4899', marginRight: '5px' }}>▶</span> {headline}
-                             </li>
-                           ))}
-                         </ul>
-                       </div>
-                     )}
-                   </div>
-                 </div>
-               </div>
-            ) : isSearching ? (
-               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "#00F0FF", width: "100%" }} className="glass-card">
-                 <Loader size={48} className="spin" style={{ marginBottom: "1rem" }} />
-                 <h3>Fetching Pro Terminal Data & Technicals...</h3>
-               </div>
-            ) : (
-               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: searchError ? "#ef4444" : "#4facfe", width: "100%", gap: "10px" }} className="glass-card">
-                 <Search size={48} style={{marginBottom: "1rem", opacity: 0.5}} />
-                 <h3>{searchError ? searchError : "No Ticker Selected"}</h3>
-                 <p style={{color: "#94a3b8"}}>{searchError ? "Please check backend connection." : "Select a ticker below to view its Deep Chart immediately:"}</p>
-                 <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                   {["SPY", "QQQ", "NVDA", "TSLA", "AAPL"].map(sym => (
-                     <button key={sym} onClick={() => fetchTickerData(sym)} style={{ background: "#3b82f6", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>
-                       Load {sym}
-                     </button>
-                   ))}
-                 </div>
-               </div>
-            )}
-        </div>
+        <DeepChartingTerminal
+          expertTickerData={expertTickerData}
+          isSearching={isSearching}
+          searchError={searchError}
+          onSelectTicker={(sym) => fetchTickerData(sym)}
+          dnaData={dnaData}
+          loadingDna={loadingDna}
+          onFetchDna={(sym) => fetchDNA(sym)}
+        />
       )}
 
       {activeTab === 'intraday' && (
@@ -2940,113 +3073,225 @@ function App() {
       
       </div> {/* End main-content */}
 
-      {/* Static Right Pane (Live Agents & Ask AI) */}
-      <div className="right-pane" style={{ padding: '1.5rem' }}>
-        
-        {/* Live Agent / Sweeps Feed - ALWAYS VISIBLE */}
-        <div className="neo-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '1rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.6rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem' }}>
-                <Radio size={16} className={streamStatus === 'live' ? 'pulse' : ''} /> Live Market Updates
-              </h3>
-              <span style={{
-                fontSize: '0.62rem',
-                fontWeight: 'bold',
-                padding: '2px 6px',
+      {/* Right Pane (Live Agents & Sweeps Feed) - Foldable */}
+      <div 
+        className={`right-pane ${isLiveUpdatesFolded ? 'folded' : ''}`} 
+        style={{ 
+          padding: isLiveUpdatesFolded ? '1rem 0.35rem' : '1.5rem',
+          width: isLiveUpdatesFolded ? '52px' : '400px',
+          minWidth: isLiveUpdatesFolded ? '52px' : '400px',
+          boxSizing: 'border-box'
+        }}
+      >
+        {isLiveUpdatesFolded ? (
+          <div
+            onClick={toggleLiveUpdates}
+            title="Click to unfold Live Market Updates panel"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              height: '100%',
+              cursor: 'pointer',
+              padding: '0.75rem 0',
+              userSelect: 'none',
+              background: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: '6px',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              transition: 'all 0.2s',
+              gap: '12px'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.6)'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.9)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.25)'; e.currentTarget.style.background = 'rgba(15, 23, 42, 0.6)'; }}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleLiveUpdates(); }}
+              title="Unfold Live Market Updates"
+              style={{
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                color: '#10b981',
                 borderRadius: '4px',
-                background: streamStatus === 'live' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-                color: streamStatus === 'live' ? '#10b981' : '#eab308',
-                border: `1px solid ${streamStatus === 'live' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(234, 179, 8, 0.4)'}`,
-                display: 'inline-flex',
+                padding: '6px',
+                cursor: 'pointer',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                textTransform: 'uppercase'
-              }}>
-                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: streamStatus === 'live' ? '#10b981' : '#eab308', display: 'inline-block' }} />
-                {streamStatus === 'live' ? 'LIVE' : 'SYNCED'}
-              </span>
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+              <Radio size={18} className={streamStatus === 'live' ? 'pulse' : ''} style={{ color: streamStatus === 'live' ? '#10b981' : '#eab308' }} />
               {chatHistory.filter(m => m.isBroadcast).length > 0 && (
-                <span style={{ fontSize: '0.7rem', background: 'rgba(255, 255, 255, 0.08)', color: '#94a3b8', padding: '1px 6px', borderRadius: '8px' }}>
+                <span style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-10px',
+                  fontSize: '0.62rem',
+                  fontWeight: 'bold',
+                  background: '#10b981',
+                  color: '#000',
+                  padding: '1px 4px',
+                  borderRadius: '8px',
+                  lineHeight: '1',
+                  minWidth: '12px',
+                  textAlign: 'center'
+                }}>
                   {chatHistory.filter(m => m.isBroadcast).length}
                 </span>
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {lastSyncTime && (
-                <span style={{ fontSize: '0.65rem', color: '#64748b', fontFamily: 'monospace' }}>
-                  {lastSyncTime}
-                </span>
-              )}
-              <button
-                onClick={() => {
-                  setIsRefreshingAlerts(true);
-                  fetch('/alerts.json?t=' + Date.now())
-                    .then(r => r.json())
-                    .then(alerts => {
-                      if (Array.isArray(alerts)) {
-                        const formatted = alerts.slice(0, 30).map(formatAlertMessage).filter(Boolean);
-                        setChatHistory(prev => mergeAlerts(prev, formatted));
-                        setLastSyncTime(new Date().toLocaleTimeString());
-                      }
-                    })
-                    .finally(() => setTimeout(() => setIsRefreshingAlerts(false), 500));
-                }}
-                title="Sync latest live alerts"
-                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '3px', display: 'flex', alignItems: 'center' }}
-              >
-                <RefreshCw size={13} style={{ transform: isRefreshingAlerts ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }} />
-              </button>
+            <div style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              transform: 'rotate(180deg)',
+              color: '#94a3b8',
+              fontSize: '0.72rem',
+              fontWeight: '700',
+              letterSpacing: '1.5px',
+              textTransform: 'uppercase',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap',
+              marginTop: '1.5rem'
+            }}>
+              <span style={{ color: '#10b981' }}>●</span> LIVE MARKET UPDATES
             </div>
           </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '5px' }}>
-            {chatHistory.filter(m => m.isBroadcast).length === 0 && (
-              <div style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' }}>
-                <Activity size={32} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
-                <p style={{ margin: 0 }}>Connecting to live market radar feed...</p>
-              </div>
-            )}
-            
-            {chatHistory.filter(m => m.isBroadcast).map((msg, idx) => (
-              <div key={msg.id || idx} style={{ alignSelf: 'flex-start', background: 'rgba(15, 23, 42, 0.65)', border: `1px solid ${msg.color || '#3b82f6'}`, padding: '10px 12px', borderRadius: '8px', width: '100%', boxSizing: 'border-box', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <strong style={{ color: msg.color, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '700' }}>
-                    {msg.council || '⚡ MARKET RADAR'}
-                  </strong>
-                  {msg.timeStr && (
-                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'monospace' }}>
-                      {msg.timeStr}
-                    </span>
-                  )}
-                </div>
-                
-                <div style={{ margin: 0, fontSize: '0.82rem', color: '#e2e8f0', lineHeight: '1.45', whiteSpace: 'pre-wrap' }}>
-                  <ReactMarkdown>{(msg.text || '').replace(/\*/g, '**')}</ReactMarkdown>
-                </div>
-                
-                {msg.payload ? (
-                  <button 
-                    onClick={() => { setBriefingData(msg.payload); setActiveTab('briefing'); }}
-                    style={{ marginTop: '8px', padding: '6px 12px', background: '#DFFF00', color: '#000', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', width: '100%', justifyContent: 'center' }}
-                  >
-                    <Maximize size={13} /> Expand Morning Briefing
-                  </button>
-                ) : (
-                  msg.ticker && !['MARKET', 'MACRO', 'UNKNOWN', 'BRIEFING'].includes(msg.ticker) && (
-                    <button 
-                      onClick={() => fetchTickerData(msg.ticker)}
-                      style={{ marginTop: '8px', padding: '4px 10px', background: 'rgba(255,255,255,0.05)', color: msg.color, border: `1px solid ${msg.color}`, borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}
-                    >
-                      <Search size={12} /> Analyze {msg.ticker}
-                    </button>
-                  )
+        ) : (
+          /* Live Agent / Sweeps Feed - ALWAYS VISIBLE */
+          <div className="neo-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '1rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <h3 style={{ margin: 0, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem' }}>
+                  <Radio size={16} className={streamStatus === 'live' ? 'pulse' : ''} /> Live Market Updates
+                </h3>
+                <span style={{
+                  fontSize: '0.62rem',
+                  fontWeight: 'bold',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  background: streamStatus === 'live' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                  color: streamStatus === 'live' ? '#10b981' : '#eab308',
+                  border: `1px solid ${streamStatus === 'live' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(234, 179, 8, 0.4)'}`,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  textTransform: 'uppercase'
+                }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: streamStatus === 'live' ? '#10b981' : '#eab308', display: 'inline-block' }} />
+                  {streamStatus === 'live' ? 'LIVE' : 'SYNCED'}
+                </span>
+                {chatHistory.filter(m => m.isBroadcast).length > 0 && (
+                  <span style={{ fontSize: '0.7rem', background: 'rgba(255, 255, 255, 0.08)', color: '#94a3b8', padding: '1px 6px', borderRadius: '8px' }}>
+                    {chatHistory.filter(m => m.isBroadcast).length}
+                  </span>
                 )}
               </div>
-            ))}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {lastSyncTime && (
+                  <span style={{ fontSize: '0.65rem', color: '#64748b', fontFamily: 'monospace' }}>
+                    {lastSyncTime}
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    setIsRefreshingAlerts(true);
+                    fetch('/alerts.json?t=' + Date.now())
+                      .then(r => r.json())
+                      .then(alerts => {
+                        if (Array.isArray(alerts)) {
+                          const formatted = alerts.slice(0, 30).map(formatAlertMessage).filter(Boolean);
+                          setChatHistory(prev => mergeAlerts(prev, formatted));
+                          setLastSyncTime(new Date().toLocaleTimeString());
+                        }
+                      })
+                      .finally(() => setTimeout(() => setIsRefreshingAlerts(false), 500));
+                  }}
+                  title="Sync latest live alerts"
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '3px', display: 'flex', alignItems: 'center' }}
+                >
+                  <RefreshCw size={13} style={{ transform: isRefreshingAlerts ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }} />
+                </button>
+                <button
+                  onClick={toggleLiveUpdates}
+                  title="Fold / Collapse Live Market Updates"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '3px 7px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    fontSize: '0.72rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)'; e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                >
+                  <span>Fold</span>
+                  <ChevronRight size={13} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '5px' }}>
+              {chatHistory.filter(m => m.isBroadcast).length === 0 && (
+                <div style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' }}>
+                  <Activity size={32} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
+                  <p style={{ margin: 0 }}>Connecting to live market radar feed...</p>
+                </div>
+              )}
+              
+              {chatHistory.filter(m => m.isBroadcast).map((msg, idx) => (
+                <div key={msg.id || idx} style={{ alignSelf: 'flex-start', background: 'rgba(15, 23, 42, 0.65)', border: `1px solid ${msg.color || '#3b82f6'}`, padding: '10px 12px', borderRadius: '8px', width: '100%', boxSizing: 'border-box', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <strong style={{ color: msg.color, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '700' }}>
+                      {msg.council || '⚡ MARKET RADAR'}
+                    </strong>
+                    {msg.timeStr && (
+                      <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'monospace' }}>
+                        {msg.timeStr}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div style={{ margin: 0, fontSize: '0.82rem', color: '#e2e8f0', lineHeight: '1.45', whiteSpace: 'pre-wrap' }}>
+                    <ReactMarkdown>{(msg.text || '').replace(/\*/g, '**')}</ReactMarkdown>
+                  </div>
+                  
+                  {msg.payload ? (
+                    <button 
+                      onClick={() => { setBriefingData(msg.payload); setActiveTab('briefing'); }}
+                      style={{ marginTop: '8px', padding: '6px 12px', background: '#DFFF00', color: '#000', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', width: '100%', justifyContent: 'center' }}
+                    >
+                      <Maximize size={13} /> Expand Morning Briefing
+                    </button>
+                  ) : (
+                    msg.ticker && !['MARKET', 'MACRO', 'UNKNOWN', 'BRIEFING'].includes(msg.ticker) && (
+                      <button 
+                        onClick={() => fetchTickerData(msg.ticker)}
+                        style={{ marginTop: '8px', padding: '4px 10px', background: 'rgba(255,255,255,0.05)', color: msg.color, border: `1px solid ${msg.color}`, borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}
+                      >
+                        <Search size={12} /> Analyze {msg.ticker}
+                      </button>
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
     </div> {/* End app-layout */}

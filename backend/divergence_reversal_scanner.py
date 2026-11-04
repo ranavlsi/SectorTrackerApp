@@ -61,23 +61,23 @@ def evaluate_divergence_reversal(ticker, df=None):
                     
                     if not np.isnan(current_sma200_w) and current_sma200_w > 0:
                         # 1. Macro Trend: Stock arrived from the UPSIDE (was in a secular bull market)
-                        # Average of prior 15-40 weeks was safely above 200W-SMA (+3% or higher)
-                        prior_w_close = weekly_close.iloc[-40:-8]
-                        prior_w_sma = sma200_series.iloc[-40:-8]
-                        was_above_from_upside = (prior_w_close.mean() > prior_w_sma.mean() * 1.03) if len(prior_w_close) >= 8 else False
+                        # Average of prior weeks was above 200W-SMA
+                        prior_w_close = weekly_close.iloc[-30:-4]
+                        prior_w_sma = sma200_series.iloc[-30:-4]
+                        was_above_from_upside = (prior_w_close.mean() > prior_w_sma.mean() * 1.01) if len(prior_w_close) >= 5 else True
                         
-                        # 2. Touch / Sweep Zone: Low within last 10 sessions tested 200W-SMA
-                        recent_10d_low = float(low.iloc[-10:].min())
-                        touched_200w = (recent_10d_low <= current_sma200_w * 1.025) and (recent_10d_low >= current_sma200_w * 0.94)
+                        # 2. Touch / Sweep Zone: Low within last 15 sessions tested 200W-SMA (within 4%)
+                        recent_15d_low = float(low.iloc[-15:].min())
+                        touched_200w = (recent_15d_low <= current_sma200_w * 1.04) and (recent_15d_low >= current_sma200_w * 0.92)
                         
-                        # 3. Institutional Defense: Current close holds above or at 200W-SMA
-                        holds_200w = curr_c >= (current_sma200_w * 0.985)
+                        # 3. Institutional Defense: Current close holds above or near 200W-SMA (>= 97%)
+                        holds_200w = curr_c >= (current_sma200_w * 0.97)
                         
                         if was_above_from_upside and touched_200w and holds_200w:
                             has_200w_touch = True
                             sma200_w = current_sma200_w
                             # Check if the low briefly swept under 200W-SMA and closed back above (classic liquidity sweep)
-                            if recent_10d_low < current_sma200_w and curr_c > current_sma200_w:
+                            if recent_15d_low < current_sma200_w and curr_c > current_sma200_w:
                                 swept_200w = True
         except Exception:
             pass
@@ -150,6 +150,17 @@ def evaluate_divergence_reversal(ticker, df=None):
         # Short-term 10-EMA Reclamation:
         ema10 = float(close.ewm(span=10, adjust=False).mean().iloc[-1])
         reclaimed_ema10 = curr_c > ema10
+        
+        # 'Ready to Fly' Trend Defense Rule:
+        # A setup cannot be 'ready to fly' if price has slumped below its 10-day EMA.
+        # It must be actively reclaiming or defending the 10-EMA (>= 99.5% of EMA10).
+        if curr_c < (ema10 * 0.995):
+            return None
+            
+        # Anti-Extension Rule:
+        # If price is already >8% above the CHoCH swing high, the initial ignition leg has already flown.
+        if swing_high and curr_c > (swing_high * 1.08):
+            return None
         
         # Candlestick Confirmation:
         candle_range = curr_h - curr_l

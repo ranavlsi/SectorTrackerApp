@@ -29,29 +29,28 @@ CORE_GANN_UNIVERSE = [
 
 def fetch_ohlcv_from_lakehouse(ticker, lookback_days=320):
     """Attempts to load daily OHLCV from the local Lakehouse parquet database."""
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    lakehouse_path = os.path.join(base_dir, 'lakehouse', 'daily_bars.parquet')
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    lakehouse_path = os.path.join(base_dir, 'data', 'daily_ohlcv.parquet')
     if not os.path.exists(lakehouse_path):
         return None
     try:
-        df = pd.read_parquet(lakehouse_path)
-        if 'ticker' in df.columns:
-            df = df[df['ticker'].str.upper() == ticker.upper()].copy()
-        elif 'Symbol' in df.columns:
-            df = df[df['Symbol'].str.upper() == ticker.upper()].copy()
-        else:
-            return None
-        if df.empty:
-            return None
-        date_col = 'date' if 'date' in df.columns else 'Date'
-        df[date_col] = pd.to_datetime(df[date_col])
-        df = df.sort_values(date_col).reset_index(drop=True)
-        col_map = {c: c.capitalize() for c in df.columns}
-        df = df.rename(columns=col_map)
-        df['Date'] = pd.to_datetime(df['Date'])
-        cutoff = datetime.datetime.now() - datetime.timedelta(days=lookback_days * 1.5)
-        df = df[df['Date'] >= cutoff].reset_index(drop=True)
-        if len(df) >= 30:
+        import duckdb
+        con = duckdb.connect()
+        query = f"""
+            SELECT date, open, high, low, close, volume 
+            FROM '{lakehouse_path}' 
+            WHERE ticker = '{ticker.upper()}' 
+            ORDER BY date DESC 
+            LIMIT {lookback_days}
+        """
+        df = con.execute(query).df()
+        con.close()
+        if df is not None and not df.empty and len(df) >= 30:
+            col_map = {c: c.capitalize() for c in df.columns}
+            df = df.rename(columns=col_map)
+            df = df.dropna(subset=['Close', 'High', 'Low']).reset_index(drop=True)
+            df = df.sort_values('Date').reset_index(drop=True)
+            df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
             return df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].copy()
         return None
     except Exception:
@@ -1343,6 +1342,9 @@ def get_detailed_stock_gann(ticker, lookback_bars=260):
         'chart_data': chart_data
     }
 
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+GANN_CACHE_FILE = os.path.join(DATA_DIR, 'gann_screener.json')
+
 def run_gann_screener(symbols=None, force_refresh=False):
     """
     Scans liquid universe across all Gann quantitative pillars and returns market breadth and scored setups.
@@ -1350,6 +1352,16 @@ def run_gann_screener(symbols=None, force_refresh=False):
     if not symbols:
         symbols = CORE_GANN_UNIVERSE
         
+    if not force_refresh and os.path.exists(GANN_CACHE_FILE):
+        try:
+            mtime = os.path.getmtime(GANN_CACHE_FILE)
+            if (datetime.datetime.now().timestamp() - mtime) < 1800:
+                import json
+                with open(GANN_CACHE_FILE, 'r') as f:
+                    return json.load(f)
+        except Exception:
+            pass
+
     results = []
     bullish_1x1_count = 0
     squared_count = 0
@@ -1438,16 +1450,23 @@ def run_gann_screener(symbols=None, force_refresh=False):
         'primary_regime': "Geometric Markup Dominance" if (bullish_1x1_count / max(1, total_scanned)) >= 0.60 else "Cycle Transition & Defense"
     }
     
-    return {
+    payload = {
         'last_updated': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'posture': posture,
         'stocks': results
     }
+    
+    try:
+        import json
+        os.makedirs(DATA_DIR, exist_ok=True)
+        with open(GANN_CACHE_FILE, 'w') as f:
+            json.dump(payload, f, indent=2)
+    except Exception as e:
+        print(f"[Gann Engine] Cache save warning: {e}")
+
+    return payload
 
 if __name__ == '__main__':
     print("Testing upgraded Gann Engine v3.0...")
-    res = get_detailed_stock_gann("META")
-    print("Gann Swings:", res['gann_swings']['summary'])
-    print("Second Square active:", res['second_square']['is_active'])
-    print("Square of 9 Matrix cells:", len(res['square_of_9']['matrix_grid']['cells']))
-    print("Chart swings remapped:", len(res['chart_data']['gann_swings']))
+    run_gann_screener(force_refresh=True)
+    print("Gann Screener cache updated successfully.")

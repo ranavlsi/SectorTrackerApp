@@ -585,6 +585,9 @@ def fetch_cboe_options(ticker: str):
         spot_price = float(data.get('current_price') or data.get('close') or data.get('prev_day_close') or 0.0)
         stock_vol = float(data.get('volume') or 10000000.0)
         
+        today_date = datetime.date.today()
+        today_str = today_date.strftime('%Y-%m-%d')
+
         parsed_calls = []
         parsed_puts = []
         for o in options_list:
@@ -594,6 +597,11 @@ def fetch_cboe_options(ticker: str):
                 continue
             _, yy, mm, dd, opt_type, strike_raw = m.groups()
             exp_str = f"20{yy}-{mm}-{dd}"
+            
+            # Strictly filter out expired options from prior trading sessions
+            if exp_str < today_str:
+                continue
+
             strike = float(strike_raw) / 1000.0
             
             row = {
@@ -626,13 +634,23 @@ def fetch_cboe_options(ticker: str):
         print(f"CBOE fetch error for {ticker}: {e}")
         return None
 
+_GEX_PROFILE_CACHE = {}
+_GEX_PROFILE_CACHE_TTL = 180  # 3 minutes
+
 def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
     """
     Calculates institutional Gamma Exposure (GEX) profile across strikes and expirations.
     First tries direct CBOE option feed (no rate limits), falling back to yfinance.
     """
     try:
-        ticker = ticker.upper()
+        ticker = ticker.upper().strip()
+        cache_key = (ticker, expiry_filter.upper().strip())
+        now_ts = time.time()
+        if cache_key in _GEX_PROFILE_CACHE:
+            cached_prof, cached_ts = _GEX_PROFILE_CACHE[cache_key]
+            if now_ts - cached_ts < _GEX_PROFILE_CACHE_TTL:
+                return cached_prof
+
         cboe_data = fetch_cboe_options(ticker)
         
         if cboe_data is not None:
@@ -684,13 +702,23 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
 
         r = 0.045
         today = datetime.date.today()
+        today_str = today.strftime('%Y-%m-%d')
+
+        valid_options = []
+        for e in options:
+            try:
+                ed = datetime.datetime.strptime(e, "%Y-%m-%d").date()
+                if ed >= today:
+                    valid_options.append(e)
+            except Exception:
+                pass
 
         if expiry_filter.upper() == "FRONT":
-            target_expiries = [options[0]]
-        elif expiry_filter in options:
+            target_expiries = [valid_options[0]] if valid_options else []
+        elif expiry_filter in valid_options:
             target_expiries = [expiry_filter]
         else:
-            target_expiries = options[:min(10, len(options))]
+            target_expiries = valid_options[:min(10, len(valid_options))]
 
         aggregated_strikes: Dict[float, Dict[str, Any]] = {}
         all_calls_list = []
@@ -706,7 +734,10 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
         for exp_date_str in target_expiries:
             try:
                 exp_date = datetime.datetime.strptime(exp_date_str, "%Y-%m-%d").date()
-                days_to_exp = max(0.5, (exp_date - today).days)
+                days_diff = (exp_date - today).days
+                if days_diff < 0:
+                    continue
+                days_to_exp = max(0.5, days_diff)
                 T = days_to_exp / 365.25
 
                 term_structure_dict[exp_date_str] = {
@@ -729,7 +760,7 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                     puts = chain.puts
 
                 if calls is not None and not calls.empty:
-                    for _, row in calls.iterrows():
+                    for row in calls.to_dict('records'):
                         strike = float(row['strike'])
                         oi = int(row['openInterest']) if pd.notna(row.get('openInterest')) else 0
                         vol = int(row['volume']) if pd.notna(row.get('volume')) else 0
@@ -800,7 +831,7 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                             all_contracts_list.append({"strike": strike, "T": T, "iv": iv, "type": "call", "weight": eff_weight})
 
                 if puts is not None and not puts.empty:
-                    for _, row in puts.iterrows():
+                    for row in puts.to_dict('records'):
                         strike = float(row['strike'])
                         oi = int(row['openInterest']) if pd.notna(row.get('openInterest')) else 0
                         vol = int(row['volume']) if pd.notna(row.get('volume')) else 0
@@ -877,13 +908,27 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                 print(f"Error parsing expiry {exp_date_str}: {exp_err}")
                 continue
 
-        if not aggregated_strikes:
-            return {"error": "No strikes resolved for GEX calculation"}
-
-        # Calculate implied volatility and expected move cones
+        # Calculate implied volatility, 25D Skew, and expected move cones
         avg_atm_iv = float(np.median(atm_iv_samples)) if atm_iv_samples else 0.22
         if avg_atm_iv <= 0.01:
             avg_atm_iv = 0.22
+
+        # 25-Delta Skew Calculation from live contracts around ~25D (~0.95x spot for Puts, ~1.05x spot for Calls)
+        front_30d_exp = target_expiries[0] if target_expiries else None
+        live_skew_25d = 0.0
+        if all_contracts_list:
+            sig_est = max(avg_atm_iv, 0.15)
+            t_est = 30.0 / 365.25
+            target_put_k = spot_price * math.exp(-0.6745 * sig_est * math.sqrt(t_est))
+            target_call_k = spot_price * math.exp(+0.6745 * sig_est * math.sqrt(t_est))
+            
+            put_contracts = [c for c in all_contracts_list if c['type'] == 'put' and 0.05 < c['iv'] < 3.0]
+            call_contracts = [c for c in all_contracts_list if c['type'] == 'call' and 0.05 < c['iv'] < 3.0]
+            
+            if put_contracts and call_contracts:
+                best_put_c = min(put_contracts, key=lambda c: abs(c['strike'] - target_put_k))
+                best_call_c = min(call_contracts, key=lambda c: abs(c['strike'] - target_call_k))
+                live_skew_25d = round((best_put_c['iv'] - best_call_c['iv']) * 100.0, 2)
 
         # 1-day, 5-day, and 30-day expected moves (+/- 1 sigma)
         em_1d = round(spot_price * avg_atm_iv * math.sqrt(1.0 / 365.25), 2)
@@ -892,6 +937,7 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
 
         expected_move = {
             "atm_iv_pct": round(avg_atm_iv * 100.0, 1),
+            "skew_25d": live_skew_25d,
             "move_1d": em_1d,
             "move_1d_pct": round((em_1d / spot_price) * 100.0, 2),
             "range_1d": [round(spot_price - em_1d, 2), round(spot_price + em_1d, 2)],
@@ -1154,10 +1200,16 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             pcr_oi_val = round(put_oi_val / max(call_oi_val, 1), 2)
             net_gex_val = round(val["net_gex"], 2)
 
+            exp_dte = max(1, val["dte"])
+            expected_move_pct_exp = round(avg_atm_iv_exp * math.sqrt(exp_dte / 365.0), 2)
+            expected_move_pts_exp = round(spot_price * (expected_move_pct_exp / 100.0), 2)
+
             term_structure.append({
                 "expiry": exp_key,
                 "dte": val["dte"],
                 "atm_iv": avg_atm_iv_exp,
+                "expected_move_pct": expected_move_pct_exp,
+                "expected_move_pts": expected_move_pts_exp,
                 "net_gex": net_gex_val,
                 "net_gex_millions": round(net_gex_val / 1e6, 2),
                 "call_gex": round(val["call_gex"], 2),
@@ -1665,7 +1717,7 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             risk_scores
         )
 
-        return {
+        result_payload = {
             "ticker": ticker.upper(),
             "spot_price": round(spot_price, 2),
             "key_levels": {
@@ -1720,6 +1772,8 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             "matrix_data": matrix_data,
             "expirations": options[:12]
         }
+        _GEX_PROFILE_CACHE[cache_key] = (result_payload, time.time())
+        return result_payload
 
     except Exception as e:
         return {"error": str(e)}

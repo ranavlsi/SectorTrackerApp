@@ -93,6 +93,19 @@ TICKER_SECTOR_MAP = {
 
 def fetch_ohlcv(ticker, period="5y", interval="1d"):
     """Fetches clean daily OHLCV dataframe over 5-year historical horizon."""
+    lakehouse_path = os.path.join(os.path.dirname(__file__), 'data', 'daily_ohlcv.parquet')
+    if os.path.exists(lakehouse_path):
+        try:
+            import duckdb
+            con = duckdb.connect()
+            df_l = con.execute(f"SELECT Date, Open, High, Low, Close, Volume FROM '{lakehouse_path}' WHERE Ticker = '{ticker.upper()}' ORDER BY Date ASC").df()
+            con.close()
+            if df_l is not None and len(df_l) >= 60:
+                df_l['Date'] = pd.to_datetime(df_l['Date']).dt.tz_localize(None)
+                return df_l[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].copy()
+        except Exception:
+            pass
+
     try:
         t = yf.Ticker(ticker.upper())
         df = t.history(period=period, interval=interval)
@@ -1907,6 +1920,687 @@ def run_stage_canslim_screener(force_refresh=False):
         print(f"Error caching Stage+CANSLIM results: {e}")
 
     return screener_payload
+
+
+def compute_sector_stage_rotation(lookback_bars=10, mode="stage", force_refresh=False):
+    """
+    Computes Stan Weinstein 4-Quadrant Sector Stage Rotation Matrix with Movement Arcs (Head & Tail).
+    
+    Quadrants:
+      Quadrant I (Top-Right): Stage 2 (Advancing / Markup)   - Price > 30W-SMA, Accelerating Slope (+X, +Y)
+      Quadrant II (Bottom-Right): Stage 3 (Distribution / Topping) - Price > 30W-SMA, Decelerating/Rolling Slope (+X, -Y)
+      Quadrant III (Bottom-Left): Stage 4 (Declining / Markdown) - Price < 30W-SMA, Negative Slope (-X, -Y)
+      Quadrant IV (Top-Left): Stage 1 (Accumulation / Basing)  - Price < 30W-SMA, Curling Positive Slope (-X, +Y)
+      
+    Movement Arcs:
+      - Head: Latest bar coordinate (X, Y) with directional angle, velocity, and current Stage.
+      - Tail: Trail of historical coordinates over past N bars (oldest -> newest), showing exact rotation path.
+    """
+    sectors_config = [
+        # --- Core Sector Spiders (Macro) ---
+        {"ticker": "XLK", "name": "Technology", "category": "Sectors", "theme": "Macro Tech", "theme_id": "SECTORS", "color": "#38bdf8"},
+        {"ticker": "SMH", "name": "Semiconductors", "category": "Sectors", "theme": "Semiconductors", "theme_id": "SECTORS", "color": "#06b6d4"},
+        {"ticker": "XLF", "name": "Financials", "category": "Sectors", "theme": "Financials", "theme_id": "SECTORS", "color": "#60a5fa"},
+        {"ticker": "XLE", "name": "Energy", "category": "Sectors", "theme": "Energy", "theme_id": "SECTORS", "color": "#f59e0b"},
+        {"ticker": "XLI", "name": "Industrials", "category": "Sectors", "theme": "Industrials", "theme_id": "SECTORS", "color": "#f97316"},
+        {"ticker": "XLY", "name": "Consumer Discretionary", "category": "Sectors", "theme": "Discretionary", "theme_id": "SECTORS", "color": "#ec4899"},
+        {"ticker": "XLP", "name": "Consumer Staples", "category": "Sectors", "theme": "Staples", "theme_id": "SECTORS", "color": "#10b981"},
+        {"ticker": "XLU", "name": "Utilities", "category": "Sectors", "theme": "Utilities", "theme_id": "SECTORS", "color": "#a855f7"},
+        {"ticker": "XLV", "name": "Health Care", "category": "Sectors", "theme": "Health Care", "theme_id": "SECTORS", "color": "#14b8a6"},
+        {"ticker": "XLB", "name": "Materials", "category": "Sectors", "theme": "Materials", "theme_id": "SECTORS", "color": "#eab308"},
+        {"ticker": "XLC", "name": "Communication Services", "category": "Sectors", "theme": "Communications", "theme_id": "SECTORS", "color": "#818cf8"},
+        {"ticker": "XLRE", "name": "Real Estate", "category": "Sectors", "theme": "Real Estate", "theme_id": "SECTORS", "color": "#fb7185"},
+
+        # --- Thematic: Quantum Computing & Advanced Tech ---
+        {"ticker": "QTUM", "name": "Quantum Computing & ML", "category": "Thematic", "theme": "Quantum Computing", "theme_id": "QUANTUM", "color": "#8b5cf6"},
+
+        # --- Thematic: Cybersecurity ---
+        {"ticker": "CIBR", "name": "Cybersecurity First Trust", "category": "Thematic", "theme": "Cybersecurity", "theme_id": "CYBERSECURITY", "color": "#06b6d4"},
+        {"ticker": "BUG", "name": "Cybersecurity Global X", "category": "Thematic", "theme": "Cybersecurity", "theme_id": "CYBERSECURITY", "color": "#0ea5e9"},
+        {"ticker": "HACK", "name": "Cybersecurity Amplify", "category": "Thematic", "theme": "Cybersecurity", "theme_id": "CYBERSECURITY", "color": "#38bdf8"},
+
+        # --- Thematic: Transportation & Logistics ---
+        {"ticker": "IYT", "name": "Transportation iShares", "category": "Thematic", "theme": "Transportation", "theme_id": "TRANSPORT", "color": "#f59e0b"},
+        {"ticker": "XTN", "name": "Transportation SPDR", "category": "Thematic", "theme": "Transportation", "theme_id": "TRANSPORT", "color": "#d97706"},
+
+        # --- Thematic: AI & Robotics ---
+        {"ticker": "BOTZ", "name": "Robotics & AI Global X", "category": "Thematic", "theme": "AI & Robotics", "theme_id": "AI_ROBOTICS", "color": "#a855f7"},
+        {"ticker": "ROBO", "name": "Robotics & Automation Global", "category": "Thematic", "theme": "AI & Robotics", "theme_id": "AI_ROBOTICS", "color": "#c084fc"},
+
+        # --- Thematic: Cloud Software & SaaS ---
+        {"ticker": "IGV", "name": "Expanded Tech-Software", "category": "Thematic", "theme": "Software & Cloud", "theme_id": "SOFTWARE", "color": "#3b82f6"},
+        {"ticker": "CLOU", "name": "Cloud Computing Global X", "category": "Thematic", "theme": "Software & Cloud", "theme_id": "SOFTWARE", "color": "#60a5fa"},
+
+        # --- Thematic: Biotech & Genomics ---
+        {"ticker": "XBI", "name": "Biotech SPDR S&P", "category": "Thematic", "theme": "Biotech", "theme_id": "BIOTECH", "color": "#ec4899"},
+        {"ticker": "IBB", "name": "Biotechnology iShares", "category": "Thematic", "theme": "Biotech", "theme_id": "BIOTECH", "color": "#f43f5e"},
+
+        # --- Thematic: Nuclear & Clean Energy / Uranium ---
+        {"ticker": "URA", "name": "Uranium Global X", "category": "Thematic", "theme": "Nuclear & Uranium", "theme_id": "NUCLEAR", "color": "#84cc16"},
+        {"ticker": "NLR", "name": "Uranium & Nuclear VanEck", "category": "Thematic", "theme": "Nuclear & Uranium", "theme_id": "NUCLEAR", "color": "#a3e635"},
+
+        # --- Thematic: Aerospace & Defense ---
+        {"ticker": "ITA", "name": "Aerospace & Defense iShares", "category": "Thematic", "theme": "Defense", "theme_id": "DEFENSE", "color": "#64748b"},
+        {"ticker": "XAR", "name": "Aerospace & Defense SPDR", "category": "Thematic", "theme": "Defense", "theme_id": "DEFENSE", "color": "#94a3b8"},
+
+        # --- Thematic: Housing & Homebuilders ---
+        {"ticker": "XHB", "name": "Homebuilders SPDR", "category": "Thematic", "theme": "Housing", "theme_id": "HOUSING", "color": "#10b981"},
+        {"ticker": "ITB", "name": "Home Construction iShares", "category": "Thematic", "theme": "Housing", "theme_id": "HOUSING", "color": "#059669"},
+
+        # --- Thematic: Regional Banking ---
+        {"ticker": "KRE", "name": "Regional Banking SPDR", "category": "Thematic", "theme": "Regional Banks", "theme_id": "REGIONAL_BANKS", "color": "#0284c7"},
+
+        # --- Thematic: Metals & Mining / Gold ---
+        {"ticker": "XME", "name": "Metals & Mining SPDR", "category": "Thematic", "theme": "Metals & Mining", "theme_id": "METALS", "color": "#eab308"},
+        {"ticker": "GDX", "name": "Gold Miners VanEck", "category": "Thematic", "theme": "Gold Miners", "theme_id": "METALS", "color": "#fbbf24"},
+
+        # --- Core Benchmarks ---
+        {"ticker": "QQQ", "name": "Nasdaq 100", "category": "Benchmark", "theme": "Broad Benchmark", "theme_id": "BENCHMARK", "color": "#c084fc"},
+        {"ticker": "IWM", "name": "Russell 2000", "category": "Benchmark", "theme": "Small-Cap Benchmark", "theme_id": "BENCHMARK", "color": "#f43f5e"},
+        {"ticker": "SPY", "name": "S&P 500 Benchmark", "category": "Benchmark", "theme": "Large-Cap Benchmark", "theme_id": "BENCHMARK", "color": "#94a3b8"}
+    ]
+
+    spy_w = get_spy_weekly()
+
+    def get_quadrant(x, y):
+        if x >= 0 and y >= 0:
+            return {"id": 2, "name": "Stage 2: Advancing / Markup", "short": "Stage 2", "phase": "Advancing", "color": "#10b981"}
+        elif x >= 0 and y < 0:
+            return {"id": 3, "name": "Stage 3: Distribution / Topping", "short": "Stage 3", "phase": "Topping", "color": "#ec4899"}
+        elif x < 0 and y < 0:
+            return {"id": 4, "name": "Stage 4: Declining / Markdown", "short": "Stage 4", "phase": "Declining", "color": "#ef4444"}
+        else:
+            return {"id": 1, "name": "Stage 1: Accumulation / Basing", "short": "Stage 1", "phase": "Basing", "color": "#8b5cf6"}
+
+    try:
+        lookback_bars = int(lookback_bars)
+    except Exception:
+        lookback_bars = 10
+    lookback_bars = max(3, min(25, lookback_bars))
+
+    etf_results = []
+    all_x = []
+    all_y = []
+
+    for item in sectors_config:
+        sym = item["ticker"]
+        df_d = fetch_ohlcv(sym)
+        if df_d is None or len(df_d) < 60:
+            continue
+        w = compute_weekly_bars(df_d)
+        if w is None or len(w) < 35:
+            continue
+        rs_df = compute_mansfield_rs(w, spy_w)
+        w["MA30"] = w["Close"].rolling(30).mean()
+        w["MA10"] = w["Close"].rolling(10).mean()
+
+        stage_details = classify_12_substages(w, rs_df, df_d)
+
+        trail = []
+        start_idx = max(30, len(w) - lookback_bars)
+        for idx in range(start_idx, len(w)):
+            sub_w = w.iloc[:idx+1]
+            c = float(sub_w["Close"].iloc[-1])
+            ma30 = float(sub_w["MA30"].iloc[-1]) if pd.notna(sub_w["MA30"].iloc[-1]) else c
+            ma10 = float(sub_w["MA10"].iloc[-1]) if pd.notna(sub_w["MA10"].iloc[-1]) else c
+            dist_ma30 = ((c - ma30) / ma30) * 100 if ma30 > 0 else 0.0
+
+            prev_ma30 = float(sub_w["MA30"].iloc[-5]) if len(sub_w) >= 5 and pd.notna(sub_w["MA30"].iloc[-5]) else ma30
+            ma30_slope = ((ma30 - prev_ma30) / prev_ma30) * 100 if prev_ma30 > 0 else 0.0
+
+            rs_val = float(rs_df["Mansfield_RS"].iloc[idx]) if rs_df is not None and idx < len(rs_df) and pd.notna(rs_df["Mansfield_RS"].iloc[idx]) else 0.0
+            prev_rs = float(rs_df["Mansfield_RS"].iloc[idx-4]) if rs_df is not None and 0 <= (idx-4) < len(rs_df) and pd.notna(rs_df["Mansfield_RS"].iloc[idx-4]) else rs_val
+            rs_slope = rs_val - prev_rs
+
+            if mode == "rrg":
+                x = round(rs_val, 2)
+                y = round(rs_slope * 2.0, 2)
+            else:
+                x = round(dist_ma30, 2)
+                y = round(ma30_slope * 1.5 + rs_slope * 0.5, 2)
+
+            q = get_quadrant(x, y)
+            dt_val = sub_w["Date"].iloc[-1]
+            d_str = dt_val.strftime("%Y-%m-%d") if hasattr(dt_val, "strftime") else str(dt_val)[:10]
+
+            trail.append({
+                "date": d_str,
+                "close": round(c, 2),
+                "x": x,
+                "y": y,
+                "dist_ma30_pct": round(dist_ma30, 2),
+                "ma30_slope_pct": round(ma30_slope, 2),
+                "mansfield_rs": round(rs_val, 2),
+                "quadrant_id": q["id"],
+                "quadrant_name": q["short"]
+            })
+            all_x.append(x)
+            all_y.append(y)
+
+        if not trail:
+            continue
+
+        head = trail[-1]
+        tail_start = trail[0]
+        prev_pt = trail[-2] if len(trail) >= 2 else trail[0]
+
+        dx = round(head["x"] - prev_pt["x"], 2)
+        dy = round(head["y"] - prev_pt["y"], 2)
+        trail_dx = round(head["x"] - tail_start["x"], 2)
+        trail_dy = round(head["y"] - tail_start["y"], 2)
+
+        velocity = round(math.sqrt(dx**2 + dy**2), 2)
+        trail_velocity = round(math.sqrt(trail_dx**2 + trail_dy**2), 2)
+        angle = round(math.atan2(dy, dx) * 180.0 / math.pi, 1)
+
+        # Direction heading text
+        if -22.5 <= angle <= 22.5:
+            heading_desc = "East (Expanding Right)"
+            heading_arrow = "➔"
+        elif 22.5 < angle <= 67.5:
+            heading_desc = "North-East (Expanding Markup)"
+            heading_arrow = "↗"
+        elif 67.5 < angle <= 112.5:
+            heading_desc = "North (Accelerating Upward)"
+            heading_arrow = "↑"
+        elif 112.5 < angle <= 157.5:
+            heading_desc = "North-West (Basing Recovery)"
+            heading_arrow = "↖"
+        elif angle > 157.5 or angle <= -157.5:
+            heading_desc = "West (Decelerating Left)"
+            heading_arrow = "⬅"
+        elif -157.5 < angle <= -112.5:
+            heading_desc = "South-West (Markdown Degradation)"
+            heading_arrow = "↙"
+        elif -112.5 < angle <= -67.5:
+            heading_desc = "South (Rapid Deterioration)"
+            heading_arrow = "↓"
+        else:
+            heading_desc = "South-East (Churning Distribution)"
+            heading_arrow = "↘"
+
+        current_q = get_quadrant(head["x"], head["y"])
+        start_q = get_quadrant(tail_start["x"], tail_start["y"])
+
+        # Determine target transition stage
+        if start_q["id"] != current_q["id"]:
+            transition_path = f"{start_q['short']} ➔ {current_q['short']}"
+            target_stage = current_q["short"]
+            is_transitioning = True
+        else:
+            if current_q["id"] == 1:
+                target_stage = "Stage 2" if dy > 0 and dx > 0 else "Stage 1"
+                transition_path = "Stage 1 ➔ Approaching Stage 2 (Ignition)" if dy > 0 else "Consolidating in Stage 1 Base"
+                is_transitioning = (dy > 0)
+            elif current_q["id"] == 2:
+                target_stage = "Stage 3" if dy < 0 else "Stage 2"
+                transition_path = "Stage 2 ➔ Weakening toward Stage 3" if dy < 0 else "Expanding inside Stage 2 Markup"
+                is_transitioning = (dy < 0)
+            elif current_q["id"] == 3:
+                target_stage = "Stage 4" if dx < 0 else "Stage 3"
+                transition_path = "Stage 3 ➔ Rolling toward Stage 4" if dx < 0 else "Distribution Churning in Stage 3"
+                is_transitioning = (dx < 0)
+            else: # Stage 4
+                target_stage = "Stage 1" if dy > 0 else "Stage 4"
+                transition_path = "Stage 4 ➔ Bottoming toward Stage 1" if dy > 0 else "Persistent Stage 4 Markdown"
+                is_transitioning = (dy > 0)
+
+        # Status badge
+        if current_q["id"] == 2:
+            badge = "EXPANDING LEADER" if dy >= 0 else "LATE STAGE 2"
+        elif current_q["id"] == 1:
+            badge = "PRE-BREAKOUT" if dy > 0 else "BASING"
+        elif current_q["id"] == 3:
+            badge = "TOPPING RISK"
+        else:
+            badge = "MARKDOWN AVOID"
+
+        etf_results.append({
+            "ticker": sym,
+            "name": item["name"],
+            "category": item["category"],
+            "theme": item.get("theme", item["category"]),
+            "theme_id": item.get("theme_id", "ALL"),
+            "color": item["color"],
+            "current_price": head["close"],
+            "sub_stage": stage_details.get("sub_stage", "N/A"),
+            "sub_stage_name": stage_details.get("sub_stage_name", "N/A"),
+            "stage_category": stage_details.get("stage_category", "N/A"),
+            "action_directive": stage_details.get("action_directive", ""),
+            "dist_ma30_pct": head["dist_ma30_pct"],
+            "ma30_slope_pct": head["ma30_slope_pct"],
+            "mansfield_rs": head["mansfield_rs"],
+            "current_quadrant": current_q["id"],
+            "current_quadrant_name": current_q["name"],
+            "current_quadrant_short": current_q["short"],
+            "current_phase": current_q["phase"],
+            "quadrant_color": current_q["color"],
+            "origin_quadrant": start_q["id"],
+            "origin_quadrant_short": start_q["short"],
+            "target_stage": target_stage,
+            "transition_path": transition_path,
+            "is_transitioning": is_transitioning,
+            "transition_badge": badge,
+            "velocity": velocity,
+            "trail_velocity": trail_velocity,
+            "heading_degrees": angle,
+            "heading_desc": heading_desc,
+            "heading_arrow": heading_arrow,
+            "head": head,
+            "tail_start": tail_start,
+            "tail": trail
+        })
+
+    # Sort etfs: Leaders (Stage 2) first, then Stage 1 (Improving), etc.
+    quadrant_order = {2: 1, 1: 2, 3: 3, 4: 4}
+    etf_results.sort(key=lambda item: (quadrant_order.get(item["current_quadrant"], 5), -item["velocity"]))
+
+    # Symmetrical grid bounds
+    max_abs_x = max([abs(v) for v in all_x] + [12.0]) * 1.15
+    max_abs_y = max([abs(v) for v in all_y] + [8.0]) * 1.15
+
+    # Groupings
+    stage_1_etfs = [e["ticker"] for e in etf_results if e["current_quadrant"] == 1]
+    stage_2_etfs = [e["ticker"] for e in etf_results if e["current_quadrant"] == 2]
+    stage_3_etfs = [e["ticker"] for e in etf_results if e["current_quadrant"] == 3]
+    stage_4_etfs = [e["ticker"] for e in etf_results if e["current_quadrant"] == 4]
+
+    entering_stage_2 = [e["ticker"] for e in etf_results if e["target_stage"] == "Stage 2" or e["transition_badge"] in ("PRE-BREAKOUT", "EXPANDING LEADER")]
+    entering_stage_3 = [e["ticker"] for e in etf_results if e["target_stage"] == "Stage 3" or e["transition_badge"] in ("TOPPING RISK", "LATE STAGE 2")]
+    entering_stage_4 = [e["ticker"] for e in etf_results if e["target_stage"] == "Stage 4" or e["transition_badge"] == "MARKDOWN AVOID"]
+    entering_stage_1 = [e["ticker"] for e in etf_results if e["target_stage"] == "Stage 1" or e["transition_badge"] in ("BASING", "IMPROVING")]
+
+    available_themes = [
+        {"id": "ALL", "label": "All ETFs & Themes", "count": len(etf_results)},
+        {"id": "SECTORS", "label": "Core Sectors", "count": len([e for e in etf_results if e.get("category") == "Sectors"])},
+        {"id": "THEMATIC", "label": "All Thematics", "count": len([e for e in etf_results if e.get("category") == "Thematic"])},
+        {"id": "QUANTUM", "label": "Quantum", "count": len([e for e in etf_results if e.get("theme_id") == "QUANTUM"])},
+        {"id": "CYBERSECURITY", "label": "Cybersecurity", "count": len([e for e in etf_results if e.get("theme_id") == "CYBERSECURITY"])},
+        {"id": "TRANSPORT", "label": "Transportation", "count": len([e for e in etf_results if e.get("theme_id") == "TRANSPORT"])},
+        {"id": "AI_ROBOTICS", "label": "AI & Robotics", "count": len([e for e in etf_results if e.get("theme_id") == "AI_ROBOTICS"])},
+        {"id": "SOFTWARE", "label": "Cloud & Software", "count": len([e for e in etf_results if e.get("theme_id") == "SOFTWARE"])},
+        {"id": "BIOTECH", "label": "Biotech", "count": len([e for e in etf_results if e.get("theme_id") == "BIOTECH"])},
+        {"id": "NUCLEAR", "label": "Nuclear & Uranium", "count": len([e for e in etf_results if e.get("theme_id") == "NUCLEAR"])},
+        {"id": "DEFENSE", "label": "Aerospace & Defense", "count": len([e for e in etf_results if e.get("theme_id") == "DEFENSE"])},
+        {"id": "HOUSING", "label": "Homebuilders", "count": len([e for e in etf_results if e.get("theme_id") == "HOUSING"])},
+        {"id": "REGIONAL_BANKS", "label": "Regional Banks", "count": len([e for e in etf_results if e.get("theme_id") == "REGIONAL_BANKS"])},
+        {"id": "METALS", "label": "Metals & Gold", "count": len([e for e in etf_results if e.get("theme_id") == "METALS"])},
+        {"id": "BENCHMARK", "label": "Benchmarks", "count": len([e for e in etf_results if e.get("category") == "Benchmark"])}
+    ]
+
+    return {
+        "status": "success",
+        "lookback_bars": lookback_bars,
+        "mode": mode,
+        "x_axis_label": "Price Distance to 30-Week SMA (%)" if mode == "stage" else "Mansfield Relative Strength Ratio vs SPY",
+        "y_axis_label": "Stage Velocity & Rotational Momentum (%)" if mode == "stage" else "Relative Strength Momentum (ROC %)",
+        "bounds": {
+            "x_min": -round(max_abs_x, 1),
+            "x_max": round(max_abs_x, 1),
+            "y_min": -round(max_abs_y, 1),
+            "y_max": round(max_abs_y, 1),
+            "max_abs_x": round(max_abs_x, 1),
+            "max_abs_y": round(max_abs_y, 1)
+        },
+        "quadrant_counts": {
+            "stage_1_basing": len(stage_1_etfs),
+            "stage_2_advancing": len(stage_2_etfs),
+            "stage_3_topping": len(stage_3_etfs),
+            "stage_4_declining": len(stage_4_etfs),
+            "total": len(etf_results)
+        },
+        "stage_transitions": {
+            "entering_stage_2": entering_stage_2,
+            "entering_stage_3": entering_stage_3,
+            "entering_stage_4": entering_stage_4,
+            "entering_stage_1": entering_stage_1
+        },
+        "available_themes": available_themes,
+        "sector_etfs": etf_results,
+        "last_updated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+ETF_CONSTITUENTS_MAP = {
+    # Quantum Computing & Advanced ML
+    "QTUM": ["RGTI", "QBTS", "IONQ", "IBM", "HON", "GOOGL", "MSFT", "NVDA", "AMAT", "KEYS"],
+    
+    # Cybersecurity
+    "CIBR": ["CRWD", "PANW", "FTNT", "NET", "CHKP", "ZS", "OKTA", "GEN", "QLYS", "RPD"],
+    "BUG": ["PANW", "CRWD", "FTNT", "NET", "CHKP", "ZS", "OKTA", "QLYS", "RPD", "TENB"],
+    "HACK": ["CRWD", "PANW", "FTNT", "NET", "CHKP", "ZS", "CSCO", "AKAM", "VRNS", "GEN"],
+    
+    # Transportation & Logistics
+    "IYT": ["UNP", "UPS", "UBER", "FDX", "CSX", "NSC", "DAL", "UAL", "ODFL", "LUV"],
+    "XTN": ["ODFL", "SAIA", "XPO", "JBHT", "KNX", "LSTR", "EXPD", "CHRW", "LUV", "DAL"],
+    
+    # AI & Robotics
+    "BOTZ": ["NVDA", "ISRG", "PATH", "SYM", "UPST", "TER", "ROK", "OMCL", "ABB"],
+    "ROBO": ["ISRG", "NVDA", "TER", "CGNX", "IPGP", "ROK", "SYM", "PATH", "AZPN"],
+    
+    # Cloud Software & SaaS
+    "IGV": ["MSFT", "CRM", "ORCL", "ADBE", "INTU", "NOW", "PLTR", "PANW", "WDAY", "SNOW"],
+    "CLOU": ["NET", "DDOG", "ZS", "TWLO", "MDB", "CRWD", "OKTA", "BOX", "DBX", "DOCU"],
+    
+    # Biotechnology & Genomics
+    "XBI": ["VRTX", "REGN", "AMGN", "GILD", "BIIB", "MRNA", "ILMN", "ALNY", "INCY", "BMRN"],
+    "IBB": ["VRTX", "REGN", "AMGN", "GILD", "BIIB", "MRNA", "ILMN", "ALNY", "INCY", "ARGX"],
+    
+    # Uranium & Nuclear Clean Energy
+    "URA": ["CCJ", "NXE", "DNN", "UEC", "UUUU", "EU", "LEU", "OKLO", "SMR", "BWXT"],
+    "NLR": ["CEG", "VST", "CCJ", "DUK", "SO", "ETR", "PEG", "OKLO", "SMR", "LEU"],
+    
+    # Aerospace & Defense
+    "ITA": ["RTX", "BA", "LMT", "GE", "NOC", "GD", "TDG", "LHX", "AXON", "HWM"],
+    "XAR": ["AXON", "HWM", "TDG", "HEI", "KTOS", "CAE", "BWXT", "CW", "SPR", "AIR"],
+    
+    # Housing & Homebuilders
+    "XHB": ["DHI", "LEN", "PHM", "TOL", "NVR", "KBH", "MHO", "BLD", "GRBK", "CCS"],
+    "ITB": ["DHI", "LEN", "PHM", "NVR", "TOL", "SHW", "HD", "LOW", "BLD", "IBP"],
+    
+    # Regional Banks
+    "KRE": ["CFG", "KEY", "HBAN", "FITB", "RF", "ZION", "WAL", "MTB", "TFC", "CMA"],
+    
+    # Metals & Mining / Gold
+    "XME": ["FCX", "NUE", "STLD", "CLF", "AA", "RS", "ATI", "CRS", "MP", "CENX"],
+    "GDX": ["NEM", "GOLD", "AEM", "WPM", "FNV", "KGC", "AU", "AGI", "GFI", "KNTNF"],
+    
+    # Macro Sector Spiders
+    "XLK": ["NVDA", "AAPL", "MSFT", "AVGO", "ORCL", "CRM", "AMD", "ADBE", "QCOM", "TXN"],
+    "SMH": ["NVDA", "TSM", "AVGO", "AMD", "QCOM", "ASML", "TXN", "AMAT", "MU", "LRCX"],
+    "XLF": ["JPM", "BAC", "WFC", "C", "GS", "MS", "BLK", "V", "MA", "AXP"],
+    "XLE": ["XOM", "CVX", "COP", "EOG", "SLB", "VLO", "MPC", "PSX", "OXY", "DVN"],
+    "XLI": ["GE", "CAT", "UNP", "HON", "RTX", "BA", "DE", "LMT", "ETN", "WM"],
+    "XLY": ["AMZN", "TSLA", "HD", "MCD", "NKE", "LOW", "SBUX", "BKNG", "TJX", "CMG"],
+    "XLP": ["PG", "COST", "WMT", "KO", "PEP", "PM", "MO", "MDLZ", "CL", "KMB"],
+    "XLU": ["NEE", "SO", "DUK", "SRE", "AEP", "EXC", "XEL", "ED", "PEG", "WEC"],
+    "XLV": ["LLY", "UNH", "JNJ", "ABBV", "MRK", "TMO", "ABT", "PFE", "DHR", "ISRG"],
+    "XLB": ["LIN", "SHW", "FCX", "ECL", "NEM", "APD", "CTVA", "DOW", "DD", "ALB"],
+    "XLC": ["META", "GOOGL", "GOOG", "NFLX", "DIS", "TMUS", "CMCSA", "T", "VZ", "CHTR"],
+    "XLRE": ["PLD", "AMT", "EQIX", "WELL", "PSA", "O", "SPG", "CCI", "DLR", "VICI"],
+    
+    # Benchmarks
+    "QQQ": ["AAPL", "MSFT", "NVDA", "AMZN", "META", "AVGO", "GOOGL", "TSLA", "COST", "NFLX"],
+    "IWM": ["PLTR", "ASTS", "HOOD", "RDDT", "CAVA", "APP", "SOFI", "CVNA", "TEM", "CELH"],
+    "SPY": ["MSFT", "AAPL", "NVDA", "AMZN", "META", "GOOGL", "LLY", "AVGO", "JPM", "V"]
+}
+
+def compute_etf_stock_rotation(etf_symbol, lookback_bars=10, mode="stage", force_refresh=False):
+    """
+    Computes 4-Quadrant Rotation Matrix for an ETF AND its top constituent stocks.
+    The ETF acts as the benchmark anchor on the chart.
+    Constituents show exact Stan Weinstein Stage, head & tail movement vectors,
+    rotational velocity, and leadership vs the ETF.
+    """
+    etf_symbol = (etf_symbol or "XLK").upper()
+    constituents = ETF_CONSTITUENTS_MAP.get(etf_symbol, [])
+    # Always include the ETF itself as the anchor
+    all_symbols = [etf_symbol] + [s for s in constituents if s != etf_symbol]
+    
+    spy_w = get_spy_weekly()
+
+    def get_quadrant(x, y):
+        if x >= 0 and y >= 0:
+            return {"id": 2, "name": "Stage 2: Advancing / Markup", "short": "Stage 2", "phase": "Advancing", "color": "#10b981"}
+        elif x >= 0 and y < 0:
+            return {"id": 3, "name": "Stage 3: Distribution / Topping", "short": "Stage 3", "phase": "Topping", "color": "#ec4899"}
+        elif x < 0 and y < 0:
+            return {"id": 4, "name": "Stage 4: Declining / Markdown", "short": "Stage 4", "phase": "Declining", "color": "#ef4444"}
+        else:
+            return {"id": 1, "name": "Stage 1: Accumulation / Basing", "short": "Stage 1", "phase": "Basing", "color": "#8b5cf6"}
+
+    try:
+        lookback_bars = int(lookback_bars)
+    except Exception:
+        lookback_bars = 10
+    lookback_bars = max(3, min(25, lookback_bars))
+
+    stock_results = []
+    all_x = []
+    all_y = []
+
+    palette = [
+        "#38bdf8", "#06b6d4", "#60a5fa", "#f59e0b", "#f97316", 
+        "#ec4899", "#10b981", "#a855f7", "#14b8a6", "#eab308",
+        "#818cf8", "#fb7185", "#c084fc", "#f43f5e", "#a3e635"
+    ]
+
+    etf_item = None
+
+    for idx_sym, sym in enumerate(all_symbols):
+        is_etf = (sym == etf_symbol)
+        df_d = fetch_ohlcv(sym)
+        if df_d is None or len(df_d) < 60:
+            continue
+        w = compute_weekly_bars(df_d)
+        if w is None or len(w) < 35:
+            continue
+        rs_df = compute_mansfield_rs(w, spy_w)
+        w["MA30"] = w["Close"].rolling(30).mean()
+        w["MA10"] = w["Close"].rolling(10).mean()
+
+        stage_details = classify_12_substages(w, rs_df, df_d)
+
+        trail = []
+        start_idx = max(30, len(w) - lookback_bars)
+        for idx in range(start_idx, len(w)):
+            sub_w = w.iloc[:idx+1]
+            c = float(sub_w["Close"].iloc[-1])
+            ma30 = float(sub_w["MA30"].iloc[-1]) if pd.notna(sub_w["MA30"].iloc[-1]) else c
+            ma10 = float(sub_w["MA10"].iloc[-1]) if pd.notna(sub_w["MA10"].iloc[-1]) else c
+            dist_ma30 = ((c - ma30) / ma30) * 100 if ma30 > 0 else 0.0
+
+            prev_ma30 = float(sub_w["MA30"].iloc[-5]) if len(sub_w) >= 5 and pd.notna(sub_w["MA30"].iloc[-5]) else ma30
+            ma30_slope = ((ma30 - prev_ma30) / prev_ma30) * 100 if prev_ma30 > 0 else 0.0
+
+            rs_val = float(rs_df["Mansfield_RS"].iloc[idx]) if rs_df is not None and idx < len(rs_df) and pd.notna(rs_df["Mansfield_RS"].iloc[idx]) else 0.0
+            prev_rs = float(rs_df["Mansfield_RS"].iloc[idx-4]) if rs_df is not None and 0 <= (idx-4) < len(rs_df) and pd.notna(rs_df["Mansfield_RS"].iloc[idx-4]) else rs_val
+            rs_slope = rs_val - prev_rs
+
+            if mode == "rrg":
+                x = round(rs_val, 2)
+                y = round(rs_slope * 2.0, 2)
+            else:
+                x = round(dist_ma30, 2)
+                y = round(ma30_slope * 1.5 + rs_slope * 0.5, 2)
+
+            q = get_quadrant(x, y)
+            dt_val = sub_w["Date"].iloc[-1]
+            d_str = dt_val.strftime("%Y-%m-%d") if hasattr(dt_val, "strftime") else str(dt_val)[:10]
+
+            trail.append({
+                "date": d_str,
+                "close": round(c, 2),
+                "x": x,
+                "y": y,
+                "dist_ma30_pct": round(dist_ma30, 2),
+                "ma30_slope_pct": round(ma30_slope, 2),
+                "mansfield_rs": round(rs_val, 2),
+                "quadrant_id": q["id"],
+                "quadrant_name": q["short"]
+            })
+            all_x.append(x)
+            all_y.append(y)
+
+        if not trail:
+            continue
+
+        head = trail[-1]
+        tail_start = trail[0]
+        prev_pt = trail[-2] if len(trail) >= 2 else trail[0]
+
+        dx = round(head["x"] - prev_pt["x"], 2)
+        dy = round(head["y"] - prev_pt["y"], 2)
+        trail_dx = round(head["x"] - tail_start["x"], 2)
+        trail_dy = round(head["y"] - tail_start["y"], 2)
+
+        velocity = round(math.sqrt(dx**2 + dy**2), 2)
+        trail_velocity = round(math.sqrt(trail_dx**2 + trail_dy**2), 2)
+        angle = round(math.atan2(dy, dx) * 180.0 / math.pi, 1)
+
+        # Direction heading text
+        if -22.5 <= angle <= 22.5:
+            heading_desc = "East (Expanding Right)"
+            heading_arrow = "➔"
+        elif 22.5 < angle <= 67.5:
+            heading_desc = "North-East (Expanding Markup)"
+            heading_arrow = "↗"
+        elif 67.5 < angle <= 112.5:
+            heading_desc = "North (Accelerating Upward)"
+            heading_arrow = "↑"
+        elif 112.5 < angle <= 157.5:
+            heading_desc = "North-West (Basing Recovery)"
+            heading_arrow = "↖"
+        elif angle > 157.5 or angle <= -157.5:
+            heading_desc = "West (Decelerating Left)"
+            heading_arrow = "⬅"
+        elif -157.5 < angle <= -112.5:
+            heading_desc = "South-West (Markdown Degradation)"
+            heading_arrow = "↙"
+        elif -112.5 < angle <= -67.5:
+            heading_desc = "South (Rapid Deterioration)"
+            heading_arrow = "↓"
+        else:
+            heading_desc = "South-East (Churning Distribution)"
+            heading_arrow = "↘"
+
+        current_q = get_quadrant(head["x"], head["y"])
+        start_q = get_quadrant(tail_start["x"], tail_start["y"])
+
+        if start_q["id"] != current_q["id"]:
+            transition_path = f"{start_q['short']} ➔ {current_q['short']}"
+            target_stage = current_q["short"]
+            is_transitioning = True
+        else:
+            if current_q["id"] == 1:
+                target_stage = "Stage 2" if dy > 0 and dx > 0 else "Stage 1"
+                transition_path = "Stage 1 ➔ Approaching Stage 2 (Ignition)" if dy > 0 else "Consolidating in Stage 1 Base"
+                is_transitioning = (dy > 0)
+            elif current_q["id"] == 2:
+                target_stage = "Stage 3" if dy < 0 else "Stage 2"
+                transition_path = "Stage 2 ➔ Weakening toward Stage 3" if dy < 0 else "Expanding inside Stage 2 Markup"
+                is_transitioning = (dy < 0)
+            elif current_q["id"] == 3:
+                target_stage = "Stage 4" if dx < 0 else "Stage 3"
+                transition_path = "Stage 3 ➔ Rolling toward Stage 4" if dx < 0 else "Distribution Churning in Stage 3"
+                is_transitioning = (dx < 0)
+            else: # Stage 4
+                target_stage = "Stage 1" if dy > 0 else "Stage 4"
+                transition_path = "Stage 4 ➔ Bottoming toward Stage 1" if dy > 0 else "Persistent Stage 4 Markdown"
+                is_transitioning = (dy > 0)
+
+        if current_q["id"] == 2:
+            badge = "EXPANDING LEADER" if dy >= 0 else "LATE STAGE 2"
+        elif current_q["id"] == 1:
+            badge = "PRE-BREAKOUT" if dy > 0 else "BASING"
+        elif current_q["id"] == 3:
+            badge = "TOPPING RISK"
+        else:
+            badge = "MARKDOWN AVOID"
+
+        item_color = "#38bdf8" if is_etf else palette[(idx_sym - 1) % len(palette)]
+
+        stock_payload = {
+            "ticker": sym,
+            "name": f"{sym} (ETF Anchor)" if is_etf else sym,
+            "is_etf_anchor": is_etf,
+            "category": "ETF Anchor" if is_etf else "Constituent",
+            "theme": etf_symbol,
+            "theme_id": etf_symbol,
+            "color": item_color,
+            "current_price": head["close"],
+            "sub_stage": stage_details.get("sub_stage", "N/A"),
+            "sub_stage_name": stage_details.get("sub_stage_name", "N/A"),
+            "stage_category": stage_details.get("stage_category", "N/A"),
+            "action_directive": stage_details.get("action_directive", ""),
+            "dist_ma30_pct": head["dist_ma30_pct"],
+            "ma30_slope_pct": head["ma30_slope_pct"],
+            "mansfield_rs": head["mansfield_rs"],
+            "current_quadrant": current_q["id"],
+            "current_quadrant_name": current_q["name"],
+            "current_quadrant_short": current_q["short"],
+            "current_phase": current_q["phase"],
+            "quadrant_color": current_q["color"],
+            "origin_quadrant": start_q["id"],
+            "origin_quadrant_short": start_q["short"],
+            "target_stage": target_stage,
+            "transition_path": transition_path,
+            "is_transitioning": is_transitioning,
+            "transition_badge": badge,
+            "velocity": velocity,
+            "trail_velocity": trail_velocity,
+            "heading_degrees": angle,
+            "heading_desc": heading_desc,
+            "heading_arrow": heading_arrow,
+            "head": head,
+            "tail_start": tail_start,
+            "tail": trail
+        }
+
+        if is_etf:
+            etf_item = stock_payload
+        else:
+            stock_results.append(stock_payload)
+
+    # Sort constituents by quadrant order and velocity
+    quadrant_order = {2: 1, 1: 2, 3: 3, 4: 4}
+    stock_results.sort(key=lambda s: (quadrant_order.get(s["current_quadrant"], 5), -s["velocity"]))
+
+    final_list = ([etf_item] if etf_item else []) + stock_results
+
+    max_abs_x = max([abs(v) for v in all_x] + [12.0]) * 1.15
+    max_abs_y = max([abs(v) for v in all_y] + [8.0]) * 1.15
+
+    stage_1_stocks = [s["ticker"] for s in stock_results if s["current_quadrant"] == 1]
+    stage_2_stocks = [s["ticker"] for s in stock_results if s["current_quadrant"] == 2]
+    stage_3_stocks = [s["ticker"] for s in stock_results if s["current_quadrant"] == 3]
+    stage_4_stocks = [s["ticker"] for s in stock_results if s["current_quadrant"] == 4]
+
+    entering_stage_2 = [s["ticker"] for s in stock_results if s["target_stage"] == "Stage 2" or s["transition_badge"] in ("PRE-BREAKOUT", "EXPANDING LEADER")]
+    entering_stage_3 = [s["ticker"] for s in stock_results if s["target_stage"] == "Stage 3" or s["transition_badge"] in ("TOPPING RISK", "LATE STAGE 2")]
+    entering_stage_4 = [s["ticker"] for s in stock_results if s["target_stage"] == "Stage 4" or s["transition_badge"] == "MARKDOWN AVOID"]
+    entering_stage_1 = [s["ticker"] for s in stock_results if s["target_stage"] == "Stage 1" or s["transition_badge"] in ("BASING", "IMPROVING")]
+
+    return {
+        "status": "success",
+        "drilldown_mode": True,
+        "etf": etf_symbol,
+        "etf_anchor": etf_item,
+        "lookback_bars": lookback_bars,
+        "mode": mode,
+        "x_axis_label": "Price Distance to 30-Week SMA (%)" if mode == "stage" else "Mansfield Relative Strength Ratio vs SPY",
+        "y_axis_label": "Stage Velocity & Rotational Momentum (%)" if mode == "stage" else "Relative Strength Momentum (ROC %)",
+        "bounds": {
+            "x_min": -round(max_abs_x, 1),
+            "x_max": round(max_abs_x, 1),
+            "y_min": -round(max_abs_y, 1),
+            "y_max": round(max_abs_y, 1),
+            "max_abs_x": round(max_abs_x, 1),
+            "max_abs_y": round(max_abs_y, 1)
+        },
+        "quadrant_counts": {
+            "stage_1_basing": len(stage_1_stocks),
+            "stage_2_advancing": len(stage_2_stocks),
+            "stage_3_topping": len(stage_3_stocks),
+            "stage_4_declining": len(stage_4_stocks),
+            "total": len(stock_results)
+        },
+        "stage_transitions": {
+            "entering_stage_2": entering_stage_2,
+            "entering_stage_3": entering_stage_3,
+            "entering_stage_4": entering_stage_4,
+            "entering_stage_1": entering_stage_1
+        },
+        "available_themes": [
+            {"id": "ALL", "label": "All Basket Stocks", "count": len(final_list)},
+            {"id": "STAGE2", "label": "Stage 2 Leaders", "count": len(stage_2_stocks)},
+            {"id": "STAGE1", "label": "Stage 1 Basing", "count": len(stage_1_stocks)},
+            {"id": "STAGE3", "label": "Stage 3 Topping", "count": len(stage_3_stocks)},
+            {"id": "STAGE4", "label": "Stage 4 Markdown", "count": len(stage_4_stocks)}
+        ],
+        "sector_etfs": final_list,
+        "available_etfs": list(ETF_CONSTITUENTS_MAP.keys()),
+        "last_updated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
 
 if __name__ == "__main__":
     print("Testing Stage Analysis + CANSLIM Engine v3.0 Accuracy Core...")

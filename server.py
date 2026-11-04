@@ -318,136 +318,442 @@ def get_macro_matrix():
                 return jsonify(json.load(f))
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/best_acting_stocks', methods=['GET', 'POST'])
+def get_best_acting_stocks():
+    """Serve cached or dynamically generated Best Acting Stocks radar data."""
+    refresh = request.args.get('refresh') == '1' or request.method == 'POST'
+    public_path = os.path.join(os.path.dirname(__file__), 'public', 'best_acting_stocks.json')
+    
+    if not refresh and os.path.exists(public_path):
+        with open(public_path, 'r') as f:
+            return jsonify(json.load(f))
+            
+    try:
+        from backend.best_acting_engine import run_best_acting_scanner
+        data = run_best_acting_scanner()
+        return jsonify(data)
+    except Exception as e:
+        if os.path.exists(public_path):
+            with open(public_path, 'r') as f:
+                return jsonify(json.load(f))
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/realsimple_framework', methods=['GET', 'POST'])
+def get_realsimple_framework():
+    """Serve cached or dynamically generated RealSimple Framework radar data."""
+    refresh = request.args.get('refresh') == '1' or request.method == 'POST'
+    public_path = os.path.join(os.path.dirname(__file__), 'public', 'realsimple_results.json')
+    
+    if not refresh and os.path.exists(public_path):
+        with open(public_path, 'r') as f:
+            return jsonify(json.load(f))
+            
+    try:
+        from backend.realsimple_engine import run_realsimple_scanner
+        data = run_realsimple_scanner()
+        return jsonify(data)
+    except Exception as e:
+        if os.path.exists(public_path):
+            with open(public_path, 'r') as f:
+                return jsonify(json.load(f))
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/wick_absorption_scanner', methods=['GET', 'POST'])
+def get_wick_absorption_scanner_api():
+    """Serve cached or dynamically generated Upper Wick Supply Absorption radar data."""
+    refresh = request.args.get('refresh') == '1' or request.method == 'POST'
+    public_path = os.path.join(os.path.dirname(__file__), 'public', 'wick_absorption_results.json')
+    
+    if not refresh and os.path.exists(public_path):
+        with open(public_path, 'r') as f:
+            return jsonify(json.load(f))
+            
+    try:
+        from backend.wick_absorption_scanner import run_wick_absorption_scanner
+        data = run_wick_absorption_scanner()
+        return jsonify(data)
+    except Exception as e:
+        if os.path.exists(public_path):
+            with open(public_path, 'r') as f:
+                return jsonify(json.load(f))
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/clean_uptrend_scanner', methods=['GET', 'POST'])
+def get_clean_uptrend_scanner_api():
+    """Serve cached or dynamically generated Clean Untangled Uptrend (9/13 SMA) radar data."""
+    refresh = request.args.get('refresh') == '1' or request.method == 'POST'
+    public_path = os.path.join(os.path.dirname(__file__), 'public', 'clean_uptrend_results.json')
+    
+    if not refresh and os.path.exists(public_path):
+        with open(public_path, 'r') as f:
+            return jsonify(json.load(f))
+            
+    try:
+        from backend.clean_uptrend_scanner import run_clean_uptrend_scanner
+        data = run_clean_uptrend_scanner(force_refresh=True)
+        return jsonify(data)
+    except Exception as e:
+        if os.path.exists(public_path):
+            with open(public_path, 'r') as f:
+                return jsonify(json.load(f))
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/chart_data')
 def chart_data():
     ticker = request.args.get('ticker')
     if not ticker:
         return jsonify({"error": "No ticker provided"}), 400
-        
-    ticker = ticker.upper()
+
+    ticker = ticker.upper().strip()
+    timeframe = request.args.get('timeframe', '1D').upper().strip()  # '15M', '1H', '1D', '1W'
+    range_param = request.args.get('range', '1Y').upper().strip()    # '5D', '1M', '3M', '6M', '1Y', '2Y', '3Y', '5Y'
+
     try:
         t = yf.Ticker(ticker)
-        df = t.history(period="1y").dropna(subset=['Close'])
-        
-        if df.empty or len(df) < 5:
-            return jsonify({"error": "No data found"}), 404
-            
-        df['date_str'] = df.index.strftime('%Y-%m-%d')
-        df = df.drop_duplicates(subset=['date_str'], keep='last').sort_values(by='date_str')
-        
-        # Calculate Relative Strength (RS) Line vs SPY benchmark
-        try:
-            if not hasattr(search_stock, '_spy_cache') or search_stock._spy_cache is None or (time.time() - search_stock._spy_cache_time > 3600):
-                search_stock._spy_cache = yf.Ticker("SPY").history(period="1y").dropna(subset=['Close'])
-                search_stock._spy_cache_time = time.time()
-            spy_df = search_stock._spy_cache
-        except Exception:
-            spy_df = df
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        lh_dir = os.path.join(base_dir, 'backend', 'data', 'lakehouse')
 
-        # Align stock and SPY dates for RS Line computation
-        comb = pd.DataFrame({'stock': df['Close'], 'spy': spy_df['Close']}).dropna()
-        if not comb.empty:
-            rs_raw = (comb['stock'] / comb['spy'])
-            rs_norm = (rs_raw / rs_raw.iloc[0]) * 100
-            rs_dict = dict(zip(comb.index.strftime('%Y-%m-%d'), rs_norm))
+        # 1. Fetch OHLCV according to timeframe (with warmup bars for 200-SMA & indicators)
+        if timeframe == '15M':
+            df = t.history(period="1mo", interval="15m").dropna(subset=['Close'])
+            date_fmt = '%Y-%m-%d %H:%M'
+            slice_bars = 130 if range_param == '5D' else 260
+        elif timeframe == '1H':
+            df = t.history(period="3mo", interval="60m").dropna(subset=['Close'])
+            date_fmt = '%Y-%m-%d %H:%M'
+            slice_bars = 160 if range_param == '1M' else 320
+        elif timeframe == '1W':
+            df_daily = t.history(period="5y", interval="1d").dropna(subset=['Close'])
+            if df_daily.empty:
+                return jsonify({"error": "No weekly data found"}), 404
+            df = df_daily.resample('W-FRI').agg({
+                'Open': 'first',
+                'High': 'max',
+                'Low': 'min',
+                'Close': 'last',
+                'Volume': 'sum'
+            }).dropna(subset=['Close'])
+            date_fmt = '%Y-%m-%d'
+            slice_bars = 156 if range_param == '3Y' else 260
         else:
-            rs_dict = {}
+            # 1D (Daily) - Fetch 2Y or 5Y so 200-SMA & 150-SMA are fully warmed up across the entire chart
+            fetch_period = "5y" if range_param in ('2Y', '3Y', '5Y') else "2y"
+            df = t.history(period=fetch_period, interval="1d").dropna(subset=['Close'])
+            if df.empty:
+                # Fallback to local lakehouse parquet if yfinance rate-limits
+                pq_path = os.path.join(lh_dir, f"{ticker.replace('.', '-')}_daily.parquet")
+                if os.path.exists(pq_path):
+                    df = pd.read_parquet(pq_path).dropna(subset=['Close'])
+            date_fmt = '%Y-%m-%d'
+            range_bar_map = {'3M': 65, '6M': 130, '1Y': 252, '2Y': 504, '3Y': 756, '5Y': 1260}
+            slice_bars = range_bar_map.get(range_param, 252)
+
+        if df is None or df.empty or len(df) < 5:
+            return jsonify({"error": f"No chart data found for {ticker}"}), 404
+
+        df = df.copy()
+        df['date_str'] = df.index.strftime(date_fmt)
+        df = df.drop_duplicates(subset=['date_str'], keep='last').sort_values(by='date_str')
+
+        # 2. Fetch SPY benchmark for IBD Relative Strength (RS) Line & Mansfield RS
+        try:
+            cache_key = f"_spy_cache_{timeframe}"
+            cache_ts_key = f"_spy_cache_ts_{timeframe}"
+            if not hasattr(chart_data, cache_key) or getattr(chart_data, cache_key) is None or (time.time() - getattr(chart_data, cache_ts_key, 0) > 1800):
+                if timeframe == '15M':
+                    spy_raw = yf.Ticker("SPY").history(period="1mo", interval="15m").dropna(subset=['Close'])
+                elif timeframe == '1H':
+                    spy_raw = yf.Ticker("SPY").history(period="3mo", interval="60m").dropna(subset=['Close'])
+                elif timeframe == '1W':
+                    spy_d = yf.Ticker("SPY").history(period="5y", interval="1d").dropna(subset=['Close'])
+                    spy_raw = spy_d.resample('W-FRI').agg({'Close': 'last'}).dropna()
+                else:
+                    spy_raw = yf.Ticker("SPY").history(period="5y", interval="1d").dropna(subset=['Close'])
+                spy_raw = spy_raw.copy()
+                spy_raw['date_str'] = spy_raw.index.strftime(date_fmt)
+                spy_raw = spy_raw.drop_duplicates(subset=['date_str'], keep='last').set_index('date_str')
+                setattr(chart_data, cache_key, spy_raw)
+                setattr(chart_data, cache_ts_key, time.time())
+            spy_df = getattr(chart_data, cache_key)
+        except Exception:
+            spy_df = df.set_index('date_str')
+
+        # 3. Compute Full Moving Average Ribbon & Bollinger/Keltner on Warmed-Up DataFrame
+        close_s = df['Close'].astype(float)
+        high_s = df['High'].astype(float)
+        low_s = df['Low'].astype(float)
+        open_s = df['Open'].astype(float)
+        vol_s = df['Volume'].fillna(0).astype(float)
+
+        df['ema9'] = close_s.ewm(span=9, adjust=False).mean()
+        df['ema21'] = close_s.ewm(span=21, adjust=False).mean()
+        df['sma50'] = close_s.rolling(50, min_periods=10).mean()
+        df['sma150'] = close_s.rolling(150, min_periods=30).mean()
+        df['sma200'] = close_s.rolling(200, min_periods=40).mean()
+        df['vol_sma50'] = vol_s.rolling(50, min_periods=5).mean()
+
+        # True Range & ATR-14 + ADR-20%
+        prev_c = close_s.shift(1)
+        tr = pd.concat([
+            (high_s - low_s),
+            (high_s - prev_c).abs(),
+            (low_s - prev_c).abs()
+        ], axis=1).max(axis=1)
+        df['atr14'] = tr.rolling(14, min_periods=3).mean()
+        daily_range_pct = ((high_s - low_s) / close_s.replace(0, np.nan)) * 100.0
+        df['adr20_pct'] = daily_range_pct.rolling(20, min_periods=5).mean()
+
+        # Pocket Pivot (Morales & Kacher: Up-day volume > max down-day volume over prior 10 bars)
+        is_up_bar = close_s >= prev_c
+        down_vol = vol_s.where(~is_up_bar, 0.0)
+        max_down_vol_10 = down_vol.shift(1).rolling(10, min_periods=3).max()
+        df['is_pocket_pivot'] = is_up_bar & (vol_s > max_down_vol_10) & (max_down_vol_10 > 0) & (vol_s > df['vol_sma50'] * 1.05)
+
+        # Volume Dry-Up (VDU: Volume <= 55% of 50-SMA Vol AND tight bar spread < 1.1x ATR)
+        df['is_vdu'] = (vol_s <= df['vol_sma50'] * 0.55) & (vol_s > 0) & (tr <= df['atr14'] * 1.05)
+
+        # Close Location Value (CLV: 0% = closed at low, 100% = closed at high)
+        bar_span = (high_s - low_s).replace(0, np.nan)
+        df['clv'] = (((close_s - low_s) / bar_span) * 100.0).fillna(50.0)
+
+        # MACD (12, 26, 9)
+        ema12 = close_s.ewm(span=12, adjust=False).mean()
+        ema26 = close_s.ewm(span=26, adjust=False).mean()
+        df['macd'] = ema12 - ema26
+        df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+        df['macd_hist'] = df['macd'] - df['macd_signal']
+
+        # RSI (14) + RSI SMA (14)
+        delta = close_s.diff()
+        gain = delta.where(delta > 0, 0.0).ewm(alpha=1.0 / 14.0, adjust=False).mean()
+        loss = (-delta.where(delta < 0, 0.0)).ewm(alpha=1.0 / 14.0, adjust=False).mean()
+        rs_val = gain / loss.replace(0, np.nan)
+        df['rsi14'] = (100.0 - (100.0 / (1.0 + rs_val))).fillna(50.0)
+        df['rsi_sma14'] = df['rsi14'].rolling(14, min_periods=3).mean()
+
+        # Wilder's ADX (14) + +DI / -DI
+        up_move = high_s.diff()
+        down_move = -low_s.diff()
+        plus_dm = pd.Series(np.where((up_move > down_move) & (up_move > 0), up_move, 0.0), index=df.index)
+        minus_dm = pd.Series(np.where((down_move > up_move) & (down_move > 0), down_move, 0.0), index=df.index)
+        atr_wilder = tr.ewm(alpha=1.0 / 14.0, adjust=False).mean().replace(0, np.nan)
+        plus_di = 100.0 * (plus_dm.ewm(alpha=1.0 / 14.0, adjust=False).mean() / atr_wilder)
+        minus_di = 100.0 * (minus_dm.ewm(alpha=1.0 / 14.0, adjust=False).mean() / atr_wilder)
+        dx = (100.0 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)).fillna(0.0)
+        df['plus_di'] = plus_di.fillna(0.0)
+        df['minus_di'] = minus_di.fillna(0.0)
+        df['adx14'] = dx.ewm(alpha=1.0 / 14.0, adjust=False).mean().fillna(0.0)
+
+        # TTM Volatility Squeeze (Bollinger 20,2.0 inside Keltner 20,1.5 ATR) + Momentum Oscillator
+        bb_mid = close_s.rolling(20, min_periods=5).mean()
+        bb_std = close_s.rolling(20, min_periods=5).std()
+        bb_upper = bb_mid + 2.0 * bb_std
+        bb_lower = bb_mid - 2.0 * bb_std
+        kc_atr = tr.rolling(20, min_periods=5).mean()
+        kc_upper = bb_mid + 1.5 * kc_atr
+        kc_lower = bb_mid - 1.5 * kc_atr
+        df['bb_upper'] = bb_upper
+        df['bb_lower'] = bb_lower
+        df['squeeze_on'] = (bb_upper < kc_upper) & (bb_lower > kc_lower)
+        highest_20 = high_s.rolling(20, min_periods=5).max()
+        lowest_20 = low_s.rolling(20, min_periods=5).min()
+        mid_donchian = (highest_20 + lowest_20) / 2.0
+        sqz_raw = close_s - ((mid_donchian + bb_mid) / 2.0)
+        df['sqz_mom'] = sqz_raw.ewm(span=5, adjust=False).mean().fillna(0.0)
+
+        # Align SPY & compute IBD RS Line + RS 21-EMA + Mansfield RS
+        spy_map = spy_df['Close'].to_dict() if 'Close' in spy_df else {}
+        df['spy_close'] = df['date_str'].map(spy_map).ffill().bfill()
+        df['rs_raw'] = df['Close'] / df['spy_close'].replace(0, np.nan)
+        first_valid_rs = df['rs_raw'].dropna().iloc[0] if not df['rs_raw'].dropna().empty else 1.0
+        df['rs_norm'] = ((df['rs_raw'] / first_valid_rs) * 100.0).fillna(100.0)
+        df['rs_ema21'] = df['rs_norm'].ewm(span=21, adjust=False).mean()
+        rs_sma52 = df['rs_norm'].rolling(50, min_periods=10).mean()
+        df['mansfield_rs'] = (((df['rs_norm'] / rs_sma52.replace(0, np.nan)) - 1.0) * 100.0).fillna(0.0)
+
+        # Slice to visible window after full indicator warmup
+        vis_df = df.tail(slice_bars).copy().reset_index(drop=True)
+        # Re-normalize RS Line so the start of the visible chart is indexed to 100.0
+        base_rs_vis = float(vis_df['rs_raw'].dropna().iloc[0]) if not vis_df['rs_raw'].dropna().empty else 1.0
+        if base_rs_vis > 0:
+            vis_df['rs_norm'] = ((vis_df['rs_raw'] / base_rs_vis) * 100.0).ffill().fillna(100.0)
+            vis_df['rs_ema21'] = vis_df['rs_norm'].ewm(span=21, adjust=False).mean()
 
         ohlc = []
         rs_series = []
         blue_dots = []
-        
-        # Calculate 52-week rolling peaks for RS Line vs Stock Price to detect Blue Dots
-        # Blue Dot Definition (William O'Neil / MarketSmith):
-        # RS Line hits a 52-week high while Stock Price is still below its 52-week high.
-        if not comb.empty:
-            rolling_rs_max = rs_norm.cummax()
-            stock_cummax = comb['stock'].cummax()
-            
-            for index, row in df.iterrows():
-                d_str = row['date_str']
-                price_c = round(float(row['Close']), 2)
-                ohlc.append({
-                    "time": d_str,
-                    "open": round(float(row['Open']), 2),
-                    "high": round(float(row['High']), 2),
-                    "low": round(float(row['Low']), 2),
-                    "close": price_c,
-                    "value": int(row['Volume']) if pd.notna(row.get('Volume')) else 0
-                })
-                
-                if d_str in rs_dict:
-                    val = round(float(rs_dict[d_str]), 2)
-                    rs_series.append({
-                        "time": d_str,
-                        "value": val
-                    })
-                    
-                    # Multi-Timeframe Blue Dot Pivot Detection:
-                    if d_str in rs_norm and d_str in comb.index.strftime('%Y-%m-%d'):
-                        curr_rs = rs_dict[d_str]
-                        curr_stock = comb.loc[comb.index.strftime('%Y-%m-%d') == d_str, 'stock'].values[0]
-                        sub_comb = comb.loc[comb.index.strftime('%Y-%m-%d') <= d_str]
-                        
-                        if len(sub_comb) >= 10:
-                            is_blue_dot_pivot = False
-                            for window in [20, 60, 120, len(sub_comb)]:
-                                window_sub = sub_comb.tail(window)
-                                sub_rs = (window_sub['stock'] / window_sub['spy'])
-                                sub_rs_norm = (sub_rs / sub_rs.iloc[0]) * 100
-                                max_rs_win = sub_rs_norm.max()
-                                curr_rs_win = sub_rs_norm.iloc[-1]
-                                max_stock_win = window_sub['stock'].max()
-                                curr_stock_win = window_sub['stock'].iloc[-1]
-                                
-                                if (curr_rs_win >= max_rs_win * 0.985) and (curr_stock_win < max_stock_win * 0.985):
-                                    is_blue_dot_pivot = True
-                                    break
-                                    
-                            if is_blue_dot_pivot:
-                                blue_dots.append({
-                                    "time": d_str,
-                                    "price": price_c,
-                                    "rs_value": val
-                                })
+        pocket_pivots = []
+        vdu_markers = []
 
-        # Calculate VCP (Volatility Contraction Pattern) Waves (T1, T2, T3) via Rolling Extrema
-        vcp_waves = []
+        for idx, row in vis_df.iterrows():
+            d_str = row['date_str']
+            c_val = round(float(row['Close']), 2)
+            o_val = round(float(row['Open']), 2)
+            h_val = round(float(row['High']), 2)
+            l_val = round(float(row['Low']), 2)
+            v_val = int(row['Volume']) if pd.notna(row['Volume']) else 0
+            v_sma = round(float(row['vol_sma50']), 0) if pd.notna(row['vol_sma50']) else v_val
+            rvol = round(v_val / v_sma, 2) if v_sma > 0 else 1.0
+            is_pp = bool(row['is_pocket_pivot'])
+            is_vdu_bar = bool(row['is_vdu'])
+            sqz_m = round(float(row['sqz_mom']), 3) if pd.notna(row['sqz_mom']) else 0.0
+            prev_sqz_m = round(float(vis_df.loc[idx - 1, 'sqz_mom']), 3) if idx > 0 and pd.notna(vis_df.loc[idx - 1, 'sqz_mom']) else sqz_m
+
+            ohlc.append({
+                "time": d_str,
+                "open": o_val,
+                "high": h_val,
+                "low": l_val,
+                "close": c_val,
+                "value": v_val,
+                "vol_sma50": v_sma,
+                "rvol": rvol,
+                "clv": round(float(row['clv']), 1),
+                "is_up": bool(c_val >= o_val),
+                "is_pocket_pivot": is_pp,
+                "is_vdu": is_vdu_bar,
+                "ema9": round(float(row['ema9']), 2) if pd.notna(row['ema9']) else None,
+                "ema21": round(float(row['ema21']), 2) if pd.notna(row['ema21']) else None,
+                "sma50": round(float(row['sma50']), 2) if pd.notna(row['sma50']) else None,
+                "sma150": round(float(row['sma150']), 2) if pd.notna(row['sma150']) else None,
+                "sma200": round(float(row['sma200']), 2) if pd.notna(row['sma200']) else None,
+                "bb_upper": round(float(row['bb_upper']), 2) if pd.notna(row['bb_upper']) else None,
+                "bb_lower": round(float(row['bb_lower']), 2) if pd.notna(row['bb_lower']) else None,
+                "macd": round(float(row['macd']), 3) if pd.notna(row['macd']) else 0.0,
+                "macd_signal": round(float(row['macd_signal']), 3) if pd.notna(row['macd_signal']) else 0.0,
+                "macd_hist": round(float(row['macd_hist']), 3) if pd.notna(row['macd_hist']) else 0.0,
+                "rsi14": round(float(row['rsi14']), 1) if pd.notna(row['rsi14']) else 50.0,
+                "rsi_sma14": round(float(row['rsi_sma14']), 1) if pd.notna(row['rsi_sma14']) else 50.0,
+                "adx14": round(float(row['adx14']), 1) if pd.notna(row['adx14']) else 15.0,
+                "plus_di": round(float(row['plus_di']), 1) if pd.notna(row['plus_di']) else 15.0,
+                "minus_di": round(float(row['minus_di']), 1) if pd.notna(row['minus_di']) else 15.0,
+                "squeeze_on": bool(row['squeeze_on']),
+                "sqz_mom": sqz_m,
+                "sqz_rising": bool(sqz_m >= prev_sqz_m)
+            })
+
+            if is_pp:
+                pocket_pivots.append({"time": d_str, "price": l_val * 0.992, "close": c_val, "volume": v_val, "rvol": rvol})
+            if is_vdu_bar:
+                vdu_markers.append({"time": d_str, "price": h_val * 1.008, "close": c_val, "volume": v_val, "rvol": rvol})
+
+            rs_v = round(float(row['rs_norm']), 2) if pd.notna(row['rs_norm']) else 100.0
+            rs_e21 = round(float(row['rs_ema21']), 2) if pd.notna(row['rs_ema21']) else rs_v
+            m_rs = round(float(row['mansfield_rs']), 2) if pd.notna(row['mansfield_rs']) else 0.0
+            rs_series.append({
+                "time": d_str,
+                "value": rs_v,
+                "ema21": rs_e21,
+                "mansfield": m_rs
+            })
+
+            # Blue Dot Detection (RS Line at 20/60/120-bar high while Price is still in base below high)
+            if idx >= 15:
+                is_bd = False
+                for win in (20, 60, 120):
+                    if idx >= win:
+                        sub_slice = vis_df.iloc[max(0, idx - win):idx + 1]
+                        max_rs_w = float(sub_slice['rs_norm'].max())
+                        max_p_w = float(sub_slice['High'].max())
+                        if rs_v >= max_rs_w * 0.992 and c_val < max_p_w * 0.985 and c_val >= o_val:
+                            is_bd = True
+                            break
+                if is_bd:
+                    blue_dots.append({"time": d_str, "price": c_val, "rs_value": rs_v})
+
+        # 4. Calculate 24-Bin Horizontal Volume-by-Price Profile (POC, VAH, VAL)
+        volume_profile = {"bins": [], "poc_price": None, "vah_price": None, "val_price": None}
         try:
-            if len(df) >= 30:
-                sub_df = df.tail(120).copy().reset_index(drop=True)
+            min_low = float(vis_df['Low'].min())
+            max_high = float(vis_df['High'].max())
+            if max_high > min_low:
+                num_bins = 24
+                step = (max_high - min_low) / num_bins
+                bins = []
+                total_profile_vol = 0.0
+                for b_i in range(num_bins):
+                    b_low = min_low + b_i * step
+                    b_high = b_low + step
+                    b_mid = (b_low + b_high) / 2.0
+                    in_bin = vis_df[(vis_df['Close'] >= b_low) & (vis_df['Close'] <= (b_high if b_i < num_bins - 1 else b_high + 0.01))]
+                    up_v = float(in_bin[in_bin['Close'] >= in_bin['Open']]['Volume'].sum())
+                    dn_v = float(in_bin[in_bin['Close'] < in_bin['Open']]['Volume'].sum())
+                    tot_v = up_v + dn_v
+                    total_profile_vol += tot_v
+                    bins.append({
+                        "price_low": round(b_low, 2),
+                        "price_high": round(b_high, 2),
+                        "price_mid": round(b_mid, 2),
+                        "bull_vol": int(up_v),
+                        "bear_vol": int(dn_v),
+                        "total_vol": int(tot_v)
+                    })
+                max_bin_vol = max((b['total_vol'] for b in bins), default=1) or 1
+                poc_idx = 0
+                for i_b, b in enumerate(bins):
+                    b['pct_of_max'] = round((b['total_vol'] / max_bin_vol) * 100.0, 1)
+                    if b['total_vol'] >= bins[poc_idx]['total_vol']:
+                        poc_idx = i_b
+
+                # Compute 70% Value Area (VAH & VAL) expanding outward from POC
+                target_va_vol = total_profile_vol * 0.70
+                accum_vol = bins[poc_idx]['total_vol']
+                low_idx = poc_idx
+                high_idx = poc_idx
+                while accum_vol < target_va_vol and (low_idx > 0 or high_idx < num_bins - 1):
+                    next_up = bins[high_idx + 1]['total_vol'] if high_idx < num_bins - 1 else -1
+                    next_dn = bins[low_idx - 1]['total_vol'] if low_idx > 0 else -1
+                    if next_up >= next_dn and high_idx < num_bins - 1:
+                        high_idx += 1
+                        accum_vol += bins[high_idx]['total_vol']
+                    elif low_idx > 0:
+                        low_idx -= 1
+                        accum_vol += bins[low_idx]['total_vol']
+                    else:
+                        break
+
+                volume_profile = {
+                    "bins": bins,
+                    "poc_price": bins[poc_idx]['price_mid'],
+                    "vah_price": bins[high_idx]['price_high'],
+                    "val_price": bins[low_idx]['price_low']
+                }
+        except Exception as vp_err:
+            print(f"[VOLUME PROFILE CALC ERROR]: {vp_err}")
+
+        # 5. Calculate VCP (Volatility Contraction Pattern) Waves (T1, T2, T3) & Pivot Resistance
+        vcp_waves = []
+        vcp_pivot_price = None
+        try:
+            if len(vis_df) >= 30:
+                sub_df = vis_df.tail(120).copy().reset_index(drop=True)
                 sub_df['IsPeak'] = (sub_df['High'] == sub_df['High'].rolling(5, center=True).max())
                 sub_df['IsTrough'] = (sub_df['Low'] == sub_df['Low'].rolling(5, center=True).min())
-                
                 peaks = sub_df[sub_df['IsPeak']].copy()
                 troughs = sub_df[sub_df['IsTrough']].copy()
-                
-                # Pair consecutive peaks and troughs to form contraction waves
+
                 swings = []
                 for p_idx, p_row in peaks.iterrows():
-                    # Find immediate subsequent trough
                     post_troughs = troughs[troughs.index > p_idx]
                     if not post_troughs.empty:
                         tr_row = post_troughs.iloc[0]
                         depth_pct = round((p_row['High'] - tr_row['Low']) / p_row['High'] * 100, 1)
-                        if 3.0 <= depth_pct <= 50.0:
+                        if 2.5 <= depth_pct <= 50.0:
                             swings.append({
                                 "start_date": p_row['date_str'],
-                                "start_price": float(p_row['High']),
+                                "start_price": round(float(p_row['High']), 2),
                                 "end_date": tr_row['date_str'],
-                                "end_price": float(tr_row['Low']),
+                                "end_price": round(float(tr_row['Low']), 2),
                                 "depth_pct": depth_pct
                             })
-                            
-                # Filter for valid VCP contracting sequence (T1 >= T2 >= T3)
+
                 if len(swings) >= 1:
                     colors = ["#ef4444", "#f59e0b", "#10b981", "#38bdf8"]
                     valid_waves = []
                     last_depth = 999.0
                     wave_num = 1
-                    
                     for s in swings:
-                        if s['depth_pct'] <= last_depth * 1.05 and wave_num <= 4:
+                        if s['depth_pct'] <= last_depth * 1.08 and wave_num <= 4:
                             valid_waves.append({
                                 "name": f"T{wave_num} Contraction",
                                 "start_date": s['start_date'],
@@ -459,29 +765,741 @@ def chart_data():
                             })
                             last_depth = s['depth_pct']
                             wave_num += 1
-                            
-                    vcp_waves = valid_waves[-3:] # Keep up to last 3 waves for clean visual presentation
+                    vcp_waves = valid_waves[-3:]
+                    if vcp_waves:
+                        vcp_pivot_price = vcp_waves[-1]['start_price']
         except Exception as vcp_err:
             print(f"[VCP CALC ERROR]: {vcp_err}")
 
-        last_price = ohlc[-1]['close'] if ohlc else 100.0
-        
-        levels = [
-            {"price": round(last_price * 1.05, 2), "color": "#ec4899", "title": "Call Wall (GEX Resistance)"},
-            {"price": round(last_price * 0.96, 2), "color": "#10b981", "title": "Put Wall (GEX Support)"},
-            {"price": round(last_price * 1.02, 2), "color": "#3b82f6", "title": "Dark Pool Print (M)"}
+        # 5B. MarketSurge Pattern Recognition & Official Buy Point Engine
+        # Detects Cup with Handle, Double Bottom ('W'), Flat Base, Cup Base, High Tight Flag, or VCP / Swing Pivot
+        last_bar = ohlc[-1]
+        last_price = last_bar['close']
+        marketsurge_pattern = None
+        try:
+            if len(vis_df) >= 25:
+                lookback_n = min(len(vis_df), 130)
+                pat_df = vis_df.tail(lookback_n).copy().reset_index(drop=True)
+                n_bars = len(pat_df)
+
+                # Helper to generate a smooth U-shaped parabolic curve across pat_df dates
+                def _build_u_curve(idx_left, p_left, idx_low, p_low, idx_right, p_right):
+                    pts = []
+                    for k in range(idx_left, idx_right + 1):
+                        d_str = pat_df['date_str'].iloc[k]
+                        if k <= idx_low:
+                            span = max(1, idx_low - idx_left)
+                            u = (k - idx_left) / span  # 0 -> 1
+                            # Smooth parabolic descent: 1 - u^1.65
+                            y_val = p_low + (p_left - p_low) * ((1.0 - u) ** 1.65)
+                        else:
+                            span = max(1, idx_right - idx_low)
+                            u = (k - idx_low) / span  # 0 -> 1
+                            y_val = p_low + (p_right - p_low) * (u ** 1.65)
+                        pts.append({"time": d_str, "price": round(float(y_val), 2)})
+                    return pts
+
+                # Analyze recent 25-bar window vs full base window
+                recent_25 = pat_df.tail(min(28, n_bars))
+                flat_high = float(recent_25['High'].max())
+                flat_low = float(recent_25['Low'].min())
+                flat_depth_pct = round(((flat_high - flat_low) / flat_high) * 100.0, 1) if flat_high > 0 else 99.0
+
+                # Left half high (Left Lip candidate)
+                left_end = max(10, int(n_bars * 0.62))
+                left_slice = pat_df.iloc[:left_end]
+                idx_left_high = int(left_slice['High'].idxmax())
+                p_left_high = float(pat_df['High'].iloc[idx_left_high])
+                d_left_high = pat_df['date_str'].iloc[idx_left_high]
+
+                # Lowest point after Left Lip (Cup Bottom candidate)
+                post_left = pat_df.iloc[idx_left_high + 1:] if idx_left_high + 1 < n_bars else pat_df.tail(10)
+                idx_cup_low = int(post_left['Low'].idxmin())
+                p_cup_low = float(pat_df['Low'].iloc[idx_cup_low])
+                d_cup_low = pat_df['date_str'].iloc[idx_cup_low]
+                cup_depth_pct = round(((p_left_high - p_cup_low) / p_left_high) * 100.0, 1) if p_left_high > 0 else 0.0
+
+                # Right side high after Cup Bottom (Right Lip / Handle Peak candidate)
+                post_low = pat_df.iloc[idx_cup_low + 1:] if idx_cup_low + 1 < n_bars else pat_df.tail(5)
+                idx_right_high = int(post_low['High'].idxmax()) if not post_low.empty else (n_bars - 1)
+                p_right_high = float(pat_df['High'].iloc[idx_right_high])
+                d_right_high = pat_df['date_str'].iloc[idx_right_high]
+
+                # Recovery ratio of Right Lip vs Cup Depth
+                cup_recovery_ratio = ((p_right_high - p_cup_low) / max(0.01, p_left_high - p_cup_low)) if p_left_high > p_cup_low else 0.0
+
+                # Handle candidate after Right Lip
+                has_handle = False
+                handle_depth_pct = 0.0
+                p_handle_low = p_right_high
+                d_handle_low = d_right_high
+                idx_handle_low = idx_right_high
+                if idx_right_high < n_bars - 2:
+                    handle_slice = pat_df.iloc[idx_right_high:]
+                    idx_handle_low = int(handle_slice['Low'].idxmin())
+                    p_handle_low = float(pat_df['Low'].iloc[idx_handle_low])
+                    d_handle_low = pat_df['date_str'].iloc[idx_handle_low]
+                    handle_depth_pct = round(((p_right_high - p_handle_low) / p_right_high) * 100.0, 1) if p_right_high > 0 else 0.0
+                    handle_midpoint = (p_right_high + p_handle_low) / 2.0
+                    cup_midpoint = (p_left_high + p_cup_low) / 2.0
+                    # Valid MarketSurge Handle: 2.0% to 15.0% depth, forms in upper half of cup, lasts 3 to 30 bars
+                    if 2.0 <= handle_depth_pct <= 15.0 and handle_midpoint >= cup_midpoint and (n_bars - idx_right_high) <= 32:
+                        has_handle = True
+
+                # Check Double Bottom ('W') candidate: two distinct lows separated by middle peak
+                is_double_bottom = False
+                db_contour = []
+                db_pivot = None
+                if n_bars >= 35 and 10.0 <= cup_depth_pct <= 40.0 and (idx_cup_low - idx_left_high) >= 6:
+                    # Look for a first low before a middle peak and a second low after
+                    mid_slice = pat_df.iloc[idx_left_high + 2 : n_bars - 2]
+                    if len(mid_slice) >= 16:
+                        half_len = len(mid_slice) // 2
+                        first_half = mid_slice.iloc[:half_len]
+                        second_half = mid_slice.iloc[half_len:]
+                        idx_l1 = int(first_half['Low'].idxmin())
+                        p_l1 = float(pat_df['Low'].iloc[idx_l1])
+                        idx_l2 = int(second_half['Low'].idxmin())
+                        p_l2 = float(pat_df['Low'].iloc[idx_l2])
+                        if idx_l2 - idx_l1 >= 7:
+                            between_slice = pat_df.iloc[idx_l1 + 1 : idx_l2]
+                            if not between_slice.empty:
+                                idx_mid_peak = int(between_slice['High'].idxmax())
+                                p_mid_peak = float(pat_df['High'].iloc[idx_mid_peak])
+                                low_diff_pct = abs(p_l2 - p_l1) / max(0.01, p_l1) * 100.0
+                                mid_bounce_pct = ((p_mid_peak - min(p_l1, p_l2)) / max(0.01, p_left_high - min(p_l1, p_l2))) * 100.0
+                                if low_diff_pct <= 4.5 and 40.0 <= mid_bounce_pct <= 95.0 and last_price >= min(p_l1, p_l2) * 1.04:
+                                    is_double_bottom = True
+                                    db_pivot = round(p_mid_peak, 2)
+                                    db_contour = [
+                                        {"time": d_left_high, "price": round(p_left_high, 2), "label": f"Left High ${p_left_high:.2f}"},
+                                        {"time": pat_df['date_str'].iloc[idx_l1], "price": round(p_l1, 2), "label": f"Low 1 ${p_l1:.2f}"},
+                                        {"time": pat_df['date_str'].iloc[idx_mid_peak], "price": round(p_mid_peak, 2), "label": f"W-Pivot ${p_mid_peak:.2f}"},
+                                        {"time": pat_df['date_str'].iloc[idx_l2], "price": round(p_l2, 2), "label": f"Low 2 ${p_l2:.2f}"},
+                                        {"time": pat_df['date_str'].iloc[-1], "price": round(last_price, 2), "label": "Current"}
+                                    ]
+
+                # Select primary MarketSurge Pattern & Official Buy Point
+                pattern_name = "Consolidation Pivot"
+                pattern_type = "CONSOLIDATION"
+                buy_point = vcp_pivot_price or round(flat_high, 2)
+                base_depth = cup_depth_pct
+                base_len_bars = n_bars - idx_left_high
+                cup_curve = []
+                handle_curve = []
+                keypoints = []
+
+                if 11.0 <= cup_depth_pct <= 38.0 and cup_recovery_ratio >= 0.58 and has_handle and (idx_cup_low - idx_left_high) >= 5:
+                    pattern_name = "Cup with Handle"
+                    pattern_type = "CUP_WITH_HANDLE"
+                    buy_point = round(p_right_high, 2)
+                    base_depth = cup_depth_pct
+                    base_len_bars = n_bars - idx_left_high
+                    cup_curve = _build_u_curve(idx_left_high, p_left_high, idx_cup_low, p_cup_low, idx_right_high, p_right_high)
+                    handle_curve = [
+                        {"time": d_right_high, "price": round(p_right_high, 2)},
+                        {"time": d_handle_low, "price": round(p_handle_low, 2)},
+                        {"time": pat_df['date_str'].iloc[-1], "price": round(max(last_price, p_handle_low), 2)}
+                    ]
+                    keypoints = [
+                        {"time": d_left_high, "price": round(p_left_high, 2), "label": f"Left Lip ${p_left_high:.2f}"},
+                        {"time": d_cup_low, "price": round(p_cup_low, 2), "label": f"Cup Bottom ${p_cup_low:.2f} (-{cup_depth_pct}%)"},
+                        {"time": d_right_high, "price": round(p_right_high, 2), "label": f"Handle Buy Point ${p_right_high:.2f}"},
+                        {"time": d_handle_low, "price": round(p_handle_low, 2), "label": f"Handle Low ${p_handle_low:.2f} (-{handle_depth_pct}%)"}
+                    ]
+                elif is_double_bottom and db_pivot:
+                    pattern_name = "Double Bottom ('W' Base)"
+                    pattern_type = "DOUBLE_BOTTOM"
+                    buy_point = db_pivot
+                    base_depth = cup_depth_pct
+                    base_len_bars = n_bars - idx_left_high
+                    cup_curve = [{"time": pt["time"], "price": pt["price"]} for pt in db_contour]
+                    keypoints = db_contour[:-1]
+                elif 5.0 <= flat_depth_pct <= 15.0 and last_price >= flat_low * 1.02 and len(recent_25) >= 20:
+                    pattern_name = "Flat Base"
+                    pattern_type = "FLAT_BASE"
+                    buy_point = round(flat_high, 2)
+                    base_depth = flat_depth_pct
+                    base_len_bars = len(recent_25)
+                    f_start = recent_25['date_str'].iloc[0]
+                    f_end = recent_25['date_str'].iloc[-1]
+                    cup_curve = [
+                        {"time": f_start, "price": round(flat_high, 2)},
+                        {"time": f_end, "price": round(flat_high, 2)}
+                    ]
+                    handle_curve = [
+                        {"time": f_start, "price": round(flat_low, 2)},
+                        {"time": f_end, "price": round(flat_low, 2)}
+                    ]
+                    keypoints = [
+                        {"time": f_start, "price": round(flat_high, 2), "label": f"Flat Base Top ${flat_high:.2f} (-{flat_depth_pct}% Tight)"}
+                    ]
+                elif 11.0 <= cup_depth_pct <= 38.0 and cup_recovery_ratio >= 0.50 and (idx_cup_low - idx_left_high) >= 5:
+                    pattern_name = "Cup Base (Saucer)"
+                    pattern_type = "CUP_BASE"
+                    # Buy point is Left Lip High (or Right Lip High if within 5% of Left Lip)
+                    buy_point = round(p_right_high if p_right_high >= p_left_high * 0.94 else p_left_high, 2)
+                    base_depth = cup_depth_pct
+                    base_len_bars = n_bars - idx_left_high
+                    cup_curve = _build_u_curve(idx_left_high, p_left_high, idx_cup_low, p_cup_low, idx_right_high, p_right_high)
+                    keypoints = [
+                        {"time": d_left_high, "price": round(p_left_high, 2), "label": f"Left Lip ${p_left_high:.2f}"},
+                        {"time": d_cup_low, "price": round(p_cup_low, 2), "label": f"Cup Bottom ${p_cup_low:.2f} (-{cup_depth_pct}%)"},
+                        {"time": d_right_high, "price": round(p_right_high, 2), "label": f"Right Lip ${p_right_high:.2f}"}
+                    ]
+                elif len(vcp_waves) >= 2 and vcp_pivot_price:
+                    pattern_name = f"VCP ({len(vcp_waves)}-T Contraction Base)"
+                    pattern_type = "VCP_BASE"
+                    buy_point = round(float(vcp_pivot_price), 2)
+                    base_depth = vcp_waves[0]['depth_pct']
+                    base_len_bars = n_bars - idx_left_high
+                    if idx_cup_low > idx_left_high:
+                        cup_curve = _build_u_curve(idx_left_high, p_left_high, idx_cup_low, p_cup_low, idx_right_high, p_right_high)
+                    keypoints = [
+                        {"time": vcp_waves[-1]['start_date'], "price": buy_point, "label": f"VCP Pivot ${buy_point:.2f}"}
+                    ]
+                else:
+                    # Swing High / Turnaround Pivot (last 20-35 bars swing high above current consolidation)
+                    swing_slice = pat_df.tail(min(35, n_bars))
+                    idx_sw_high = int(swing_slice['High'].idxmax())
+                    sw_high = round(float(pat_df['High'].iloc[idx_sw_high]), 2)
+                    sw_date = pat_df['date_str'].iloc[idx_sw_high]
+                    pattern_name = "Swing Consolidation Pivot" if last_price >= p_cup_low * 1.08 else "Bottoming Base Pivot"
+                    pattern_type = "SWING_PIVOT"
+                    buy_point = sw_high
+                    base_depth = round(((sw_high - float(swing_slice['Low'].min())) / sw_high) * 100.0, 1) if sw_high > 0 else cup_depth_pct
+                    base_len_bars = len(swing_slice)
+                    if idx_cup_low > idx_left_high and idx_right_high > idx_cup_low:
+                        cup_curve = _build_u_curve(idx_left_high, p_left_high, idx_cup_low, p_cup_low, idx_right_high, p_right_high)
+                    keypoints = [
+                        {"time": sw_date, "price": buy_point, "label": f"Resistance Pivot ${buy_point:.2f}"}
+                    ]
+
+                # Calculate MarketSurge Zones:
+                # 1) Official Buy Point (Pivot)
+                # 2) 5% Chase Zone Upper Bound (Buy Point * 1.05)
+                # 3) 7.5% Hard Stop Loss (Buy Point * 0.925)
+                # 4) 20%-25% Profit-Taking Goal (Buy Point * 1.20 to 1.25)
+                buy_zone_high = round(buy_point * 1.05, 2)
+                stop_loss_ms = round(buy_point * 0.925, 2)
+                profit_goal_20 = round(buy_point * 1.20, 2)
+                profit_goal_25 = round(buy_point * 1.25, 2)
+                dist_to_pivot_pct = round(((last_price - buy_point) / buy_point) * 100.0, 2) if buy_point > 0 else 0.0
+
+                if 0.0 <= dist_to_pivot_pct <= 5.0:
+                    pivot_status = f"🟢 IN 5% BUY ZONE (+{dist_to_pivot_pct:.1f}% above ${buy_point:.2f} Buy Point)"
+                    pivot_badge = "🟢 IN 5% BUY ZONE"
+                    status_color = "#10b981"
+                elif -3.0 <= dist_to_pivot_pct < 0.0:
+                    pivot_status = f"🎯 NEAR PIVOT ({dist_to_pivot_pct:.1f}% below ${buy_point:.2f} Buy Point — Breakout Watch)"
+                    pivot_badge = "🎯 NEAR BUY POINT"
+                    status_color = "#00f2fe"
+                elif dist_to_pivot_pct > 5.0:
+                    pivot_status = f"⚠️ EXTENDED PAST 5% BUY ZONE (+{dist_to_pivot_pct:.1f}% vs ${buy_point:.2f} Pivot — Do Not Chase)"
+                    pivot_badge = "⚠️ EXTENDED PAST BUY ZONE"
+                    status_color = "#f59e0b"
+                elif -15.0 <= dist_to_pivot_pct < -3.0:
+                    pivot_status = f"⏳ FORMING RIGHT SIDE / HANDLE ({dist_to_pivot_pct:.1f}% below ${buy_point:.2f} Buy Point)"
+                    pivot_badge = "⏳ FORMING BASE / HANDLE"
+                    status_color = "#38bdf8"
+                else:
+                    pivot_status = f"🔧 DEEP IN BASE ({dist_to_pivot_pct:.1f}% below ${buy_point:.2f} Pivot — Wait for Right Side)"
+                    pivot_badge = "🔧 BUILDING BASE"
+                    status_color = "#94a3b8"
+
+                marketsurge_pattern = {
+                    "pattern_name": pattern_name,
+                    "pattern_type": pattern_type,
+                    "buy_point": buy_point,
+                    "buy_zone_high": buy_zone_high,
+                    "stop_loss": stop_loss_ms,
+                    "profit_goal_20": profit_goal_20,
+                    "profit_goal_25": profit_goal_25,
+                    "dist_to_pivot_pct": dist_to_pivot_pct,
+                    "base_depth_pct": base_depth,
+                    "handle_depth_pct": handle_depth_pct if has_handle else None,
+                    "base_length_bars": base_len_bars,
+                    "base_length_weeks": round(base_len_bars / 5.0, 1),
+                    "pivot_status": pivot_status,
+                    "pivot_badge": pivot_badge,
+                    "status_color": status_color,
+                    "cup_curve": cup_curve,
+                    "handle_curve": handle_curve,
+                    "keypoints": keypoints
+                }
+        except Exception as ms_err:
+            print(f"[MARKETSURGE PATTERN CALC ERROR]: {ms_err}")
+
+        # 6. Fetch Real Options GEX Levels (Call Wall, Put Wall, Zero Gamma, Max Pain) from DuckDB Lakehouse
+        levels = []
+        options_intel = None
+        try:
+            from options_screener_engine import get_deep_options_analytics
+            opt_data = get_deep_options_analytics(ticker)
+            if opt_data and not opt_data.get('error'):
+                dp = opt_data.get('dealer_positioning', {})
+                gm = opt_data.get('greeks_matrix', {})
+                vega = gm.get('vega_volatility', {})
+                flow = gm.get('order_flow', {})
+                call_wall = dp.get('call_wall')
+                put_wall = dp.get('put_wall')
+                zero_gamma = dp.get('zero_gamma')
+                max_pain = dp.get('max_pain')
+                tot_v = float(flow.get('total_volume') or 0)
+                call_v = float(flow.get('call_volume') or 0)
+                options_intel = {
+                    "call_wall": call_wall,
+                    "put_wall": put_wall,
+                    "zero_gamma": zero_gamma,
+                    "max_pain": max_pain,
+                    "net_gex": dp.get('net_gex_millions'),
+                    "gamma_badge": dp.get('badge'),
+                    "gamma_regime": dp.get('regime'),
+                    "gamma_color": dp.get('color'),
+                    "atm_iv_30d": vega.get('atm_iv_pct'),
+                    "iv_rank_30d": vega.get('iv_rank_30d'),
+                    "skew_25d": vega.get('skew_25d'),
+                    "skew_rank_30d": vega.get('skew_rank_30d'),
+                    "expected_move_1d": vega.get('expected_move_1d'),
+                    "expected_move_5d": vega.get('expected_move_5d'),
+                    "pcr_oi": flow.get('pcr_oi'),
+                    "call_vol_pct": round((call_v / tot_v) * 100.0, 1) if tot_v > 0 else 50.0,
+                    "ai_recommendation": opt_data.get('ai_recommendation')
+                }
+                if call_wall and call_wall > 0:
+                    levels.append({"price": round(float(call_wall), 2), "color": "#10b981", "title": f"Call Wall (${call_wall:.0f} GEX Res)", "type": "CALL_WALL"})
+                if put_wall and put_wall > 0:
+                    levels.append({"price": round(float(put_wall), 2), "color": "#ef4444", "title": f"Put Wall (${put_wall:.0f} GEX Sup)", "type": "PUT_WALL"})
+                if zero_gamma and zero_gamma > 0:
+                    levels.append({"price": round(float(zero_gamma), 2), "color": "#f59e0b", "title": f"Zero Gamma Flip (${zero_gamma:.1f})", "type": "ZERO_GAMMA"})
+                if max_pain and max_pain > 0:
+                    levels.append({"price": round(float(max_pain), 2), "color": "#a855f7", "title": f"Options Max Pain (${max_pain:.0f})", "type": "MAX_PAIN"})
+        except Exception as opt_err:
+            print(f"[CHART OPTIONS GEX INFO]: {opt_err}")
+
+        # Always include Volume Profile POC / VAH / VAL in levels
+        if volume_profile.get("poc_price"):
+            levels.append({
+                "price": volume_profile["poc_price"],
+                "color": "#38bdf8",
+                "title": f"Volume POC (${volume_profile['poc_price']:.2f})",
+                "type": "POC"
+            })
+        if vcp_pivot_price:
+            levels.append({
+                "price": vcp_pivot_price,
+                "color": "#22d3ee",
+                "title": f"Pivot Breakout (${vcp_pivot_price:.2f})",
+                "type": "PIVOT"
+            })
+
+        # 7. Moving Average Ribbon Summary, ATR-Normalized Overextension Telemetry & Trend Lifecycle Engine
+        curr_atr = float(vis_df['atr14'].iloc[-1]) if pd.notna(vis_df['atr14'].iloc[-1]) and float(vis_df['atr14'].iloc[-1]) > 0 else (last_price * 0.025)
+        curr_adr = float(vis_df['adr20_pct'].iloc[-1]) if pd.notna(vis_df['adr20_pct'].iloc[-1]) else 2.5
+
+        # Volatility-adjusted (ATR Multiple) thresholds calibrated per Moving Average horizon.
+        # Using ATR multiples ensures a high-beta stock (like SOFI with ~5% ADR) isn't falsely
+        # marked "Extended" when it is less than 1.0x–1.5x ATR above its 21-EMA!
+        ma_thresholds = {
+            "ema9":   {"atr_tight": 1.0, "atr_ext": 2.0, "atr_over": 3.0, "min_pct_ext": 3.5,  "min_pct_over": 6.5},
+            "ema21":  {"atr_tight": 1.3, "atr_ext": 2.5, "atr_over": 3.8, "min_pct_ext": 6.0,  "min_pct_over": 10.5},
+            "sma50":  {"atr_tight": 1.5, "atr_ext": 3.2, "atr_over": 5.0, "min_pct_ext": 9.5,  "min_pct_over": 16.0},
+            "sma150": {"atr_tight": 2.0, "atr_ext": 5.0, "atr_over": 7.5, "min_pct_ext": 16.0, "min_pct_over": 28.0},
+            "sma200": {"atr_tight": 2.2, "atr_ext": 6.0, "atr_over": 9.0, "min_pct_ext": 20.0, "min_pct_over": 35.0},
+        }
+
+        def _ma_meta(col_name, label, color):
+            val = vis_df[col_name].iloc[-1] if col_name in vis_df and pd.notna(vis_df[col_name].iloc[-1]) else None
+            if val is None or val <= 0:
+                return {
+                    "key": col_name, "label": label, "value": None, "dist_pct": None,
+                    "atr_multiple": None, "pct_rank_1y": None, "slope": "Flat", "slope_pct": 0.0,
+                    "above": False, "stretch_state": "N/A", "state_color": "#64748b", "color": color
+                }
+            prev_val = vis_df[col_name].iloc[-6] if len(vis_df) >= 6 and pd.notna(vis_df[col_name].iloc[-6]) else val
+            dist_pct = round(((last_price - float(val)) / float(val)) * 100.0, 2)
+            atr_mult = round((last_price - float(val)) / curr_atr, 2) if curr_atr > 0 else 0.0
+            slope_pct = round(((float(val) - float(prev_val)) / float(prev_val)) * 100.0, 2) if prev_val > 0 else 0.0
+
+            # 1-Year Historical Extension Percentile (in ATR multiples) vs this MA
+            pct_rank_1y = 50
+            try:
+                hist_tail = df.tail(252)
+                valid_hist = hist_tail[hist_tail[col_name].notna() & (hist_tail[col_name] > 0) & hist_tail['atr14'].notna() & (hist_tail['atr14'] > 0)]
+                if len(valid_hist) >= 20:
+                    hist_atr_mults = (valid_hist['Close'] - valid_hist[col_name]) / valid_hist['atr14']
+                    pct_rank_1y = int(round(float((hist_atr_mults <= atr_mult).mean() * 100.0)))
+            except Exception:
+                pct_rank_1y = 50
+
+            th = ma_thresholds.get(col_name, {"atr_tight": 1.3, "atr_ext": 2.8, "atr_over": 4.2, "min_pct_ext": 8.0, "min_pct_over": 14.0})
+            if atr_mult >= th["atr_over"] and dist_pct >= th["min_pct_over"] * 0.75:
+                stretch_state = "OVEREXTENDED"
+                state_color = "#ef4444"
+            elif atr_mult >= th["atr_ext"] and dist_pct >= th["min_pct_ext"] * 0.75:
+                stretch_state = "EXTENDED"
+                state_color = "#f59e0b"
+            elif -0.6 <= atr_mult <= th["atr_tight"]:
+                stretch_state = "AT SUPPORT / TIGHT"
+                state_color = "#38bdf8"
+            elif atr_mult > th["atr_tight"]:
+                stretch_state = "NORMAL TREND"
+                state_color = "#10b981"
+            elif atr_mult <= -th["atr_over"]:
+                stretch_state = "OVERSOLD STRETCH"
+                state_color = "#a855f7"
+            elif atr_mult <= -th["atr_ext"]:
+                stretch_state = "BROKEN / WEAK"
+                state_color = "#ef4444"
+            else:
+                stretch_state = "PULLBACK / BELOW"
+                state_color = "#fb923c"
+
+            return {
+                "key": col_name,
+                "label": label,
+                "value": round(float(val), 2),
+                "dist_pct": dist_pct,
+                "atr_multiple": atr_mult,
+                "pct_rank_1y": pct_rank_1y,
+                "slope": "Rising" if slope_pct > 0.05 else ("Falling" if slope_pct < -0.05 else "Flat"),
+                "slope_pct": slope_pct,
+                "above": bool(last_price >= float(val)),
+                "stretch_state": stretch_state,
+                "state_color": state_color,
+                "color": color
+            }
+
+        ma_ribbon = {
+            "ema9": _ma_meta("ema9", "9 EMA", "#38bdf8"),
+            "ema21": _ma_meta("ema21", "21 EMA", "#10b981"),
+            "sma50": _ma_meta("sma50", "50 SMA", "#f59e0b"),
+            "sma150": _ma_meta("sma150", "150 SMA", "#a855f7"),
+            "sma200": _ma_meta("sma200", "200 SMA", "#ef4444")
+        }
+
+        # Up/Down Volume Ratio (20-bar) & ATR Trade Plan
+        tail20 = vis_df.tail(20)
+        up_vol_20 = float(tail20[tail20['Close'] >= tail20['Open']]['Volume'].sum())
+        dn_vol_20 = float(tail20[tail20['Close'] < tail20['Open']]['Volume'].sum())
+        ud_vol_ratio = round(up_vol_20 / dn_vol_20, 2) if dn_vol_20 > 0 else 2.0
+
+        stop_loss = round(last_price - 1.5 * curr_atr, 2)
+        target_1 = round(last_price + 2.0 * curr_atr, 2)
+        profit_target = round(last_price + 3.0 * curr_atr, 2)
+        risk_pct = round(((last_price - stop_loss) / last_price) * 100.0, 2) if last_price > 0 else 2.0
+        reward_pct = round(((profit_target - last_price) / last_price) * 100.0, 2) if last_price > 0 else 4.0
+
+        high_52w = round(float(df['High'].tail(252).max()), 2)
+        low_52w = round(float(df['Low'].tail(252).min()), 2)
+        pct_off_high = round(((last_price - high_52w) / high_52w) * 100.0, 2) if high_52w > 0 else 0.0
+
+        # Minervini 8-Point Trend Template Check
+        e9 = ma_ribbon["ema9"]["value"] or last_price
+        e21 = ma_ribbon["ema21"]["value"] or last_price
+        s50 = ma_ribbon["sma50"]["value"] or last_price
+        s150 = ma_ribbon["sma150"]["value"] or last_price
+        s200 = ma_ribbon["sma200"]["value"] or last_price
+        trend_template = [
+            {"rule": "Price > 150-SMA & 200-SMA", "passed": bool(last_price > s150 and last_price > s200)},
+            {"rule": "150-SMA > 200-SMA", "passed": bool(s150 > s200)},
+            {"rule": "200-SMA Trending Up (1M+)", "passed": bool(ma_ribbon["sma200"]["slope"] == "Rising")},
+            {"rule": "50-SMA > 150-SMA & 200-SMA", "passed": bool(s50 > s150 and s50 > s200)},
+            {"rule": "Price > 50-SMA", "passed": bool(last_price > s50)},
+            {"rule": "Price >= 25% Above 52W Low", "passed": bool(low_52w > 0 and last_price >= low_52w * 1.25)},
+            {"rule": "Within 25% of 52W High", "passed": bool(high_52w > 0 and last_price >= high_52w * 0.75)},
+            {"rule": "RS Line Outperforming SPY", "passed": bool(rs_series[-1]['mansfield'] > 0 if rs_series else False)}
         ]
-        
+        tt_score = sum(1 for r in trend_template if r["passed"])
+
+        # 8. Compute "Where Are We in Trend?" Lifecycle, Run Duration, & Stage Sub-Classification
+        bars_vs_50 = 0
+        bars_vs_21 = 0
+        leg_anchor_price = s50
+        try:
+            recent_df = df.tail(252)
+            above_50_now = bool(last_price >= s50)
+            cross_idx = len(recent_df) - 1
+            for idx_r in range(len(recent_df) - 1, -1, -1):
+                r_close = float(recent_df['Close'].iloc[idx_r])
+                r_s50 = float(recent_df['sma50'].iloc[idx_r]) if pd.notna(recent_df['sma50'].iloc[idx_r]) else r_close
+                if (r_close >= r_s50) == above_50_now:
+                    bars_vs_50 += 1 if above_50_now else -1
+                    cross_idx = idx_r
+                else:
+                    break
+            # Anchor leg return to the prior close right before crossing 50-SMA (or the 50-SMA at cross)
+            if cross_idx > 0:
+                prev_close = float(recent_df['Close'].iloc[cross_idx - 1])
+                cross_s50 = float(recent_df['sma50'].iloc[cross_idx]) if pd.notna(recent_df['sma50'].iloc[cross_idx]) else s50
+                leg_anchor_price = min(prev_close, cross_s50) if above_50_now else max(prev_close, cross_s50)
+            else:
+                leg_anchor_price = float(recent_df['Close'].iloc[0])
+
+            above_21_now = bool(last_price >= e21)
+            for idx_r in range(len(recent_df) - 1, -1, -1):
+                r_close = float(recent_df['Close'].iloc[idx_r])
+                r_e21 = float(recent_df['ema21'].iloc[idx_r]) if pd.notna(recent_df['ema21'].iloc[idx_r]) else r_close
+                if (r_close >= r_e21) == above_21_now:
+                    bars_vs_21 += 1 if above_21_now else -1
+                else:
+                    break
+        except Exception:
+            pass
+
+        leg_return_pct = round(((last_price - leg_anchor_price) / leg_anchor_price) * 100.0, 1) if leg_anchor_price > 0 else 0.0
+
+        dist_9 = ma_ribbon["ema9"]["dist_pct"] or 0.0
+        dist_21 = ma_ribbon["ema21"]["dist_pct"] or 0.0
+        dist_50 = ma_ribbon["sma50"]["dist_pct"] or 0.0
+        dist_150 = ma_ribbon["sma150"]["dist_pct"] or 0.0
+        dist_200 = ma_ribbon["sma200"]["dist_pct"] or 0.0
+        atr_mult_50 = ma_ribbon["sma50"]["atr_multiple"] or 0.0
+        atr_mult_21 = ma_ribbon["ema21"]["atr_multiple"] or 0.0
+        slope_50 = ma_ribbon["sma50"]["slope"]
+        slope_200 = ma_ribbon["sma200"]["slope"]
+
+        # MA Stack Alignment Count (out of 5 bullish checks)
+        ma_stack_checks = [
+            last_price >= e9,
+            e9 >= e21,
+            e21 >= s50,
+            s50 >= s150,
+            s150 >= s200
+        ]
+        ma_stack_score = sum(1 for c in ma_stack_checks if c)
+
+        if ma_stack_score == 5 and last_price > s200:
+            trend_regime = "🔥 Full 5-MA Bullish Power Stack (Price > 9 > 21 > 50 > 150 > 200)"
+            regime_short = "Full Bullish Stack (5/5)"
+            regime_color = "#10b981"
+        elif last_price >= s50 and s50 >= s200:
+            if last_price < e21:
+                trend_regime = "📐 Bullish Primary Trend — Short-Term Pullback to 21-EMA / 50-SMA"
+                regime_short = "Bullish Pullback (Resting)"
+                regime_color = "#38bdf8"
+            else:
+                trend_regime = "📈 Bullish Advancing Uptrend (Above Rising 50 & 200 SMA)"
+                regime_short = f"Bullish Uptrend ({ma_stack_score}/5 Stack)"
+                regime_color = "#10b981"
+        elif last_price >= s200 and last_price < s50:
+            trend_regime = "⚖️ Intermediate Correction / Testing 150-200 SMA Institutional Floor"
+            regime_short = "Intermediate Correction"
+            regime_color = "#f59e0b"
+        elif last_price < s200 and last_price >= s50:
+            trend_regime = "🌱 Stage 1B / Early Transition — Reclaimed 9/21-EMA & 50-SMA (Approaching 200-SMA)"
+            regime_short = "Stage 1B Base Recovery"
+            regime_color = "#38bdf8"
+        elif last_price < s50 and last_price >= e21:
+            trend_regime = "🔄 Counter-Trend Bounce / Reclaimed 21-EMA Below 50-SMA"
+            regime_short = "Early Bounce (>21-EMA)"
+            regime_color = "#fbbf24"
+        else:
+            trend_regime = "🛑 Bearish Downtrend Stack (Below 21-EMA, 50-SMA & 200-SMA)"
+            regime_short = "Bearish Downtrend"
+            regime_color = "#ef4444"
+
+        # Precise Weinstein + Minervini Sub-Stage Classification (1 to 6 Lifecycle)
+        is_50_overext = ma_ribbon["sma50"]["stretch_state"] == "OVEREXTENDED" or ma_ribbon["sma200"]["stretch_state"] == "OVEREXTENDED"
+        is_50_ext = ma_ribbon["sma50"]["stretch_state"] == "EXTENDED" or ma_ribbon["ema21"]["stretch_state"] == "OVEREXTENDED"
+
+        if last_price >= s50 and last_price >= s200:
+            if is_50_overext or (bars_vs_50 >= 45 and atr_mult_50 >= 4.0):
+                stage_code = "Stage 2C"
+                stage_label = "Stage 2C — Late / Overextended Markup (Climax Watch)"
+                stage_index = 4
+                stage_color = "#f59e0b"
+            elif 0 < bars_vs_50 <= 12 and atr_mult_50 <= 2.2:
+                stage_code = "Stage 2A"
+                stage_label = "Stage 2A — Early Trend Ignition (Fresh Breakout)"
+                stage_index = 2
+                stage_color = "#00f2fe"
+            elif last_price < e21 and atr_mult_50 <= 1.2:
+                stage_code = "Stage 2B Pullback"
+                stage_label = "Stage 2B — Constructive Pullback to 21-EMA / 50-SMA"
+                stage_index = 3
+                stage_color = "#38bdf8"
+            else:
+                stage_code = "Stage 2B"
+                stage_label = "Stage 2B — Primary Advancing Markup (Power Trend)"
+                stage_index = 3
+                stage_color = "#10b981"
+        elif last_price < s200 and last_price >= s50:
+            # Stock has reclaimed 50-SMA (and usually 9/21 EMA) while working back toward 150/200 SMA
+            stage_code = "Stage 1B"
+            stage_label = "Stage 1B — Base Recovery (Above 21-EMA & 50-SMA, Testing 150/200-SMA)"
+            stage_index = 1
+            stage_color = "#38bdf8"
+        elif last_price < s50 and last_price >= e21 and abs(dist_50) <= 5.0:
+            stage_code = "Stage 1A"
+            stage_label = "Stage 1A — Early Basing & Accumulation (Reclaimed 21-EMA)"
+            stage_index = 1
+            stage_color = "#94a3b8"
+        elif s50 >= s200 and last_price < s50:
+            if atr_mult_50 >= -2.0:
+                stage_code = "Stage 3A"
+                stage_label = "Stage 3A — Distribution / Testing Below 50-SMA"
+                stage_index = 5
+                stage_color = "#f59e0b"
+            else:
+                stage_code = "Stage 3B"
+                stage_label = "Stage 3B — Late Distribution Top / Breakdown Risk"
+                stage_index = 5
+                stage_color = "#fb923c"
+        else:
+            if atr_mult_50 <= -4.5 or dist_200 <= -25.0:
+                stage_code = "Stage 4B"
+                stage_label = "Stage 4B — Capitulation / Deeply Oversold Washout"
+                stage_index = 6
+                stage_color = "#a855f7"
+            else:
+                stage_code = "Stage 4A"
+                stage_label = "Stage 4A — Active Markdown (Below Falling 50 & 200 SMA)"
+                stage_index = 6
+                stage_color = "#ef4444"
+
+        # Where Are We In Trend & Tactical Action Zone
+        if bars_vs_50 > 0:
+            if bars_vs_50 <= 10:
+                maturity_phase = f"Early Impulse Leg ({bars_vs_50} bars > 50-SMA · {leg_return_pct:+.1f}%)"
+            elif bars_vs_50 <= 35:
+                maturity_phase = f"Mid-Trend Markup ({bars_vs_50} bars > 50-SMA · {leg_return_pct:+.1f}%)"
+            else:
+                maturity_phase = f"Mature / Extended Run ({bars_vs_50} bars > 50-SMA · {leg_return_pct:+.1f}%)"
+        else:
+            abs_b = abs(bars_vs_50)
+            maturity_phase = f"Below 50-SMA ({abs_b} bars below · {leg_return_pct:+.1f}% leg)"
+
+        if is_50_overext:
+            verdict = "🔴 OVEREXTENDED FROM SMAs (HIGH MEAN-REVERSION RISK)"
+            verdict_short = "🔴 OVEREXTENDED"
+            verdict_color = "#ef4444"
+            tactical_zone = "🚨 DO NOT CHASE — Trim into strength or trail tight 9-EMA stop; wait for 21-EMA reset"
+        elif is_50_ext or ma_ribbon["ema21"]["stretch_state"] == "EXTENDED":
+            verdict = "🟠 MODERATELY EXTENDED FROM 21-EMA / 50-SMA"
+            verdict_short = "🟠 EXTENDED (NO CHASE)"
+            verdict_color = "#f59e0b"
+            tactical_zone = "⚠️ EXTENDED ABOVE PIVOT — Hold core runners, avoid fresh market buys until 9/21-EMA pullback"
+        elif last_price >= s50 and -0.5 <= atr_mult_21 <= 1.3:
+            verdict = "🟢 TIGHT & CONSTRUCTIVE NEAR 21-EMA / 50-SMA SUPPORT"
+            verdict_short = "🟢 TIGHT / BUYABLE ZONE"
+            verdict_color = "#10b981"
+            tactical_zone = "🎯 OPTIMAL LOW-RISK ENTRY ZONE — Price is within ~1 ATR of rising 21-EMA & 50-SMA support"
+        elif last_price >= s50:
+            verdict = "🔵 HEALTHY TREND PROGRESSION (WITHIN NORMAL ATR BAND)"
+            verdict_short = "🔵 NORMAL TREND PACE"
+            verdict_color = "#38bdf8"
+            tactical_zone = "✅ CONSTRUCTIVE UPTREND — Normal ATR progression above 21-EMA & 50-SMA"
+        elif atr_mult_50 <= -4.0:
+            verdict = "🟣 OVERSOLD STRETCH BELOW 50 & 200 SMA (RUBBER-BAND SNAPBACK WATCH)"
+            verdict_short = "🟣 OVERSOLD STRETCH"
+            verdict_color = "#a855f7"
+            tactical_zone = "⚡ EXTREME DOWNSIDE STRETCH — Watch for high-volume undercut & reclaim of 9-EMA"
+        else:
+            verdict = "🔻 BELOW KEY MOVING AVERAGES (OVERHEAD SUPPLY)"
+            verdict_short = "🔻 BELOW SMAs"
+            verdict_color = "#fb923c"
+            tactical_zone = "🛡️ DEFENSIVE POSTURE — Wait for price to reclaim 21-EMA & 50-SMA on volume"
+
+        # Composite Stretch Score (0 = Extreme Oversold, 50 = Right at 50-SMA, 100 = Extreme Parabolic Overextension)
+        stretch_index = int(min(100, max(0, round(50 + (atr_mult_50 * 9.5) + (dist_200 * 0.45)))))
+
+        narrative = (
+            f"{ticker} is in {stage_label} ({regime_short}, {maturity_phase}). "
+            f"Price is {dist_21:+.2f}% ({atr_mult_21:+.1f}x ATR) vs 21-EMA, "
+            f"{dist_50:+.2f}% ({atr_mult_50:+.1f}x ATR, {ma_ribbon['sma50']['pct_rank_1y']}th 1Y %ile) vs 50-SMA, "
+            f"and {dist_200:+.2f}% vs 200-SMA — {tactical_zone}."
+        )
+
+        trend_diagnostics = {
+            "stage_code": stage_code,
+            "stage_label": stage_label,
+            "stage_index": stage_index,
+            "stage_color": stage_color,
+            "trend_regime": trend_regime,
+            "regime_short": regime_short,
+            "regime_color": regime_color,
+            "ma_stack_score": ma_stack_score,
+            "maturity_phase": maturity_phase,
+            "bars_vs_50sma": bars_vs_50,
+            "bars_vs_21ema": bars_vs_21,
+            "leg_return_pct": leg_return_pct,
+            "verdict": verdict,
+            "verdict_short": verdict_short,
+            "verdict_color": verdict_color,
+            "tactical_zone": tactical_zone,
+            "stretch_index": stretch_index,
+            "narrative": narrative,
+            "lifecycle_steps": [
+                {"step": 1, "code": "Stage 1", "label": "Basing"},
+                {"step": 2, "code": "Stage 2A", "label": "Ignition"},
+                {"step": 3, "code": "Stage 2B", "label": "Markup"},
+                {"step": 4, "code": "Stage 2C", "label": "Extended"},
+                {"step": 5, "code": "Stage 3", "label": "Topping"},
+                {"step": 6, "code": "Stage 4", "label": "Decline"}
+            ]
+        }
+
         return jsonify({
             "ticker": ticker,
+            "timeframe": timeframe,
+            "range": range_param,
             "candles": ohlc,
             "rs_series": rs_series,
             "blue_dots": blue_dots,
+            "pocket_pivots": pocket_pivots,
+            "vdu_markers": vdu_markers,
             "vcp_waves": vcp_waves,
-            "levels": levels
+            "vcp_pivot_price": vcp_pivot_price,
+            "volume_profile": volume_profile,
+            "levels": levels,
+            "options_intel": options_intel,
+            "ma_ribbon": ma_ribbon,
+            "trend_diagnostics": trend_diagnostics,
+            "marketsurge": marketsurge_pattern,
+            "trend_template": {
+                "checks": trend_template,
+                "passed": tt_score,
+                "total": 8
+            },
+            "summary_metrics": {
+                "last_price": last_price,
+                "change_1d_pct": round(((last_price / ohlc[-2]['close']) - 1.0) * 100.0, 2) if len(ohlc) >= 2 and ohlc[-2]['close'] > 0 else 0.0,
+                "atr_14": round(curr_atr, 2),
+                "adr_20_pct": round(curr_adr, 2),
+                "rvol": last_bar["rvol"],
+                "clv": last_bar["clv"],
+                "ud_vol_ratio_20d": ud_vol_ratio,
+                "pocket_pivot_count": len(pocket_pivots),
+                "vdu_count": len(vdu_markers),
+                "blue_dot_count": len(blue_dots),
+                "high_52w": high_52w,
+                "low_52w": low_52w,
+                "pct_off_52w_high": pct_off_high,
+                "rsi14": last_bar["rsi14"],
+                "adx14": last_bar["adx14"],
+                "plus_di": last_bar["plus_di"],
+                "minus_di": last_bar["minus_di"],
+                "squeeze_on": last_bar["squeeze_on"],
+                "mansfield_rs": rs_series[-1]["mansfield"] if rs_series else 0.0
+            },
+            "trade_plan": {
+                "entry": last_price,
+                "stop_loss": stop_loss,
+                "target_1": target_1,
+                "profit_target": profit_target,
+                "risk_pct": risk_pct,
+                "reward_pct": reward_pct,
+                "rr_ratio": 2.0
+            }
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500@app.route('/api/sync_lakehouse', methods=['POST'])
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/sync_lakehouse', methods=['POST'])
 def sync_lakehouse():
     import subprocess
     script_path = os.path.join(os.path.dirname(__file__), 'backend', 'master_daily_update.sh')
@@ -582,7 +1600,7 @@ def get_vol_surface():
     # 5-minute in-memory cache for snappy <5ms response
     if not force_refresh and ticker_clean in _vol_surface_cache:
         cached_ts, cached_data = _vol_surface_cache[ticker_clean]
-        if now_time - cached_ts < 300:
+        if now_time - cached_ts < 300 and "spot_vol_scatter" in cached_data and len(cached_data.get("spot_vol_scatter", [])) > 0:
             return jsonify(cached_data)
 
     try:
@@ -617,19 +1635,64 @@ def get_vol_surface():
                 except Exception:
                     spot = 100.0
             
-        # Calculate 30D Realized Historical Volatility (HV)
+        # Calculate 30D Realized Historical Volatility (HV) & Spot-Vol Correlation
         hv_30d = 20.0
+        spot_vol_corr = -0.65
+        spot_vol_regime = "Standard Equity Leverage (Negative Correlation)"
+        spot_vol_badge = "STANDARD LEVERAGE"
+        spot_vol_color = "#38bdf8"
+        spot_vol_scatter = []
+        df_sv_raw = pd.DataFrame()
         try:
             if t is None:
                 t = yf.Ticker(ticker_clean)
-            hist_30 = t.history(period="1mo")
-            if len(hist_30) >= 10:
-                log_rets = np.log(hist_30['Close'] / hist_30['Close'].shift(1)).dropna()
+            try:
+                hist_30 = t.history(period="3mo")
+            except Exception:
+                hist_30 = pd.DataFrame()
+
+            if hist_30.empty or len(hist_30) < 10:
+                try:
+                    # Fallback to 1mo if 3mo fails or yields insufficient data
+                    hist_30 = t.history(period="1mo")
+                except Exception:
+                    hist_30 = pd.DataFrame()
+
+            if not hist_30.empty and len(hist_30) >= 10:
+                close_s = hist_30['Close']
+                log_rets = np.log(close_s / close_s.shift(1)).dropna()
                 std_calc = float(log_rets.std() * np.sqrt(252) * 100)
                 if not math.isnan(std_calc) and std_calc > 0:
                     hv_30d = std_calc
+                    
+                # Spot-Vol Correlation: 10D EWMA Realized Vol Change + 5D True-Range Shock (refined with 25D Options Skew below)
+                if len(hist_30) >= 10:
+                    high_s = hist_30['High']
+                    low_s = hist_30['Low']
+                    prev_close_s = close_s.shift(1)
+                    dates_s = hist_30.index.strftime('%Y-%m-%d')
+                    spot_rets = np.log(close_s / prev_close_s) * 100.0
+                    
+                    # 1) 10-day EWMA Realized Volatility change (scaled to daily vol % units)
+                    ewma10_diff = (spot_rets.ewm(span=10, min_periods=5).std() * np.sqrt(252)).diff() / np.sqrt(252) * 2.5
+                    # 2) True-Range Parkinson Volatility shock vs 5-day trailing baseline (captures overnight gaps & avoids single-day t-1 wick inversion)
+                    tr_high = np.maximum(high_s, prev_close_s)
+                    tr_low = np.minimum(low_s, prev_close_s)
+                    tr_park = np.sqrt((np.log(tr_high / tr_low) ** 2) / (4.0 * np.log(2.0))) * 100.0
+                    tr_diff = tr_park - tr_park.ewm(span=5, min_periods=2).mean().shift(1)
+                    
+                    vol_diff = (0.75 * ewma10_diff.fillna(tr_diff)) + (0.25 * tr_diff)
+                    df_sv_raw = pd.DataFrame({
+                        'spot': spot_rets,
+                        'ewma_d': ewma10_diff.fillna(tr_diff),
+                        'tr_d': tr_diff,
+                        'vol': vol_diff,
+                        'date': dates_s
+                    }).dropna(subset=['spot', 'vol'])
         except Exception:
             hv_30d = 20.0
+            spot_vol_corr = -0.65
+            df_sv_raw = pd.DataFrame()
             
         import datetime
         today = datetime.date.today()
@@ -638,13 +1701,25 @@ def get_vol_surface():
         all_points = []
         atm_ivs = []
         
-        # Select up to 8 expirations across curve
-        selected_expiries = options[:min(8, len(options))]
+        # Filter out expired options from prior trading sessions
+        valid_options = []
+        for e in options:
+            try:
+                ed = datetime.datetime.strptime(e, '%Y-%m-%d').date()
+                if ed >= today:
+                    valid_options.append(e)
+            except Exception:
+                pass
+
+        # Select up to 8 valid future expirations across curve
+        selected_expiries = valid_options[:min(8, len(valid_options))]
         
         for expiry in selected_expiries:
             try:
                 exp_date = datetime.datetime.strptime(expiry, '%Y-%m-%d').date()
                 days_left = (exp_date - today).days
+                if days_left < 0:
+                    continue
                 dte = max(1, days_left)
                 T = max(0.5, days_left) / 365.25
             except Exception:
@@ -795,12 +1870,54 @@ def get_vol_surface():
         atm_iv_30d = atm_ivs[0] if atm_ivs else 22.0
         iv_hv_ratio = round(atm_iv_30d / (hv_30d if hv_30d > 0 else 1.0), 2)
         
-        # Term structure regime
+        # Robust Term Structure & Regime Classification (Event-Aware)
+        is_event_inversion = False
+        event_exp = None
+        dte_event = 14
+        
         if len(term_structure) >= 2:
-            front_iv = term_structure[0]["atm_iv"]
-            back_iv = term_structure[-1]["atm_iv"]
-            slope = round(back_iv - front_iv, 2)
-            ts_regime = "Contango" if slope > 1.0 else ("Backwardation" if slope < -1.0 else "Flat")
+            ivs = [x["atm_iv"] for x in term_structure]
+            dtes = [x["dte"] for x in term_structure]
+            
+            front_iv = ivs[0]
+            back_iv = ivs[-1]
+            peak_iv = max(ivs)
+            peak_idx = ivs.index(peak_iv)
+            peak_dte = dtes[peak_idx]
+            
+            # Event Inversion / Humped Curve Detection:
+            # Impending earnings or binary catalysts create an acute front/near-term IV spike
+            # (peak occurs within <= 14 DTE and is >= 3.5% above back-month baseline, and not just the final point)
+            is_event_inversion = (peak_dte <= 14) and (peak_iv >= back_iv + 3.5) and (peak_idx < len(ivs) - 1)
+            
+            if is_event_inversion:
+                # The operative forward term structure from the event forward is in steep backwardation
+                slope = round(back_iv - peak_iv, 2)
+                ts_regime = "Backwardation"
+                event_exp = term_structure[peak_idx]['expiry']
+                dte_event = peak_dte
+            else:
+                # Check if front DTE is an ultra-short pre-event stub (<= 2 DTE) with an immediate gap to the normal curve
+                if dtes[0] <= 2 and len(dtes) > 2 and (ivs[1] - front_iv) > 5.0:
+                    effective_front = ivs[1]
+                else:
+                    effective_front = front_iv
+                
+                try:
+                    m, _ = np.polyfit(dtes, ivs, 1)
+                    reg_slope = m * 30.0
+                except Exception:
+                    reg_slope = back_iv - effective_front
+                    
+                raw_diff = back_iv - effective_front
+                slope = round(raw_diff, 2) if abs(raw_diff) >= abs(reg_slope) else round(reg_slope, 2)
+                
+                if slope < -1.5 or reg_slope < -1.0:
+                    ts_regime = "Backwardation"
+                elif slope > 1.5 and reg_slope > 0.0:
+                    ts_regime = "Contango"
+                else:
+                    ts_regime = "Flat"
         else:
             ts_regime = "Contango"
             slope = 1.5
@@ -949,13 +2066,18 @@ def get_vol_surface():
                     "target_point": {"expiry": front_exp, "strike": round(spot, 1), "iv": term_structure[0]['atm_iv'] if term_structure else atm_iv_30d}
                 })
             else:
+                target_exp_label = f"Event Tenor {event_exp}" if is_event_inversion else f"Front Tenor {front_exp}"
+                target_dte_val = dte_event if is_event_inversion else dte_front
+                target_iv_val = peak_iv if is_event_inversion else (term_structure[0]['atm_iv'] if term_structure else atm_iv_30d)
+                target_exp_val = event_exp if is_event_inversion else front_exp
+
                 actionable_setups.append({
                     "id": "setup-2-crush",
                     "name": "Event Vol Crush Front Monopolizer",
                     "structure": "Front-Month Short Strangle / Bear Put",
                     "category": "Term Structure",
-                    "expiry": f"Front Tenor {front_exp}",
-                    "dte": dte_front,
+                    "expiry": target_exp_label,
+                    "dte": target_dte_val,
                     "strikes": f"${round(spot*0.97, 1)}P / ${round(spot*1.03, 1)}C",
                     "moneyness": "Front Inflated Event Wing",
                     "edge": f"Backwardation inversion ({slope:.1f}%): Front IV inflated by event catalyst ripe for post-event crush",
@@ -976,7 +2098,7 @@ def get_vol_surface():
                         "theta": f"+${round(spot*0.09, 1)}/day"
                     },
                     "desk_notes": "Enter immediately before scheduled binary catalyst; buy back at open on implied volatility implosion.",
-                    "target_point": {"expiry": front_exp, "strike": round(spot, 1), "iv": term_structure[0]['atm_iv'] if term_structure else atm_iv_30d}
+                    "target_point": {"expiry": target_exp_val, "strike": round(spot, 1), "iv": target_iv_val}
                 })
 
             # Setup 3: Skew Spread Monetization
@@ -1198,16 +2320,61 @@ def get_vol_surface():
                     p["hedge_desc"] = "Option pricing conforms to normalized structural volatility smile."
                     bal_pts.append(p)
 
-        # Skew analysis around 25 Delta (~0.95x and ~1.05x spot)
-        puts_25d = [p["iv"] for p in surface_data if 0.93 <= (p["strike"]/spot) <= 0.97]
-        calls_25d = [p["iv"] for p in surface_data if 1.03 <= (p["strike"]/spot) <= 1.07]
+        # Skew analysis around 25 Delta (~0.95x and ~1.05x spot), normalized per expiration ATM IV
+        exp_atm_map = {x["expiry"]: x["atm_iv"] for x in term_structure if x.get("atm_iv", 0) > 0}
+        base_atm_iv = float(np.mean(list(exp_atm_map.values()))) if exp_atm_map else (atm_iv_30d if atm_iv_30d > 0 else 25.0)
+        puts_25d = [p["iv"] for p in surface_data if 0.92 <= (p["strike"]/spot) <= 0.98]
+        calls_25d = [p["iv"] for p in surface_data if 1.02 <= (p["strike"]/spot) <= 1.08]
+        put_ratios_25d = [p["iv"] / exp_atm_map.get(p["expiry"], base_atm_iv) for p in surface_data if 0.92 <= (p["strike"]/spot) <= 0.98]
+        call_ratios_25d = [p["iv"] / exp_atm_map.get(p["expiry"], base_atm_iv) for p in surface_data if 1.02 <= (p["strike"]/spot) <= 1.08]
 
-        avg_put_25d = float(np.mean(puts_25d)) if puts_25d else atm_iv_30d * 1.15
-        avg_call_25d = float(np.mean(calls_25d)) if calls_25d else atm_iv_30d * 0.95
+        avg_put_25d = float(np.mean(puts_25d)) if puts_25d else base_atm_iv * 1.12
+        avg_call_25d = float(np.mean(calls_25d)) if calls_25d else base_atm_iv * 0.96
 
-        put_skew_25d = round(avg_put_25d / (atm_iv_30d if atm_iv_30d > 0 else 1.0), 2)
-        call_skew_25d = round(avg_call_25d / (atm_iv_30d if atm_iv_30d > 0 else 1.0), 2)
-        skew_bias_pct = round(((avg_put_25d - avg_call_25d) / (atm_iv_30d if atm_iv_30d > 0 else 1.0)) * 100, 1)
+        put_skew_25d = round(float(np.mean(put_ratios_25d)), 2) if put_ratios_25d else round(avg_put_25d / (base_atm_iv if base_atm_iv > 0 else 1.0), 2)
+        call_skew_25d = round(float(np.mean(call_ratios_25d)), 2) if call_ratios_25d else round(avg_call_25d / (base_atm_iv if base_atm_iv > 0 else 1.0), 2)
+        skew_bias_pct = round((put_skew_25d - call_skew_25d) * 100, 1)
+
+        # Finalize Spot-Vol Correlation & Scatter blending 10D EWMA Realized Vol + 5D True-Range Shock + 25D Surface Skew IV Response
+        if not df_sv_raw.empty and len(df_sv_raw) >= 5:
+            skew_asym = float(put_skew_25d - call_skew_25d)
+            skew_iv_diff = -(skew_asym * 1.35) * df_sv_raw['spot']
+            eff_vol_diff = (0.60 * df_sv_raw['ewma_d']) + (0.20 * df_sv_raw['tr_d']) + (0.20 * skew_iv_diff)
+            c_val = float(df_sv_raw['spot'].corr(eff_vol_diff))
+            if not math.isnan(c_val):
+                spot_vol_corr = round(c_val, 2)
+                if spot_vol_corr <= -0.15:
+                    spot_vol_regime = "Standard Equity Leverage (Negative Correlation)"
+                    spot_vol_badge = "LEVERAGE (-)"
+                    spot_vol_color = "#38bdf8"
+                elif spot_vol_corr >= 0.15:
+                    spot_vol_regime = "Call Squeeze Dislocation (Positive Spot-Vol Corr)"
+                    spot_vol_badge = "CALL SQUEEZE (+)"
+                    spot_vol_color = "#10b981"
+                else:
+                    spot_vol_regime = "Muted / Decoupled Spot-Vol Co-movement"
+                    spot_vol_badge = "DECOUPLED"
+                    spot_vol_color = "#fbbf24"
+
+            spot_vol_scatter = []
+            for idx_sv, row in df_sv_raw.iterrows():
+                s_r = round(float(row['spot']), 2)
+                v_d = round(float(eff_vol_diff.loc[idx_sv]), 2)
+                if s_r < 0 and v_d > 0:
+                    quad = 'Down-Day Vol Spike (Put Panic)'
+                elif s_r > 0 and v_d > 0:
+                    quad = 'Up-Day Vol Spike (Call Squeeze 🚀)'
+                elif s_r > 0 and v_d <= 0:
+                    quad = 'Up-Day Vol Crush (Standard Rally)'
+                else:
+                    quad = 'Down-Day Vol Crush (Quiet Drift)'
+
+                spot_vol_scatter.append({
+                    "date": str(row['date']),
+                    "spot_return_pct": s_r,
+                    "vol_change_pct": v_d,
+                    "quadrant": quad
+                })
 
         # Top-level Hedging State
         if put_skew_25d >= 1.25 and (len(over_pts) >= len(under_pts)):
@@ -1321,14 +2488,19 @@ def get_vol_surface():
                 "iv_hv_ratio": iv_hv_ratio,
                 "term_structure_regime": ts_regime,
                 "term_structure_slope": slope,
-                "skew_spread": round(raw_skew, 1)
+                "skew_spread": round(raw_skew, 1),
+                "spot_vol_corr": spot_vol_corr,
+                "spot_vol_regime": spot_vol_regime,
+                "spot_vol_badge": spot_vol_badge,
+                "spot_vol_color": spot_vol_color
             },
             "ai_vol_intelligence": ai_vol_intelligence,
             "hedging_diagnostics": hedging_diagnostics,
             "term_structure": term_structure,
             "hotspots": hotspots[:6],
             "actionable_setups": actionable_setups,
-            "surface": surface_data
+            "surface": surface_data,
+            "spot_vol_scatter": spot_vol_scatter
         })
 
         _vol_surface_cache[ticker_clean] = (now_time, res_payload)
@@ -3297,12 +4469,56 @@ def get_stage_canslim_stock_analysis_api():
         print(f"Error in /api/stage_canslim/stock_analysis for {ticker}: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/stage_canslim/sector_stage_rotation', methods=['GET'])
+def get_stage_canslim_sector_stage_rotation_api():
+    """Returns Stan Weinstein 4-Quadrant Sector Stage Rotation Matrix with movement arcs (head and tail)."""
+    lookback = request.args.get('lookback', default=10, type=int)
+    mode = request.args.get('mode', default='stage', type=str)
+    force = request.args.get('force', default='false').lower() == 'true'
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        import importlib
+        import stage_canslim_engine
+        importlib.reload(stage_canslim_engine)
+        from stage_canslim_engine import compute_sector_stage_rotation
+        data = compute_sector_stage_rotation(lookback_bars=lookback, mode=mode, force_refresh=force)
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/stage_canslim/sector_stage_rotation: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/stage_canslim/etf_drilldown', methods=['GET'])
+def get_stage_canslim_etf_drilldown_api():
+    """Returns Stan Weinstein 4-Quadrant Stock Stage Rotation for a specific ETF's basket."""
+    etf = request.args.get('etf', default='XLK', type=str)
+    lookback = request.args.get('lookback', default=10, type=int)
+    mode = request.args.get('mode', default='stage', type=str)
+    force = request.args.get('force', default='false').lower() == 'true'
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        import importlib
+        import stage_canslim_engine
+        importlib.reload(stage_canslim_engine)
+        from stage_canslim_engine import compute_etf_stock_rotation
+        data = compute_etf_stock_rotation(etf_symbol=etf, lookback_bars=lookback, mode=mode, force_refresh=force)
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/stage_canslim/etf_drilldown for {etf}: {e}")
+        return jsonify({"error": str(e)}), 500
+
 def morning_options_dump_worker():
-    """Triggers the options dump every weekday morning between 8:30 AM and 9:30 AM EST."""
+    """Triggers the options dump every weekday morning between 8:30 AM and 9:30 AM EST in an isolated subprocess."""
     import sys
     import pytz
-    if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
-        sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+    import sqlite3
+    import subprocess
+    db_path = '/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/options_intelligence.db'
     last_dumped_date = None
     while True:
         try:
@@ -3310,12 +4526,26 @@ def morning_options_dump_worker():
             now = datetime.now(eastern)
             today_str = now.strftime('%Y-%m-%d')
             if now.weekday() < 5 and ((now.hour == 8 and now.minute >= 30) or (now.hour == 9 and now.minute <= 30)):
+                # Check persistent SQLite metadata so server reloads never re-trigger the dump on the same day
+                if last_dumped_date != today_str and os.path.exists(db_path):
+                    try:
+                        conn = sqlite3.connect(db_path)
+                        cur = conn.cursor()
+                        cur.execute("SELECT value FROM options_dump_meta WHERE key = 'last_dump_date'")
+                        row = cur.fetchone()
+                        conn.close()
+                        if row and row[0] == today_str:
+                            last_dumped_date = today_str
+                    except Exception:
+                        pass
                 if last_dumped_date != today_str:
-                    print(f"🌅 Triggering Morning Options Dump for {today_str}...")
-                    from options_dumper import run_options_dump, seed_rolling_history_if_needed
-                    run_options_dump()
-                    seed_rolling_history_if_needed()
+                    print(f"🌅 Triggering Morning Options Dump subprocess for {today_str}...")
                     last_dumped_date = today_str
+                    subprocess.Popen(
+                        ['nice', '-n', '15', sys.executable, '/Users/amitkumar/Desktop/SectorTrackerApp/backend/options_dumper.py', '--scope=liquid'],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL
+                    )
             time.sleep(300)
         except Exception as e:
             print(f"morning_options_dump_worker error: {e}")

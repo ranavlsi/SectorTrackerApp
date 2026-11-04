@@ -51,25 +51,42 @@ def detect_pending_breakout(ticker: str, pre_df=None):
         df['Base_Low'] = df['Low'].rolling(120).min()
         
         base_depth = (df['Base_High'].iloc[-1] - df['Base_Low'].iloc[-1]) / df['Base_High'].iloc[-1]
-        if base_depth > 0.45: return None # Anti-EQIX: Base is too deep/loose
+        if base_depth > 0.65: return None # Base is too deep/loose (>65%)
         
         # Position in base (Must be top 25%)
         pos_in_base = (df['Close'].iloc[-1] - df['Base_Low'].iloc[-1]) / (df['Base_High'].iloc[-1] - df['Base_Low'].iloc[-1])
-        if pos_in_base < 0.75: return None # Squeezing too low in the base
+        if pos_in_base < 0.70: return None # Squeezing too low in the base
         
-        # Extension Limits (Anti-AVGO): Must be perfectly coiled under local pivot, not breaking out yet
-        df['Local_Pivot'] = df['High'].shift(1).rolling(15).max()
-        local_pivot = df['Local_Pivot'].iloc[-1]
-        close = df['Close'].iloc[-1]
+        # Extension & Already-Broken-Out Disqualifier:
+        # 1) Must be strictly BELOW the 20-day resistance pivot (0.1% to 12% beneath pivot, NEVER above it!)
+        df['Local_Pivot'] = df['High'].shift(1).rolling(20).max()
+        local_pivot = float(df['Local_Pivot'].iloc[-1])
+        close = float(df['Close'].iloc[-1])
+        prev_close = float(df['Close'].iloc[-2]) if len(df) >= 2 else close
         
-        dist_to_pivot = (local_pivot - close) / local_pivot
-        # Must be strictly underneath the pivot! If dist <= 0, it already broke out.
-        if dist_to_pivot < 0.002 or dist_to_pivot > 0.15: return None
+        dist_to_pivot = (local_pivot - close) / local_pivot if local_pivot > 0 else 0.0
+        if dist_to_pivot < 0.001 or dist_to_pivot > 0.12:
+            return None
+
+        # 2) Structural Base Ceiling Check:
+        # Prevent a multi-day breakout rally (where Local_Pivot just resets to yesterday's breakout high)
+        # from being misclassified as a pending squeeze. Close must not exceed the prior base ceiling [-45:-5].
+        structural_pivot = float(df['High'].iloc[-45:-5].max()) if len(df) >= 45 else local_pivot
+        if close > structural_pivot * 1.005:
+            return None
+
+        # 3) Multi-day / Single-day Expansion Filter:
+        # If the stock has already surged > +8% over the last 10 trading days or >= +3.5% today, it is already breaking out.
+        ret_10d = (close / float(df['Close'].iloc[-11])) - 1.0 if len(df) >= 11 else 0.0
+        day_gain = (close / prev_close) - 1.0 if prev_close > 0 else 0.0
+        if ret_10d > 0.08 or day_gain >= 0.035:
+            return None
         
-        # Smoothness
+        # Smoothness (1.2% <= ADR_20 <= 7.5% — filters out both <1.2% merger-arb buyout pins and >7.5% choppy whipsaws)
         df['Daily_Range'] = (df['High'] / df['Low']) - 1
-        adr_20 = df['Daily_Range'].rolling(20).mean().iloc[-1] * 100
-        if adr_20 > 6.0: return None # Too choppy
+        adr_20 = float(df['Daily_Range'].rolling(20).mean().iloc[-1] * 100)
+        if adr_20 < 1.2 or adr_20 > 7.5:
+            return None
         
         # --- PILLAR 2: THE VOLUME FOOTPRINT ---
         df['Vol_SMA_50'] = df['Volume'].rolling(50).mean()
@@ -107,10 +124,24 @@ def detect_pending_breakout(ticker: str, pre_df=None):
         df['KC_Upper'] = df['BB_Mid'] + (1.5 * df['ATR_20'])
         df['KC_Lower'] = df['BB_Mid'] - (1.5 * df['ATR_20'])
         
+        # Disqualify if price is already piercing outside the upper Bollinger Band
+        if close >= float(df['BB_Upper'].iloc[-1]):
+            return None
+
         ttm_squeeze = (df['BB_Upper'].iloc[-1] < df['KC_Upper'].iloc[-1]) and (df['BB_Lower'].iloc[-1] > df['KC_Lower'].iloc[-1])
-        # We removed the hard strict rejection for TTM squeeze to let more VCPs through.
         
-        # PASSES ALL TESTS! We have a structural VCP.
+        # --- PILLAR 9: RELATIVE MOMENTUM VECTOR (RMV) ---
+        ema20 = float(df['Close'].ewm(span=20, adjust=False).mean().iloc[-1])
+        atr20 = float(df['ATR_20'].iloc[-1]) if float(df['ATR_20'].iloc[-1]) > 0 else 1.0
+        rmv = (close - ema20) / atr20
+
+        # A true Pending Breakout must still be coiling near its 20-EMA (RMV <= +1.35σ), not already extended in a breakout trend
+        if rmv > 1.35 or rmv < -1.50:
+            return None
+
+        rmv_status = f"RMV {rmv:+.2f}σ (Coiled Vector)"
+
+        # PASSES ALL TESTS! We have a genuine pre-breakout structural VCP.
         alerts = [{
             "model": "V2 VCP Squeeze",
             "details": f"VCP setup coiled {dist_to_pivot*100:.1f}% under local pivot (${local_pivot:.2f}). Accumulation ratio: {up_down_ratio:.2f}x."
@@ -121,6 +152,11 @@ def detect_pending_breakout(ticker: str, pre_df=None):
                 "model": "TTM Squeeze Active",
                 "details": "Bollinger Bands have compressed inside the Keltner Channels, indicating an imminent explosive move."
             })
+
+        alerts.append({
+            "model": "Relative Momentum Vector (RMV)",
+            "details": f"Price velocity coiling at {rmv_status}. Vector compression prior to expansion."
+        })
 
         # --- ADVANCED QUANTITATIVE CATALYSTS ---
         # We use try/except block to avoid crashing the base scanner if yfinance API fails
@@ -172,10 +208,6 @@ def detect_pending_breakout(ticker: str, pre_df=None):
                                 "model": "Gamma Squeeze Trigger",
                                 "details": f"Explosive Call Volume/OI ratio ({v_oi_ratio:.1f}x) at ${max_vol_call['strike']} strike forces Dealer hedging."
                             })
-                            
-            # PILLAR 8: EARNINGS PROXIMITY FILTER (SKIP BINARY RISK)
-            # Not strictly enforcing the skip here to avoid hiding the setup, 
-            # but we can check if it's close using YahooQuery or skip for now since info['earningsDates'] is sometimes messy.
 
         except Exception as e:
             logger.warning(f"Failed to fetch advanced proxies for {ticker}: {e}")
@@ -184,6 +216,8 @@ def detect_pending_breakout(ticker: str, pre_df=None):
             "status": "PENDING_BREAKOUT",
             "ticker": ticker,
             "price": round(float(close), 2),
+            "rmv": round(float(rmv), 2),
+            "rmv_status": rmv_status,
             "alerts": alerts
         }
 

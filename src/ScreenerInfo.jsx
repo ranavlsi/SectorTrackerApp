@@ -1,6 +1,46 @@
 import React from 'react';
 
 export const ScreenerDescriptions = {
+  clean_uptrend_9_13: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (Clean Untangled Uptrend &amp; 9/13 SMA Strong Trend Inception):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>6-Month Long-Term SMA See-Saw Resolution Engine:</strong> Scans back 6 months (~126 trading days) across the 50 SMA, 150 SMA, and 200 SMA. Disqualifies stocks currently stuck in a directionless see-saw (&ge; 2 crosses of 50-SMA in the recent 20 days). Confirms the asset has <strong>definitively resolved upward</strong> out of a contested multi-month base (Price &gt; 50 SMA, Price &gt; 150 SMA, Price &gt; 200 SMA, and non-falling 200-SMA).</li>
+        <li><strong>Fresh Macro Inception vs. Mature Trend Weeding:</strong> Tracks exact macro breakout age (consecutive days above 50 SMA must be between 4 and 35 trading days, and days above 200 SMA &le; 55). <strong>Strictly weeds out mature / late-stage trends</strong> (stocks like WST, MPC, or AVTR that began their Stage 2 run 3 to 6 months ago in April/May 2026).</li>
+        <li><strong>Anti-Tangling Moving Average Ribbon:</strong> Moving averages must be strictly fan-stacked: <code>Price &ge; 9 SMA &gt; 13 SMA &gt; 21 SMA &gt; 50 SMA</code>. All moving average slopes must be monotonically ascending with expanding ribbon spacing and <strong>zero crossovers / tangles</strong> during the active trend.</li>
+        <li><strong>Anti-See-Saw Filter (Kaufman Directional Efficiency):</strong> Eliminates choppy see-saw oscillations. Requires Directional Efficiency Ratio (ER = Net Displacement / Total Path Traveled &ge; 0.40).</li>
+        <li><strong>9-SMA Respect &amp; 13-SMA Guardrail:</strong> Stock must strictly ride and respect the 9 SMA (&ge; 75% to 100% of trend closes &ge; 9 SMA). There must be <strong>zero closes below the 13 SMA</strong> (the 13 SMA serves as the ultimate trailing risk floor).</li>
+        <li><strong>Immediate Buyable Proximity:</strong> Price is within actionable low-risk reach of the 9 SMA (-1.5% to +4.8%) and not overextended from the 50 SMA (&le; 22%) or 200 SMA (&le; 30%), catching stocks early in their new cycle.</li>
+        <li><strong>Setup Badges:</strong>
+          <ul style={{ marginTop: '4px', paddingLeft: '16px' }}>
+            <li><strong style={{ color: '#10b981' }}>🌟 FRESH INCEPTION (3-6d):</strong> Clean stack ignited within the past week.</li>
+            <li><strong style={{ color: '#ec4899' }}>⚡ RESOLVED 6M BASE:</strong> Decisively broken out from a multi-month contested 50/200-SMA base.</li>
+            <li><strong style={{ color: '#38bdf8' }}>🏄 100% 9-SMA RIDER:</strong> Flawless trend holding above 9 SMA on every single close.</li>
+            <li><strong style={{ color: '#fbbf24' }}>🎯 9-SMA PULLBACK BOUNCE:</strong> Testing the 9 SMA today with lower wick absorption.</li>
+            <li><strong style={{ color: '#f59e0b' }}>🔥 ACCUMULATION FLOW:</strong> Up/down volume ratio &ge; 1.5x during the uptrend.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  ),
+  wick_supply_absorption: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <strong>Algorithm Architecture (Wyckoff Supply Absorption Inside Prior Wick):</strong>
+      <ul style={{ margin: 0, paddingLeft: '20px' }}>
+        <li><strong>Microstructural Principle:</strong> When an advancing stock tests overhead resistance, an upper wick forms as sellers offer supply. If the stock refuses to pull back and instead stays/coils strictly inside that upper wick across 1, 2, or 3 sessions, institutional buyers are actively absorbing all available supply at the highs.</li>
+        <li><strong>Absorption Durations:</strong>
+          <ul style={{ marginTop: '4px', paddingLeft: '16px' }}>
+            <li><strong style={{ color: '#10b981' }}>💎 3-Day Wick Absorption Apex:</strong> The stock printed an upper wick 3 days back, and all 3 subsequent sessions have held inside the wick zone without breaking down. Maximum coil compression.</li>
+            <li><strong style={{ color: '#f59e0b' }}>🔥 2-Day Persistent Coiling:</strong> The stock has held and consolidated inside the upper wick of 2 days back for 2 consecutive sessions.</li>
+            <li><strong style={{ color: '#38bdf8' }}>⚡ 1-Day Fresh Absorption:</strong> Yesterday printed a supply wick, and today is coiling tightly within that wick zone.</li>
+          </ul>
+        </li>
+        <li><strong>Trend &amp; Moving Average Floor:</strong> Stock is in a confirmed Stage 2 uptrend well above all SMAs (Price &ge; 20-EMA &gt; 50-SMA &gt; 200-SMA, with rising 200-SMA).</li>
+        <li><strong>Institutional Gates:</strong> Strict Market Cap &ge; <strong>$2.0 Billion</strong> and 20-day average daily trading volume &ge; <strong>5,000,000 shares/day</strong>.</li>
+        <li><strong>Volume Dry-Up (VDU):</strong> Volume contracts as the wick is absorbed, confirming overhead sellers have been depleted.</li>
+      </ul>
+    </div>
+  ),
   deepvue_launchpad: (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <strong>Algorithm Architecture (TraderLion / Deepvue Launchpad Setup):</strong>

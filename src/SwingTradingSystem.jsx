@@ -5,7 +5,7 @@ import {
   ShieldCheck, RefreshCw, Search, Filter, Layers, ArrowUpRight,
   ArrowRight, CheckCircle2, AlertCircle, Clock, BarChart2,
   DollarSign, Calculator, Copy, Check, ExternalLink, Sparkles,
-  Sliders, Compass, Flame, Info
+  Sliders, Compass, Flame, Info, BookOpen
 } from 'lucide-react';
 
 const SETUP_CATEGORIES = [
@@ -34,6 +34,7 @@ export default function SwingTradingSystem({ onSelectTicker, onOpenFundamentals 
   const [riskPercent, setRiskPercent] = useState(1.0);
   const [maxAllocationPct, setMaxAllocationPct] = useState(20);
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
   const [copiedTicker, setCopiedTicker] = useState(null);
   const [refreshingLive, setRefreshingLive] = useState(false);
 
@@ -193,6 +194,14 @@ Execution: ${setup.execution_strategy}`;
           </div>
 
           <div className="swing-header-actions">
+            <button
+              className="swing-calculator-btn"
+              style={{ background: 'rgba(16, 185, 129, 0.15)', borderColor: '#10b981', color: '#10b981' }}
+              onClick={() => setShowChecklistModal(true)}
+            >
+              <BookOpen size={16} />
+              <span>Legacy TA Manual Checklist 📋</span>
+            </button>
             <button
               className="swing-calculator-btn"
               onClick={() => setShowCalculatorModal(!showCalculatorModal)}
@@ -614,6 +623,68 @@ Execution: ${setup.execution_strategy}`;
               </div>
             );
           })}
+        </div>
+      )}
+      {/* 8. LEGACY TA CHECKLIST MANUAL MODAL */}
+      {showChecklistModal && (
+        <div className="swing-modal-backdrop" onClick={() => setShowChecklistModal(false)}>
+          <div className="swing-modal-card" style={{ maxWidth: '850px', maxHeight: '85vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <div className="swing-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <BookOpen size={24} color="#10b981" />
+                <div>
+                  <h2 style={{ margin: 0, color: '#fff', fontSize: '1.25rem' }}>The Legacy Technical Analysis Entry System</h2>
+                  <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>Complete Checklist Manual — Vetoes, Graders & Risk Arithmetic</p>
+                </div>
+              </div>
+              <button className="swing-modal-close" onClick={() => setShowChecklistModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+            </div>
+
+            <div className="swing-modal-body" style={{ padding: '1.5rem 0', color: '#cbd5e1', fontSize: '0.9rem', lineHeight: '1.6' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', borderLeft: '4px solid #10b981', padding: '1rem', borderRadius: '6px', marginBottom: '1.5rem' }}>
+                <strong style={{ color: '#10b981' }}>Master Rule:</strong> "The pattern gets you interested. Volume and the close give you permission."
+                <br />
+                <em>Sections 1–3 are VETOES (failure = no trade). Sections 4–7 are GRADERS (score A/B/C). Sections 8–9 are ARITHMETIC (no numbers = no trade).</em>
+              </div>
+
+              <h3 style={{ color: '#00f2fe', marginTop: '1rem' }}>SECTION 1 — CONTEXT (VETO): "Never Fight the Tape Above You"</h3>
+              <ul style={{ paddingLeft: '1.2rem' }}>
+                <li><strong>1.1 Higher-Timeframe Trend:</strong> Is price above a rising 50-day and 200-day MA? MAs stacked (10 &gt; 21 &gt; 50 &gt; 200)? Reject Stage 1 bottoming attempts below a declining 200-day.</li>
+                <li><strong>1.2 Market Environment:</strong> Are indexes in confirmed uptrends? Breadth expanding? Distribution days under control (&lt;4-6 cluster)?</li>
+                <li><strong>1.3 Group Confirmation:</strong> Is the stock's industry group outperforming (group RS rising)? 2–3 peers breaking out too?</li>
+              </ul>
+
+              <h3 style={{ color: '#00f2fe', marginTop: '1.5rem' }}>SECTION 2 — LOCATION (VETO): "Amateurs Ask What; Professionals Ask Where"</h3>
+              <ul style={{ paddingLeft: '1.2rem' }}>
+                <li><strong>2.1 Meaningful Level:</strong> 52-week-high pivot after a long base · multi-month base boundary · blue-sky setup.</li>
+                <li><strong>2.2 Base Maturity &amp; Shape:</strong> 5–7 weeks minimum duration. VCP contraction (18% &#8594; 11% &#8594; 6% &#8594; 3%). No wide-and-loose expanding bases.</li>
+                <li><strong>2.3 Distance-to-Pivot:</strong> Entry within 1–3% of pivot. Beyond ~5% extended = chase = automatic veto.</li>
+              </ul>
+
+              <h3 style={{ color: '#00f2fe', marginTop: '1.5rem' }}>SECTION 3 — VOLUME STORY (VETO): "Price Is the Advertisement; Volume Is the Transaction"</h3>
+              <ul style={{ paddingLeft: '1.2rem' }}>
+                <li><strong>3.1 Accumulation Backdrop:</strong> OBV / A-D line rising or at new highs while price moves sideways in the base.</li>
+                <li><strong>3.2 Pocket Pivots:</strong> Up-day volume exceeding every down-day volume of the prior 10 sessions.</li>
+                <li><strong>3.3 Volume Dry-up (VDU):</strong> Quietest bars of the whole base on the final shelf prior to breakout.</li>
+              </ul>
+
+              <h3 style={{ color: '#f59e0b', marginTop: '1.5rem' }}>SECTION 4–7 — PATTERN, MOMENTUM &amp; TRIGGER GRADERS</h3>
+              <ul style={{ paddingLeft: '1.2rem' }}>
+                <li><strong>4.3 Relative Strength Thread:</strong> RS line breaking to new highs <em>before</em> price does.</li>
+                <li><strong>7.1 Decisive Clearance:</strong> Trades through pivot with follow-through, holding after 10:30 AM.</li>
+                <li><strong>7.2 Projected RVOL:</strong> RVOL &ge; 1.5x - 2.0x at the moment of break.</li>
+                <li><strong>7.3 Close Location:</strong> Day closes in upper third of range (CLV &ge; 0.67).</li>
+              </ul>
+
+              <h3 style={{ color: '#ef4444', marginTop: '1.5rem' }}>SECTION 8–9 — RISK MATH &amp; MANAGEMENT PLAN (ARITHMETIC)</h3>
+              <ul style={{ paddingLeft: '1.2rem' }}>
+                <li><strong>Structural Stop:</strong> Placed below breakout day low or handle low (where thesis is wrong).</li>
+                <li><strong>Position Sizer:</strong> Shares = (Account &times; 0.5-1%) &divide; Stop Distance.</li>
+                <li><strong>Tripwire Exit:</strong> Daily close back inside the base = exit without waiting for full stop.</li>
+                <li><strong>Trail Rule:</strong> Rising 21-EMA close-below for swing runners; 50-day for position runners.</li>
+              </ul>
+            </div>
+          </div>
         </div>
       )}
     </div>

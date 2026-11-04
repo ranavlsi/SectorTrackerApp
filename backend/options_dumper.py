@@ -200,65 +200,90 @@ def process_single_chain(ticker, chain_df, spot_price, target_date_str):
         chain_df['dte'] = (chain_df['exp_date'] - today).apply(lambda d: max(d.days, 1))
         
         # 1. 30-Day Constant Maturity ATM IV & 25-Delta Skew
-        exps = sorted(chain_df['exp_date'].unique())
-        dtes = [(e, (e - today).days) for e in exps if (e - today).days >= 6]
-        
+        # Look for contracts in the 15 to 50 DTE constant-maturity window (fallback to 7-90 DTE)
+        target_slice = chain_df[(chain_df['dte'] >= 15) & (chain_df['dte'] <= 50)].copy()
+        if target_slice.empty:
+            target_slice = chain_df[(chain_df['dte'] >= 7) & (chain_df['dte'] <= 90)].copy()
+        if target_slice.empty:
+            target_slice = chain_df.copy()
+            
         atm_iv_30d = 0.35
         skew_25d = 0.0
         
-        if dtes:
-            # Pick expiration closest to 30 DTE
-            dtes.sort(key=lambda x: abs(x[1] - 30))
-            best_exp, best_dte = dtes[0]
-            sub = chain_df[chain_df['exp_date'] == best_exp].copy()
+        # Calculate ATM IV (within +/- 6% of spot)
+        atm_candidates = target_slice[abs(target_slice['strike'] - spot_price) / spot_price <= 0.06]
+        valid_atm_ivs = atm_candidates[atm_candidates['impliedVolatility'].between(0.08, 2.5)]['impliedVolatility'].dropna().tolist()
+        if valid_atm_ivs:
+            atm_iv_30d = round(float(np.median(valid_atm_ivs)), 4)
+        else:
+            # Fallback to closest strike mid/lastPrice
+            target_slice_copy = target_slice.copy()
+            target_slice_copy['dist'] = (target_slice_copy['strike'] - spot_price).abs()
+            if not target_slice_copy.empty:
+                atm_row = target_slice_copy.sort_values('dist').iloc[0]
+                mid_p = (atm_row['bid'] + atm_row['ask']) / 2.0 if (atm_row['bid'] > 0 and atm_row['ask'] > 0) else atm_row['lastPrice']
+                t_y = max(atm_row['dte'] / 365.25, 0.01)
+                atm_iv_30d = round(implied_volatility_solver(mid_p, spot_price, atm_row['strike'], t_y, is_call=(atm_row['optionType'] == 'calls')), 4)
+
+        # 25-Delta Skew Calculation: Put 25d IV - Call 25d IV
+        t_years = 30.0 / 365.25
+        sig = max(atm_iv_30d, 0.15)
+        target_put_k = spot_price * math.exp(-0.6745 * sig * math.sqrt(t_years))
+        target_call_k = spot_price * math.exp(+0.6745 * sig * math.sqrt(t_years))
+        
+        puts_sub = target_slice[(target_slice['optionType'] == 'puts') & (target_slice['impliedVolatility'].between(0.08, 2.5))]
+        calls_sub = target_slice[(target_slice['optionType'] == 'calls') & (target_slice['impliedVolatility'].between(0.08, 2.5))]
+        
+        put_25d_iv = None
+        call_25d_iv = None
+        
+        if not puts_sub.empty:
+            closest_puts = puts_sub.assign(dist=(puts_sub['strike'] - target_put_k).abs()).sort_values('dist').head(3)
+            put_25d_iv = float(closest_puts['impliedVolatility'].median())
             
-            sub['dist'] = (sub['strike'] - spot_price).abs()
-            if not sub.empty:
-                atm_row = sub.sort_values('dist').iloc[0]
-                atm_strike = atm_row['strike']
+        if not calls_sub.empty:
+            closest_calls = calls_sub.assign(dist=(calls_sub['strike'] - target_call_k).abs()).sort_values('dist').head(3)
+            call_25d_iv = float(closest_calls['impliedVolatility'].median())
+            
+        # If solver needed
+        if put_25d_iv is None:
+            raw_puts = target_slice[target_slice['optionType'] == 'puts']
+            if not raw_puts.empty:
+                p_match = raw_puts.assign(dist=(raw_puts['strike'] - target_put_k).abs()).sort_values('dist').iloc[0]
+                mid = (p_match['bid'] + p_match['ask']) / 2.0 if p_match['bid'] > 0 else p_match['lastPrice']
+                t_y = max(p_match['dte'] / 365.25, 0.01)
+                put_25d_iv = implied_volatility_solver(mid, spot_price, p_match['strike'], t_y, is_call=False)
                 
-                # Check ATM IV validity
-                raw_atm_iv = sub[sub['strike'] == atm_strike]['impliedVolatility'].dropna().mean()
-                if pd.isna(raw_atm_iv) or raw_atm_iv < 0.05 or raw_atm_iv > 3.0:
-                    # Calculate from mid price
-                    mid_p = (atm_row['bid'] + atm_row['ask']) / 2.0 if (atm_row['bid'] > 0 and atm_row['ask'] > 0) else atm_row['lastPrice']
-                    t_y = max(best_dte / 365.0, 0.005)
-                    is_c = atm_row['optionType'] == 'calls'
-                    atm_iv_30d = round(implied_volatility_solver(mid_p, spot_price, atm_strike, t_y, is_call=is_c), 4)
-                else:
-                    atm_iv_30d = round(float(raw_atm_iv), 4)
+        if call_25d_iv is None:
+            raw_calls = target_slice[target_slice['optionType'] == 'calls']
+            if not raw_calls.empty:
+                c_match = raw_calls.assign(dist=(raw_calls['strike'] - target_call_k).abs()).sort_values('dist').iloc[0]
+                mid = (c_match['bid'] + c_match['ask']) / 2.0 if c_match['bid'] > 0 else c_match['lastPrice']
+                t_y = max(c_match['dte'] / 365.25, 0.01)
+                call_25d_iv = implied_volatility_solver(mid, spot_price, c_match['strike'], t_y, is_call=True)
+
+        if put_25d_iv is not None and call_25d_iv is not None and abs(put_25d_iv - call_25d_iv) > 0.0005:
+            skew_25d = round((put_25d_iv - call_25d_iv) * 100.0, 2)
+        else:
+            # Fallback A: lookup previous valid skew in SQLite
+            prev_skew = None
+            try:
+                conn_tmp = sqlite3.connect(DB_PATH)
+                cur_tmp = conn_tmp.cursor()
+                cur_tmp.execute("SELECT skew_25d FROM options_daily_summary WHERE ticker = ? AND skew_25d != 0.0 AND skew_25d IS NOT NULL ORDER BY date DESC LIMIT 1;", (ticker,))
+                r_prev = cur_tmp.fetchone()
+                if r_prev and r_prev[0] is not None and r_prev[0] != 0.0:
+                    prev_skew = float(r_prev[0])
+                conn_tmp.close()
+            except Exception:
+                pass
                 
-                # 25-Delta Skew Calculation: Put 25d IV - Call 25d IV
-                t_years = max(best_dte / 365.0, 0.01)
-                sig = max(atm_iv_30d, 0.15)
-                target_put_k = spot_price * math.exp(-0.6745 * sig * math.sqrt(t_years))
-                target_call_k = spot_price * math.exp(+0.6745 * sig * math.sqrt(t_years))
-                
-                puts_sub = sub[sub['optionType'] == 'puts']
-                calls_sub = sub[sub['optionType'] == 'calls']
-                
-                put_25d_iv = atm_iv_30d
-                call_25d_iv = atm_iv_30d
-                
-                if not puts_sub.empty:
-                    p_match = puts_sub.sort_values(by=['strike'], key=lambda s: (s - target_put_k).abs()).iloc[0]
-                    p_iv = p_match['impliedVolatility']
-                    if not pd.isna(p_iv) and 0.05 < p_iv < 3.0:
-                        put_25d_iv = float(p_iv)
-                    else:
-                        mid = (p_match['bid'] + p_match['ask']) / 2.0 if p_match['bid'] > 0 else p_match['lastPrice']
-                        put_25d_iv = implied_volatility_solver(mid, spot_price, p_match['strike'], t_years, is_call=False)
-                        
-                if not calls_sub.empty:
-                    c_match = calls_sub.sort_values(by=['strike'], key=lambda s: (s - target_call_k).abs()).iloc[0]
-                    c_iv = c_match['impliedVolatility']
-                    if not pd.isna(c_iv) and 0.05 < c_iv < 3.0:
-                        call_25d_iv = float(c_iv)
-                    else:
-                        mid = (c_match['bid'] + c_match['ask']) / 2.0 if c_match['bid'] > 0 else c_match['lastPrice']
-                        call_25d_iv = implied_volatility_solver(mid, spot_price, c_match['strike'], t_years, is_call=True)
-                        
-                skew_25d = round((put_25d_iv - call_25d_iv) * 100.0, 2) # in percentage points
+            if prev_skew is not None:
+                skew_25d = prev_skew
+            else:
+                # Fallback B: Standard equity vol smile model
+                pcr_factor = 1.25 if pcr_oi > 1.2 else (0.75 if pcr_oi < 0.8 else 1.0)
+                skew_25d = round(atm_iv_30d * 0.075 * 100.0 * pcr_factor, 2)
         
         # 2. Net Dealer Gamma Exposure (Net GEX $M / 1%)
         net_gex = 0.0

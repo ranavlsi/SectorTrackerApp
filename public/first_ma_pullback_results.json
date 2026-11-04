@@ -1,0 +1,52 @@
+{
+  "last_updated": "2026-11-03T17:45:14.112645",
+  "total_scanned": 12802,
+  "total_setups": 3,
+  "results": [
+    {
+      "ticker": "RDWR",
+      "close": 33.6,
+      "ma_tested": "21-EMA",
+      "ma_price": 31.98,
+      "rejection_dist_pct": 5.07,
+      "close_location_value": 0.97,
+      "volume_footprint": "Pocket Pivot Reclaim",
+      "volume_ratio": 0.89,
+      "trend_duration_bars": 6,
+      "impulse_gain_pct": 29.2,
+      "retest_number": 1,
+      "is_first_retest": true,
+      "setup_quality": "A"
+    },
+    {
+      "ticker": "KDP",
+      "close": 34.74,
+      "ma_tested": "21-EMA",
+      "ma_price": 34.22,
+      "rejection_dist_pct": 1.53,
+      "close_location_value": 0.26,
+      "volume_footprint": "Pocket Pivot Reclaim",
+      "volume_ratio": 2.04,
+      "trend_duration_bars": 13,
+      "impulse_gain_pct": 16.0,
+      "retest_number": 1,
+      "is_first_retest": true,
+      "setup_quality": "A"
+    },
+    {
+      "ticker": "W",
+      "close": 111.32,
+      "ma_tested": "21-EMA",
+      "ma_price": 110.95,
+      "rejection_dist_pct": 0.34,
+      "close_location_value": 0.35,
+      "volume_footprint": "Pocket Pivot Reclaim",
+      "volume_ratio": 1.48,
+      "trend_duration_bars": 3,
+      "impulse_gain_pct": 10.9,
+      "retest_number": 1,
+      "is_first_retest": true,
+      "setup_quality": "A"
+    }
+  ]
+}

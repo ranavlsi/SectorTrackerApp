@@ -2544,7 +2544,10 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     />
                     <RechartsTooltip
                       contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: '#334155', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
-                      formatter={(val) => [formatDollarGex(val), 'Net Dollar Vanna (VEX)']}
+                      formatter={(val) => [
+                        `${formatDollarGex(val)} (${val >= 0 ? 'Dealers BUY on IV drop' : 'Dealers SELL on IV drop'})`,
+                        'Net Dollar Vanna (VEX)'
+                      ]}
                     />
                     {spot > 0 && (
                       <ReferenceLine
@@ -2553,6 +2556,24 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                         strokeDasharray="4 4"
                         strokeWidth={2.5}
                         label={{ position: 'top', value: `Spot $${spot.toFixed(2)}`, fill: '#ffffff', fontSize: 11, fontWeight: 800 }}
+                      />
+                    )}
+                    {keyLevels.call_wall && (
+                      <ReferenceLine
+                        x={keyLevels.call_wall}
+                        stroke="#00E676"
+                        strokeDasharray="3 3"
+                        strokeWidth={1.5}
+                        label={{ position: 'top', value: `Call Wall $${keyLevels.call_wall}`, fill: '#00E676', fontSize: 10 }}
+                      />
+                    )}
+                    {keyLevels.put_wall && (
+                      <ReferenceLine
+                        x={keyLevels.put_wall}
+                        stroke="#f43f5e"
+                        strokeDasharray="3 3"
+                        strokeWidth={1.5}
+                        label={{ position: 'top', value: `Put Wall $${keyLevels.put_wall}`, fill: '#f43f5e', fontSize: 10 }}
                       />
                     )}
                     <ReferenceLine y={0} stroke="#475569" strokeWidth={1} />
@@ -2665,7 +2686,10 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     />
                     <RechartsTooltip
                       contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: '#334155', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
-                      formatter={(val) => [formatDollarGex(val), 'Cumulative Dollar GEX']}
+                      formatter={(val) => [
+                        `${formatDollarGex(val)} (${val >= 0 ? 'Net Long Gamma Zone' : 'Net Short Gamma Zone'})`,
+                        'Cumulative Dollar GEX'
+                      ]}
                     />
                     {spot > 0 && (
                       <ReferenceLine 
@@ -2674,6 +2698,33 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                         strokeDasharray="4 4" 
                         strokeWidth={2.5} 
                         label={{ position: 'top', value: `Spot $${spot.toFixed(2)}`, fill: '#ffffff', fontSize: 11, fontWeight: 800 }} 
+                      />
+                    )}
+                    {keyLevels.zero_gamma && (
+                      <ReferenceLine 
+                        x={keyLevels.zero_gamma} 
+                        stroke="#fbbf24" 
+                        strokeDasharray="3 3" 
+                        strokeWidth={2} 
+                        label={{ position: 'top', value: `Flip $${keyLevels.zero_gamma}`, fill: '#fbbf24', fontSize: 10, fontWeight: 700 }} 
+                      />
+                    )}
+                    {keyLevels.call_wall && (
+                      <ReferenceLine 
+                        x={keyLevels.call_wall} 
+                        stroke="#00E676" 
+                        strokeDasharray="3 3" 
+                        strokeWidth={1.5} 
+                        label={{ position: 'top', value: `Call Wall $${keyLevels.call_wall}`, fill: '#00E676', fontSize: 10 }} 
+                      />
+                    )}
+                    {keyLevels.put_wall && (
+                      <ReferenceLine 
+                        x={keyLevels.put_wall} 
+                        stroke="#f43f5e" 
+                        strokeDasharray="3 3" 
+                        strokeWidth={1.5} 
+                        label={{ position: 'top', value: `Put Wall $${keyLevels.put_wall}`, fill: '#f43f5e', fontSize: 10 }} 
                       />
                     )}
                     <ReferenceLine y={0} stroke="#475569" strokeWidth={1} />
@@ -2885,6 +2936,147 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                 <div className="impact-footer-rule">
                   <span className="rule-title">Actionable Rule:</span>
                   <span className="rule-desc">{optionsImpact.trading_implication}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Microstructure Rulebook Strip for Net Vanna (VEX) Mode */}
+            {activeChartMode === 'vanna_vex' && (
+              <div className="gex-impact-chart-footer">
+                <div className="impact-footer-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Sparkles size={16} color="#38bdf8" />
+                    <span style={{ fontWeight: 800, color: '#ffffff', fontFamily: 'monospace', fontSize: '12px' }}>
+                      QUANT DEALER VANNA (VEX) SENSITIVITY PLAYBOOK · {ticker}:
+                    </span>
+                  </div>
+                  <span
+                    className="impact-footer-badge"
+                    style={{
+                      color: (totals?.total_net_vex || 0) >= 0 ? '#38bdf8' : '#fb7185',
+                      borderColor: (totals?.total_net_vex || 0) >= 0 ? '#38bdf866' : '#fb718566'
+                    }}
+                  >
+                    {(totals?.total_net_vex || 0) >= 0 ? 'VANNA FUEL BULLISH 🚀' : 'VANNA DRAG BEARISH ⚠️'}
+                  </span>
+                </div>
+                <div className="impact-footer-grid">
+                  <div className="impact-footer-item">
+                    <span className="lbl">Total Net VEX:</span>
+                    <strong style={{ color: (totals?.total_net_vex || 0) >= 0 ? '#38bdf8' : '#fb7185' }}>
+                      {formatDollarGex(totals?.total_net_vex || 0)} / 1% IV
+                    </strong>
+                    <span className="sub">Market maker delta shift per 1% change in IV</span>
+                  </div>
+                  <div className="impact-footer-item">
+                    <span className="lbl">IV Crush (Post-Event / OpEx):</span>
+                    <strong style={{ color: (totals?.total_net_vex || 0) >= 0 ? '#00E676' : '#f43f5e' }}>
+                      {(totals?.total_net_vex || 0) >= 0 ? 'Dealers BUY Stock (+Fuel)' : 'Dealers SELL Stock (-Drag)'}
+                    </strong>
+                    <span className="sub">Post-earnings / FOMC vol drop forces dealer {(totals?.total_net_vex || 0) >= 0 ? 'buying' : 'selling'}</span>
+                  </div>
+                  <div className="impact-footer-item">
+                    <span className="lbl">Vol Spike (Selloff / Fear):</span>
+                    <strong style={{ color: (totals?.total_net_vex || 0) >= 0 ? '#f43f5e' : '#00E676' }}>
+                      {(totals?.total_net_vex || 0) >= 0 ? 'Dealers SELL Stock (-Amplifies)' : 'Dealers BUY Stock (+Buffers)'}
+                    </strong>
+                    <span className="sub">Rising fear index flips hedging into {(totals?.total_net_vex || 0) >= 0 ? 'mechanical selling' : 'dip cushioning'}</span>
+                  </div>
+                  <div className="impact-footer-item">
+                    <span className="lbl">Strike Bar Anatomy:</span>
+                    <strong className="cyan">🟦 Blue &gt; 0 · 🟥 Red &lt; 0</strong>
+                    <span className="sub">Blue strikes: dealers buy as IV falls; Red strikes: dealers sell</span>
+                  </div>
+                  <div className="impact-footer-item">
+                    <span className="lbl">Tactical Implication:</span>
+                    <strong className="purple">
+                      {(totals?.total_net_vex || 0) >= 0 ? 'Catalyst Melt-Up Potential' : 'Vol Compression Headwind'}
+                    </strong>
+                    <span className="sub">{(totals?.total_net_vex || 0) >= 0 ? 'IV crush ignites upward squeeze' : 'Fading IV creates downward resistance'}</span>
+                  </div>
+                </div>
+                <div className="impact-footer-rule">
+                  <span className="rule-title">VEX Mechanical Rule:</span>
+                  <span className="rule-desc">
+                    {(totals?.total_net_vex || 0) >= 0
+                      ? `Dealers hold positive Vanna (${formatDollarGex(totals?.total_net_vex || 0)}/1% IV). When Implied Volatility drops (such as after earnings, economic releases, or OpEx), dealers must aggressively BUY shares of ${ticker} to keep their portfolios delta-neutral. This creates the classic "Vanna Melt-Up" even on neutral news. Watch for acceleration toward the tall blue strikes above spot.`
+                      : `Dealers hold negative Vanna (${formatDollarGex(totals?.total_net_vex || 0)}/1% IV). Volatility contraction forces dealers to mechanically SELL shares of ${ticker} to adjust delta. Even if news is favorable, rallies will face a stiff "Vanna Drag" unless aggressive cash equity buyers overwhelm market maker hedging.`
+                    }
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Microstructure Rulebook Strip for Cumulative & Net GEX Modes */}
+            {(activeChartMode === 'cumulative' || activeChartMode === 'net_gex') && (
+              <div className="gex-impact-chart-footer">
+                <div className="impact-footer-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <TrendingUp size={16} color={spot >= (keyLevels?.zero_gamma || spot) ? '#00E676' : '#fbbf24'} />
+                    <span style={{ fontWeight: 800, color: '#ffffff', fontFamily: 'monospace', fontSize: '12px' }}>
+                      {activeChartMode === 'cumulative' ? 'CUMULATIVE GEX CURVE & LIVE REGIME DIAGNOSTIC' : 'DEALER NET GEX PROFILE & LIVE REGIME DIAGNOSTIC'} · {ticker}:
+                    </span>
+                  </div>
+                  <span
+                    className="impact-footer-badge"
+                    style={{
+                      color: spot >= (keyLevels?.zero_gamma || spot) ? '#00E676' : '#fbbf24',
+                      borderColor: spot >= (keyLevels?.zero_gamma || spot) ? '#00E67666' : '#fbbf2466'
+                    }}
+                  >
+                    {spot >= (keyLevels?.zero_gamma || spot) ? '🟢 POSITIVE GAMMA ZONE (STABILIZING)' : '🌪️ NEGATIVE GAMMA ZONE (ACCELERATING)'}
+                  </span>
+                </div>
+                <div className="impact-footer-grid">
+                  <div className="impact-footer-item">
+                    <span className="lbl">Zero Gamma Flip:</span>
+                    <strong style={{ color: spot >= (keyLevels?.zero_gamma || spot) ? '#00E676' : '#fbbf24' }}>
+                      ${keyLevels?.zero_gamma || '---'}
+                    </strong>
+                    <span className="sub">
+                      {keyLevels?.zero_gamma ? (
+                        spot >= keyLevels.zero_gamma
+                          ? `▲ +${(((spot - keyLevels.zero_gamma) / keyLevels.zero_gamma) * 100).toFixed(1)}% above flip (Safe)`
+                          : `▼ -${Math.abs(((spot - keyLevels.zero_gamma) / keyLevels.zero_gamma) * 100).toFixed(1)}% below flip (Turbulent)`
+                      ) : 'Vol inflection line'}
+                    </span>
+                  </div>
+                  <div className="impact-footer-item">
+                    <span className="lbl">Total Net Gamma:</span>
+                    <strong style={{ color: (totals?.total_net_gex || 0) >= 0 ? '#00E676' : '#f43f5e' }}>
+                      {formatDollarGex(totals?.total_net_gex || 0)} / 1%
+                    </strong>
+                    <span className="sub">{(totals?.total_net_gex || 0) >= 0 ? 'Long Gamma (Mean-Reverting)' : 'Short Gamma (Expanding Volatility)'}</span>
+                  </div>
+                  <div className="impact-footer-item">
+                    <span className="lbl">Dealer Market Behavior:</span>
+                    <strong className="cyan">
+                      {(totals?.total_net_gex || 0) >= 0 ? 'COUNTER-TREND (Absorber)' : 'PRO-TREND (Accelerator)'}
+                    </strong>
+                    <span className="sub">{(totals?.total_net_gex || 0) >= 0 ? 'Dealers buy dips & sell rips' : 'Dealers sell down-moves & buy breakouts'}</span>
+                  </div>
+                  <div className="impact-footer-item">
+                    <span className="lbl">Structural Bracket:</span>
+                    <strong className="purple">
+                      ${keyLevels?.put_wall || '---'} ── ${keyLevels?.call_wall || '---'}
+                    </strong>
+                    <span className="sub">Put Wall Floor vs Call Wall Overhead Ceiling</span>
+                  </div>
+                  <div className="impact-footer-item">
+                    <span className="lbl">{activeChartMode === 'cumulative' ? 'Cumulative Curve Anatomy:' : 'Strike GEX Anatomy:'}</span>
+                    <strong className="amber">{activeChartMode === 'cumulative' ? 'Slope = Gamma Density' : 'Pins & Air Pockets'}</strong>
+                    <span className="sub">{activeChartMode === 'cumulative' ? 'Steep rise = heavy ceiling; Trough = air pocket' : 'Green bars = dip buying; Red bars = selling'}</span>
+                  </div>
+                </div>
+                <div className="impact-footer-rule">
+                  <span className="rule-title">What Current GEX is Suggesting Right Now:</span>
+                  <span className="rule-desc">
+                    {spot >= (keyLevels?.zero_gamma || 0) && (totals?.total_net_gex || 0) >= 0 ? (
+                      `${ticker} is trading at $${spot.toFixed(2)}, comfortably ABOVE the Zero Gamma Flip ($${keyLevels?.zero_gamma}). Aggregate dealer gamma is positive (${formatDollarGex(totals?.total_net_gex || 0)}). This indicates market makers act as volatility absorbers — dampening swings by buying dips toward the Put Wall ($${keyLevels?.put_wall}) and taking profits/capping upside near the Call Wall ($${keyLevels?.call_wall}). Expect low-volatility consolidation, sticky price action, and reliable support at major strikes.`
+                    ) : (
+                      `${ticker} is trading at $${spot.toFixed(2)}, BELOW the Zero Gamma Flip ($${keyLevels?.zero_gamma}) with negative aggregate dealer gamma (${formatDollarGex(totals?.total_net_gex || 0)}). In this regime, dealers are VOLATILITY ACCELERATORS — when price drops, market makers must aggressively SELL shares to hedge expanding put delta, creating high risk of sudden flash cascades or air pockets down toward the Put Wall ($${keyLevels?.put_wall}). Expect wide intraday swings, momentum overshooting, and avoid buying dips without strong confirmation volume.`
+                    )}
+                  </span>
                 </div>
               </div>
             )}

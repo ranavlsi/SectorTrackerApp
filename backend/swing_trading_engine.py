@@ -213,6 +213,10 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['SMA_50'] = c.rolling(50).mean()
     df['SMA_200'] = c.rolling(200).mean()
     
+    # Slopes
+    df['SMA_50_Slope'] = (df['SMA_50'] - df['SMA_50'].shift(10)) / df['SMA_50'].shift(10)
+    df['SMA_200_Slope'] = (df['SMA_200'] - df['SMA_200'].shift(20)) / df['SMA_200'].shift(20)
+    
     prev_c = c.shift(1)
     tr = pd.concat([
         h - l,
@@ -226,6 +230,11 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['Vol_50'] = v.rolling(50).mean()
     df['Vol_5'] = v.rolling(5).mean()
     
+    # OBV & A/D Line
+    df['OBV'] = (np.sign(c.diff()) * v).fillna(0).cumsum()
+    clv = (c - l) / (h - l).replace(0, np.nan)
+    df['AD_Line'] = (clv.fillna(0.5) * v).cumsum()
+    
     std_20 = c.rolling(20).std()
     df['BB_Upper'] = df['SMA_20'] + (std_20 * 2.0)
     df['BB_Lower'] = df['SMA_20'] - (std_20 * 2.0)
@@ -235,6 +244,51 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['Low_52W'] = l.rolling(min(252, len(df))).min()
     
     return df
+
+
+def check_veto_rules(df: pd.DataFrame) -> Tuple[bool, List[str], Dict[str, Any]]:
+    """
+    Evaluates Section 1-3 Veto Rules from Legacy TA Checklist Manual:
+    - 1.1 Higher-Timeframe Stage 2 Trend: Price > rising 50d & 200d MA, stacked MAs (10 > 21 > 50 > 200).
+    - 2.2 Base Maturity & Shape: No wide-and-loose expanding bases.
+    - 3.3 Volume Dry-Up (VDU): Final shelf volume must dry up (<0.85x average).
+    """
+    veto_reasons = []
+    if len(df) < 50:
+        return False, ["Insufficient bar count (<50 bars)"], {}
+        
+    row = df.iloc[-1]
+    close = row['Close']
+    sma50 = row['SMA_50']
+    sma200 = row['SMA_200']
+    ema10 = row['EMA_10']
+    ema21 = row['EMA_21']
+    sma50_slope = row.get('SMA_50_Slope', 0)
+    
+    # 1.1 Stage 2 Trend Veto: Must be above 50d & 200d (or 50d if <200d history)
+    if pd.isna(sma50) or close < sma50:
+        veto_reasons.append("VETO 1.1: Below 50-day MA (Not in Stage 2)")
+    if not pd.isna(sma50_slope) and sma50_slope < -0.005:
+        veto_reasons.append("VETO 1.1: Declining 50-day MA slope")
+    if not pd.isna(sma200) and close < sma200 * 0.95:
+        veto_reasons.append("VETO 1.1: Below declining 200-day MA (Stage 1 or 4 trap)")
+        
+    # Stacked MAs Alignment check
+    ma_stacked = (ema10 >= ema21 * 0.99) and (ema21 >= sma50 * 0.985)
+    
+    # Section 3.1 OBV & Accumulation Check
+    obv_20d_high = df['OBV'].tail(20).max()
+    curr_obv = row['OBV']
+    obv_leading = curr_obv >= obv_20d_high
+    
+    veto_passed = len(veto_reasons) == 0
+    veto_details = {
+        "stage2_confirmed": veto_passed,
+        "ma_stacked": ma_stacked,
+        "obv_leading": obv_leading,
+        "sma50_slope_pct": round(float(sma50_slope * 100) if not pd.isna(sma50_slope) else 0, 2)
+    }
+    return veto_passed, veto_reasons, veto_details
 
 
 def evaluate_vcp_coil(df: pd.DataFrame, ticker: str):

@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import json
 import warnings
 import requests
@@ -314,6 +315,7 @@ def run_screener(custom_universe=None):
         if len(close) < 20: continue
         
         curr_c = close.iloc[-1]
+        prev_c = close.iloc[-2]
         curr_o = open_s.iloc[-1]
         curr_h = high.iloc[-1]
         curr_l = low.iloc[-1]
@@ -454,7 +456,36 @@ def run_screener(custom_universe=None):
             prev_high_52w = high.iloc[-252:-1].max()
             curr_h = high.iloc[-1]
             if curr_h >= prev_high_52w:
-                results["fresh_52w_high"].append({"ticker": ticker, "metric": f"New High: ${curr_h:.2f}"})
+                close_vals = close.values
+                volume = vol
+                vol_vals = volume.values
+                avg_shares_vol = vol_vals[-20:].mean() if len(vol_vals) >= 20 else 0
+                avg_dvol = (close_vals[-20:] * vol_vals[-20:]).mean() if len(vol_vals) >= 20 else 0
+                
+                # LIQUIDITY GATEKEEPER & STRICT EARLY UNEXTENDED BREAKOUT RULES:
+                # 1. Traded volume >= $10M $Vol or >= 500k Shares Vol
+                # 2. Must be DORMANT >= 63 trading days (>= 3 months) to avoid extended runners
+                # 3. Must NOT be overextended from 50-SMA (<= 25% above 50-SMA)
+                if avg_shares_vol >= 500_000 or avg_dvol >= 10_000_000:
+                    high_vals = high.values
+                    days_since_last_52w_high = 999
+                    for i in range(2, min(len(high_vals) - 252, 500)):
+                        hist_window_max = np.max(high_vals[-252-i : -i])
+                        if high_vals[-i] >= hist_window_max * 0.999:
+                            days_since_last_52w_high = i - 1
+                            break
+                    
+                    sma50_val = close_vals[-50:].mean() if len(close_vals) >= 50 else close_vals[-1]
+                    pct_above_sma50 = ((curr_c - sma50_val) / sma50_val) * 100
+                    
+                    # STRICT EARLY BREAKOUT FILTERS: Dormant >= 63 days & SMA50 Ext <= 25%
+                    if days_since_last_52w_high >= 63 and pct_above_sma50 <= 25.0:
+                        months_dormant = round(days_since_last_52w_high / 21, 1)
+                        results["fresh_52w_high"].append({
+                            "ticker": ticker, 
+                            "score": float(avg_dvol),
+                            "metric": f"Early 52W High ({months_dormant}mo Base) | +{pct_above_sma50:.1f}% to 50-SMA | ${curr_h:.2f}"
+                        })
         
         ath_4y = float(close.max())
         if curr_c >= ath_4y * 0.98:
@@ -494,25 +525,33 @@ def run_screener(custom_universe=None):
         detected_bullish = []
 
         # --- A. Reversal Patterns ---
+        # Prior Downtrend Context Rule: A Reversal Pattern MUST occur after a prior pullback/downtrend (e.g. Close[t-3] or Close[t-2] < 10-SMA or 5-day return < 0)
+        c_m3, c_m2, c_m1, c_0 = close.iloc[-4], close.iloc[-3], close.iloc[-2], curr_c
+        o_m3, o_m2, o_m1, o_0 = open_s.iloc[-4], open_s.iloc[-3], open_s.iloc[-2], curr_o
+        h_m3, h_m2, h_m1, h_0 = high.iloc[-4], high.iloc[-3], high.iloc[-2], curr_h
+        l_m3, l_m2, l_m1, l_0 = low.iloc[-4], low.iloc[-3], low.iloc[-2], curr_l
+
+        prior_downtrend = (c_m2 < close.iloc[-8]) or (c_m2 <= sma_10 * 1.01)
+
         for func_name, common_name in CDL_REVERSAL_PATTERNS.items():
             func = getattr(talib, func_name)
             val = func(open_s, high, low, close).iloc[-1]
-            if val > 0:
-                # Reversal context: Must close in upper half and occur near or below 10-SMA (pullback)
-                # Volume must not be completely dead (> 0.85x average)
-                if close_pct >= 0.48 and curr_c <= sma_10 * 1.015 and vol.iloc[-1] >= avg_vol_10 * 0.85:
+            if val > 0 and prior_downtrend:
+                if close_pct >= 0.48 and curr_c <= sma_10 * 1.02 and vol.iloc[-1] >= avg_vol_10 * 0.85:
                     detected_bullish.append(f"Bullish {common_name}")
 
-        # Geometric Morning Star fallback (TA-Lib's gap requirement is too rigid for equities)
-        if len(close) >= 3 and not any("Morning Star" in p for p in detected_bullish):
-            c_m2, o_m2 = close.iloc[-3], open_s.iloc[-3]
-            c_m1, o_m1 = close.iloc[-2], open_s.iloc[-2]
-            c_0, o_0 = curr_c, curr_o
+        # Geometric Morning Star (STRICT RULES):
+        # Day -2 (3 days ago): CLEAR RED CANDLE (Close < Open)
+        # Day -1 (Yesterday): SMALL BODY STAR (Body <= 40% of Day -2 Body) with a LOW point near/below Day -2 Low
+        # Day 0 (Today): CLEAR GREEN CANDLE (Close > Open) closing strictly above the midpoint of Day -2 Body
+        if len(close) >= 4 and prior_downtrend and not any("Morning Star" in p for p in detected_bullish):
             b_m2 = abs(c_m2 - o_m2)
             b_m1 = abs(c_m1 - o_m1)
             mid_m2 = (c_m2 + o_m2) / 2.0
-            # Day -2: Red candle, Day -1: Small star/indecision body, Day 0: Strong green closing > mid of Day -2
-            if c_m2 < o_m2 and b_m2 > 0 and b_m1 <= b_m2 * 0.45 and c_0 > o_0 and c_0 > mid_m2:
+            is_m2_red = c_m2 < o_m2
+            is_m1_star = b_m1 <= b_m2 * 0.40
+            is_today_green = c_0 > o_0
+            if is_m2_red and b_m2 > 0 and is_m1_star and is_today_green and c_0 > mid_m2:
                 if close_pct >= 0.55 and vol.iloc[-1] >= avg_vol_10 * 0.90:
                     detected_bullish.append("Bullish Morning Star")
 
@@ -521,42 +560,47 @@ def run_screener(custom_universe=None):
             func = getattr(talib, func_name)
             val = func(open_s, high, low, close).iloc[-1]
             if val > 0:
-                # Continuation context: Must close in upper 50% and hold at/above short-term trend
                 if close_pct >= 0.50 and curr_c >= sma_10 * 0.985:
                     detected_bullish.append(f"Bullish {common_name}")
 
-        # Practical 3 White Soldiers fallback (TA-Lib requires zero wicks and rigid opens inside prior body)
+        # Practical 3 White Soldiers (STRICT CONSTRAINTS):
+        # Must have 3 CONSECUTIVE GREEN DAYS (Close > Open for Day -2, Day -1, Today)
+        # Each day must close higher than prior day (Close_0 > Close_-1 > Close_-2)
+        # Each day must open WITHIN the prior day's real body, and have minimal upper wicks (Close near High)
         if len(close) >= 4 and not any("3 White Soldiers" in p for p in detected_bullish):
-            c1, c2, c3 = close.iloc[-3], close.iloc[-2], curr_c
-            o1, o2, o3 = open_s.iloc[-3], open_s.iloc[-2], curr_o
-            l1, l2, l3 = low.iloc[-3], low.iloc[-2], curr_l
-            h1, h2, h3 = high.iloc[-3], high.iloc[-2], curr_h
-            # 3 green days, sequential higher closes, closing in upper 55% each day, holding above 10-SMA
-            if c1 > o1 and c2 > o2 and c3 > o3 and c3 > c2 and c2 > c1 and c3 >= sma_10:
-                rng2 = h2 - l2
-                rng3 = h3 - l3
-                if rng2 > 0 and rng3 > 0 and ((c3 - l3) / rng3 >= 0.55) and ((c2 - l2) / rng2 >= 0.50):
+            is_3_green = (c_m2 > o_m2) and (c_m1 > o_m1) and (c_0 > o_0)
+            is_seq_higher = (c_0 > c_m1) and (c_m1 > c_m2)
+            opens_inside_body = (o_m1 >= o_m2 and o_m1 <= c_m2) and (o_0 >= o_m1 and o_0 <= c_m1)
+            if is_3_green and is_seq_higher and opens_inside_body and c_0 >= sma_10:
+                rng_m1 = h_m1 - l_m1
+                rng_0 = h_0 - l_0
+                if rng_m1 > 0 and rng_0 > 0 and ((c_0 - l_0) / rng_0 >= 0.65) and ((c_m1 - l_m1) / rng_m1 >= 0.60):
                     if vol.iloc[-1] >= avg_vol_10 * 1.05:
                         detected_bullish.append("Bullish 3 White Soldiers")
 
-        # Practical Bullish Harami / Inside Bar Coil fallback
-        if len(close) >= 3 and not any("Harami" in p or "Engulfing" in p for p in detected_bullish):
-            c_prev, o_prev = close.iloc[-2], open_s.iloc[-2]
-            h_prev, l_prev = high.iloc[-2], low.iloc[-2]
-            if c_prev < o_prev: # Prev day red
-                # Inside bar: Today's range completely inside yesterday's range, green close
-                if curr_h <= h_prev and curr_l >= l_prev and curr_c > curr_o:
-                    if curr_c <= sma_10 * 1.02:
-                        detected_bullish.append("Bullish Harami (Inside Bar)")
+        # Practical Bullish Harami (STRICT INSIDE DAY):
+        # Day -1 MUST BE A RED CANDLE (Close < Open)
+        # Today MUST BE AN INSIDE BAR (Today High <= Prev High AND Today Low >= Prev Low) & Green (Close > Open)
+        if len(close) >= 3 and prior_downtrend and not any("Harami" in p or "Engulfing" in p for p in detected_bullish):
+            is_m1_red = c_m1 < o_m1
+            is_today_inside = (h_0 <= h_m1) and (l_0 >= l_m1)
+            is_today_green = c_0 > o_0
+            if is_m1_red and is_today_inside and is_today_green:
+                if c_0 <= sma_10 * 1.02:
+                    detected_bullish.append("Bullish Harami (Inside Bar)")
 
-        # --- C. Trap Patterns (Hikkake) ---
-        for func_name, common_name in CDL_TRAP_PATTERNS.items():
-            func = getattr(talib, func_name)
-            val = func(open_s, high, low, close).iloc[-1]
-            if val > 0:
-                # Must be a strong green candle closing near the top of its range
-                if curr_c > curr_o and close_pct >= 0.65 and vol.iloc[-1] >= avg_vol_10 * 1.1:
-                    detected_bullish.append(f"Bullish {common_name}")
+        # --- C. Trap Patterns (Hikkake - STRICT INSIDE BAR + BREAKDOWN + RECLAIM) ---
+        # Bar -3 (Mother Bar)
+        # Bar -2 (Inside Bar): High_-2 < High_-3 AND Low_-2 > Low_-3
+        # Bar -1 (False Breakdown): Low_-1 < Low_-2 (Under-cuts inside bar low)
+        # Today (Reclaim Trigger): Close_0 > High_-2 (Closes above inside bar high)
+        if len(close) >= 5:
+            is_m2_inside = (h_m2 < h_m3) and (l_m2 > l_m3)
+            is_m1_breakdown = (l_m1 < l_m2)
+            is_today_reclaim = (c_0 > h_m2) and (c_0 > o_0)
+            if is_m2_inside and is_m1_breakdown and is_today_reclaim:
+                if close_pct >= 0.60 and vol.iloc[-1] >= avg_vol_10 * 1.0:
+                    detected_bullish.append("Bullish Hikkake")
 
         # Register detected bullish patterns
         for pat in detected_bullish:
@@ -580,7 +624,7 @@ def run_screener(custom_universe=None):
             curr_sma50 = float(sma50.iloc[-1])
             curr_sma20 = float(sma20.iloc[-1])
             prev_sma = float(sma200.iloc[-5])
-            prev_c = float(close.iloc[-5])
+            c_5d_ago = float(close.iloc[-5])
             
             # Calculate moving average slopes (% change over recent periods)
             slope20 = (curr_sma20 - float(sma20.iloc[-5])) / float(sma20.iloc[-5]) * 100
@@ -996,7 +1040,7 @@ def run_screener(custom_universe=None):
             # -----------------------------------
             try:
                 flag_res = detect_bull_flag(ticker, ticker_df)
-                if flag_res["status"] == "triggered":
+                if flag_res["status"] in ["triggered", "early_entry"]:
                     results["bull_flag_breakout"].append({
                         "ticker": ticker,
                         "score": flag_res["score"],
@@ -1199,8 +1243,16 @@ def run_screener(custom_universe=None):
         else:
             results[key] = sorted(filtered_mcap, key=lambda x: (x.get("score", 0), dollar_vol_dict.get(x["ticker"], 0)), reverse=True)[:50]
 
+    from datetime import datetime
+    results["_metadata"] = {
+        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "lakehouse_date": str(last_date).split(" ")[0] if 'last_date' in locals() else "2026-10-15",
+        "total_tickers_scanned": len(dynamic_universe) if 'dynamic_universe' in locals() else len(dollar_vol_dict),
+        "status": "LIVE"
+    }
+
     with open('/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_results.json', 'w') as f:
-        json.dump(results, f)
+        json.dump(results, f, indent=2)
         
     print(f"Screener complete! Results saved to public/screener_results.json")
     
