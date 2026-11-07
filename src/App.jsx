@@ -32,6 +32,7 @@ import GannScreener from './GannScreener';
 import StageCanslimScreener from './StageCanslimScreener';
 import RrgMoneyFlowDashboard from './RrgMoneyFlowDashboard';
 import SqueezeRadarDashboard from './SqueezeRadarDashboard';
+import IntradayRadarDashboard from './IntradayRadarDashboard';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -620,7 +621,7 @@ function App() {
       
     fetchNoCache('/intraday_results.json')
       .then(res => res.json())
-      .then(json => setIntradayData(json.results || []))
+      .then(json => setIntradayData(json))
       .catch(err => console.error("Error loading intraday data:", err))
       
     fetchNoCache('/alerts.json')
@@ -1031,7 +1032,7 @@ function App() {
     try {
       const res = await fetch(`/intraday_results.json?t=` + new Date().getTime());
       const json = await res.json();
-      setIntradayData(json.results || []);
+      setIntradayData(json);
     } catch (err) {
       console.error(err);
     } finally {
@@ -2508,68 +2509,16 @@ function App() {
       )}
 
       {activeTab === 'intraday' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-          <div className="glass-card" style={{ padding: '2rem', borderTop: '5px solid #ec4899' }}>
-            <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ec4899' }}>
-              <Radio className="spin-slow" /> Live Intraday Options Radar
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              Scanning High-Beta Mega Caps for 15-Min Opening Range Breakouts paired with massive Call Volume &gt; Put Volume flow.
-            </p>
-            
-            {intradayLoading ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: '#ec4899' }}>
-                <Loader size={48} className="spin" style={{ marginBottom: '1rem' }} />
-                <h3>Scanning Options Chains... (This takes a few seconds)</h3>
-              </div>
-            ) : intradayData && intradayData.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
-                {intradayData.map((alert, i) => (
-                  <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #10b981', cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => fetchTickerData(alert.ticker)} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
-                    <div>
-                      <h2 style={{ margin: '0 0 0.5rem 0', color: '#fff', fontSize: '2rem' }}>{alert.ticker}</h2>
-                      <div style={{ color: '#10b981', fontWeight: 'bold' }}>
-                        Broke 15m ORB Pivot: ${alert.orb_pivot.toFixed(2)}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>Current Price</span>
-                        <strong style={{ fontSize: '1.2rem' }}>${alert.current_price.toFixed(2)}</strong>
-                      </div>
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>Vol Multiplier</span>
-                        <strong style={{ color: alert.vol_multiplier > 2 ? '#10b981' : '#f59e0b' }}>{alert.vol_multiplier.toFixed(1)}x Avg</strong>
-                      </div>
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>Call/Put Vol Ratio</span>
-                        <strong style={{ color: alert.call_put_ratio > 2 ? '#10b981' : '#ec4899' }}>{alert.call_put_ratio.toFixed(2)}x</strong>
-                      </div>
-                      <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>VWAP Trend Velocity</span>
-                        <strong style={{ background: alert.vwap_slope > 0.1 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: alert.vwap_slope > 0.1 ? '#10b981' : '#ef4444', padding: '2px 8px', borderRadius: '4px', fontSize: '0.9rem' }}>
-                          {alert.vwap_slope !== undefined ? `${alert.vwap_slope > 0 ? '+' : ''}${alert.vwap_slope.toFixed(2)}%` : 'N/A'}
-                        </strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginRight: '10px' }}>Institutional Block HVN</span>
-                        <strong style={{ color: '#3b82f6', borderBottom: '1px dashed #3b82f6' }}>
-                          ${alert.hvn_proxy !== undefined ? alert.hvn_proxy.toFixed(2) : 'N/A'}
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
-                <AlertCircle size={48} color="#f59e0b" style={{ marginBottom: '1rem' }} />
-                <h3>No Intraday Breakouts Found</h3>
-                <p style={{ color: '#94a3b8' }}>None of the high-beta stocks are currently breaking their 15-minute ORB with heavy Call flow.</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <IntradayRadarDashboard
+          intradayData={intradayData}
+          loading={intradayLoading}
+          onTickerClick={fetchTickerData}
+          onOpenFundamentals={(ticker) => {
+            setDeepFundamentalsTicker(ticker);
+            setActiveTab('deepfundamentals');
+          }}
+          onRefresh={fetchIntradayAlerts}
+        />
       )}
 
       {/* Morning Briefing Tab */}
