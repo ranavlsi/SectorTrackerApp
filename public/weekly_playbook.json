@@ -1,165 +1,122 @@
 {
-    "date": "November 03, 2026",
+    "date": "November 07, 2026",
     "market_summary": {
-        "text": "The S&P 500 closed the week at $754.35, moving -1.99% over the last 5 days. Structurally, the market is defensive below its 50-day moving average. Macro Health Score is 25.5/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
+        "text": "The S&P 500 closed the week at $735.29, moving -2.70% over the last 5 days. Structurally, the market is defensive below its 50-day moving average. Macro Health Score is 21.2/100 (Bearish / Deteriorating). Recommended Exposure: Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash).",
         "bias": "Bearish",
-        "spy_weekly_return": "-1.99%",
+        "spy_weekly_return": "-2.70%",
         "regime": "RISK_OFF"
     },
     "regime_briefing": {
-        "score_value": 25.5,
+        "score_value": 21.2,
         "score_label": "Bearish / Deteriorating",
         "regime_status": "RISK_OFF",
         "regime_color": "#ef4444",
         "recommended_exposure": "Defensive / Capital Preservation: 0% - 25% Invested (75%+ Cash)",
         "exposure_percent": 20,
         "mco_status": "Neutral",
-        "mco_value": 67.8,
-        "breadth_above_50": 0.0,
-        "breadth_above_200": 0.0,
+        "mco_value": 126.9,
+        "breadth_above_50": 31.8,
+        "breadth_above_200": 32.5,
         "actionable_takeaway": "Market internals are in a defensive distribution regime. Protect open capital, raise cash, and preserve psychological energy for the next confirmed follow-through day.",
         "distribution_warning": true
     },
     "sector_rotation": {
         "leading_sectors": [
             {
-                "ticker": "XLY",
-                "name": "Consumer Discr",
-                "rs_ratio": 114.9,
-                "rs_momentum": 126.8,
-                "top_stocks": [
-                    "LOW",
-                    "MCD",
-                    "HD",
-                    "NKE"
-                ],
-                "status": "Leading (Accumulation)",
-                "color": "#10b981",
-                "note": "Weekly RS: 114.9 | Momentum: 126.8 \u2022 Intraday: (110.2, 102.8)"
-            },
-            {
                 "ticker": "XLV",
                 "name": "Healthcare",
-                "rs_ratio": 126.5,
-                "rs_momentum": 116.2,
+                "rs_ratio": 128.2,
+                "rs_momentum": 116.8,
                 "top_stocks": [
                     "TMO",
-                    "UNH",
-                    "LLY"
+                    "JNJ",
+                    "ABBV"
                 ],
                 "status": "Leading (Accumulation)",
                 "color": "#10b981",
-                "note": "Weekly RS: 126.5 | Momentum: 116.2 \u2022 Intraday: (86.7, 98.4)"
+                "note": "Weekly RS: 128.2 | Momentum: 116.8 \u2022 Intraday: (106.9, 102.3)"
             },
             {
-                "ticker": "XLRE",
-                "name": "Real Estate",
-                "rs_ratio": 107.0,
-                "rs_momentum": 118.9,
+                "ticker": "XLP",
+                "name": "Consumer Staples",
+                "rs_ratio": 127.8,
+                "rs_momentum": 122.2,
                 "top_stocks": [
-                    "PSA",
-                    "SPG",
-                    "PLD",
-                    "AMT"
+                    "COST",
+                    "PEP",
+                    "PG",
+                    "KO"
                 ],
                 "status": "Leading (Accumulation)",
                 "color": "#10b981",
-                "note": "Weekly RS: 107.0 | Momentum: 118.9 \u2022 Intraday: (118.9, 110.8)"
+                "note": "Weekly RS: 127.8 | Momentum: 122.2 \u2022 Intraday: (98.3, 98.9)"
+            },
+            {
+                "ticker": "TAN",
+                "name": "Solar",
+                "rs_ratio": 103.5,
+                "rs_momentum": 147.2,
+                "top_stocks": [
+                    "SHLS",
+                    "ARRY",
+                    "CSIQ"
+                ],
+                "status": "Leading (Accumulation)",
+                "color": "#10b981",
+                "note": "Weekly RS: 103.5 | Momentum: 147.2 \u2022 Intraday: (117.3, 113.7)"
             }
         ],
         "weakening_sectors": [
             {
-                "ticker": "XLI",
-                "name": "Industrials",
-                "rs_ratio": 100.0,
-                "rs_momentum": 111.5,
+                "ticker": "XLC",
+                "name": "Communication",
+                "rs_ratio": 96.9,
+                "rs_momentum": 105.1,
                 "top_stocks": [
-                    "CAT",
-                    "ETN",
-                    "BA"
+                    "META",
+                    "T",
+                    "GOOGL",
+                    "GOOG"
                 ],
                 "drag_stocks": [
-                    "CAT",
-                    "ETN",
-                    "BA"
+                    "META",
+                    "T",
+                    "GOOGL",
+                    "GOOG"
                 ],
                 "rs_stocks": [
-                    "GE",
-                    "RTX",
-                    "DE",
-                    "LMT"
+                    "DIS",
+                    "CMCSA",
+                    "TMUS",
+                    "VZ"
                 ],
                 "status": "Weakening (Distribution)",
                 "color": "#f59e0b",
-                "note": "Distribution Drag: CAT (-12.5%), ETN (+2.0%) \u2022 RS Islands: GE (+7.7%), RTX (+4.7%)"
+                "note": "Distribution Drag: META (-0.8%), T (+1.0%) \u2022 RS Islands: DIS (+5.2%), CMCSA (+5.0%)"
             },
             {
-                "ticker": "JETS",
-                "name": "Airlines",
-                "rs_ratio": 95.9,
-                "rs_momentum": 104.9,
+                "ticker": "XME",
+                "name": "Metals & Mining",
+                "rs_ratio": 85.6,
+                "rs_momentum": 89.5,
                 "top_stocks": [
-                    "JBLU",
-                    "AC.TO",
-                    "DAL"
+                    "MTRN",
+                    "AA",
+                    "FCX"
                 ],
                 "drag_stocks": [],
                 "rs_stocks": [],
                 "status": "Weakening (Distribution)",
                 "color": "#f59e0b",
-                "note": "Weekly momentum decayed to 104.9 \u2022 Intraday Lagging (85.2, 95.5)"
-            },
-            {
-                "ticker": "ARKK",
-                "name": "Innovation",
-                "rs_ratio": 94.5,
-                "rs_momentum": 90.7,
-                "top_stocks": [
-                    "TWST",
-                    "TXG",
-                    "COIN"
-                ],
-                "drag_stocks": [],
-                "rs_stocks": [],
-                "status": "Weakening (Distribution)",
-                "color": "#f59e0b",
-                "note": "Weekly momentum decayed to 90.7 \u2022 Intraday Lagging (87.0, 95.1)"
+                "note": "Weekly momentum decayed to 89.5 \u2022 Intraday Lagging (87.8, 85.2)"
             }
         ],
         "lagging_sectors": [
             {
-                "ticker": "XME",
-                "name": "Metals & Mining",
-                "rs_ratio": 85.5,
-                "rs_momentum": 89.0,
-                "top_stocks": [
-                    "MTRN",
-                    "CMC",
-                    "CLF"
-                ],
-                "status": "Lagging (Outflow)",
-                "color": "#ef4444",
-                "note": "Severe RS breakdown vs SPY (x=85.5)"
-            },
-            {
-                "ticker": "BOTZ",
-                "name": "Robotics & AI",
-                "rs_ratio": 81.2,
-                "rs_momentum": 90.1,
-                "top_stocks": [
-                    "CGNX",
-                    "300124.SZ",
-                    "NVDA"
-                ],
-                "status": "Lagging (Outflow)",
-                "color": "#ef4444",
-                "note": "Severe RS breakdown vs SPY (x=81.2)"
-            },
-            {
                 "ticker": "QTUM",
                 "name": "Quantum",
-                "rs_ratio": 77.9,
-                "rs_momentum": 83.3,
+                "rs_ratio": 74.2,
+                "rs_momentum": 81.7,
                 "top_stocks": [
                     "IONQ",
                     "RGTI",
@@ -167,434 +124,464 @@
                 ],
                 "status": "Lagging (Outflow)",
                 "color": "#ef4444",
-                "note": "Severe RS breakdown vs SPY (x=77.9)"
+                "note": "Severe RS breakdown vs SPY (x=74.2)"
+            },
+            {
+                "ticker": "SMH",
+                "name": "Semiconductors",
+                "rs_ratio": 72.7,
+                "rs_momentum": 79.2,
+                "top_stocks": [
+                    "LRCX",
+                    "AMAT",
+                    "INTC",
+                    "ADI"
+                ],
+                "status": "Lagging (Outflow)",
+                "color": "#ef4444",
+                "note": "Severe RS breakdown vs SPY (x=72.7)"
+            },
+            {
+                "ticker": "XLK",
+                "name": "Technology",
+                "rs_ratio": 73.9,
+                "rs_momentum": 76.6,
+                "top_stocks": [
+                    "INTC",
+                    "ORCL",
+                    "AMD",
+                    "CSCO"
+                ],
+                "status": "Lagging (Outflow)",
+                "color": "#ef4444",
+                "note": "Severe RS breakdown vs SPY (x=73.9)"
             }
         ]
     },
     "focus_list": [
         {
-            "ticker": "REGN",
-            "entry_price": "$976.93",
-            "stop_loss": "$945.67",
-            "profit_target": "$1055.09",
+            "ticker": "AAPL",
+            "entry_price": "$355.83",
+            "stop_loss": "$344.44",
+            "profit_target": "$389.99",
             "risk_pct": "3.2%",
-            "reward_risk": "2.5:1",
-            "setup_type": "Parabolic Momentum Tracker",
-            "reasoning": "Consolidating tightly near 52-week highs. Holding firmly above the 10-SMA (47.9% bounce rate). Ideal low-cheat entry.",
+            "reward_risk": "3.0:1",
+            "setup_type": "Flat Base Consolidation",
+            "reasoning": "Constructing an orderly Flat Base consolidation shelf near 52-week highs. Holding support along the 50-SMA (51.4% respect). Sizing: Full Position (Core Book Leader).",
             "health": {
                 "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
-                "momentum_color": "bullish",
-                "rsi": 87.4
+                "momentum_text": "\ud83e\ude78 Momentum Building (Bearish)",
+                "momentum_color": "bearish",
+                "rsi": 49.6
             },
             "personality": {
                 "personality_tier": "TIGHT_AND_ORDERLY",
                 "tier_label": "Tight & Orderly",
                 "tier_color": "#10b981",
                 "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 3.45,
-                "adr_20d": 3.07,
+                "adr_10d": 2.53,
+                "adr_20d": 2.15,
                 "sizing_recommendation": "Full Position (Core Book Leader)",
-                "guardian_ma": "10-SMA",
-                "guardian_respect_score": 47.9
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 51.4
             }
         },
         {
-            "ticker": "ROKU",
-            "entry_price": "$161.39",
-            "stop_loss": "$156.23",
-            "profit_target": "$176.89",
+            "ticker": "ABBV",
+            "entry_price": "$303.33",
+            "stop_loss": "$293.62",
+            "profit_target": "$332.45",
             "risk_pct": "3.2%",
             "reward_risk": "3.0:1",
-            "setup_type": "52-Week High Breakout",
-            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 23-EMA (38.0% respect). Sizing: Full Position (Core Book Leader).",
-            "health": {
-                "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
-                "momentum_color": "bullish",
-                "rsi": 69.5
-            },
-            "personality": {
-                "personality_tier": "TIGHT_AND_ORDERLY",
-                "tier_label": "Tight & Orderly",
-                "tier_color": "#10b981",
-                "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 1.75,
-                "adr_20d": 1.5,
-                "sizing_recommendation": "Full Position (Core Book Leader)",
-                "guardian_ma": "23-EMA",
-                "guardian_respect_score": 38.0
-            }
-        },
-        {
-            "ticker": "V",
-            "entry_price": "$427.17",
-            "stop_loss": "$413.50",
-            "profit_target": "$468.18",
-            "risk_pct": "3.2%",
-            "reward_risk": "3.0:1",
-            "setup_type": "52-Week High Breakout",
-            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 50-SMA (37.3% respect). Sizing: Full Position (Core Book Leader).",
+            "setup_type": "Ascending Base Breakout",
+            "reasoning": "Momentum breakout pushing towards multi-month highs. Primed with Tight & Orderly character (ADR: 2.87%). Institutional anchor: 50-SMA.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
                 "momentum_color": "warning",
-                "rsi": 71.7
+                "rsi": 58.7
             },
             "personality": {
                 "personality_tier": "TIGHT_AND_ORDERLY",
                 "tier_label": "Tight & Orderly",
                 "tier_color": "#10b981",
                 "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 1.77,
-                "adr_20d": 1.8,
+                "adr_10d": 2.87,
+                "adr_20d": 2.64,
                 "sizing_recommendation": "Full Position (Core Book Leader)",
                 "guardian_ma": "50-SMA",
-                "guardian_respect_score": 37.3
+                "guardian_respect_score": 58.3
+            }
+        },
+        {
+            "ticker": "MSFT",
+            "entry_price": "$559.94",
+            "stop_loss": "$542.03",
+            "profit_target": "$613.70",
+            "risk_pct": "3.2%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Flat Base Consolidation",
+            "reasoning": "Constructing an orderly Flat Base consolidation shelf near 52-week highs. Holding support along the 23-EMA (53.7% respect). Sizing: Full Position (Core Book Leader).",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83e\ude78 Momentum Building (Bearish)",
+                "momentum_color": "bearish",
+                "rsi": 48.8
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 2.99,
+                "adr_20d": 2.49,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "23-EMA",
+                "guardian_respect_score": 53.7
+            }
+        },
+        {
+            "ticker": "MRK",
+            "entry_price": "$154.28",
+            "stop_loss": "$149.35",
+            "profit_target": "$169.09",
+            "risk_pct": "3.2%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Flat Base Consolidation",
+            "reasoning": "Constructing an orderly Flat Base consolidation shelf near 52-week highs. Holding support along the 50-SMA (60.0% respect). Sizing: Full Position (Core Book Leader).",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
+                "momentum_color": "warning",
+                "rsi": 53.8
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 3.19,
+                "adr_20d": 3.09,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 60.0
             }
         },
         {
             "ticker": "KO",
-            "entry_price": "$96.35",
-            "stop_loss": "$93.26",
-            "profit_target": "$105.60",
+            "entry_price": "$97.49",
+            "stop_loss": "$94.37",
+            "profit_target": "$106.85",
             "risk_pct": "3.2%",
             "reward_risk": "3.0:1",
             "setup_type": "52-Week High Breakout",
-            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 50-SMA (41.8% respect). Sizing: Full Position (Core Book Leader).",
+            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 50-SMA (42.9% respect). Sizing: Full Position (Core Book Leader).",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
                 "momentum_color": "warning",
-                "rsi": 59.4
+                "rsi": 57.8
             },
             "personality": {
                 "personality_tier": "TIGHT_AND_ORDERLY",
                 "tier_label": "Tight & Orderly",
                 "tier_color": "#10b981",
                 "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 1.67,
-                "adr_20d": 1.63,
+                "adr_10d": 1.92,
+                "adr_20d": 1.77,
                 "sizing_recommendation": "Full Position (Core Book Leader)",
                 "guardian_ma": "50-SMA",
-                "guardian_respect_score": 41.8
+                "guardian_respect_score": 42.9
             }
         },
         {
-            "ticker": "ECL",
-            "entry_price": "$308.20",
-            "stop_loss": "$298.49",
-            "profit_target": "$337.34",
-            "risk_pct": "3.2%",
-            "reward_risk": "3.0:1",
-            "setup_type": "Trend Continuation Pivot",
-            "reasoning": "Consolidating tightly near 52-week highs. Holding firmly above the 50-SMA (47.6% bounce rate). Ideal low-cheat entry.",
-            "health": {
-                "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
-                "momentum_color": "warning",
-                "rsi": 70.3
-            },
-            "personality": {
-                "personality_tier": "TIGHT_AND_ORDERLY",
-                "tier_label": "Tight & Orderly",
-                "tier_color": "#10b981",
-                "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 2.13,
-                "adr_20d": 1.96,
-                "sizing_recommendation": "Full Position (Core Book Leader)",
-                "guardian_ma": "50-SMA",
-                "guardian_respect_score": 47.6
-            }
-        },
-        {
-            "ticker": "MA",
-            "entry_price": "$662.00",
-            "stop_loss": "$640.81",
-            "profit_target": "$725.55",
+            "ticker": "ROKU",
+            "entry_price": "$163.71",
+            "stop_loss": "$158.47",
+            "profit_target": "$179.43",
             "risk_pct": "3.2%",
             "reward_risk": "3.0:1",
             "setup_type": "52-Week High Breakout",
-            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 10-SMA (38.0% respect). Sizing: Full Position (Core Book Leader).",
+            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 21-SMA (40.8% respect). Sizing: Full Position (Core Book Leader).",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
                 "momentum_color": "warning",
-                "rsi": 69.2
+                "rsi": 61.5
             },
             "personality": {
                 "personality_tier": "TIGHT_AND_ORDERLY",
                 "tier_label": "Tight & Orderly",
                 "tier_color": "#10b981",
                 "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 2.03,
-                "adr_20d": 1.85,
+                "adr_10d": 1.88,
+                "adr_20d": 1.58,
                 "sizing_recommendation": "Full Position (Core Book Leader)",
-                "guardian_ma": "10-SMA",
-                "guardian_respect_score": 38.0
+                "guardian_ma": "21-SMA",
+                "guardian_respect_score": 40.8
             }
         },
         {
-            "ticker": "DIS",
-            "entry_price": "$114.56",
-            "stop_loss": "$111.52",
-            "profit_target": "$123.68",
-            "risk_pct": "2.7%",
+            "ticker": "JNJ",
+            "entry_price": "$282.41",
+            "stop_loss": "$273.37",
+            "profit_target": "$309.52",
+            "risk_pct": "3.2%",
             "reward_risk": "3.0:1",
-            "setup_type": "Trend Continuation Pivot",
-            "reasoning": "Consolidating tightly near 52-week highs. Holding firmly above the 50-SMA (45.1% bounce rate). Ideal low-cheat entry.",
+            "setup_type": "52-Week High Breakout",
+            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 23-EMA (39.7% respect). Sizing: Full Position (Core Book Leader).",
             "health": {
-                "stage": "Early Stage 2 Breakout",
+                "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
                 "momentum_color": "bullish",
-                "rsi": 66.7
+                "rsi": 68.9
             },
             "personality": {
                 "personality_tier": "TIGHT_AND_ORDERLY",
                 "tier_label": "Tight & Orderly",
                 "tier_color": "#10b981",
                 "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 1.58,
-                "adr_20d": 1.7,
+                "adr_10d": 2.83,
+                "adr_20d": 2.59,
                 "sizing_recommendation": "Full Position (Core Book Leader)",
-                "guardian_ma": "50-SMA",
-                "guardian_respect_score": 45.1
+                "guardian_ma": "23-EMA",
+                "guardian_respect_score": 39.7
             }
         },
         {
-            "ticker": "LLY",
-            "entry_price": "$1439.41",
-            "stop_loss": "$1393.35",
-            "profit_target": "$1554.56",
+            "ticker": "PG",
+            "entry_price": "$167.02",
+            "stop_loss": "$161.68",
+            "profit_target": "$183.05",
             "risk_pct": "3.2%",
-            "reward_risk": "2.5:1",
-            "setup_type": "Parabolic Momentum Tracker",
-            "reasoning": "Consolidating tightly near 52-week highs. Holding firmly above the 50-SMA (55.6% bounce rate). Ideal low-cheat entry.",
+            "reward_risk": "3.0:1",
+            "setup_type": "Trend Continuation Pivot",
+            "reasoning": "Consolidating tightly near 52-week highs. Holding firmly above the 10-SMA (38.8% bounce rate). Ideal low-cheat entry.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
                 "momentum_color": "warning",
-                "rsi": 79.3
+                "rsi": 61.3
             },
             "personality": {
                 "personality_tier": "TIGHT_AND_ORDERLY",
                 "tier_label": "Tight & Orderly",
                 "tier_color": "#10b981",
                 "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 3.09,
-                "adr_20d": 3.05,
+                "adr_10d": 1.79,
+                "adr_20d": 1.75,
                 "sizing_recommendation": "Full Position (Core Book Leader)",
-                "guardian_ma": "50-SMA",
-                "guardian_respect_score": 55.6
+                "guardian_ma": "10-SMA",
+                "guardian_respect_score": 38.8
             }
         }
     ],
     "top_3_picks": [
         {
-            "ticker": "REGN",
-            "entry_price": "$976.93",
-            "stop_loss": "$945.67",
-            "profit_target": "$1055.09",
+            "ticker": "AAPL",
+            "entry_price": "$355.83",
+            "stop_loss": "$344.44",
+            "profit_target": "$389.99",
             "risk_pct": "3.2%",
-            "reward_risk": "2.5:1",
-            "setup_type": "Parabolic Momentum Tracker",
-            "reasoning": "Consolidating tightly near 52-week highs. Holding firmly above the 10-SMA (47.9% bounce rate). Ideal low-cheat entry.",
+            "reward_risk": "3.0:1",
+            "setup_type": "Flat Base Consolidation",
+            "reasoning": "Constructing an orderly Flat Base consolidation shelf near 52-week highs. Holding support along the 50-SMA (51.4% respect). Sizing: Full Position (Core Book Leader).",
             "health": {
                 "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
-                "momentum_color": "bullish",
-                "rsi": 87.4
+                "momentum_text": "\ud83e\ude78 Momentum Building (Bearish)",
+                "momentum_color": "bearish",
+                "rsi": 49.6
             },
             "personality": {
                 "personality_tier": "TIGHT_AND_ORDERLY",
                 "tier_label": "Tight & Orderly",
                 "tier_color": "#10b981",
                 "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 3.45,
-                "adr_20d": 3.07,
+                "adr_10d": 2.53,
+                "adr_20d": 2.15,
                 "sizing_recommendation": "Full Position (Core Book Leader)",
-                "guardian_ma": "10-SMA",
-                "guardian_respect_score": 47.9
+                "guardian_ma": "50-SMA",
+                "guardian_respect_score": 51.4
             }
         },
         {
-            "ticker": "ROKU",
-            "entry_price": "$161.39",
-            "stop_loss": "$156.23",
-            "profit_target": "$176.89",
+            "ticker": "ABBV",
+            "entry_price": "$303.33",
+            "stop_loss": "$293.62",
+            "profit_target": "$332.45",
             "risk_pct": "3.2%",
             "reward_risk": "3.0:1",
-            "setup_type": "52-Week High Breakout",
-            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 23-EMA (38.0% respect). Sizing: Full Position (Core Book Leader).",
-            "health": {
-                "stage": "Stage 2 (Advancing)",
-                "momentum_text": "\ud83d\udd25 Momentum Building (Bullish)",
-                "momentum_color": "bullish",
-                "rsi": 69.5
-            },
-            "personality": {
-                "personality_tier": "TIGHT_AND_ORDERLY",
-                "tier_label": "Tight & Orderly",
-                "tier_color": "#10b981",
-                "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 1.75,
-                "adr_20d": 1.5,
-                "sizing_recommendation": "Full Position (Core Book Leader)",
-                "guardian_ma": "23-EMA",
-                "guardian_respect_score": 38.0
-            }
-        },
-        {
-            "ticker": "V",
-            "entry_price": "$427.17",
-            "stop_loss": "$413.50",
-            "profit_target": "$468.18",
-            "risk_pct": "3.2%",
-            "reward_risk": "3.0:1",
-            "setup_type": "52-Week High Breakout",
-            "reasoning": "Stage 2 institutional leader pressing against 52-week highs. Orderly accumulation anchored above 50-SMA (37.3% respect). Sizing: Full Position (Core Book Leader).",
+            "setup_type": "Ascending Base Breakout",
+            "reasoning": "Momentum breakout pushing towards multi-month highs. Primed with Tight & Orderly character (ADR: 2.87%). Institutional anchor: 50-SMA.",
             "health": {
                 "stage": "Stage 2 (Advancing)",
                 "momentum_text": "\u26a0\ufe0f Momentum Fading (Exhaustion)",
                 "momentum_color": "warning",
-                "rsi": 71.7
+                "rsi": 58.7
             },
             "personality": {
                 "personality_tier": "TIGHT_AND_ORDERLY",
                 "tier_label": "Tight & Orderly",
                 "tier_color": "#10b981",
                 "badge_color": "rgba(16, 185, 129, 0.15)",
-                "adr_10d": 1.77,
-                "adr_20d": 1.8,
+                "adr_10d": 2.87,
+                "adr_20d": 2.64,
                 "sizing_recommendation": "Full Position (Core Book Leader)",
                 "guardian_ma": "50-SMA",
-                "guardian_respect_score": 37.3
+                "guardian_respect_score": 58.3
+            }
+        },
+        {
+            "ticker": "MSFT",
+            "entry_price": "$559.94",
+            "stop_loss": "$542.03",
+            "profit_target": "$613.70",
+            "risk_pct": "3.2%",
+            "reward_risk": "3.0:1",
+            "setup_type": "Flat Base Consolidation",
+            "reasoning": "Constructing an orderly Flat Base consolidation shelf near 52-week highs. Holding support along the 23-EMA (53.7% respect). Sizing: Full Position (Core Book Leader).",
+            "health": {
+                "stage": "Stage 2 (Advancing)",
+                "momentum_text": "\ud83e\ude78 Momentum Building (Bearish)",
+                "momentum_color": "bearish",
+                "rsi": 48.8
+            },
+            "personality": {
+                "personality_tier": "TIGHT_AND_ORDERLY",
+                "tier_label": "Tight & Orderly",
+                "tier_color": "#10b981",
+                "badge_color": "rgba(16, 185, 129, 0.15)",
+                "adr_10d": 2.99,
+                "adr_20d": 2.49,
+                "sizing_recommendation": "Full Position (Core Book Leader)",
+                "guardian_ma": "23-EMA",
+                "guardian_respect_score": 53.7
             }
         }
     ],
     "character_change_watch": [
         {
-            "ticker": "AAPL",
-            "price": "$331.90",
-            "status": "SELL_RULE_TRIGGERED",
-            "warning_level": "HIGH",
-            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
-            "guardian_ma": "50-SMA",
-            "adr_10d": 2.06,
-            "action": "Trim / Tighten Stops / Avoid New Buys"
-        },
-        {
-            "ticker": "AFRM",
-            "price": "$71.97",
-            "status": "SELL_RULE_TRIGGERED",
-            "warning_level": "HIGH",
-            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
-            "guardian_ma": "50-SMA",
-            "adr_10d": 4.13,
-            "action": "Trim / Tighten Stops / Avoid New Buys"
-        },
-        {
-            "ticker": "AMZN",
-            "price": "$250.69",
-            "status": "SELL_RULE_TRIGGERED",
-            "warning_level": "HIGH",
-            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
-            "guardian_ma": "10-SMA",
-            "adr_10d": 2.88,
-            "action": "Trim / Tighten Stops / Avoid New Buys"
-        },
-        {
-            "ticker": "CRM",
-            "price": "$222.20",
+            "ticker": "ADBE",
+            "price": "$239.30",
             "status": "SELL_RULE_TRIGGERED",
             "warning_level": "HIGH",
             "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
             "guardian_ma": "21-SMA",
-            "adr_10d": 3.39,
+            "adr_10d": 3.29,
             "action": "Trim / Tighten Stops / Avoid New Buys"
         },
         {
-            "ticker": "CRWD",
-            "price": "$244.68",
+            "ticker": "AEP",
+            "price": "$126.53",
             "status": "SELL_RULE_TRIGGERED",
             "warning_level": "HIGH",
             "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
             "guardian_ma": "50-SMA",
-            "adr_10d": 5.73,
+            "adr_10d": 2.34,
             "action": "Trim / Tighten Stops / Avoid New Buys"
         },
         {
-            "ticker": "DDOG",
-            "price": "$220.52",
+            "ticker": "COP",
+            "price": "$136.27",
             "status": "SELL_RULE_TRIGGERED",
             "warning_level": "HIGH",
             "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
-            "guardian_ma": "23-EMA",
-            "adr_10d": 6.62,
+            "guardian_ma": "10-SMA",
+            "adr_10d": 2.95,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        },
+        {
+            "ticker": "CRM",
+            "price": "$213.65",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "21-SMA",
+            "adr_10d": 3.61,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        },
+        {
+            "ticker": "CVX",
+            "price": "$212.61",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "10-SMA",
+            "adr_10d": 2.28,
+            "action": "Trim / Tighten Stops / Avoid New Buys"
+        },
+        {
+            "ticker": "EOG",
+            "price": "$147.13",
+            "status": "SELL_RULE_TRIGGERED",
+            "warning_level": "HIGH",
+            "signal": "\ud83d\udea8 Character Change: 2nd consecutive close below 21-day SMA. Trim full size or exit into strength.",
+            "guardian_ma": "10-SMA",
+            "adr_10d": 2.75,
             "action": "Trim / Tighten Stops / Avoid New Buys"
         }
     ],
     "stocks_that_ran": [
         {
-            "ticker": "REGN",
-            "return": "+19.27%",
-            "price": "$973.36",
+            "ticker": "DUOL",
+            "return": "+21.91%",
+            "price": "$160.42",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
-            "ticker": "LLY",
-            "return": "+9.94%",
-            "price": "$1409.38",
-            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
-        },
-        {
-            "ticker": "TEM",
-            "return": "+7.83%",
-            "price": "$77.80",
-            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
-        },
-        {
-            "ticker": "MA",
-            "return": "+6.12%",
-            "price": "$647.18",
+            "ticker": "NEM",
+            "return": "+13.41%",
+            "price": "$120.91",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         },
         {
             "ticker": "TOST",
-            "return": "+5.54%",
-            "price": "$33.53",
+            "return": "+9.44%",
+            "price": "$34.67",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        },
+        {
+            "ticker": "BILL",
+            "return": "+8.49%",
+            "price": "$52.41",
+            "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
+        },
+        {
+            "ticker": "AMZN",
+            "return": "+7.88%",
+            "price": "$259.30",
             "reason": "Extreme momentum influx; watch for exhaustion or high-tight flag formation."
         }
     ],
     "about_to_fly": [
         {
+            "ticker": "AAPL",
+            "price": "$342.37",
+            "dist_ath": "3.7%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        },
+        {
+            "ticker": "ABBV",
+            "price": "$291.31",
+            "dist_ath": "3.8%",
+            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
+        },
+        {
             "ticker": "MSFT",
-            "price": "$520.99",
-            "dist_ath": "5.5%",
+            "price": "$530.61",
+            "dist_ath": "5.1%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
-            "ticker": "GTLB",
-            "price": "$52.37",
-            "dist_ath": "9.7%",
-            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
-        },
-        {
-            "ticker": "NTRA",
-            "price": "$388.63",
-            "dist_ath": "11.2%",
+            "ticker": "MRK",
+            "price": "$146.73",
+            "dist_ath": "6.5%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         },
         {
             "ticker": "IOT",
-            "price": "$41.11",
-            "dist_ath": "13.4%",
-            "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
-        },
-        {
-            "ticker": "TEM",
-            "price": "$77.80",
-            "dist_ath": "14.1%",
+            "price": "$40.98",
+            "dist_ath": "13.7%",
             "reason": "Extreme volatility compression (Bollinger Bands inside Keltner Channels) near 52-week highs."
         }
     ]

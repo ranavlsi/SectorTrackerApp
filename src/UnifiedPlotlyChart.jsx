@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader, Maximize2, Minimize2, Layers, Activity, Shield, Target, Zap, BarChart2, RefreshCw, Search } from 'lucide-react';
 
 const QUICK_FS_TICKERS = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'META', 'PLTR', 'AMD', 'AVGO', 'HOOD', 'SMH'];
@@ -43,6 +44,10 @@ export default function UnifiedPlotlyChart({
   const [viewportHeight, setViewportHeight] = useState(
     typeof window !== 'undefined' ? window.innerHeight : 900
   );
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1600
+  );
+  const [containerWidth, setContainerWidth] = useState(0);
 
   const isFullscreen = externalFullscreen !== undefined ? externalFullscreen : internalFullscreen;
   const paneLayout = externalPaneLayout !== undefined ? externalPaneLayout : internalPaneLayout;
@@ -77,10 +82,11 @@ export default function UnifiedPlotlyChart({
   });
 
   const plotRef = useRef(null);
+  const canvasWrapRef = useRef(null);
   const lastHoveredTimeRef = useRef(null);
   const hoverRafRef = useRef(null);
 
-  // Keyboard ESC listener & dynamic viewport resize for Full Chart mode
+  // Keyboard ESC listener & dynamic viewport/container resize for Full Chart mode
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === 'Escape' && isFullscreen) {
@@ -93,15 +99,37 @@ export default function UnifiedPlotlyChart({
     };
     const onResize = () => {
       setViewportHeight(window.innerHeight);
+      setViewportWidth(window.innerWidth);
+      if (canvasWrapRef.current) {
+        setContainerWidth(canvasWrapRef.current.clientWidth);
+      }
       if (plotRef.current && window.Plotly) {
         window.Plotly.Plots.resize(plotRef.current);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('resize', onResize);
+
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined' && canvasWrapRef.current) {
+      ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = Math.floor(entry.contentRect.width);
+          if (w > 100) {
+            setContainerWidth(w);
+          }
+        }
+        if (plotRef.current && window.Plotly) {
+          window.Plotly.Plots.resize(plotRef.current);
+        }
+      });
+      ro.observe(canvasWrapRef.current);
+    }
+
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('resize', onResize);
+      if (ro) ro.disconnect();
     };
   }, [isFullscreen, onToggleFullscreen]);
 
@@ -122,7 +150,17 @@ export default function UnifiedPlotlyChart({
     try {
       const url = `/api/chart_data?ticker=${encodeURIComponent(ticker)}&timeframe=${activePresetObj.timeframe}&range=${activePresetObj.range}`;
       const res = await fetch(url);
-      const data = await res.json();
+      const rawText = await res.text();
+      if (!res.ok) {
+        let errMsg = `Backend HTTP ${res.status}`;
+        try {
+          const parsedErr = JSON.parse(rawText);
+          if (parsedErr.error) errMsg = parsedErr.error;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
+      const safeText = rawText.replace(/:\s*NaN\b/g, ': null').replace(/:\s*Infinity\b/g, ': null').replace(/:\s*-Infinity\b/g, ': null');
+      const data = JSON.parse(safeText);
       if (data.error) {
         setError(data.error);
         setLoading(false);
@@ -538,7 +576,7 @@ export default function UnifiedPlotlyChart({
     }
 
     // 7.5 MARKET-SURGE PATTERN RECOGNITION & OFFICIAL BUY POINT OVERLAY
-    if (overlays.marketsurgePattern && data.marketsurge && data.marketsurge.detected && data.marketsurge.buy_point > 0) {
+    if (overlays.marketsurgePattern && data.marketsurge && data.marketsurge.buy_point > 0) {
       const ms = data.marketsurge;
 
       // Smooth Cup / Base Contour Arc
@@ -567,7 +605,7 @@ export default function UnifiedPlotlyChart({
           y: ms.handle_curve.map((pt) => pt.price),
           type: 'scatter',
           mode: 'lines+markers',
-          name: `☕ Handle (-${ms.handle_depth_pct}%)`,
+          name: `☕ Handle (-${ms.handle_depth_pct || 0}%)`,
           line: {
             color: '#fbbf24',
             width: 2.4,
@@ -610,17 +648,41 @@ export default function UnifiedPlotlyChart({
         });
       }
 
+      // Anchor trace on right edge so Plotly y-axis auto-range ALWAYS includes Buy Point & 5% Buy Zone
+      if (dates.length > 0) {
+        const lastDate = dates[dates.length - 1];
+        traces.push({
+          x: [lastDate, lastDate],
+          y: [ms.buy_point, ms.buy_zone_high],
+          type: 'scatter',
+          mode: 'markers',
+          name: `🎯 MS Buy Pt ($${ms.buy_point.toFixed(2)})`,
+          marker: {
+            color: ['#10b981', '#34d399'],
+            size: [8, 6],
+            symbol: ['diamond', 'triangle-up'],
+            line: { color: '#090d16', width: 1.2 },
+          },
+          yaxis: 'y',
+          hovertemplate:
+            `<b>🏆 ${ms.pattern_name}</b><br>` +
+            `Official Buy Point: <b>$${ms.buy_point.toFixed(2)}</b><br>` +
+            `5% Buy Zone: <b>$${ms.buy_point.toFixed(2)} – $${ms.buy_zone_high.toFixed(2)}</b><br>` +
+            `-7.5% Stop Loss: <b>$${(ms.stop_loss || 0).toFixed(2)}</b><extra></extra>`,
+        });
+      }
+
       // MarketSurge 5% Buy Zone Green Shaded Box [buy_point, buy_zone_high]
       shapes.push({
         type: 'rect',
         xref: 'paper',
-        x0: 0.58,
+        x0: 0.52,
         x1: 1.0,
         yref: 'y',
         y0: ms.buy_point,
         y1: ms.buy_zone_high,
-        fillcolor: 'rgba(16, 185, 129, 0.14)',
-        line: { color: 'rgba(16, 185, 129, 0.55)', width: 1, dash: 'dot' },
+        fillcolor: 'rgba(16, 185, 129, 0.15)',
+        line: { color: 'rgba(16, 185, 129, 0.6)', width: 1, dash: 'dot' },
         layer: 'below',
       });
 
@@ -628,12 +690,12 @@ export default function UnifiedPlotlyChart({
       shapes.push({
         type: 'line',
         xref: 'paper',
-        x0: 0.35,
+        x0: 0.30,
         x1: 1.0,
         yref: 'y',
         y0: ms.buy_point,
         y1: ms.buy_point,
-        line: { color: '#10b981', width: 2.0, dash: 'dash' },
+        line: { color: '#10b981', width: 2.2, dash: 'dash' },
       });
 
       annotations.push({
@@ -641,27 +703,41 @@ export default function UnifiedPlotlyChart({
         x: 0.995,
         yref: 'y',
         y: ms.buy_point,
-        text: `🎯 MS Buy Pt: $${ms.buy_point.toFixed(2)} (5% Zone: $${ms.buy_zone_high.toFixed(2)})`,
+        text: `🎯 MS Buy Pt: $${ms.buy_point.toFixed(2)} (5% Buy Zone: $${ms.buy_zone_high.toFixed(2)})`,
         showarrow: false,
         xanchor: 'right',
         yanchor: 'bottom',
-        font: { color: '#10b981', size: 9.5, family: 'monospace' },
-        bgcolor: 'rgba(6, 78, 59, 0.88)',
-        bordercolor: 'rgba(16, 185, 129, 0.6)',
-        borderpad: 2,
+        font: { color: '#10b981', size: 10, family: 'monospace' },
+        bgcolor: 'rgba(6, 78, 59, 0.92)',
+        bordercolor: 'rgba(16, 185, 129, 0.7)',
+        borderpad: 3,
       });
 
-      // MarketSurge -7.5% Hard Stop Loss Line
+      // MarketSurge -7.5% Hard Stop Loss Line & Label
       if (ms.stop_loss > 0) {
         shapes.push({
           type: 'line',
           xref: 'paper',
-          x0: 0.65,
+          x0: 0.62,
           x1: 1.0,
           yref: 'y',
           y0: ms.stop_loss,
           y1: ms.stop_loss,
-          line: { color: 'rgba(239, 68, 68, 0.65)', width: 1.3, dash: 'dot' },
+          line: { color: 'rgba(239, 68, 68, 0.7)', width: 1.4, dash: 'dot' },
+        });
+        annotations.push({
+          xref: 'paper',
+          x: 0.995,
+          yref: 'y',
+          y: ms.stop_loss,
+          text: `🛑 MS -7.5% Stop: $${ms.stop_loss.toFixed(2)}`,
+          showarrow: false,
+          xanchor: 'right',
+          yanchor: 'top',
+          font: { color: '#f87171', size: 9, family: 'monospace' },
+          bgcolor: 'rgba(69, 10, 10, 0.85)',
+          bordercolor: 'rgba(239, 68, 68, 0.5)',
+          borderpad: 2,
         });
       }
     }
@@ -897,10 +973,18 @@ export default function UnifiedPlotlyChart({
       }
     }
 
-    const computedHeight = isFullscreen ? Math.max(580, viewportHeight - 135) : 710;
-    const uiRevKey = `${data.ticker || ticker}_${data.timeframe || '1D'}_${data.range || '1Y'}_${paneLayout}_${logScale}`;
+    const computedHeight = isFullscreen ? Math.max(580, (window.innerHeight || viewportHeight) - 128) : 710;
+    const measuredWrapWidth = canvasWrapRef.current ? canvasWrapRef.current.clientWidth : containerWidth;
+    const computedWidth = isFullscreen
+      ? Math.max(800, window.innerWidth || viewportWidth)
+      : measuredWrapWidth > 200
+      ? measuredWrapWidth
+      : undefined;
+    const uiRevKey = `${data.ticker || ticker}_${data.timeframe || '1D'}_${data.range || '1Y'}_${paneLayout}_${logScale}_${isFullscreen ? 'fs' : 'dock'}`;
 
     const layout = {
+      autosize: true,
+      width: computedWidth,
       height: computedHeight,
       uirevision: uiRevKey,
       dragmode: 'pan',
@@ -1007,7 +1091,24 @@ export default function UnifiedPlotlyChart({
 
     const renderPlot = () => {
       if (!plotRef.current || !window.Plotly) return;
+      const liveW = isFullscreen
+        ? window.innerWidth
+        : canvasWrapRef.current?.clientWidth || plotRef.current?.clientWidth || computedWidth;
+      if (liveW && liveW > 200) {
+        layout.width = liveW;
+      }
       window.Plotly.react(plotRef.current, traces, layout, config);
+      requestAnimationFrame(() => {
+        if (plotRef.current && window.Plotly) {
+          window.Plotly.Plots.resize(plotRef.current);
+        }
+      });
+      setTimeout(() => {
+        if (plotRef.current && window.Plotly) {
+          window.Plotly.Plots.resize(plotRef.current);
+        }
+      }, 60);
+
       if (plotRef.current.removeAllListeners) {
         plotRef.current.removeAllListeners('plotly_hover');
       }
@@ -1033,7 +1134,7 @@ export default function UnifiedPlotlyChart({
       script.onload = renderPlot;
       document.head.appendChild(script);
     }
-  }, [chartPayload, overlays, oscMode, logScale, isFullscreen, paneLayout, viewportHeight]);
+  }, [chartPayload, overlays, oscMode, logScale, isFullscreen, paneLayout, viewportHeight, viewportWidth, containerWidth]);
 
   const activeBar = hoveredBar || (chartPayload?.candles ? chartPayload.candles[chartPayload.candles.length - 1] : null);
   const sm = chartPayload?.summary_metrics || {};
@@ -1048,15 +1149,18 @@ export default function UnifiedPlotlyChart({
     setFsSearchInput('');
   };
 
-  return (
+  const chartNode = (
     <div
       style={{
         position: isFullscreen ? 'fixed' : 'relative',
+        inset: isFullscreen ? 0 : 'auto',
         top: isFullscreen ? 0 : 'auto',
         left: isFullscreen ? 0 : 'auto',
+        right: isFullscreen ? 0 : 'auto',
+        bottom: isFullscreen ? 0 : 'auto',
         width: isFullscreen ? '100vw' : '100%',
         height: isFullscreen ? '100vh' : '100%',
-        zIndex: isFullscreen ? 99999 : 1,
+        zIndex: isFullscreen ? 999999 : 1,
         background: '#070b12',
         border: '1px solid rgba(148, 163, 184, 0.16)',
         borderRadius: isFullscreen ? 0 : '10px',
@@ -1470,20 +1574,23 @@ export default function UnifiedPlotlyChart({
                 {activeBar.clv}%
               </strong>
             </span>
-            {chartPayload?.marketsurge?.detected && chartPayload?.marketsurge?.buy_point > 0 && (
-              <span
-                style={{
-                  padding: '1px 6px',
-                  borderRadius: '4px',
-                  background: 'rgba(192, 132, 252, 0.16)',
-                  border: '1px solid rgba(192, 132, 252, 0.45)',
-                  color: '#c084fc',
-                  fontWeight: 800,
-                }}
-              >
-                🏆 {chartPayload.marketsurge.pattern_name} · Buy Pt: ${chartPayload.marketsurge.buy_point.toFixed(2)} ({chartPayload.marketsurge.distance_to_pivot_pct >= 0 ? '+' : ''}{chartPayload.marketsurge.distance_to_pivot_pct}%)
-              </span>
-            )}
+            {chartPayload?.marketsurge?.buy_point > 0 && (() => {
+              const distPct = chartPayload.marketsurge.distance_to_pivot_pct ?? chartPayload.marketsurge.dist_to_pivot_pct ?? 0;
+              return (
+                <span
+                  style={{
+                    padding: '1px 6px',
+                    borderRadius: '4px',
+                    background: 'rgba(192, 132, 252, 0.16)',
+                    border: '1px solid rgba(192, 132, 252, 0.45)',
+                    color: '#c084fc',
+                    fontWeight: 800,
+                  }}
+                >
+                  🏆 {chartPayload.marketsurge.pattern_name} · Buy Pt: ${chartPayload.marketsurge.buy_point.toFixed(2)} ({distPct >= 0 ? '+' : ''}{distPct}%)
+                </span>
+              );
+            })()}
             {activeBar.is_pocket_pivot && (
               <span
                 style={{
@@ -1552,7 +1659,7 @@ export default function UnifiedPlotlyChart({
       )}
 
       {/* 3. SYNCHRONIZED 4-PANE PLOTLY CANVAS */}
-      <div style={{ flex: 1, width: '100%', minHeight: '640px', position: 'relative' }}>
+      <div ref={canvasWrapRef} style={{ flex: 1, width: '100%', minHeight: '640px', position: 'relative' }}>
         {loading && (
           <div
             style={{
@@ -1614,4 +1721,9 @@ export default function UnifiedPlotlyChart({
       </div>
     </div>
   );
+
+  if (isFullscreen && typeof document !== 'undefined') {
+    return createPortal(chartNode, document.body);
+  }
+  return chartNode;
 }

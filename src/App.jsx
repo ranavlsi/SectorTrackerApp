@@ -17,7 +17,7 @@ import ScreenerMonitorDashboard from './ScreenerMonitorDashboard'
 import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { ScreenerDescriptions } from './ScreenerInfo';
-import { MarketHealthGuideCard, MarketHealthRadarMatrix, RegimePlaybookCard } from './MarketHealthGuideCard';
+import { MarketHealthHeroCockpit, MarketHealthGuideCard, MarketHealthRadarMatrix, RegimePlaybookCard } from './MarketHealthGuideCard';
 import { StockPersonalityBadge, RossHaberPersonalityPanel } from './StockPersonalityBadge';
 import WeeklyPlaybookDashboard from './WeeklyPlaybookDashboard';
 import SeasonalityRadarDashboard from './SeasonalityRadarDashboard';
@@ -30,6 +30,8 @@ import WyckoffScreener from './WyckoffScreener';
 import ElliottWaveScreener from './ElliottWaveScreener';
 import GannScreener from './GannScreener';
 import StageCanslimScreener from './StageCanslimScreener';
+import RrgMoneyFlowDashboard from './RrgMoneyFlowDashboard';
+import SqueezeRadarDashboard from './SqueezeRadarDashboard';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -386,6 +388,8 @@ function App() {
   
   // Advanced Analytics State
   const [correlationData, setCorrelationData] = useState(null)
+  const [healthMacroSection, setHealthMacroSection] = useState('unified')
+  const [healthChartCategory, setHealthChartCategory] = useState('all')
   const [gexSearch, setGexSearch] = useState('')
   const [searchedGex, setSearchedGex] = useState(null)
   const [gexLoading, setGexLoading] = useState(false)
@@ -962,9 +966,10 @@ function App() {
 
 
   const fetchTickerData = async (ticker) => {
+    const cleanSym = String(ticker || 'NVDA').trim().toUpperCase();
     setIsSearching(true);
     setSearchError(null);
-    setExpertTickerData(null);
+    setExpertTickerData({ ticker: cleanSym });
     setModalData(null);
     setActiveTab('chart');
     setIsRightDrawerOpen(true);
@@ -1134,12 +1139,11 @@ function App() {
             <Target size={18} color="#00f2fe" /> 1-3W Swing System 🎯
           </button>
           <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
-          <button className={activeTab === 'health' ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health</button>
+          <button className={(activeTab === 'health' || activeTab === 'macromatrix') ? 'tab-active' : ''} onClick={() => { setActiveTab('health'); setHealthMacroSection('unified'); }}><HeartPulse size={18} /> Market Health &amp; Macro</button>
           <button className={activeTab === 'playbook' ? 'tab-active' : ''} onClick={() => setActiveTab('playbook')}><BookOpen size={18} /> Weekly Playbook</button>
           <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
           <button className={activeTab === 'seasonality' ? 'tab-active' : ''} onClick={() => setActiveTab('seasonality')}><Compass size={18} /> Seasonality Radar</button>
           <button className={activeTab === 'intraday' ? 'tab-active' : ''} onClick={fetchIntradayAlerts}><Radio size={18} /> Intraday Radar</button>
-          <button className={activeTab === 'macromatrix' ? 'tab-active' : ''} onClick={() => setActiveTab('macromatrix')}><ActivitySquare size={18} /> Macro Matrix</button>
           <button className={activeTab === 'rslinescanner' ? 'tab-active' : ''} onClick={() => setActiveTab('rslinescanner')}><Star size={18} /> RS Line Scanner</button>
           <button className={activeTab === 'volsurface' ? 'tab-active' : ''} onClick={() => setActiveTab('volsurface')}><Activity size={18} /> 3D Vol Surface</button>
           <button className={activeTab === 'options_screener' ? 'tab-active' : ''} onClick={() => setActiveTab('options_screener')} style={{ color: activeTab === 'options_screener' ? '#38bdf8' : undefined }}><Zap size={18} color="#38bdf8" /> Options Screener ⚡</button>
@@ -1330,10 +1334,6 @@ function App() {
         <TradingViewSync />
       )}
 
-      {activeTab === 'macromatrix' && (
-        <MacroMatrixDashboard data={correlationData} onTickerClick={fetchTickerData} />
-      )}
-
       {activeTab === 'gexprofiler' && (
         <div style={{ width: '100%' }}>
           <GexHeatmap ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
@@ -1492,7 +1492,14 @@ function App() {
       )}
 
       {activeTab === 'earnings' && (
-        <EarningsEvasionTracker initialTicker={searchQuery || 'NVDA'} />
+        <EarningsEvasionTracker 
+          initialTicker={expertTickerData?.ticker || searchQuery || 'NVDA'} 
+          onSelectTicker={fetchTickerData}
+          onOpenFundamentals={(ticker) => {
+            setSearchQuery(ticker);
+            setActiveTab('deepfundamentals');
+          }}
+        />
       )}
 
       {activeTab === 'agents' && (
@@ -1521,68 +1528,21 @@ function App() {
         <AiPlaybookDashboard onTickerClick={fetchTickerData} />
       )}
 
-      {activeTab === 'squeeze' && squeezeData && (
-        <div>
-          <h2 style={{ marginBottom: '2rem' }}>🔥 Short Squeeze Radar</h2>
-          
-          {squeezeData.squeeze_started && squeezeData.squeeze_started.length > 0 && (
-            <div className="glass-card flash-alert" style={{ padding: '2rem', marginBottom: '2rem', border: '2px solid #ef4444' }}>
-              <h2 style={{ color: '#ef4444', marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <AlertCircle /> SQUEEZE TRIGGERED!
-              </h2>
-              <p style={{ color: '#f87171' }}>These highly shorted stocks are experiencing massive price spikes and aggressive Call buying right now.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                {squeezeData.squeeze_started.map(item => (
-                  <ScreenerPill key={item.ticker} item={item} onClick={() => fetchTickerData(item.ticker)} />
-                ))}
-              </div>
-            </div>
-          )}
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
-            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '3px solid #a855f7' }}>
-              <h3 style={{ marginTop: 0, color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Zap /> ⚡ TTM Keltner Squeeze (Pending Breakout)
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Bollinger Bands compressed inside Keltner Channels (BB/KC &lt; 1.0) with Volume Dry-Up. Catches coiling before explosive breakouts.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                {squeezeData.ttm_keltner_squeeze && squeezeData.ttm_keltner_squeeze.length > 0 ? (
-                  squeezeData.ttm_keltner_squeeze.map(item => (
-                    <ScreenerPill key={item.ticker} item={item} onClick={() => fetchTickerData(item.ticker)} />
-                  ))
-                ) : <span style={{ color: '#64748b' }}>None currently detected.</span>}
-              </div>
-            </div>
-
-            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '3px solid #f59e0b' }}>
-              <h3 style={{ marginTop: 0, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ActivitySquare /> Gamma Squeeze Setup
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: '#94a3b8' }}>High short interest + Unusual Options Call Volume</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                {squeezeData.gamma_squeeze_setup && squeezeData.gamma_squeeze_setup.length > 0 ? (
-                  squeezeData.gamma_squeeze_setup.map(item => (
-                    <ScreenerPill key={item.ticker} item={item} onClick={() => fetchTickerData(item.ticker)} />
-                  ))
-                ) : <span style={{ color: '#64748b' }}>None currently detected.</span>}
-              </div>
-            </div>
-            
-            <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '3px solid #4facfe' }}>
-              <h3 style={{ marginTop: 0, color: '#4facfe', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <TrendingUp /> Heavily Shorted Watchlist
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Top stocks with &gt; 5% Float Short or &gt; 3 Days to Cover</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                {squeezeData.high_short_interest && squeezeData.high_short_interest.length > 0 ? (
-                  squeezeData.high_short_interest.map(item => (
-                    <ScreenerPill key={item.ticker} item={item} onClick={() => fetchTickerData(item.ticker)} />
-                  ))
-                ) : <span style={{ color: '#64748b' }}>None currently detected.</span>}
-              </div>
-            </div>
-          </div>
-        </div>
+      {activeTab === 'squeeze' && (
+        <SqueezeRadarDashboard
+          squeezeData={squeezeData}
+          onTickerClick={fetchTickerData}
+          onOpenFundamentals={(ticker) => {
+            setDeepFundamentalsTicker(ticker);
+            setActiveTab('deepfundamentals');
+          }}
+          onRefresh={() => {
+            fetch(`/squeeze_results.json?t=${Date.now()}`, { cache: 'no-store' })
+              .then((res) => res.json())
+              .then((data) => setSqueezeData(data))
+              .catch((err) => console.error('Error refreshing squeeze data:', err));
+          }}
+        />
       )}
 
       {activeTab === 'seasonality' && (
@@ -1895,50 +1855,40 @@ function App() {
         )
       )}
 
-      {/* Market Health Dashboard Tab */}
-      {activeTab === 'health' && marketHealth && (
-        <div style={{ marginTop: '2rem' }}>
-          {/* Master Health Card */}
-          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', textAlign: 'center', borderTop: `5px solid ${marketHealth.current_health.score_value >= 60 ? '#10b981' : marketHealth.current_health.score_value <= 40 ? '#ef4444' : '#f59e0b'}` }}>
-            <h2 style={{ fontSize: '1.5rem', margin: '0', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '2px' }}>Aggregate Market Health Score</h2>
-            <h1 style={{ fontSize: '4rem', margin: '0.5rem 0 0 0', color: marketHealth.current_health.score_value >= 60 ? '#10b981' : marketHealth.current_health.score_value <= 40 ? '#ef4444' : '#f59e0b' }}>
-              {marketHealth.current_health.score_value} <span style={{fontSize: '2rem', color: '#64748b'}}>/ 100</span>
-            </h1>
-            <h3 style={{ fontSize: '1.2rem', margin: '0.5rem 0 2rem 0', color: '#fff' }}>Status: {marketHealth.current_health.score_label}</h3>
-            
-            <div style={{ background: 'rgba(15,23,42,0.5)', padding: '1.5rem', borderRadius: '12px', textAlign: 'left', borderLeft: '4px solid #3b82f6' }}>
-              <h4 style={{ margin: '0 0 1rem 0', color: '#60a5fa', fontSize: '1.1rem' }}>Council Summary Briefing</h4>
-              {marketHealth.current_health.summary_text ? (
-                 marketHealth.current_health.summary_text.split(/\r?\n|\\n/).map((line, i) => (
-                    <p key={i} style={{ margin: '0.5rem 0', color: '#e2e8f0', lineHeight: '1.5' }}>
-                      {line.replace(/\*\*/g, '').replace(/\\*\\*/g, '')}
-                    </p>
-                 ))
-              ) : null}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '2rem' }}>
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-                <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>McClellan Oscillator</span>
-                <h3 style={{ margin: '0.5rem 0 0 0', color: marketHealth.current_health.mco_value > 0 ? '#10b981' : '#ef4444' }}>{marketHealth.current_health.mco_value} ({marketHealth.current_health.mco_status})</h3>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-                <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Breadth (% &gt; 50 SMA)</span>
-                <h3 style={{ margin: '0.5rem 0 0 0', color: marketHealth.current_health.pct_above_50_value > 50 ? '#10b981' : '#ef4444' }}>{marketHealth.current_health.pct_above_50_value}% ({marketHealth.current_health.breadth_status})</h3>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-                <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>A/D Momentum</span>
-                <h3 style={{ margin: '0.5rem 0 0 0', color: marketHealth.current_health.ad_momentum.includes('Bullish') ? '#10b981' : '#ef4444' }}>{marketHealth.current_health.ad_momentum}</h3>
-              </div>
-            </div>
-          </div>
+      {/* Unified Market Health & Macro Command Center Tab */}
+      {(activeTab === 'health' || activeTab === 'macromatrix') && marketHealth && (
+        <div style={{ marginTop: '1.25rem' }}>
+          {/* 4-Pillar Unified Market Health & Macro Command Cockpit */}
+          <MarketHealthHeroCockpit
+            healthData={marketHealth}
+            macroData={correlationData}
+            onRefresh={(fresh) => setMarketHealth(fresh)}
+            onRefreshMacro={(freshMacro) => setCorrelationData(freshMacro)}
+            onTickerClick={fetchTickerData}
+            activeSection={healthMacroSection}
+            onSectionChange={setHealthMacroSection}
+            chartCategory={healthChartCategory}
+            onChartCategoryChange={setHealthChartCategory}
+          />
 
           {/* Regime Rules of Engagement Playbook */}
-          <RegimePlaybookCard currentRegime={marketHealth.current_health.health_regime || (marketHealth.current_health.score_value >= 60 ? 'RISK_ON' : marketHealth.current_health.score_value <= 40 ? 'RISK_OFF' : 'CAUTIOUS')} />
+          {healthMacroSection !== 'macro' && (
+            <RegimePlaybookCard currentRegime={marketHealth.current_health.health_regime || (marketHealth.current_health.score_value >= 60 ? 'RISK_ON' : marketHealth.current_health.score_value <= 40 ? 'RISK_OFF' : 'CAUTIOUS')} />
+          )}
 
           {/* 9-Factor Executive Health Matrix */}
-          <MarketHealthRadarMatrix healthData={marketHealth} />
+          {healthMacroSection !== 'macro' && (
+            <MarketHealthRadarMatrix healthData={marketHealth} />
+          )}
 
+          {/* Cross-Asset Macro Transmission & 4-Quadrant Cycle Matrix */}
+          {(healthMacroSection === 'unified' || healthMacroSection === 'macro') && (
+            <div style={{ marginBottom: healthMacroSection === 'unified' ? '2rem' : '0' }}>
+              <MacroMatrixDashboard data={correlationData} onTickerClick={fetchTickerData} />
+            </div>
+          )}
+
+          {healthMacroSection !== 'macro' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
             
             {/* Global Gradients */}
@@ -1962,6 +1912,8 @@ function App() {
                 </linearGradient>
               </defs>
             </svg>
+            {(healthChartCategory === 'all' || healthChartCategory === 'breadth') && (
+              <>
 
             {/* Chart 1: Master Composite Market Health Oscillator */}
             <MarketHealthGuideCard
@@ -2198,11 +2150,15 @@ function App() {
                 </div>
               </MarketHealthGuideCard>
             </div>
+              </>
+            )}
 
             {/* Grid for Secondary Indicators (NH-NL & Volatility Skew) */}
+            {(healthChartCategory === 'all' || healthChartCategory === 'breadth' || healthChartCategory === 'vol_credit') && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem' }}>
               
               {/* Chart 4: New Highs vs New Lows */}
+              {(healthChartCategory === 'all' || healthChartCategory === 'breadth') && (
               <MarketHealthGuideCard
                 icon={BarChart2}
                 title="New Highs vs New Lows (NH-NL Expansion)"
@@ -2244,8 +2200,10 @@ function App() {
                   </ResponsiveContainer>
                 </div>
               </MarketHealthGuideCard>
+              )}
 
               {/* Chart 5: Volatility Skew */}
+              {(healthChartCategory === 'all' || healthChartCategory === 'vol_credit') && (
               <MarketHealthGuideCard
                 icon={ShieldAlert}
                 title="CBOE Volatility Skew (VIX vs VIX3M Term Structure)"
@@ -2287,10 +2245,13 @@ function App() {
                   </ResponsiveContainer>
                 </div>
               </MarketHealthGuideCard>
+              )}
 
             </div>
+            )}
 
             {/* Grid for Bottom Indicators (Credit Spreads & Divergences) */}
+            {(healthChartCategory === 'all' || healthChartCategory === 'vol_credit') && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem' }}>
               
               {/* Chart 6: Credit Spreads */}
@@ -2378,8 +2339,10 @@ function App() {
                 </div>
               </MarketHealthGuideCard>
             </div>
+            )}
 
             {/* Grid for Macro Institutional Data (COT & T-Bill) */}
+            {(healthChartCategory === 'all' || healthChartCategory === 'macro_cot') && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem' }}>
               
               {/* Chart 8: Money Market Liquidity (13-Week T-Bill) */}
@@ -2463,472 +2426,69 @@ function App() {
               </MarketHealthGuideCard>
 
             </div>
+            )}
 
           </div>
+          )}
         </div>
       )}
 
       {/* RRG Dashboard Tab */}
       {activeTab === 'dashboard' && (
-        <>
-          <div className="timeframe-toggles">
-            <button className={timeframe === 'intraday' ? 'active' : ''} onClick={() => { setTimeframe('intraday'); setHiddenLines({}); setIsTop5Isolated(false); }}>Intraday (15m)</button>
-            <button className={timeframe === 'daily' ? 'active' : ''} onClick={() => { setTimeframe('daily'); setHiddenLines({}); setIsTop5Isolated(false); }}>Daily (Short-Term)</button>
-            <button className={timeframe === 'weekly' ? 'active' : ''} onClick={() => { setTimeframe('weekly'); setHiddenLines({}); setIsTop5Isolated(false); }}>Weekly (Medium-Term)</button>
-            <button className={timeframe === 'monthly' ? 'active' : ''} onClick={() => { setTimeframe('monthly'); setHiddenLines({}); setIsTop5Isolated(false); }}>Monthly (Structural)</button>
-          </div>
-
-          <div className="dashboard-grid">
-            <div className="glass-card chart-card" style={{ paddingBottom: '3rem', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h2 style={{ textAlign: 'left', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <TrendingUp color="#4facfe" /> Relative Rotation Graph ({timeframe})
-                </h2>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => { setIsTop5Isolated(false); setHiddenLines({}) }} className={`isolate-btn ${!isTop5Isolated && !hiddenLines['grid'] ? 'isolated' : ''}`}><Activity size={16} />All</button>
-                  <button onClick={isolateTop5} className={`isolate-btn ${isTop5Isolated ? 'isolated' : ''}`}><Filter size={16} />Top 5</button>
-                  <button onClick={() => setHiddenLines({ 'grid': true })} className={`isolate-btn ${hiddenLines['grid'] ? 'isolated' : ''}`}><ActivitySquare size={16} />Grid View (Separate)</button>
-                </div>
-              </div>
-              
-              {!hiddenLines['grid'] ? (
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: '70px', right: '30px', color: '#10b981', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>LEADING</div>
-                  <div style={{ position: 'absolute', bottom: '150px', right: '30px', color: '#f59e0b', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>WEAKENING</div>
-                  <div style={{ position: 'absolute', bottom: '150px', left: '80px', color: '#ef4444', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>LAGGING</div>
-                  <div style={{ position: 'absolute', top: '70px', left: '80px', color: '#3b82f6', fontWeight: 'bold', fontSize: '1.2rem', opacity: 0.5 }}>IMPROVING</div>
-
-                  <div style={{ height: '650px', width: '100%' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <ReferenceArea x1={100} y1={100} fill="rgba(16, 185, 129, 0.05)" /> 
-                        <ReferenceArea x1={100} y2={100} fill="rgba(245, 158, 11, 0.05)" /> 
-                        <ReferenceArea x2={100} y2={100} fill="rgba(239, 68, 68, 0.05)" /> 
-                        <ReferenceArea x2={100} y1={100} fill="rgba(59, 130, 246, 0.05)" /> 
-                        <ReferenceLine x={100} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
-                        <ReferenceLine y={100} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
-                        <XAxis type="number" dataKey="x" name="RS-Ratio" domain={['dataMin - 3', 'dataMax + 4']} stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                        <YAxis type="number" dataKey="y" name="RS-Momentum" domain={['dataMin - 3', 'dataMax + 4']} stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                        <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
-                        <Legend content={renderCustomLegend} verticalAlign="bottom" />
-                        
-                        {rrgData.map((sector, idx) => {
-                          if (hiddenLines[sector.name]) return null;
-                          const isHovered = hoveredSector === sector.name;
-                          const isAnotherHovered = hoveredSector !== null && hoveredSector !== sector.name;
-                          const color = COLORS[idx % COLORS.length];
-                          
-                          return (
-                            <Scatter 
-                              key={sector.name} name={sector.name} 
-                              data={sector.trail.map((pt, i) => ({ ...pt, labelName: i === sector.trail.length - 1 ? sector.name : '' }))} 
-                              fill={color}
-                              line={{ type: "monotone", stroke: color, strokeWidth: isHovered ? 4 : 2 }}
-                              opacity={isAnotherHovered ? 0.1 : 1} style={{ transition: 'all 0.3s ease', cursor: 'pointer' }}
-                              onClick={() => setModalData(sector)}
-                            >
-                              <LabelList dataKey="labelName" position="right" offset={8} style={{ fill: 'white', fontSize: '13px', fontWeight: 'bold', textShadow: `0px 0px 4px ${color}, 0px 0px 8px black` }} />
-                              {sector.trail.map((entry, index) => {
-                                const isLast = index === sector.trail.length - 1;
-                                return <Cell key={`cell-${index}`} fill={color} r={isLast ? (isHovered ? 12 : 8) : 0} opacity={isLast ? 1 : 0} />
-                              })}
-                            </Scatter>
-                          )
-                        })}
-                      </ScatterChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
-                  {rrgData.map((sector, idx) => {
-                    const color = COLORS[idx % COLORS.length];
-                    return (
-                      <div key={sector.name} className="stat-card" style={{ padding: '10px', height: '250px', cursor: 'pointer' }} onClick={() => setModalData(sector)}>
-                        <h4 style={{ margin: '0 0 10px 0', textAlign: 'center', color: color }}>{sector.name}</h4>
-                        <ResponsiveContainer width="100%" height="85%">
-                          <ScatterChart margin={{ top: 5, right: 15, bottom: 5, left: 5 }}>
-                            <ReferenceArea x1={100} y1={100} fill="rgba(16, 185, 129, 0.05)" /> 
-                            <ReferenceArea x1={100} y2={100} fill="rgba(245, 158, 11, 0.05)" /> 
-                            <ReferenceArea x2={100} y2={100} fill="rgba(239, 68, 68, 0.05)" /> 
-                            <ReferenceArea x2={100} y1={100} fill="rgba(59, 130, 246, 0.05)" /> 
-                            <ReferenceLine x={100} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
-                            <ReferenceLine y={100} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
-                            <XAxis type="number" dataKey="x" domain={['dataMin - 1', 'dataMax + 1']} hide />
-                            <YAxis type="number" dataKey="y" domain={['dataMin - 1', 'dataMax + 1']} hide />
-                            <Tooltip content={<CustomTooltip />} cursor={false} />
-                            <Scatter 
-                              name={sector.name} 
-                              data={sector.trail} 
-                              fill={color}
-                              line={{ type: "monotone", stroke: color, strokeWidth: 2 }}
-                            >
-                              {sector.trail.map((entry, index) => {
-                                const isLast = index === sector.trail.length - 1;
-                                return <Cell key={`mini-cell-${index}`} fill={color} r={isLast ? 6 : 0} opacity={isLast ? 1 : 0} />
-                              })}
-                            </Scatter>
-                          </ScatterChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="glass-card alerts-card" style={{ display: 'flex', flexDirection: 'column' }}>
-              <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <AlertCircle color="#10b981" /> Structural Leaders
-              </h2>
-              <div style={{ flex: 1, overflowY: 'auto' }}>
-                {tableData.slice(0, 5).map((sec, idx) => {
-                  const current = sec.trail[sec.trail.length - 1];
-                  const isLeading = current.x > 100 && current.y > 100;
-                  return (
-                    <div key={idx} className="alert-item" style={{ borderLeft: `4px solid ${isLeading ? '#10b981' : '#f59e0b'}`, paddingLeft: '1rem', marginBottom: '1rem', cursor: 'pointer' }} onClick={() => setModalData(sec)}>
-                      <div className="alert-content">
-                        <h4>{sec.name}</h4>
-                        <p style={{ margin: '5px 0' }}>Trend: <strong>{current.x}</strong> | Mom: <strong>{current.y}</strong></p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Multi-Timeframe Trade Playbook */}
-          <div className="glass-card" style={{ marginTop: '20px' }}>
-            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Compass color="#a855f7" /> Multi-Timeframe Trade Playbook
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', marginBottom: '20px' }}>
-              The engine automatically maps sector quadrant positions across Monthly, Weekly, and Daily timeframes to find actionable trade setups based on cross-timeframe alignment.
-            </p>
-            
-            {(() => {
-              const playbooks = getMultiTimeframeSummary();
-              return (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                  
-                  {/* Pullback Buys */}
-                  <div className="stat-card" style={{ padding: '15px' }}>
-                    <h3 style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 15px 0' }}>
-                      <ActivitySquare size={18} /> Pullback Buys
-                    </h3>
-                    <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '0 0 10px 0' }}>Structural uptrend, short-term dip.</p>
-                    {playbooks.pullbackBuys.length === 0 ? <p style={{ color: '#555', fontSize: '0.9rem' }}>No setups.</p> : playbooks.pullbackBuys.map((s, i) => (
-                      <div key={i} style={{ marginBottom: '12px', fontSize: '0.9rem', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <strong>{s.name}</strong> 
-                        <span style={{ color: '#888', display: 'block', fontSize: '0.75rem', marginTop: '2px' }}>{s.status}</span>
-                        {s.topStocks && <span style={{ color: '#4facfe', display: 'block', fontSize: '0.8rem', marginTop: '4px', fontWeight: 500 }}>{s.topStocks}</span>}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Emerging Leaders */}
-                  <div className="stat-card" style={{ padding: '15px' }}>
-                    <h3 style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 15px 0' }}>
-                      <TrendingUp size={18} /> Emerging Leaders
-                    </h3>
-                    <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '0 0 10px 0' }}>Early-stage momentum shift.</p>
-                    {playbooks.emergingLeaders.length === 0 ? <p style={{ color: '#555', fontSize: '0.9rem' }}>No setups.</p> : playbooks.emergingLeaders.map((s, i) => (
-                      <div key={i} style={{ marginBottom: '12px', fontSize: '0.9rem', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <strong>{s.name}</strong> 
-                        <span style={{ color: '#888', display: 'block', fontSize: '0.75rem', marginTop: '2px' }}>{s.status}</span>
-                        {s.topStocks && <span style={{ color: '#4facfe', display: 'block', fontSize: '0.8rem', marginTop: '4px', fontWeight: 500 }}>{s.topStocks}</span>}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Exhaustion Warnings */}
-                  <div className="stat-card" style={{ padding: '15px' }}>
-                    <h3 style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 15px 0' }}>
-                      <AlertCircle size={18} /> Exhaustion Warnings
-                    </h3>
-                    <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '0 0 10px 0' }}>Macro leader breaking down short-term.</p>
-                    {playbooks.exhaustionWarnings.length === 0 ? <p style={{ color: '#555', fontSize: '0.9rem' }}>No setups.</p> : playbooks.exhaustionWarnings.map((s, i) => (
-                      <div key={i} style={{ marginBottom: '12px', fontSize: '0.9rem', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <strong>{s.name}</strong> 
-                        <span style={{ color: '#888', display: 'block', fontSize: '0.75rem', marginTop: '2px' }}>{s.status}</span>
-                        {s.topStocks && <span style={{ color: '#4facfe', display: 'block', fontSize: '0.8rem', marginTop: '4px', fontWeight: 500 }}>{s.topStocks}</span>}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Full Throttle */}
-                  <div className="stat-card" style={{ padding: '15px' }}>
-                    <h3 style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 15px 0' }}>
-                      <Zap size={18} /> Full Throttle
-                    </h3>
-                    <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '0 0 10px 0' }}>Leading on all timeframes.</p>
-                    {playbooks.fullThrottle.length === 0 ? <p style={{ color: '#555', fontSize: '0.9rem' }}>No setups.</p> : playbooks.fullThrottle.map((s, i) => (
-                      <div key={i} style={{ marginBottom: '12px', fontSize: '0.9rem', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <strong>{s.name}</strong> 
-                        <span style={{ color: '#888', display: 'block', fontSize: '0.75rem', marginTop: '2px' }}>{s.status}</span>
-                        {s.topStocks && <span style={{ color: '#4facfe', display: 'block', fontSize: '0.8rem', marginTop: '4px', fontWeight: 500 }}>{s.topStocks}</span>}
-                      </div>
-                    ))}
-                  </div>
-
-                </div>
-              )
-            })()}
-          </div>
-
-          {/* Institutional Sector & Industry Money Flow Dashboard */}
-          <div className="glass-card" style={{ marginTop: '20px' }}>
-            <h2 style={{ textAlign: 'left', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
-              <Zap color="#f59e0b" /> Institutional Sector & Industry Money Flow ({timeframe})
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.25rem', textAlign: 'left' }}>
-              Real-time capital flow matrix tracking sector rotation phases, early trend ignition signals, and momentum exhaustion traps.
-            </p>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px' }}>
-              
-              {/* Card 1: Early Trend Ignition */}
-              <div style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <h3 style={{ color: '#60a5fa', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    🌱 Early Trend Ignition
-                  </h3>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>EARLY SIGNAL</span>
-                </div>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '12px' }}>
-                  Smart money quiet accumulation. Momentum ($Y$-axis) turning UP from oversold bases before public breakout.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {moneyFlow.earlyRotation.map(sec => (
-                    <div key={sec.name} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <strong style={{ color: '#fff' }}>{sec.name} <span style={{ color: '#60a5fa', fontSize: '0.75rem' }}>({sec.ticker})</span></strong>
-                        <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.75rem' }}>📈 RS-Mom ↑</span>
-                      </div>
-                      {sec.topStocks && (
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px' }}>
-                          Key Anchors: <strong style={{ color: '#cbd5e1' }}>{sec.topStocks}</strong>
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {moneyFlow.earlyRotation.length === 0 && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No sectors in early ignition phase.</span>}
-                </div>
-              </div>
-
-              {/* Card 2: Dominant Trend Expansion */}
-              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <h3 style={{ color: '#10b981', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    🚀 Dominant Trend Expansion
-                  </h3>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>LEADING</span>
-                </div>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '12px' }}>
-                  Established market leaders in top-right Leading Quadrant (RS-Ratio &gt; 100, RS-Mom &gt; 100). Ride breakout momentum.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {moneyFlow.freshMoney.map(sec => (
-                    <div key={sec.name} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <strong style={{ color: '#fff' }}>#{sec.rank} {sec.name} <span style={{ color: '#10b981', fontSize: '0.75rem' }}>({sec.ticker})</span></strong>
-                        <span style={{ color: sec.momRising ? '#10b981' : '#f59e0b', fontWeight: 'bold', fontSize: '0.75rem' }}>
-                          {sec.momRising ? '🔥 High Velocity' : '⏸️ Consolidating'}
-                        </span>
-                      </div>
-                      {sec.topStocks && (
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px' }}>
-                          Key Anchors: <strong style={{ color: '#cbd5e1' }}>{sec.topStocks}</strong>
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {moneyFlow.freshMoney.length === 0 && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No sectors in dominant expansion.</span>}
-                </div>
-              </div>
-
-              {/* Card 3: Distribution & Exhaustion Warning */}
-              <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <h3 style={{ color: '#f59e0b', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    ⚠️ Distribution & Exhaustion
-                  </h3>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>EXHAUSTION</span>
-                </div>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '12px' }}>
-                  Institutional profit taking. Former leaders losing momentum (RS-Mom falling into Weakening quadrant).
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {moneyFlow.profitTaking.map(sec => (
-                    <div key={sec.name} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <strong style={{ color: '#fff' }}>#{sec.rank} {sec.name} <span style={{ color: '#f59e0b', fontSize: '0.75rem' }}>({sec.ticker})</span></strong>
-                        <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.75rem' }}>📉 Mom Fading</span>
-                      </div>
-                      {sec.topStocks && (
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px' }}>
-                          Caution Stocks: <strong style={{ color: '#cbd5e1' }}>{sec.topStocks}</strong>
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {moneyFlow.profitTaking.length === 0 && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No sectors showing distribution.</span>}
-                </div>
-              </div>
-
-              {/* Card 4: Capitulation & Structural Drag */}
-              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <h3 style={{ color: '#ef4444', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    🔴 Structural Drag & Dead Money
-                  </h3>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>LAGGING</span>
-                </div>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '12px' }}>
-                  Trapped in multi-month relative downtrends (RS-Ratio &lt; 100, RS-Mom &lt; 100). Avoid long positions until ignition.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {moneyFlow.deadMoney.slice(0, 5).map(sec => (
-                    <div key={sec.name} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <strong style={{ color: '#fff' }}>#{sec.rank} {sec.name} <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>({sec.ticker})</span></strong>
-                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Lagging</span>
-                      </div>
-                      {sec.topStocks && (
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '3px' }}>
-                          Lagging Stocks: <strong style={{ color: '#94a3b8' }}>{sec.topStocks}</strong>
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {moneyFlow.deadMoney.length === 0 && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No sectors in structural drag.</span>}
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Multi-Timeframe Focus List */}
-          <div className="glass-card" style={{ marginTop: '20px' }}>
-            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
-              🔥 Multi-Timeframe Focus List
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '15px' }}>
-              Top stocks from sectors exhibiting structural alignment (Leading on Monthly/Weekly, hooking up on Daily).
-            </p>
-            {multiTimeframeFocusList.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
-                {multiTimeframeFocusList.map((stock, idx) => (
-                  <div key={`${stock.ticker}-${idx}`} onClick={() => fetchTickerData(stock.ticker)} style={{ cursor: 'pointer', background: 'rgba(15, 23, 42, 0.6)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', transition: 'transform 0.2s, border 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.border = '1px solid #4facfe' }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.border = '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <strong style={{ fontSize: '1.2rem', color: '#4facfe' }}>{stock.ticker}</strong>
-                      <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px', color: '#fff' }}>{stock.sectorName}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                      <span style={{ color: stock.stage?.includes('2') ? '#10b981' : '#f59e0b' }}>{stock.stage}</span>
-                      <span style={{ color: stock.momentum_color === 'bullish' ? '#10b981' : stock.momentum_color === 'bearish' ? '#ef4444' : '#f59e0b', fontWeight: 'bold' }}>{stock.momentum_text.split(' ')[0]} {stock.rs_spy_1mo > 0 ? `+${stock.rs_spy_1mo.toFixed(1)}%` : `${stock.rs_spy_1mo.toFixed(1)}%`} RS</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                <p style={{ color: '#94a3b8' }}>No stocks currently meet the strict multi-timeframe alignment criteria.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Emerging Leaders Focus List */}
-          <div className="glass-card" style={{ marginTop: '20px' }}>
-            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
-              🌱 Emerging Leaders (Early Rotation)
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '15px' }}>
-              Top stocks from sectors transitioning into the Improving quadrant with immediate short-term momentum.
-            </p>
-            {emergingLeadersList.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
-                {emergingLeadersList.map((stock, idx) => (
-                  <div key={`${stock.ticker}-${idx}-emerging`} onClick={() => fetchTickerData(stock.ticker)} style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s, border 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.border = '1px solid #10b981' }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.border = '1px solid rgba(16, 185, 129, 0.3)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <strong style={{ fontSize: '1.2rem', color: '#10b981' }}>{stock.ticker}</strong>
-                      <span style={{ fontSize: '0.8rem', background: 'rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '12px', color: '#fff' }}>{stock.sectorName}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                      <span style={{ color: stock.stage?.includes('2') ? '#10b981' : '#f59e0b' }}>{stock.stage}</span>
-                      <span style={{ color: stock.momentum_color === 'bullish' ? '#10b981' : stock.momentum_color === 'bearish' ? '#ef4444' : '#f59e0b', fontWeight: 'bold' }}>{stock.momentum_text.split(' ')[0]} {stock.rs_spy_1mo > 0 ? `+${stock.rs_spy_1mo.toFixed(1)}%` : `${stock.rs_spy_1mo.toFixed(1)}%`} RS</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                <p style={{ color: '#10b981' }}>No early-rotation sectors currently detected.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Detailed Sector Rankings */}
-          <div className="glass-card" style={{ marginTop: '20px' }}>
-            <h2 style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
-              <List color="#4facfe" /> Sector Rankings & Momentum ({timeframe})
-            </h2>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Rank</th>
-                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Sector</th>
-                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Trend (RS-Ratio)</th>
-                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Momentum</th>
-                    <th style={{ padding: '12px 10px', color: '#94a3b8' }}>Trajectory</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableData.map((sec, idx) => {
-                    const current = sec.trail[sec.trail.length - 1];
-                    const prev = sec.trail.length > 3 ? sec.trail[sec.trail.length - 3] : sec.trail[0];
-                    const momRising = current.y > prev.y;
-                    
-                    return (
-                      <tr key={sec.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                        <td style={{ padding: '12px 10px', color: '#fff', fontWeight: 'bold' }}>#{idx + 1}</td>
-                        <td style={{ padding: '12px 10px', color: '#4facfe', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setModalData(sec)}>{sec.name}</td>
-                        <td style={{ padding: '12px 10px', color: current.x >= 100 ? '#10b981' : '#ef4444' }}>{current.x}</td>
-                        <td style={{ padding: '12px 10px', color: current.y >= 100 ? '#10b981' : '#ef4444' }}>{current.y}</td>
-                        <td style={{ padding: '12px 10px', display: 'flex', alignItems: 'center', gap: '8px', color: momRising ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                          {momRising ? <TrendingUp size={18} /> : <TrendingDown size={18} />} 
-                          {momRising ? 'Improving' : 'Deteriorating'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
+        <RrgMoneyFlowDashboard
+          data={data}
+          timeframe={timeframe}
+          setTimeframe={setTimeframe}
+          setModalData={setModalData}
+          fetchTickerData={fetchTickerData}
+          multiTimeframeFocusList={multiTimeframeFocusList}
+          emergingLeadersList={emergingLeadersList}
+        />
       )}
 
       {/* Sector Components Modal */}
       {modalData && (
         <div className="modal-overlay" onClick={() => setModalData(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
             <button className="modal-close" onClick={() => setModalData(null)}><X size={24} /></button>
-            <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4facfe' }}>
+            <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#38bdf8' }}>
               <Activity /> {modalData.name} ({modalData.ticker})
             </h2>
-            <div className="top-stocks-grid" style={{ gridTemplateColumns: '1fr', gap: '1rem' }}>
+            <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '-6px', marginBottom: '14px' }}>
+              Click any component stock below to launch its Deep Institutional Chart & Stage Analysis.
+            </p>
+            <div className="top-stocks-grid" style={{ gridTemplateColumns: '1fr', gap: '0.65rem' }}>
               {modalData.top_stocks && modalData.top_stocks.length > 0 ? (
                 modalData.top_stocks.map(stock => (
-                  <div key={stock.ticker} className="stock-pill" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', cursor: 'pointer' }} onClick={() => openLocalTicker(stock)}>
-                    <strong style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{stock.ticker} <BarChart2 size={16} /></strong>
-                    <span style={{ color: stock.perf > 0 ? '#10b981' : '#ef4444' }}>{stock.perf > 0 ? '+' : ''}{stock.perf.toFixed(2)}%</span>
+                  <div
+                    key={stock.ticker}
+                    className="stock-pill"
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', cursor: 'pointer' }}
+                    onClick={() => fetchTickerData(stock.ticker)}
+                  >
+                    <div>
+                      <strong style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f8fafc', fontSize: '0.95rem' }}>
+                        {stock.ticker} <BarChart2 size={15} color="#38bdf8" />
+                      </strong>
+                      {stock.stage && (
+                        <span style={{ fontSize: '0.73rem', color: stock.stage.includes('2') ? '#10b981' : '#94a3b8' }}>
+                          {stock.stage} {stock.momentum_text ? `• ${stock.momentum_text}` : ''}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right', fontFamily: 'monospace' }}>
+                      <div style={{ color: stock.perf > 0 ? '#10b981' : '#ef4444', fontWeight: 800, fontSize: '0.9rem' }}>
+                        1D: {stock.perf > 0 ? '+' : ''}{Number(stock.perf || 0).toFixed(2)}%
+                      </div>
+                      {stock.rs_spy_1mo !== undefined && (
+                        <div style={{ fontSize: '0.72rem', color: stock.rs_spy_1mo >= 0 ? '#38bdf8' : '#94a3b8' }}>
+                          1M RS vs SPY: {stock.rs_spy_1mo >= 0 ? '+' : ''}{Number(stock.rs_spy_1mo || 0).toFixed(1)}%
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))
-              ) : <span>No data available.</span>}
+              ) : <span>No component data available.</span>}
             </div>
           </div>
         </div>
@@ -3073,10 +2633,11 @@ function App() {
       
       </div> {/* End main-content */}
 
-      {/* Right Pane (Live Agents & Sweeps Feed) - Foldable */}
+      {/* Right Pane (Live Agents & Sweeps Feed) - Foldable (Hidden on Deep Charting so chart takes full width) */}
       <div 
         className={`right-pane ${isLiveUpdatesFolded ? 'folded' : ''}`} 
         style={{ 
+          display: activeTab === 'chart' ? 'none' : 'flex',
           padding: isLiveUpdatesFolded ? '1rem 0.35rem' : '1.5rem',
           width: isLiveUpdatesFolded ? '52px' : '400px',
           minWidth: isLiveUpdatesFolded ? '52px' : '400px',

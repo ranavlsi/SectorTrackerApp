@@ -527,3 +527,13 @@ h1 {
   100% { transform: translateX(-50%); }
 }
 
+/* Ensure TradingView & Plotly Full Chart containers occupy 100% of available real estate */
+.tv-full-widget-host,
+.tv-full-widget-host > div,
+.tv-full-widget-host > div > div,
+.tv-full-widget-host iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+}
+

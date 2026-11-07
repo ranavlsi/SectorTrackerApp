@@ -398,6 +398,48 @@ def get_clean_uptrend_scanner_api():
                 return jsonify(json.load(f))
         return jsonify({"error": str(e)}), 500
 
+def _heal_daily_ohlcv(t_obj, df_raw):
+    """
+    Yahoo Finance's 1d history endpoint frequently returns a row for today's session
+    with Open/High/Low/Close = NaN (while Volume is populated) for several hours after
+    the 4:00 PM ET close. Before calling .dropna(subset=['Close']), heal any trailing
+    NaN row using t_obj.fast_info (or 60m intraday bars fallback) so today's candle is never dropped.
+    """
+    if df_raw is None or df_raw.empty:
+        return df_raw
+    df_out = df_raw.copy()
+    try:
+        last_idx = df_out.index[-1]
+        if pd.isna(df_out.loc[last_idx, 'Close']):
+            fi = t_obj.fast_info
+            c_p = float(fi.get('lastPrice') or fi.get('regularMarketPrice') or 0)
+            o_p = float(fi.get('open') or c_p)
+            h_p = float(fi.get('dayHigh') or max(o_p, c_p))
+            l_p = float(fi.get('dayLow') or min(o_p, c_p))
+            v_p = float(fi.get('lastVolume') or df_out.loc[last_idx, 'Volume'] or 0)
+            if c_p > 0:
+                df_out.loc[last_idx, 'Open'] = o_p
+                df_out.loc[last_idx, 'High'] = h_p
+                df_out.loc[last_idx, 'Low'] = l_p
+                df_out.loc[last_idx, 'Close'] = c_p
+                df_out.loc[last_idx, 'Volume'] = v_p
+            else:
+                # Fallback to 60m intraday aggregation for that date
+                intra = t_obj.history(period="5d", interval="60m").dropna(subset=['Close'])
+                if not intra.empty:
+                    last_date_str = last_idx.strftime('%Y-%m-%d')
+                    day_bars = intra[intra.index.strftime('%Y-%m-%d') == last_date_str]
+                    if not day_bars.empty:
+                        df_out.loc[last_idx, 'Open'] = float(day_bars['Open'].iloc[0])
+                        df_out.loc[last_idx, 'High'] = float(day_bars['High'].max())
+                        df_out.loc[last_idx, 'Low'] = float(day_bars['Low'].min())
+                        df_out.loc[last_idx, 'Close'] = float(day_bars['Close'].iloc[-1])
+                        if pd.isna(df_out.loc[last_idx, 'Volume']) or df_out.loc[last_idx, 'Volume'] == 0:
+                            df_out.loc[last_idx, 'Volume'] = float(day_bars['Volume'].sum())
+    except Exception as _heal_err:
+        pass
+    return df_out.dropna(subset=['Close'])
+
 @app.route('/api/chart_data')
 def chart_data():
     ticker = request.args.get('ticker')
@@ -423,7 +465,7 @@ def chart_data():
             date_fmt = '%Y-%m-%d %H:%M'
             slice_bars = 160 if range_param == '1M' else 320
         elif timeframe == '1W':
-            df_daily = t.history(period="5y", interval="1d").dropna(subset=['Close'])
+            df_daily = _heal_daily_ohlcv(t, t.history(period="5y", interval="1d"))
             if df_daily.empty:
                 return jsonify({"error": "No weekly data found"}), 404
             df = df_daily.resample('W-FRI').agg({
@@ -438,7 +480,7 @@ def chart_data():
         else:
             # 1D (Daily) - Fetch 2Y or 5Y so 200-SMA & 150-SMA are fully warmed up across the entire chart
             fetch_period = "5y" if range_param in ('2Y', '3Y', '5Y') else "2y"
-            df = t.history(period=fetch_period, interval="1d").dropna(subset=['Close'])
+            df = _heal_daily_ohlcv(t, t.history(period=fetch_period, interval="1d"))
             if df.empty:
                 # Fallback to local lakehouse parquet if yfinance rate-limits
                 pq_path = os.path.join(lh_dir, f"{ticker.replace('.', '-')}_daily.parquet")
@@ -460,15 +502,16 @@ def chart_data():
             cache_key = f"_spy_cache_{timeframe}"
             cache_ts_key = f"_spy_cache_ts_{timeframe}"
             if not hasattr(chart_data, cache_key) or getattr(chart_data, cache_key) is None or (time.time() - getattr(chart_data, cache_ts_key, 0) > 1800):
+                spy_t = yf.Ticker("SPY")
                 if timeframe == '15M':
-                    spy_raw = yf.Ticker("SPY").history(period="1mo", interval="15m").dropna(subset=['Close'])
+                    spy_raw = spy_t.history(period="1mo", interval="15m").dropna(subset=['Close'])
                 elif timeframe == '1H':
-                    spy_raw = yf.Ticker("SPY").history(period="3mo", interval="60m").dropna(subset=['Close'])
+                    spy_raw = spy_t.history(period="3mo", interval="60m").dropna(subset=['Close'])
                 elif timeframe == '1W':
-                    spy_d = yf.Ticker("SPY").history(period="5y", interval="1d").dropna(subset=['Close'])
+                    spy_d = _heal_daily_ohlcv(spy_t, spy_t.history(period="5y", interval="1d"))
                     spy_raw = spy_d.resample('W-FRI').agg({'Close': 'last'}).dropna()
                 else:
-                    spy_raw = yf.Ticker("SPY").history(period="5y", interval="1d").dropna(subset=['Close'])
+                    spy_raw = _heal_daily_ohlcv(spy_t, spy_t.history(period="5y", interval="1d"))
                 spy_raw = spy_raw.copy()
                 spy_raw['date_str'] = spy_raw.index.strftime(date_fmt)
                 spy_raw = spy_raw.drop_duplicates(subset=['date_str'], keep='last').set_index('date_str')
@@ -1007,22 +1050,34 @@ def chart_data():
                     pivot_badge = "🔧 BUILDING BASE"
                     status_color = "#94a3b8"
 
+                sma50_cur = last_bar.get('sma50') or last_price
+                sma200_cur = last_bar.get('sma200') or last_price
+                pattern_stage = (
+                    "1st/2nd Stage Base"
+                    if last_price >= sma50_cur * 0.96 and sma50_cur >= sma200_cur * 0.96
+                    else f"{round(base_len_bars / 5.0, 1)}w Consolidation Base"
+                )
+
                 marketsurge_pattern = {
+                    "detected": True,
                     "pattern_name": pattern_name,
                     "pattern_type": pattern_type,
+                    "pattern_stage": pattern_stage,
                     "buy_point": buy_point,
                     "buy_zone_high": buy_zone_high,
                     "stop_loss": stop_loss_ms,
                     "profit_goal_20": profit_goal_20,
                     "profit_goal_25": profit_goal_25,
                     "dist_to_pivot_pct": dist_to_pivot_pct,
+                    "distance_to_pivot_pct": dist_to_pivot_pct,
                     "base_depth_pct": base_depth,
-                    "handle_depth_pct": handle_depth_pct if has_handle else None,
+                    "handle_depth_pct": handle_depth_pct if has_handle else 0.0,
                     "base_length_bars": base_len_bars,
                     "base_length_weeks": round(base_len_bars / 5.0, 1),
                     "pivot_status": pivot_status,
                     "pivot_badge": pivot_badge,
                     "status_color": status_color,
+                    "pivot_status_color": status_color,
                     "cup_curve": cup_curve,
                     "handle_curve": handle_curve,
                     "keypoints": keypoints
@@ -1600,7 +1655,7 @@ def get_vol_surface():
     # 5-minute in-memory cache for snappy <5ms response
     if not force_refresh and ticker_clean in _vol_surface_cache:
         cached_ts, cached_data = _vol_surface_cache[ticker_clean]
-        if now_time - cached_ts < 300 and "spot_vol_scatter" in cached_data and len(cached_data.get("spot_vol_scatter", [])) > 0:
+        if now_time - cached_ts < 300 and cached_data.get("multi_year_v2") and "spot_vol_scatter" in cached_data and len(cached_data.get("spot_vol_scatter", [])) > 0:
             return jsonify(cached_data)
 
     try:
@@ -1703,16 +1758,54 @@ def get_vol_surface():
         
         # Filter out expired options from prior trading sessions
         valid_options = []
+        valid_with_dte = []
         for e in options:
             try:
                 ed = datetime.datetime.strptime(e, '%Y-%m-%d').date()
                 if ed >= today:
                     valid_options.append(e)
+                    valid_with_dte.append((e, max(1, (ed - today).days)))
             except Exception:
                 pass
 
-        # Select up to 8 valid future expirations across curve
-        selected_expiries = valid_options[:min(8, len(valid_options))]
+        # Build full multi-year curve (1M, 3M, 6M, 1Y, 2Y+ LEAPS)
+        # If CBOE full chain is already in memory, include all expirations (thinning only ultra-dense daily Mon-Thu stubs if > 26 expiries)
+        if cboe_calls_df is not None and cboe_puts_df is not None:
+            if len(valid_with_dte) <= 28:
+                selected_expiries = [e for e, _ in valid_with_dte]
+            else:
+                selected_expiries = []
+                for idx_e, (e, dte_val) in enumerate(valid_with_dte):
+                    ed_weekday = datetime.datetime.strptime(e, '%Y-%m-%d').date().weekday()
+                    # Keep front 2 expirations, all Friday/Month-End expirations in first 21D, and all expirations beyond 21D (3M, 6M, 1Y, 2Y+)
+                    if idx_e < 2 or dte_val > 21 or ed_weekday == 4 or idx_e % 2 == 0:
+                        selected_expiries.append(e)
+        else:
+            # For yfinance fallback, sample up to 18 expirations spanning 1M, 3M, 6M, 1Y, 2Y
+            if len(valid_options) <= 18:
+                selected_expiries = valid_options
+            else:
+                front_part = valid_options[:6]
+                rest_part = valid_options[6:]
+                step = max(1, len(rest_part) // 12)
+                sampled_rest = rest_part[::step]
+                if valid_options[-1] not in sampled_rest:
+                    sampled_rest.append(valid_options[-1])
+                selected_expiries = front_part + sampled_rest
+
+        # Pre-fetch yfinance chains in parallel if CBOE df is unavailable
+        yf_chains = {}
+        if (cboe_calls_df is None or cboe_puts_df is None) and t is not None:
+            from concurrent.futures import ThreadPoolExecutor
+            def _fetch_yf_exp(exp_str):
+                try:
+                    return exp_str, t.option_chain(exp_str)
+                except Exception:
+                    return exp_str, None
+            with ThreadPoolExecutor(max_workers=8) as ex:
+                for exp_str, ch in ex.map(_fetch_yf_exp, selected_expiries):
+                    if ch is not None:
+                        yf_chains[exp_str] = ch
         
         for expiry in selected_expiries:
             try:
@@ -1721,7 +1814,16 @@ def get_vol_surface():
                 if days_left < 0:
                     continue
                 dte = max(1, days_left)
-                T = max(0.5, days_left) / 365.25
+                # Use business-day effective time for near-dated expirations (<= 10 DTE) so weekend calendar days
+                # do not artificially depress 1-3 DTE Black-76 implied volatility on Fridays/Weekends
+                try:
+                    bus_days = int(np.busday_count(today.strftime('%Y-%m-%d'), expiry))
+                except Exception:
+                    bus_days = max(1, int(round(days_left * 5.0 / 7.0)))
+                if days_left <= 10:
+                    T = max(0.85, float(bus_days) + 0.35) / 252.0
+                else:
+                    T = max(0.5, float(days_left)) / 365.25
             except Exception:
                 dte = 30
                 T = 30.0 / 365.25
@@ -1731,16 +1833,15 @@ def get_vol_surface():
                 calls = cboe_calls_df[cboe_calls_df['expiration'] == expiry]
                 puts = cboe_puts_df[cboe_puts_df['expiration'] == expiry]
             else:
-                try:
-                    chain = t.option_chain(expiry)
-                    calls = chain.calls
-                    puts = chain.puts
-                except Exception:
+                ch = yf_chains.get(expiry)
+                if ch is None:
                     continue
+                calls = ch.calls
+                puts = ch.puts
                 
-            # Tradable moneyness band scaled by time to expiration (min +/-5%, max +/-25%)
-            # Prevents near-dated 1-cent penny options from injecting 350% IV noise
-            band_pct = min(0.25, max(0.05, 3.5 * 0.22 * math.sqrt(T)))
+            # Tradable moneyness band scaled by time to expiration (min +/-6%, max +/-35% for 1Y-2Y LEAPS)
+            # Prevents near-dated 1-cent penny options from injecting 350% IV noise while allowing full 1Y-2Y LEAPS smile
+            band_pct = min(0.35, max(0.06, 3.5 * 0.22 * math.sqrt(T)))
             low_strike = spot * (1.0 - band_pct)
             high_strike = spot * (1.0 + band_pct)
             
@@ -1818,20 +1919,20 @@ def get_vol_surface():
                 if p_iv is None and not is_p_dead and p_mid > 0:
                     p_iv = solve_black76_iv(p_mid, F, float(st), T, r, False)
 
-                # True OTM Volatility Surface:
-                # - Puts for strikes < F (downside fear skew)
-                # - Calls for strikes > F (upside wing)
-                if st < F:
+                # True OTM Volatility Surface with smooth ATM blending band (+/-1.2% around F)
+                m_rel = (float(st) - F) / max(F, 1e-4)
+                if abs(m_rel) <= 0.012 and c_iv is not None and p_iv is not None:
+                    w_call = (m_rel + 0.012) / 0.024
+                    chosen_iv = (1.0 - w_call) * p_iv + w_call * c_iv
+                    point_type = 'atm' if abs(m_rel) <= 0.004 else ('otm_put' if st < F else 'otm_call')
+                elif st < F:
                     chosen_iv = p_iv if p_iv is not None else c_iv
                     point_type = 'otm_put'
                 elif st > F:
                     chosen_iv = c_iv if c_iv is not None else p_iv
                     point_type = 'otm_call'
                 else:
-                    if c_iv is not None and p_iv is not None:
-                        chosen_iv = (c_iv + p_iv) / 2.0
-                    else:
-                        chosen_iv = c_iv if c_iv is not None else p_iv
+                    chosen_iv = c_iv if c_iv is not None else p_iv
                     point_type = 'atm'
 
                 if chosen_iv and 0.04 <= chosen_iv <= 3.5:
@@ -1843,34 +1944,69 @@ def get_vol_surface():
                         "type": point_type,
                         "moneyness": round(float(st) / spot, 3)
                     }
-                    surface_data.append(pt)
-                    all_points.append(pt)
                     pts_this_exp.append(pt)
-                    
-                    if abs(st - atm_strike) < 0.01:
-                        exp_atm_iv = pt["iv"]
 
-            # If exact ATM strike had no clean IV, use the closest strike resolved on this expiry
-            if exp_atm_iv == 0.0 and pts_this_exp:
-                atm_closest = min(pts_this_exp, key=lambda p: abs(p["strike"] - spot))
-                exp_atm_iv = atm_closest["iv"]
+            # Despike isolated single-strike bad quotes (e.g. stale odd-strike print jumping >2.2% vs both neighbors)
+            if len(pts_this_exp) >= 5:
+                pts_this_exp.sort(key=lambda p: p["strike"])
+                cleaned_ivs = [p["iv"] for p in pts_this_exp]
+                for i in range(1, len(pts_this_exp) - 1):
+                    prev_iv = cleaned_ivs[i - 1]
+                    curr_iv = cleaned_ivs[i]
+                    next_iv = cleaned_ivs[i + 1]
+                    neighbor_avg = 0.5 * (prev_iv + next_iv)
+                    neighbor_span = abs(next_iv - prev_iv)
+                    if abs(curr_iv - neighbor_avg) > max(2.0, 1.2 * neighbor_span) and neighbor_span < 4.0:
+                        cleaned_ivs[i] = round(neighbor_avg, 2)
+                for i, p in enumerate(pts_this_exp):
+                    p["iv"] = cleaned_ivs[i]
 
-            if exp_atm_iv > 0:
+            for pt in pts_this_exp:
+                surface_data.append(pt)
+                all_points.append(pt)
+
+            # Compute clean ATM IV for this expiration by distance-weighted average of the 3 strikes closest to spot
+            if pts_this_exp:
+                nearest_atm = sorted(pts_this_exp, key=lambda p: abs(p["strike"] - spot))[:3]
+                weights = [1.0 / max(0.25, abs(p["strike"] - spot) / max(spot * 0.005, 0.5)) for p in nearest_atm]
+                exp_atm_iv = round(sum(p["iv"] * w for p, w in zip(nearest_atm, weights)) / sum(weights), 2)
+
+            if exp_atm_iv > 0 and pts_this_exp:
+                # Also compute maturity-scaled 25-Delta Put and Call IV for this expiration
+                sigma_est = max(0.12, min(1.20, exp_atm_iv / 100.0))
+                delta25_offset = min(0.22, max(0.025, 0.6745 * sigma_est * math.sqrt(max(2.0, dte) / 365.25)))
+                target_put_k = spot * (1.0 - delta25_offset)
+                target_call_k = spot * (1.0 + delta25_offset)
+                put_25d_pt = min(pts_this_exp, key=lambda p: abs(p["strike"] - target_put_k))
+                call_25d_pt = min(pts_this_exp, key=lambda p: abs(p["strike"] - target_call_k))
+                put_25d_iv = round(float(put_25d_pt["iv"]), 2)
+                call_25d_iv = round(float(call_25d_pt["iv"]), 2)
+                skew_25d_exp = round(put_25d_iv - call_25d_iv, 2)
+
                 expected_move_pct = float(round(exp_atm_iv * np.sqrt(dte / 365.0), 2))
                 expected_move_pts = float(round(spot * (expected_move_pct / 100.0), 2))
                 term_structure.append({
                     "expiry": expiry,
                     "dte": dte,
                     "atm_iv": float(exp_atm_iv),
+                    "put_25d_iv": put_25d_iv,
+                    "call_25d_iv": call_25d_iv,
+                    "put_25d_strike": float(put_25d_pt["strike"]),
+                    "call_25d_strike": float(call_25d_pt["strike"]),
+                    "skew_25d": skew_25d_exp,
                     "expected_move_pct": expected_move_pct,
                     "expected_move_pts": expected_move_pts
                 })
                 atm_ivs.append(float(exp_atm_iv))
 
-        atm_iv_30d = atm_ivs[0] if atm_ivs else 22.0
+        if term_structure:
+            atm_30_item = min(term_structure, key=lambda x: abs(x.get("dte", 30) - 30))
+            atm_iv_30d = float(atm_30_item.get("atm_iv", atm_ivs[0] if atm_ivs else 22.0))
+        else:
+            atm_iv_30d = atm_ivs[0] if atm_ivs else 22.0
         iv_hv_ratio = round(atm_iv_30d / (hv_30d if hv_30d > 0 else 1.0), 2)
         
-        # Robust Term Structure & Regime Classification (Event-Aware)
+        # Robust Term Structure & Regime Classification (Event-Aware across 1M-2Y curve)
         is_event_inversion = False
         event_exp = None
         dte_event = 14
@@ -1886,35 +2022,29 @@ def get_vol_surface():
             peak_dte = dtes[peak_idx]
             
             # Event Inversion / Humped Curve Detection:
-            # Impending earnings or binary catalysts create an acute front/near-term IV spike
-            # (peak occurs within <= 14 DTE and is >= 3.5% above back-month baseline, and not just the final point)
-            is_event_inversion = (peak_dte <= 14) and (peak_iv >= back_iv + 3.5) and (peak_idx < len(ivs) - 1)
+            # Impending earnings or binary catalysts create an acute front/near-term IV spike (within <= 35 DTE)
+            is_event_inversion = (peak_dte <= 35) and (peak_iv >= back_iv + 3.0) and (peak_idx < len(ivs) - 1)
             
             if is_event_inversion:
-                # The operative forward term structure from the event forward is in steep backwardation
                 slope = round(back_iv - peak_iv, 2)
                 ts_regime = "Backwardation"
                 event_exp = term_structure[peak_idx]['expiry']
                 dte_event = peak_dte
             else:
-                # Check if front DTE is an ultra-short pre-event stub (<= 2 DTE) with an immediate gap to the normal curve
-                if dtes[0] <= 2 and len(dtes) > 2 and (ivs[1] - front_iv) > 5.0:
-                    effective_front = ivs[1]
-                else:
-                    effective_front = front_iv
+                # Anchor effective front to the nearest liquid 5-14 DTE tenor if index 0 is an ultra-short <=3 DTE stub
+                front_candidates = [x for x in term_structure if 5 <= x["dte"] <= 18]
+                effective_front = front_candidates[0]["atm_iv"] if front_candidates else (ivs[1] if dtes[0] <= 3 and len(ivs) > 1 else front_iv)
+                # Anchor primary structural back benchmark to ~90-180 DTE (or last available) so 2-year LEAPS flat tail doesn't mask 1M-6M backwardation
+                back_candidates = [x for x in term_structure if 60 <= x["dte"] <= 180]
+                effective_back = back_candidates[-1]["atm_iv"] if back_candidates else back_iv
                 
-                try:
-                    m, _ = np.polyfit(dtes, ivs, 1)
-                    reg_slope = m * 30.0
-                except Exception:
-                    reg_slope = back_iv - effective_front
-                    
-                raw_diff = back_iv - effective_front
-                slope = round(raw_diff, 2) if abs(raw_diff) >= abs(reg_slope) else round(reg_slope, 2)
+                raw_diff = effective_back - effective_front
+                full_diff = back_iv - effective_front
+                slope = round(raw_diff if abs(raw_diff) >= abs(full_diff) else full_diff, 2)
                 
-                if slope < -1.5 or reg_slope < -1.0:
+                if slope < -1.2:
                     ts_regime = "Backwardation"
-                elif slope > 1.5 and reg_slope > 0.0:
+                elif slope > 1.2:
                     ts_regime = "Contango"
                 else:
                     ts_regime = "Flat"
@@ -1931,6 +2061,7 @@ def get_vol_surface():
             for exp, grp in df_pts.groupby('expiry'):
                 mean_iv = grp['iv'].mean()
                 std_iv = grp['iv'].std() if len(grp) > 3 else 2.0
+                exp_dte = int(grp['dte'].iloc[0]) if 'dte' in grp.columns and not grp.empty else 30
                 
                 rich_pts = grp[grp['iv'] > mean_iv + 1.25 * std_iv]
                 if not rich_pts.empty:
@@ -1940,6 +2071,7 @@ def get_vol_surface():
                         "type": "overpriced",
                         "title": f"Overpriced {r_pt['type'].replace('_', ' ').upper()}",
                         "expiry": exp,
+                        "dte": exp_dte,
                         "strike": float(r_pt['strike']),
                         "iv": float(r_pt['iv']),
                         "benchmark_iv": round(mean_iv, 1),
@@ -1956,6 +2088,7 @@ def get_vol_surface():
                         "type": "underpriced",
                         "title": "Underpriced Vol Valley",
                         "expiry": exp,
+                        "dte": exp_dte,
                         "strike": float(c_pt['strike']),
                         "iv": float(c_pt['iv']),
                         "benchmark_iv": round(mean_iv, 1),
@@ -2101,11 +2234,16 @@ def get_vol_surface():
                     "target_point": {"expiry": target_exp_val, "strike": round(spot, 1), "iv": target_iv_val}
                 })
 
-            # Setup 3: Skew Spread Monetization
-            downside_puts = df_pts[df_pts['strike'] < spot]
-            upside_calls = df_pts[df_pts['strike'] > spot]
-            avg_put_iv = downside_puts['iv'].mean() if not downside_puts.empty else atm_iv_30d
-            avg_call_iv = upside_calls['iv'].mean() if not upside_calls.empty else atm_iv_30d
+            # Setup 3: Skew Spread Monetization (anchored on 14D-60D 25-Delta Skew)
+            bench_ts = [x for x in term_structure if 10 <= x["dte"] <= 65] or term_structure[:6]
+            if bench_ts:
+                avg_put_iv = float(np.mean([x.get("put_25d_iv", x["atm_iv"] * 1.1) for x in bench_ts]))
+                avg_call_iv = float(np.mean([x.get("call_25d_iv", x["atm_iv"] * 0.95) for x in bench_ts]))
+            else:
+                downside_puts = df_pts[df_pts['strike'] < spot]
+                upside_calls = df_pts[df_pts['strike'] > spot]
+                avg_put_iv = downside_puts['iv'].mean() if not downside_puts.empty else atm_iv_30d
+                avg_call_iv = upside_calls['iv'].mean() if not upside_calls.empty else atm_iv_30d
             skew_spread = round(avg_put_iv - avg_call_iv, 1)
 
             actionable_setups.append({
@@ -2263,33 +2401,41 @@ def get_vol_surface():
             by_exp.setdefault(pt["expiry"], []).append(pt)
 
         for exp, pts in by_exp.items():
-            strikes = np.array([p["strike"] for p in pts])
-            ivs = np.array([p["iv"] for p in pts])
-            moneyness = strikes / spot
+            strikes = np.array([p["strike"] for p in pts], dtype=float)
+            ivs = np.array([p["iv"] for p in pts], dtype=float)
+            exp_dte_val = float(pts[0].get("dte", 30)) if pts else 30.0
+            u = (strikes / spot) - 1.0
+            # Wing damping scale grows with sqrt(T) so deep OTM LEAPS wings never explode parabolically
+            L = max(0.12, min(0.28, 0.35 * math.sqrt(max(7.0, exp_dte_val) / 365.25)))
+            b1 = u / np.sqrt(1.0 + (u / L) ** 2)
+            b2 = (u ** 2) / (1.0 + (u / L) ** 2)
             
             if len(pts) >= 5:
                 try:
-                    # Robust outlier rejection before fitting smile baseline
                     median_iv = np.median(ivs)
-                    mad_iv = np.median(np.abs(ivs - median_iv)) or 5.0
+                    mad_iv = np.median(np.abs(ivs - median_iv)) or 4.0
                     valid_mask = np.abs(ivs - median_iv) <= 3.5 * mad_iv
-                    if np.sum(valid_mask) >= 5:
-                        poly_coeffs = np.polyfit(moneyness[valid_mask] - 1.0, ivs[valid_mask], 2)
-                        # Guarantee physical smile convexity (a >= 0)
-                        if poly_coeffs[0] < 0:
-                            poly_coeffs = np.polyfit(moneyness[valid_mask] - 1.0, ivs[valid_mask], 1)
+                    if np.sum(valid_mask) < 5:
+                        valid_mask = np.ones_like(ivs, dtype=bool)
+                    X_design = np.column_stack([np.ones_like(u), b1, b2])
+                    coeffs, _, _, _ = np.linalg.lstsq(X_design[valid_mask], ivs[valid_mask], rcond=None)
+                    # Enforce non-negative smile convexity (coeffs[2] >= 0)
+                    if coeffs[2] < 0:
+                        X_lin = np.column_stack([np.ones_like(u), b1])
+                        c_lin, _, _, _ = np.linalg.lstsq(X_lin[valid_mask], ivs[valid_mask], rcond=None)
+                        fit_curve = X_lin @ c_lin
                     else:
-                        poly_coeffs = np.polyfit(moneyness - 1.0, ivs, 2)
-                    fit_curve = np.polyval(poly_coeffs, moneyness - 1.0)
-                    std_resid = np.std(ivs - fit_curve)
+                        fit_curve = X_design @ coeffs
+                    fit_curve = np.clip(fit_curve, np.min(ivs) * 0.85, np.max(ivs) * 1.08)
+                    std_resid = float(np.std(ivs - fit_curve))
                 except Exception:
                     fit_curve = np.full_like(ivs, np.mean(ivs))
-                    std_resid = np.std(ivs)
+                    std_resid = float(np.std(ivs))
             else:
                 fit_curve = np.full_like(ivs, np.mean(ivs))
-                std_resid = np.std(ivs)
+                std_resid = float(np.std(ivs))
             
-            threshold = max(2.0, 0.75 * std_resid)
+            threshold = max(0.65, min(2.2, 0.85 * std_resid))
             
             for i, p in enumerate(pts):
                 diff = ivs[i] - fit_curve[i]
@@ -2320,19 +2466,20 @@ def get_vol_surface():
                     p["hedge_desc"] = "Option pricing conforms to normalized structural volatility smile."
                     bal_pts.append(p)
 
-        # Skew analysis around 25 Delta (~0.95x and ~1.05x spot), normalized per expiration ATM IV
-        exp_atm_map = {x["expiry"]: x["atm_iv"] for x in term_structure if x.get("atm_iv", 0) > 0}
-        base_atm_iv = float(np.mean(list(exp_atm_map.values()))) if exp_atm_map else (atm_iv_30d if atm_iv_30d > 0 else 25.0)
-        puts_25d = [p["iv"] for p in surface_data if 0.92 <= (p["strike"]/spot) <= 0.98]
-        calls_25d = [p["iv"] for p in surface_data if 1.02 <= (p["strike"]/spot) <= 1.08]
-        put_ratios_25d = [p["iv"] / exp_atm_map.get(p["expiry"], base_atm_iv) for p in surface_data if 0.92 <= (p["strike"]/spot) <= 0.98]
-        call_ratios_25d = [p["iv"] / exp_atm_map.get(p["expiry"], base_atm_iv) for p in surface_data if 1.02 <= (p["strike"]/spot) <= 1.08]
-
-        avg_put_25d = float(np.mean(puts_25d)) if puts_25d else base_atm_iv * 1.12
-        avg_call_25d = float(np.mean(calls_25d)) if calls_25d else base_atm_iv * 0.96
-
-        put_skew_25d = round(float(np.mean(put_ratios_25d)), 2) if put_ratios_25d else round(avg_put_25d / (base_atm_iv if base_atm_iv > 0 else 1.0), 2)
-        call_skew_25d = round(float(np.mean(call_ratios_25d)), 2) if call_ratios_25d else round(avg_call_25d / (base_atm_iv if base_atm_iv > 0 else 1.0), 2)
+        # Skew analysis using maturity-scaled 25-Delta Put and Call IV ratios across the benchmark tenors
+        bench_Skew_ts = [x for x in term_structure if 7 <= x["dte"] <= 90 and x.get("atm_iv", 0) > 0] or [x for x in term_structure if x.get("atm_iv", 0) > 0]
+        if bench_Skew_ts:
+            put_ratios_25d = [x["put_25d_iv"] / x["atm_iv"] for x in bench_Skew_ts if x.get("put_25d_iv")]
+            call_ratios_25d = [x["call_25d_iv"] / x["atm_iv"] for x in bench_Skew_ts if x.get("call_25d_iv")]
+            avg_put_25d = float(np.mean([x["put_25d_iv"] for x in bench_Skew_ts]))
+            avg_call_25d = float(np.mean([x["call_25d_iv"] for x in bench_Skew_ts]))
+            put_skew_25d = round(float(np.mean(put_ratios_25d)), 2) if put_ratios_25d else 1.12
+            call_skew_25d = round(float(np.mean(call_ratios_25d)), 2) if call_ratios_25d else 0.96
+        else:
+            avg_put_25d = atm_iv_30d * 1.12
+            avg_call_25d = atm_iv_30d * 0.96
+            put_skew_25d = 1.12
+            call_skew_25d = 0.96
         skew_bias_pct = round((put_skew_25d - call_skew_25d) * 100, 1)
 
         # Finalize Spot-Vol Correlation & Scatter blending 10D EWMA Realized Vol + 5D True-Range Shock + 25D Surface Skew IV Response
@@ -2423,8 +2570,8 @@ def get_vol_surface():
                         break
             return selected
 
-        top_overhedged = filter_spatially(over_pts, is_reverse=True, min_strike_pct=0.035, max_count=4)
-        top_underhedged = filter_spatially(under_pts, is_reverse=True, min_strike_pct=0.035, max_count=4)
+        top_overhedged = filter_spatially(over_pts, is_reverse=True, min_strike_pct=0.035, max_count=16)
+        top_underhedged = filter_spatially(under_pts, is_reverse=True, min_strike_pct=0.035, max_count=16)
 
         hedging_diagnostics = {
             "net_hedging_state": net_hedge_state,
@@ -2450,14 +2597,28 @@ def get_vol_surface():
             },
             "top_overhedged": [
                 {
-                    "expiry": p["expiry"], "strike": p["strike"], "iv": p["iv"],
+                    "expiry": p["expiry"], "dte": p.get("dte", 30), "strike": p["strike"], "iv": p["iv"],
+                    "fit_iv": p["fit_iv"], "dislocation_pct": p["dislocation_pct"],
+                    "type": p["type"], "strategy": "Sell Premium / Broken Wing Fly"
+                } for p in top_overhedged[:4]
+            ],
+            "all_overhedged": [
+                {
+                    "expiry": p["expiry"], "dte": p.get("dte", 30), "strike": p["strike"], "iv": p["iv"],
                     "fit_iv": p["fit_iv"], "dislocation_pct": p["dislocation_pct"],
                     "type": p["type"], "strategy": "Sell Premium / Broken Wing Fly"
                 } for p in top_overhedged
             ],
             "top_underhedged": [
                 {
-                    "expiry": p["expiry"], "strike": p["strike"], "iv": p["iv"],
+                    "expiry": p["expiry"], "dte": p.get("dte", 30), "strike": p["strike"], "iv": p["iv"],
+                    "fit_iv": p["fit_iv"], "dislocation_pct": p["dislocation_pct"],
+                    "type": p["type"], "strategy": "Buy Cheap Wings / Diagonal Convexity"
+                } for p in top_underhedged[:4]
+            ],
+            "all_underhedged": [
+                {
+                    "expiry": p["expiry"], "dte": p.get("dte", 30), "strike": p["strike"], "iv": p["iv"],
                     "fit_iv": p["fit_iv"], "dislocation_pct": p["dislocation_pct"],
                     "type": p["type"], "strategy": "Buy Cheap Wings / Diagonal Convexity"
                 } for p in top_underhedged
@@ -2480,6 +2641,7 @@ def get_vol_surface():
             return val
 
         res_payload = clean_nan({
+            "multi_year_v2": True,
             "spot": spot,
             "ticker": ticker_clean,
             "desk_metrics": {
@@ -2497,7 +2659,7 @@ def get_vol_surface():
             "ai_vol_intelligence": ai_vol_intelligence,
             "hedging_diagnostics": hedging_diagnostics,
             "term_structure": term_structure,
-            "hotspots": hotspots[:6],
+            "hotspots": hotspots[:36],
             "actionable_setups": actionable_setups,
             "surface": surface_data,
             "spot_vol_scatter": spot_vol_scatter
@@ -2548,15 +2710,16 @@ def search_stock():
     ticker = ticker.upper()
     try:
         t = yf.Ticker(ticker)
-        # Fetch Technicals
-        df = t.history(period="2y")
+        # Fetch Technicals (with trailing NaN healing so today's candle is included)
+        df = _heal_daily_ohlcv(t, t.history(period="2y"))
         if len(df) < 200:
             return jsonify({"error": "Insufficient price data for Stage Analysis"}), 400
             
         # Cache SPY baseline in local memory to avoid repetitive rate-limited calls
         if not hasattr(search_stock, '_spy_cache') or search_stock._spy_cache is None or (time.time() - search_stock._spy_cache_time > 3600):
             try:
-                search_stock._spy_cache = yf.Ticker("SPY").history(period="2y")
+                spy_t = yf.Ticker("SPY")
+                search_stock._spy_cache = _heal_daily_ohlcv(spy_t, spy_t.history(period="2y"))
                 search_stock._spy_cache_time = time.time()
             except Exception:
                 if not hasattr(search_stock, '_spy_cache') or search_stock._spy_cache is None:
@@ -3494,10 +3657,10 @@ def get_agents():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/market_health')
+@app.route('/api/market_health', methods=['GET', 'POST'])
 def get_market_health_api():
     """Serves the latest 15-parameter Market Health Council payload."""
-    force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+    force_refresh = request.args.get('refresh', 'false').lower() in ('true', '1') or request.method == 'POST'
     public_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'market_health.json')
     try:
         if force_refresh or not os.path.exists(public_file):

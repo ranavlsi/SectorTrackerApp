@@ -1,3 +1,73 @@
+## 🌋 Volume Climax Consolidation Scanner - November 06, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### BRZE
+- **Current Price:** $45.79
+- **Climax Date:** 2026-10-20 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 17.2x avg | MCap: $5.2B | AvgVol: 5.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 06, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### BRZE
+- **Current Price:** $45.79
+- **Climax Date:** 2026-10-20 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 17.2x avg | MCap: $5.2B | AvgVol: 5.2M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 05, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### BRZE
+- **Current Price:** $45.81
+- **Climax Date:** 2026-10-20 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 17.2x avg | MCap: $5.2B | AvgVol: 5.1M
+
+### MDT
+- **Current Price:** $104.84
+- **Climax Date:** 2026-10-08 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 7.2x avg | MCap: $134.1B | AvgVol: 19.5M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 05, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### BRZE
+- **Current Price:** $45.81
+- **Climax Date:** 2026-10-20 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 17.2x avg | MCap: $5.2B | AvgVol: 5.1M
+
+### MDT
+- **Current Price:** $104.84
+- **Climax Date:** 2026-10-08 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 7.2x avg | MCap: $134.1B | AvgVol: 19.5M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 04, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### MDT
+- **Current Price:** $104.96
+- **Climax Date:** 2026-10-08 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 7.2x avg | MCap: $134.3B | AvgVol: 19.4M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 04, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### MDT
+- **Current Price:** $104.96
+- **Climax Date:** 2026-10-08 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 7.2x avg | MCap: $134.3B | AvgVol: 19.4M
+
+---
+
 ## 🌋 Volume Climax Consolidation Scanner - November 03, 2026
 Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
 

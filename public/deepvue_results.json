@@ -1,1 +1,1 @@
-{"leaders": [{"ticker": "ACVA", "rs_score": 43.55, "vcp_setup": false, "price": 10.5, "is_uptrend": true, "rs_rating": 86, "rev_growth_pct": 0, "eps_growth_pct": 0, "has_fundamentals": false}], "active_vcp": [{"ticker": "VRNS", "rs_score": 17.21, "vcp_setup": true, "price": 48.96, "is_uptrend": true, "rs_rating": 47}]}
+{"leaders": [{"ticker": "ACVA", "rs_score": 46.28, "vcp_setup": false, "price": 10.5, "is_uptrend": true, "rs_rating": 86, "rev_growth_pct": 0, "eps_growth_pct": 0, "has_fundamentals": false}], "active_vcp": []}

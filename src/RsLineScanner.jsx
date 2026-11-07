@@ -256,6 +256,7 @@ export default function RsLineScanner({ onTickerClick, onOpenDeepChart }) {
   const [maxAdr, setMaxAdr] = useState(15);
   const [personalityFilter, setPersonalityFilter] = useState('ALL'); // ALL, TIGHT, IN_BETWEEN, WIDE
   const [minDailyVol, setMinDailyVol] = useState(400000); // 400K+ shares/day (William O'Neil / MarketSurge daily volume constraint)
+  const [maxDailyVol, setMaxDailyVol] = useState(0); // 0 = no upper cap, or 5M / 10M cap
   const [minDailyRvol, setMinDailyRvol] = useState(0); // Daily Relative Volume vs 50D avg (e.g. 1.4x = +40% IBD breakout volume)
   const [minDollarVol, setMinDollarVol] = useState(2); // $M/day liquidity filter (reliable across all tickers)
   const [minMcap, setMinMcap] = useState(0); // $B (optional since many tickers have mcap=0 in yq cache)
@@ -409,6 +410,106 @@ export default function RsLineScanner({ onTickerClick, onOpenDeepChart }) {
     };
   }, [data]);
 
+  const [showNextDayIdeas, setShowNextDayIdeas] = useState(true);
+
+  // Top 3 Liquid Next-Day Trade Ideas Engine (Multi-Factor Conviction Ranking)
+  const nextDayIdeas = useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    // Filter for liquid institutional leaders near actionable pivot
+    const candidates = data.filter((r) => {
+      if (r.is_etf) return false;
+      const vol50d = Number(r.avg_daily_vol_50d || 0);
+      const dvolM = Number(r.dollar_vol_m || 0);
+      const rs = Number(r.rs_rating || 0);
+      const trendScore = Number(r.trend_strength_score || r.rs_rating || 0);
+      const dist = Number(r.dist_to_pivot_pct ?? -99);
+      const rvol = Number(r.daily_rvol || 0);
+      const adr = Number(r.adr_pct || 0);
+      const earnDays = Number(r.earnings_days ?? 999);
+
+      // Must be liquid (>= 2M shares/day and >= $50M/day dollar volume)
+      if (vol50d < 2000000 || dvolM < 50) return false;
+      // Strong relative strength & Power Uptrend
+      if (rs < 85 || trendScore < 85) return false;
+      // Right below or just clearing official buy point (-5.0% to +2.0%)
+      if (dist < -5.0 || dist > 2.0) return false;
+      // Institutional volume expansion & controlled volatility, no immediate earnings binary risk
+      if (rvol < 1.1 || adr > 8.0) return false;
+      if (earnDays <= 7) return false;
+
+      return true;
+    });
+
+    const scored = candidates.map((r) => {
+      const rs = Number(r.rs_rating || 0);
+      const trendScore = Number(r.trend_strength_score || rs);
+      const dist = Number(r.dist_to_pivot_pct || 0);
+      const rvol = Number(r.daily_rvol || 1);
+      const volM = Number(r.avg_daily_vol_50d || 0) / 1e6;
+      const dvolM = Number(r.dollar_vol_m || 0);
+      const price = Number(r.price || 0);
+      const buyPt = Number(r.buy_point || price);
+
+      // Pattern & Blue Dot bonuses
+      const patternBonus = r.pattern_status === 'c_and_h' ? 32 : r.pattern_status === 'cup' ? 24 : 0;
+      const blueDotBonus = r.is_blue_dot_today ? 18 : r.is_blue_dot ? 12 : 0;
+      // Proximity bonus: closest to 0% pivot gets highest score
+      const proximityScore = Math.max(0, 25 - Math.abs(dist) * 5);
+      // Volume surge & liquidity bonus
+      const rvolBonus = Math.min(20, (rvol - 1.0) * 18);
+      const liqBonus = Math.min(12, Math.log10(Math.max(10, dvolM)) * 4);
+
+      const convictionScore = Math.min(
+        99,
+        Math.round(
+          rs * 0.25 +
+            trendScore * 0.25 +
+            patternBonus +
+            blueDotBonus +
+            proximityScore * 0.5 +
+            rvolBonus +
+            liqBonus * 0.4
+        )
+      );
+
+      const buyZoneHigh = buyPt * 1.05;
+      const stopLoss = buyPt * 0.925;
+      const target20 = buyPt * 1.2;
+
+      const patternName =
+        r.pattern_status === 'c_and_h'
+          ? 'Cup with Handle'
+          : r.pattern_status === 'cup'
+            ? 'Cup Base'
+            : r.is_blue_dot
+              ? 'RS Blue Dot Pivot'
+              : 'Stage 2A Pivot Base';
+
+      const thesis = `${patternName} (${dist >= 0 ? `+${dist.toFixed(2)}% above` : `${dist.toFixed(2)}% below`} $${buyPt.toFixed(
+        2
+      )} pivot) • Trend Meter ${trendScore}/99 (${r.ma_alignment_str || '21E>50S>200S'}) • ${rvol.toFixed(
+        2
+      )}x RVOL on ${volM.toFixed(2)}M sh/d ($${dvolM >= 1000 ? `${(dvolM / 1000).toFixed(2)}B` : `${Math.round(dvolM)}M`}/d).`;
+
+      return {
+        ...r,
+        convictionScore,
+        patternName,
+        buyPt,
+        buyZoneHigh,
+        stopLoss,
+        target20,
+        volM,
+        dvolM,
+        thesis,
+      };
+    });
+
+    scored.sort((a, b) => b.convictionScore - a.convictionScore || b.rs_rating - a.rs_rating);
+    return scored.slice(0, 3);
+  }, [data]);
+
   // Apply Strategy Preset + User Filters + Sorting
   const filteredAndSortedData = useMemo(() => {
     const sourceList = activePreset === 'WATCHLIST' ? watchlist : data;
@@ -457,8 +558,10 @@ export default function RsLineScanner({ onTickerClick, onOpenDeepChart }) {
       // Daily Trading Volume Constraints (50D Avg Daily Shares & Daily RVOL)
       const avgDailyShares = item.avg_daily_vol_50d ?? Math.round((item.volume_20w_avg || 0) / 5);
       const currDailyShares = item.daily_volume ?? Math.round((item.current_volume || 0) / 5);
+      const effectiveVol = Math.max(avgDailyShares, currDailyShares);
       const dRvol = item.daily_rvol ?? item.vol_ratio ?? 1.0;
-      if (minDailyVol > 0 && avgDailyShares < minDailyVol && currDailyShares < minDailyVol) return false;
+      if (minDailyVol > 0 && effectiveVol < minDailyVol) return false;
+      if (maxDailyVol > 0 && effectiveVol > maxDailyVol) return false;
       if (minDailyRvol > 0 && dRvol < minDailyRvol) return false;
 
       if (minDollarVol > 0 && (item.dollar_vol_m || 0) < minDollarVol) return false;
@@ -499,6 +602,7 @@ export default function RsLineScanner({ onTickerClick, onOpenDeepChart }) {
     minAdr,
     maxAdr,
     minDailyVol,
+    maxDailyVol,
     minDailyRvol,
     minDollarVol,
     minMcap,
@@ -523,6 +627,7 @@ export default function RsLineScanner({ onTickerClick, onOpenDeepChart }) {
     minAdr,
     maxAdr,
     minDailyVol,
+    maxDailyVol,
     minDailyRvol,
     minDollarVol,
     minMcap,
@@ -557,6 +662,7 @@ export default function RsLineScanner({ onTickerClick, onOpenDeepChart }) {
     setMaxAdr(15);
     setPersonalityFilter('ALL');
     setMinDailyVol(0);
+    setMaxDailyVol(0);
     setMinDailyRvol(0);
     setMinDollarVol(0);
     setMinMcap(0);
@@ -984,6 +1090,328 @@ export default function RsLineScanner({ onTickerClick, onOpenDeepChart }) {
       )}
 
       {/* ===================================================================== */}
+      {/* 2B. TOP 3 NEXT-DAY INSTITUTIONAL TRADE IDEAS (LIQUID PLAYBOOK)        */}
+      {/* ===================================================================== */}
+      {nextDayIdeas.length > 0 && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.95) 55%, rgba(56, 189, 248, 0.08) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            borderRadius: '12px',
+            padding: '0.85rem 1.05rem',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '8px',
+              marginBottom: showNextDayIdeas ? '10px' : '0px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: '0.82rem',
+                  fontWeight: 900,
+                  color: '#34d399',
+                  fontFamily: 'monospace',
+                  letterSpacing: '0.03em',
+                }}
+              >
+                🎯 TOP 3 NEXT-DAY INSTITUTIONAL TRADE IDEAS (LIQUID PLAYBOOK)
+              </span>
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  background: 'rgba(16, 185, 129, 0.14)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  color: '#a7f3d0',
+                  fontFamily: 'monospace',
+                  fontWeight: 700,
+                }}
+              >
+                Criteria: Vol ≥ 2M/d • $Vol ≥ $50M/d • IBD RS ≥ 85 • Trend Meter ≥ 85 • Stage 2A Pivot (-5% to +2%) • RVOL ≥ 1.1x
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowNextDayIdeas((prev) => !prev)}
+              style={{
+                padding: '3px 10px',
+                borderRadius: '6px',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                background: 'rgba(15, 23, 42, 0.8)',
+                color: '#38bdf8',
+                fontFamily: 'monospace',
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {showNextDayIdeas ? '▲ Hide Playbook' : '▼ Show Top 3 Ideas'}
+            </button>
+          </div>
+
+          {showNextDayIdeas && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))',
+                gap: '12px',
+              }}
+            >
+              {nextDayIdeas.map((idea, idx) => {
+                const dist = Number(idea.dist_to_pivot_pct || 0);
+                const rankColors = ['#10b981', '#38bdf8', '#f59e0b'];
+                const accent = rankColors[idx] || '#10b981';
+                return (
+                  <div
+                    key={idea.ticker}
+                    style={{
+                      background: 'rgba(9, 14, 24, 0.92)',
+                      border: `1px solid ${accent}55`,
+                      borderLeft: `4px solid ${accent}`,
+                      borderRadius: '10px',
+                      padding: '0.75rem 0.9rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '7px',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {/* Top Row: Rank, Ticker, Price, Conviction & Pattern */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                        <span
+                          style={{
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            background: `${accent}22`,
+                            border: `1px solid ${accent}`,
+                            color: accent,
+                            fontSize: '0.68rem',
+                            fontWeight: 900,
+                          }}
+                        >
+                          #{idx + 1} IDEA
+                        </span>
+                        <strong
+                          onClick={() => {
+                            setSelectedTicker(idea.ticker);
+                            setSplitView(true);
+                          }}
+                          style={{
+                            fontSize: '1.05rem',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            textDecorationColor: accent,
+                          }}
+                        >
+                          {idea.ticker}
+                        </strong>
+                        <span style={{ fontSize: '0.88rem', color: '#e2e8f0', fontWeight: 800 }}>
+                          ${Number(idea.price || 0).toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(16, 185, 129, 0.16)',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            color: '#34d399',
+                            fontSize: '0.65rem',
+                            fontWeight: 800,
+                          }}
+                        >
+                          🔥 Trend {idea.trend_strength_score || idea.rs_rating}/99
+                        </span>
+                        <span
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(56, 189, 248, 0.16)',
+                            border: '1px solid rgba(56, 189, 248, 0.4)',
+                            color: '#38bdf8',
+                            fontSize: '0.65rem',
+                            fontWeight: 800,
+                          }}
+                        >
+                          RS {idea.rs_rating}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Badges Row: Base Pattern, Liquidity, RVOL */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', alignItems: 'center' }}>
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(245, 158, 11, 0.15)',
+                          border: '1px solid rgba(245, 158, 11, 0.4)',
+                          color: '#fbbf24',
+                          fontWeight: 800,
+                        }}
+                      >
+                        {idea.pattern_status === 'c_and_h'
+                          ? '🏆 Cup w/ Handle'
+                          : idea.pattern_status === 'cup'
+                            ? '☕ Cup Base'
+                            : '🚀 Stage 2A Pivot'}
+                      </span>
+                      {idea.is_blue_dot && (
+                        <span
+                          style={{
+                            fontSize: '0.65rem',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(56, 189, 248, 0.2)',
+                            border: '1px solid #38bdf8',
+                            color: '#7dd3fc',
+                            fontWeight: 800,
+                          }}
+                        >
+                          🔵 RS Blue Dot
+                        </span>
+                      )}
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(148, 163, 184, 0.12)',
+                          color: '#cbd5e1',
+                          fontWeight: 700,
+                        }}
+                      >
+                        💧 {idea.volM.toFixed(2)}M sh/d ($
+                        {idea.dvolM >= 1000 ? `${(idea.dvolM / 1000).toFixed(2)}B` : `${Math.round(idea.dvolM)}M`}/d)
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(16, 185, 129, 0.14)',
+                          color: '#34d399',
+                          fontWeight: 800,
+                        }}
+                      >
+                        ⚡ {Number(idea.daily_rvol || 1).toFixed(2)}x RVOL
+                      </span>
+                    </div>
+
+                    {/* Execution Levels Box */}
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '6px',
+                        background: 'rgba(15, 23, 42, 0.85)',
+                        border: '1px solid rgba(148, 163, 184, 0.15)',
+                        borderRadius: '6px',
+                        padding: '6px 8px',
+                        fontSize: '0.67rem',
+                      }}
+                    >
+                      <div>
+                        <div style={{ color: '#64748b', fontSize: '0.6rem' }}>BUY POINT (PIVOT)</div>
+                        <div style={{ color: '#10b981', fontWeight: 900 }}>
+                          ${idea.buyPt.toFixed(2)}{' '}
+                          <span style={{ color: '#38bdf8', fontSize: '0.61rem' }}>
+                            ({dist >= 0 ? `+${dist.toFixed(1)}%` : `${dist.toFixed(1)}%`})
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#64748b', fontSize: '0.6rem' }}>5% BUY ZONE</div>
+                        <div style={{ color: '#e2e8f0', fontWeight: 700 }}>
+                          ${idea.buyPt.toFixed(2)}–${idea.buyZoneHigh.toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#64748b', fontSize: '0.6rem' }}>STOP (-7.5%) / TARGET</div>
+                        <div>
+                          <span style={{ color: '#f87171', fontWeight: 800 }}>${idea.stopLoss.toFixed(2)}</span>
+                          <span style={{ color: '#64748b' }}> / </span>
+                          <span style={{ color: '#34d399', fontWeight: 800 }}>${idea.target20.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Thesis + Quick Action Buttons */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginTop: '2px',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.65rem', color: '#94a3b8', lineHeight: 1.35 }}>{idea.thesis}</span>
+                      <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTicker(idea.ticker);
+                            setSplitView(true);
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '5px',
+                            border: '1px solid rgba(56, 189, 248, 0.4)',
+                            background: 'rgba(56, 189, 248, 0.14)',
+                            color: '#38bdf8',
+                            fontSize: '0.65rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            fontFamily: 'monospace',
+                          }}
+                        >
+                          RS Dock
+                        </button>
+                        {onTickerClick && (
+                          <button
+                            type="button"
+                            onClick={() => onTickerClick(idea.ticker)}
+                            style={{
+                              padding: '4px 8px',
+                              borderRadius: '5px',
+                              border: '1px solid rgba(16, 185, 129, 0.45)',
+                              background: 'rgba(16, 185, 129, 0.16)',
+                              color: '#10b981',
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              fontFamily: 'monospace',
+                            }}
+                          >
+                            Deep Chart ↗
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
       {/* 3. MULTI-FACTOR QUANT FILTER BAR                                      */}
       {/* ===================================================================== */}
       <div
@@ -1206,21 +1634,30 @@ export default function RsLineScanner({ onTickerClick, onOpenDeepChart }) {
           >
             DAILY VOLUME (SHARES/DAY)
           </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
             {[
-              { val: 0, label: 'Any' },
-              { val: 250000, label: '250K+' },
-              { val: 400000, label: '400K+ (IBD)' },
-              { val: 500000, label: '500K+' },
-              { val: 1000000, label: '1M+' },
-              { val: 2000000, label: '2M+' },
+              { min: 0, max: 0, label: 'Any', title: 'No daily share volume filter' },
+              { min: 250000, max: 0, label: '250K+', title: 'At least 250,000 shares/day' },
+              { min: 400000, max: 0, label: '400K+ (IBD)', title: "William O'Neil / MarketSurge 400K+ institutional floor" },
+              { min: 500000, max: 0, label: '500K+', title: 'At least 500,000 shares/day' },
+              { min: 1000000, max: 0, label: '1M+', title: 'At least 1,000,000 shares/day' },
+              { min: 2000000, max: 0, label: '2M+', title: 'At least 2,000,000 shares/day' },
+              { min: 5000000, max: 0, label: '5M+', title: 'At least 5,000,000 shares/day' },
+              { min: 10000000, max: 0, label: '10M+', title: 'At least 10,000,000 shares/day (Mega Liquidity)' },
+              { min: 400000, max: 5000000, label: '≤5M', title: '400K to 5M shares/day (Under 5M)' },
+              { min: 5000000, max: 10000000, label: '5M–10M', title: 'Between 5M and 10M shares/day' },
+              { min: 400000, max: 10000000, label: '≤10M', title: '400K to 10M shares/day (Under 10M)' },
             ].map((opt) => {
-              const active = minDailyVol === opt.val;
+              const active = minDailyVol === opt.min && maxDailyVol === opt.max;
               return (
                 <button
-                  key={opt.val}
+                  key={opt.label}
                   type="button"
-                  onClick={() => setMinDailyVol(opt.val)}
+                  title={opt.title}
+                  onClick={() => {
+                    setMinDailyVol(opt.min);
+                    setMaxDailyVol(opt.max);
+                  }}
                   style={{
                     padding: '4px 7px',
                     borderRadius: '5px',

@@ -36,12 +36,22 @@ const CAMERA_PRESETS = {
   top: { eye: { x: 0.01, y: 0.01, z: 2.5 }, label: '🗺️ Top-Down' }
 };
 
+const HORIZON_OPTIONS = [
+  { id: '1M', label: '1 Month', short: '1M', maxDte: 35, desc: 'Near-Term Weekly & Monthly Gamma (≤35 DTE)' },
+  { id: '3M', label: '3 Months', short: '3M', maxDte: 100, desc: 'Quarterly Earnings & Swing Horizon (≤100 DTE)' },
+  { id: '6M', label: '6 Months', short: '6M', maxDte: 195, desc: 'Semi-Annual Structural Horizon (≤195 DTE)' },
+  { id: '1Y', label: '1 Year', short: '1Y', maxDte: 390, desc: '1-Year Institutional Curve (≤390 DTE)' },
+  { id: '2Y', label: '2 Years', short: '2Y', maxDte: 800, desc: '1–2 Year Multi-Cycle LEAPS Manifold (≤800 DTE)' },
+  { id: 'ALL', label: 'All LEAPS', short: 'ALL', maxDte: 9999, desc: 'Full Available Multi-Year Option Chain' }
+];
+
 const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [tenorHorizon, setTenorHorizon] = useState('2Y'); // '1M' | '3M' | '6M' | '1Y' | '2Y' | 'ALL'
   const [selectedExpiry, setSelectedExpiry] = useState('All');
-  const [activeViewMode, setActiveViewMode] = useState('heatmap'); // 'heatmap' | '3d_surface' | '2d_skew' | 'term_structure'
+  const [activeViewMode, setActiveViewMode] = useState('3d_surface'); // '3d_surface' | 'heatmap' | '2d_skew' | 'term_structure'
   const [surfaceColor, setSurfaceColor] = useState('Plasma');
   const [surfaceBg, setSurfaceBg] = useState('#060910');
   const [cameraPreset, setCameraPreset] = useState('iso');
@@ -61,19 +71,177 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
   const rotateAngleRef = useRef(0);
   const animFrameRef = useRef(null);
 
-  // Algorithmic Air Pocket Scanner (Cheapest Volatility Valleys across the Surface)
-  const detectedAirPockets = useMemo(() => {
-    if (!data || !data.surface || data.surface.length === 0) return [];
+  // Dynamically slice surface, term structure, hotspots, and hedging diagnostics to the chosen Tenor Horizon (1M, 3M, 6M, 1Y, 2Y, ALL)
+  const horizonData = useMemo(() => {
+    if (!data || !data.surface || data.surface.length === 0) return data;
 
-    const spotPrice = data.spot || 100;
-    const underpriced = (data.hotspots || [])
+    const horizonMeta = HORIZON_OPTIONS.find(h => h.id === tenorHorizon) || HORIZON_OPTIONS[4];
+    const maxDte = horizonMeta.maxDte;
+
+    const allTerm = data.term_structure || [];
+    let candidateTerm = allTerm.filter(t => (t.dte ?? 30) <= maxDte);
+    if (candidateTerm.length < 2 && allTerm.length >= 2) {
+      candidateTerm = allTerm.slice(0, 2);
+    }
+
+    // Count strike coverage per expiration so we prefer standard liquid monthly OpEx over thin weekly/EOM stubs when sampling for 3D surface
+    const strikeCountByExp = new Map();
+    data.surface.forEach(p => {
+      strikeCountByExp.set(p.expiry, (strikeCountByExp.get(p.expiry) || 0) + 1);
+    });
+
+    // Select up to 9 evenly-spaced benchmark tenors specifically for the 3D Surface mesh so it stays silky smooth,
+    // while keeping ALL candidateTerm expirations for the 2D Term Structure and 2D Skew dropdown!
+    const targetTenorCount = tenorHorizon === '1M' ? 7 : (tenorHorizon === '3M' ? 8 : 9);
+    let surfaceTerm = candidateTerm;
+    if (candidateTerm.length > targetTenorCount) {
+      const selectedIndices = new Set([0, candidateTerm.length - 1]);
+      // Always preserve the peak ATM IV tenor (e.g. earnings event spike) so 3D surface never misses it
+      let peakIdx = 0;
+      for (let i = 1; i < candidateTerm.length; i++) {
+        if ((candidateTerm[i].atm_iv || 0) > (candidateTerm[peakIdx].atm_iv || 0)) {
+          peakIdx = i;
+        }
+      }
+      selectedIndices.add(peakIdx);
+
+      const minD = candidateTerm[0].dte || 1;
+      const maxD = candidateTerm[candidateTerm.length - 1].dte || maxDte;
+
+      for (let k = 1; k < targetTenorCount - 1; k++) {
+        if (selectedIndices.size >= targetTenorCount) break;
+        const targetDte = minD + ((maxD - minD) * (k / (targetTenorCount - 1)));
+        let bestIdx = Math.round((k * (candidateTerm.length - 1)) / (targetTenorCount - 1));
+        let bestScore = Infinity;
+
+        for (let idx = 1; idx < candidateTerm.length - 1; idx++) {
+          if (selectedIndices.has(idx)) continue;
+          const dteDist = Math.abs((candidateTerm[idx].dte || 30) - targetDte);
+          const coverageBonus = Math.min(20, (strikeCountByExp.get(candidateTerm[idx].expiry) || 20) * 0.1);
+          const score = dteDist - coverageBonus * 0.15;
+          if (score < bestScore) {
+            bestScore = score;
+            bestIdx = idx;
+          }
+        }
+        selectedIndices.add(bestIdx);
+      }
+      surfaceTerm = Array.from(selectedIndices)
+        .sort((a, b) => a - b)
+        .map(idx => candidateTerm[idx]);
+    }
+
+    const fullHorizonExpiries = new Set(candidateTerm.map(t => t.expiry));
+    const surfaceExpiriesList = surfaceTerm.map(t => t.expiry);
+    let filteredSurface = data.surface.filter(p =>
+      fullHorizonExpiries.size > 0 ? fullHorizonExpiries.has(p.expiry) : (p.dte ?? 30) <= maxDte
+    );
+    if (filteredSurface.length === 0) {
+      filteredSurface = data.surface;
+    }
+
+    const activeExpirySet = new Set(filteredSurface.map(p => p.expiry));
+    const filteredHotspots = (data.hotspots || [])
+      .filter(h => activeExpirySet.has(h.expiry))
+      .sort((a, b) => (b.edge_pct || 0) - (a.edge_pct || 0))
+      .slice(0, 6);
+
+    // Recompute horizon-scoped hedging diagnostics counts & top pins
+    let updatedHedging = data.hedging_diagnostics;
+    if (data.hedging_diagnostics) {
+      const overCount = filteredSurface.filter(p => p.hedge_state === 'overhedged').length;
+      const underCount = filteredSurface.filter(p => p.hedge_state === 'underhedged').length;
+      const balCount = filteredSurface.filter(p => p.hedge_state === 'balanced').length;
+      const totalPts = filteredSurface.length || 1;
+
+      const overPool = data.hedging_diagnostics.all_overhedged || data.hedging_diagnostics.top_overhedged || [];
+      const underPool = data.hedging_diagnostics.all_underhedged || data.hedging_diagnostics.top_underhedged || [];
+
+      const topOverFiltered = overPool.filter(p => activeExpirySet.has(p.expiry)).slice(0, 4);
+      const topUnderFiltered = underPool.filter(p => activeExpirySet.has(p.expiry)).slice(0, 4);
+
+      updatedHedging = {
+        ...data.hedging_diagnostics,
+        counts: {
+          overhedged: overCount,
+          underhedged: underCount,
+          balanced: balCount,
+          total: filteredSurface.length
+        },
+        percentages: {
+          overhedged_pct: Number(((overCount / totalPts) * 100).toFixed(1)),
+          underhedged_pct: Number(((underCount / totalPts) * 100).toFixed(1)),
+          balanced_pct: Number(((balCount / totalPts) * 100).toFixed(1))
+        },
+        top_overhedged: topOverFiltered,
+        top_underhedged: topUnderFiltered
+      };
+    }
+
+    // Recompute event-aware & stub-aware term structure slope across the selected horizon
+    let updatedMetrics = { ...(data.desk_metrics || {}) };
+    if (candidateTerm.length >= 2) {
+      const ivs = candidateTerm.map(t => t.atm_iv);
+      const dtes = candidateTerm.map(t => t.dte || 30);
+      const backIv = ivs[ivs.length - 1];
+      const peakIv = Math.max(...ivs);
+      const peakIdx = ivs.indexOf(peakIv);
+      const peakDte = dtes[peakIdx];
+      const isEventSpike = peakDte <= 35 && peakIv >= backIv + 3.0 && peakIdx < ivs.length - 1;
+
+      let horizonSlope = 0;
+      if (isEventSpike) {
+        horizonSlope = Number((backIv - peakIv).toFixed(2));
+      } else {
+        const liquidFront = candidateTerm.find(t => (t.dte || 0) >= 5 && (t.dte || 0) <= 18);
+        const effFront = liquidFront ? liquidFront.atm_iv : (dtes[0] <= 3 && ivs.length > 1 ? ivs[1] : ivs[0]);
+        horizonSlope = Number((backIv - effFront).toFixed(2));
+      }
+      updatedMetrics.term_structure_slope = horizonSlope;
+      updatedMetrics.term_structure_regime = horizonSlope < -1.2 ? 'Backwardation' : (horizonSlope > 1.2 ? 'Contango' : 'Flat');
+    }
+
+    const maxDteActual = candidateTerm.length > 0
+      ? candidateTerm[candidateTerm.length - 1].dte
+      : Math.max(...filteredSurface.map(p => p.dte || 30));
+    const minDteActual = candidateTerm.length > 0
+      ? candidateTerm[0].dte
+      : Math.min(...filteredSurface.map(p => p.dte || 1));
+
+    return {
+      ...data,
+      surface: filteredSurface,
+      term_structure: candidateTerm,
+      surface_expirations: surfaceExpiriesList,
+      hotspots: filteredHotspots,
+      hedging_diagnostics: updatedHedging,
+      desk_metrics: updatedMetrics,
+      horizon_meta: {
+        ...horizonMeta,
+        expiries_count: candidateTerm.length,
+        surface_tenors_count: surfaceExpiriesList.length,
+        total_in_horizon: candidateTerm.length,
+        total_expiries_available: new Set(data.surface.map(p => p.expiry)).size,
+        min_dte: minDteActual,
+        max_dte: maxDteActual
+      }
+    };
+  }, [data, tenorHorizon]);
+
+  // Algorithmic Air Pocket Scanner (Cheapest Volatility Valleys across the Active Horizon Surface)
+  const detectedAirPockets = useMemo(() => {
+    const activeData = horizonData || data;
+    if (!activeData || !activeData.surface || activeData.surface.length === 0) return [];
+
+    const spotPrice = activeData.spot || 100;
+    const underpriced = (activeData.hotspots || [])
       .filter(h => h.type === 'underpriced')
       .map(h => ({
         id: h.id || `pocket-${h.expiry}-${h.strike}`,
         expiry: h.expiry,
         strike: h.strike,
         iv: h.iv,
-        benchmark_iv: h.benchmark_iv || (data.desk_metrics?.atm_iv_30d || 25.0),
+        benchmark_iv: h.benchmark_iv || (activeData.desk_metrics?.atm_iv_30d || 25.0),
         edge_pct: h.edge_pct || 20.0,
         type: h.strike < spotPrice ? 'otm_put' : 'otm_call',
         moneyness: (h.strike / spotPrice).toFixed(2),
@@ -84,7 +252,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
 
     // Find genuine model-calibrated air pockets (depressed vol valleys)
     const valleys = [];
-    (data.surface || []).forEach(p => {
+    (activeData.surface || []).forEach(p => {
       // Point is a calibrated underhedged depression with significant dislocation (< -12%)
       if (p.hedge_state === 'underhedged' && p.dislocation_pct <= -12) {
         const isCall = p.strike >= spotPrice;
@@ -114,7 +282,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
 
     // Sort by largest discount edge and take top 4
     return combined.sort((a, b) => (b.edge_pct || 0) - (a.edge_pct || 0)).slice(0, 4);
-  }, [data]);
+  }, [horizonData, data]);
 
   // Poll for Plotly window global if CDN script is still downloading
   useEffect(() => {
@@ -222,7 +390,8 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
   };
 
   useEffect(() => {
-    if (!data || !data.surface || data.surface.length === 0 || !plotRef.current || !window.Plotly) {
+    const activeData = horizonData || data;
+    if (!activeData || !activeData.surface || activeData.surface.length === 0 || !plotRef.current || !window.Plotly) {
       return;
     }
 
@@ -232,41 +401,157 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
       // ignore
     }
 
-    const { spot, surface, term_structure = [], hotspots = [] } = data;
-    const expirations = [...new Set(surface.map(item => item.expiry))].sort();
-    const strikes = [...new Set(surface.map(item => item.strike))].sort((a,b) => a - b);
+    const { spot, surface, term_structure = [], hotspots = [] } = activeData;
+    const allExpirations = [...new Set(surface.map(item => item.expiry))].sort();
+    const rawStrikes = [...new Set(surface.map(item => item.strike))].sort((a,b) => a - b);
 
     if (activeViewMode === '3d_surface') {
-      // 1. BUILD 3D VOLATILITY SURFACE
-      let zData = expirations.map(exp => {
-        return strikes.map(str => {
-          const pt = surface.find(p => p.expiry === exp && p.strike === str);
-          return pt ? pt.iv : null;
-        });
+      const expirations = (activeData.surface_expirations && activeData.surface_expirations.length >= 2)
+        ? activeData.surface_expirations
+        : allExpirations;
+      // 1. BUILD CLEAN INSTITUTIONAL 3D VOLATILITY SURFACE MANIFOLD
+      // Restrict 3D surface strike axis to the liquid core band (±15% around spot) and ~26 evenly-spaced strike nodes
+      // so 300+ multi-year strikes never create a dense wireframe "mash" or flat boundary shelves.
+      const coreBandPct = tenorHorizon === '1M' ? 0.12 : (tenorHorizon === '3M' ? 0.15 : 0.18);
+      let coreStrikes = spot
+        ? rawStrikes.filter(s => Math.abs(s - spot) / spot <= coreBandPct)
+        : rawStrikes;
+      if (coreStrikes.length < 8) {
+        coreStrikes = rawStrikes;
+      }
+
+      const maxGridStrikes = 26;
+      let strikes = coreStrikes;
+      if (coreStrikes.length > maxGridStrikes) {
+        const sampled = new Set();
+        for (let k = 0; k < maxGridStrikes; k++) {
+          const idx = Math.round((k * (coreStrikes.length - 1)) / (maxGridStrikes - 1));
+          sampled.add(coreStrikes[idx]);
+        }
+        // Always include the strike closest to ATM spot
+        if (spot) {
+          const atmSt = coreStrikes.reduce((prev, curr) => Math.abs(curr - spot) < Math.abs(prev - spot) ? curr : prev, coreStrikes[0]);
+          sampled.add(atmSt);
+        }
+        strikes = Array.from(sampled).sort((a, b) => a - b);
+      }
+
+      // Group points by expiration sorted by strike for continuous smile interpolation
+      const ptsByExp = new Map();
+      expirations.forEach(exp => ptsByExp.set(exp, []));
+      surface.forEach(p => {
+        if (p && p.expiry && ptsByExp.has(p.expiry)) {
+          ptsByExp.get(p.expiry).push(p);
+        }
+      });
+      ptsByExp.forEach(arr => arr.sort((a, b) => a.strike - b.strike));
+
+      // Helper to evaluate IV & dislocation at any strike along an expiration's smile
+      const evalExpAtStrike = (exp, targetStrike) => {
+        const arr = ptsByExp.get(exp) || [];
+        if (arr.length === 0) return null;
+        // Exact or very close match
+        for (let i = 0; i < arr.length; i++) {
+          if (Math.abs(arr[i].strike - targetStrike) < 1e-4) {
+            return arr[i];
+          }
+        }
+        // If outside this expiration's traded strike range, return null so vertical tenor interpolation handles it smoothly
+        if (targetStrike < arr[0].strike || targetStrike > arr[arr.length - 1].strike) {
+          return null;
+        }
+        // Linear interpolation between bracketing strikes on this expiration
+        for (let i = 0; i < arr.length - 1; i++) {
+          const left = arr[i];
+          const right = arr[i + 1];
+          if (targetStrike >= left.strike && targetStrike <= right.strike) {
+            const w = (right.strike - left.strike) > 0 ? (targetStrike - left.strike) / (right.strike - left.strike) : 0;
+            const iv = Number((left.iv + w * (right.iv - left.iv)).toFixed(2));
+            const fit_iv = Number(((left.fit_iv || left.iv) + w * ((right.fit_iv || right.iv) - (left.fit_iv || left.iv))).toFixed(2));
+            const dislocation_pct = Number(((left.dislocation_pct || 0) + w * ((right.dislocation_pct || 0) - (left.dislocation_pct || 0))).toFixed(1));
+            return {
+              expiry: exp,
+              dte: left.dte,
+              strike: targetStrike,
+              iv,
+              fit_iv,
+              dislocation_pct,
+              type: targetStrike < (spot || left.strike) ? 'otm_put' : 'otm_call',
+              hedge_label: dislocation_pct >= 5 ? 'OVERHEDGED (Rich)' : (dislocation_pct <= -5 ? 'UNDERHEDGED (Cheap)' : 'BALANCED (Fair Value)')
+            };
+          }
+        }
+        return null;
+      };
+
+      const evalGrid = expirations.map(exp => strikes.map(st => evalExpAtStrike(exp, st)));
+      let zData = evalGrid.map(row => row.map(cell => (cell ? cell.iv : null)));
+
+      // Build a reference mean smile profile across strikes from expirations that cover each strike
+      const defaultIv = (activeData.desk_metrics && activeData.desk_metrics.atm_iv_30d) || 25.0;
+      const refProfile = strikes.map((_, j) => {
+        const vals = [];
+        for (let i = 0; i < expirations.length; i++) {
+          if (zData[i][j] !== null && !isNaN(zData[i][j])) vals.push(zData[i][j]);
+        }
+        return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : defaultIv;
       });
 
-      // Interpolate missing IVs for continuous manifold
-      for (let j = 0; j < strikes.length; j++) {
-        let lastValid = null;
-        for (let i = 0; i < expirations.length; i++) {
-          if (zData[i][j] !== null) lastValid = zData[i][j];
-          else if (lastValid !== null) zData[i][j] = lastValid;
+      // Smoothly fill any missing outer wings on narrower near-term expirations by anchoring to that
+      // expiration's outermost valid strike and following the reference smile slope (zero cliffs, zero flat shelves)
+      for (let i = 0; i < expirations.length; i++) {
+        let firstValidIdx = -1;
+        let lastValidIdx = -1;
+        for (let j = 0; j < strikes.length; j++) {
+          if (zData[i][j] !== null && !isNaN(zData[i][j])) {
+            if (firstValidIdx === -1) firstValidIdx = j;
+            lastValidIdx = j;
+          }
         }
-        lastValid = null;
-        for (let i = expirations.length - 1; i >= 0; i--) {
-          if (zData[i][j] !== null) lastValid = zData[i][j];
-          else if (lastValid !== null) zData[i][j] = lastValid;
+        if (firstValidIdx === -1) {
+          for (let j = 0; j < strikes.length; j++) zData[i][j] = refProfile[j];
+          continue;
+        }
+        // Fill left wing (lower strikes) preserving continuous slope from firstValidIdx
+        for (let j = firstValidIdx - 1; j >= 0; j--) {
+          const slopeDelta = refProfile[j] - refProfile[j + 1];
+          zData[i][j] = Math.max(5.0, zData[i][j + 1] + slopeDelta * 0.85);
+        }
+        // Fill right wing (higher strikes) preserving continuous slope from lastValidIdx
+        for (let j = lastValidIdx + 1; j < strikes.length; j++) {
+          const slopeDelta = refProfile[j] - refProfile[j - 1];
+          zData[i][j] = Math.max(5.0, zData[i][j - 1] + slopeDelta * 0.85);
+        }
+        // Fill any internal gaps linearly
+        let prevIdx = firstValidIdx;
+        for (let j = firstValidIdx + 1; j <= lastValidIdx; j++) {
+          if (zData[i][j] !== null && !isNaN(zData[i][j])) {
+            if (j > prevIdx + 1) {
+              const startV = zData[i][prevIdx];
+              const endV = zData[i][j];
+              for (let k = prevIdx + 1; k < j; k++) {
+                zData[i][k] = startV + ((endV - startV) * (k - prevIdx)) / (j - prevIdx);
+              }
+            }
+            prevIdx = j;
+          }
         }
       }
 
-      // Guarantee no remaining nulls or NaNs in surface manifold
-      const defaultIv = (data.desk_metrics && data.desk_metrics.atm_iv_30d) || 25.0;
-      for (let i = 0; i < expirations.length; i++) {
-        for (let j = 0; j < strikes.length; j++) {
-          if (zData[i][j] === null || isNaN(zData[i][j])) {
-            zData[i][j] = defaultIv;
+      // Gentle 2-pass Savitzky-Golay / Gaussian smoothing kernel to produce a silky institutional manifold
+      for (let pass = 0; pass < 2; pass++) {
+        const nextZ = zData.map(row => [...row]);
+        for (let i = 0; i < expirations.length; i++) {
+          for (let j = 0; j < strikes.length; j++) {
+            const c = zData[i][j];
+            const l = j > 0 ? zData[i][j - 1] : c;
+            const r = j < strikes.length - 1 ? zData[i][j + 1] : c;
+            const u = i > 0 ? zData[i - 1][j] : c;
+            const d = i < expirations.length - 1 ? zData[i + 1][j] : c;
+            nextZ[i][j] = Number((0.50 * c + 0.17 * l + 0.17 * r + 0.08 * u + 0.08 * d).toFixed(2));
           }
         }
+        zData = nextZ;
       }
 
       const xValues = strikeMode === 'moneyness' 
@@ -276,12 +561,6 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
 
       const currentBg = BG_THEMES.find(t => t.id === surfaceBg) || BG_THEMES[0];
 
-      // Construct Point Map for Rich Hover & Dislocation Surface Color
-      const pointMap = new Map();
-      (surface || []).forEach(p => {
-        pointMap.set(`${p.expiry}-${p.strike}`, p);
-      });
-
       let surfaceColorscale = surfaceColor;
       let surfaceColorMatrix = undefined;
       let cminVal = undefined;
@@ -289,10 +568,10 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
       let colorbarTitle = 'Implied Vol (%)';
 
       if (surfaceColor === 'HedgingRegimes') {
-        surfaceColorMatrix = expirations.map(exp => {
-          return strikes.map(st => {
-            const p = pointMap.get(`${exp}-${st}`);
-            return p ? (p.dislocation_pct || 0) : 0;
+        surfaceColorMatrix = expirations.map((exp, i) => {
+          return strikes.map((st, j) => {
+            const cell = evalGrid[i][j];
+            return cell ? (cell.dislocation_pct || 0) : 0;
           });
         });
 
@@ -311,24 +590,27 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
       }
 
       // Rich hover template matrix
-      const hoverTextMatrix = expirations.map(exp => {
-        return strikes.map(st => {
-          const p = pointMap.get(`${exp}-${st}`);
-          if (!p) return `Strike: $${st}<br>Expiry: ${exp}`;
+      const hoverTextMatrix = expirations.map((exp, i) => {
+        return strikes.map((st, j) => {
+          const p = evalGrid[i][j];
+          const surfIv = zData[i][j];
+          if (!p) {
+            return `<b>Strike: $${st}</b> (${(st / (spot || 1)).toFixed(2)}x Spot)<br>Tenor: ${exp}<br>Surface IV: <b>${surfIv}%</b>`;
+          }
           const dis = p.dislocation_pct !== undefined ? (p.dislocation_pct > 0 ? `+${p.dislocation_pct}%` : `${p.dislocation_pct}%`) : '0%';
           const state = p.hedge_label || 'BALANCED (Fair Value)';
-          const fit = p.fit_iv || p.iv;
+          const fit = p.fit_iv || surfIv;
           const optType = p.type === 'otm_put' ? 'PUT' : (p.type === 'otm_call' ? 'CALL' : 'ATM');
-          return `<b>${optType} $${p.strike}</b> (${(p.strike / (spot || 1)).toFixed(2)}x Spot)<br>` +
+          return `<b>${optType} $${st}</b> (${(st / (spot || 1)).toFixed(2)}x Spot)<br>` +
                  `Tenor: ${p.expiry} (${p.dte}d)<br>` +
-                 `Market IV: <b>${p.iv}%</b><br>` +
+                 `Market IV: <b>${surfIv}%</b><br>` +
                  `Smile Baseline: ${fit}%<br>` +
                  `Dislocation: <b>${dis}</b><br>` +
                  `State: <b>${state}</b>`;
         });
       });
 
-      // Base 3D Surface with HD Mesh Lighting & Crisp Contour Lines
+      // Base 3D Surface with HD Mesh Lighting & Subtle Institutional Contour Lines
       const baseSurfaceTrace = {
         type: 'surface',
         z: zData,
@@ -336,45 +618,67 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         y: expirations,
         colorscale: surfaceColorscale,
         showscale: true,
-        opacity: 0.90,
+        opacity: 0.93,
         lighting: {
-          ambient: 0.82,
+          ambient: 0.85,
           diffuse: 0.90,
-          fresnel: 0.20,
-          specular: 0.40,
-          roughness: 0.35
+          fresnel: 0.25,
+          specular: 0.45,
+          roughness: 0.32
         },
         hoverinfo: 'text',
         text: hoverTextMatrix,
         colorbar: { 
           title: { text: colorbarTitle, font: { color: currentBg.text, family: 'monospace', size: 11 } }, 
           tickfont: { color: currentBg.text, family: 'monospace', size: 10 },
-          len: 0.8,
+          len: 0.78,
           thickness: 14,
           xpad: 10
         },
         contours: {
-          x: { show: true, color: 'rgba(255, 255, 255, 0.20)', width: 1 },
-          y: { show: true, color: 'rgba(255, 255, 255, 0.20)', width: 1 },
-          z: { show: true, usecolormap: true, highlightcolor: '#00F0FF', project: { z: true }, width: 2 }
+          x: { show: true, color: 'rgba(255, 255, 255, 0.08)', width: 1 },
+          y: { show: true, color: 'rgba(255, 255, 255, 0.12)', width: 1 },
+          z: { show: true, usecolormap: true, highlightcolor: '#00F0FF', project: { z: true }, width: 1 }
         }
       };
 
       if (surfaceColor === 'HedgingRegimes' && surfaceColorMatrix) {
         baseSurfaceTrace.surfacecolor = surfaceColorMatrix;
-        baseSurfaceTrace.cmin = -20;
-        baseSurfaceTrace.cmax = 20;
+        baseSurfaceTrace.cmin = cminVal;
+        baseSurfaceTrace.cmax = cmaxVal;
       }
 
       const plotData = [baseSurfaceTrace];
 
-      // Floating 3D Overhedge / Underhedge Radar Callout Pins (Anti-Collision & Staggered)
-      const topOver = data.hedging_diagnostics?.top_overhedged || [];
-      const topUnder = data.hedging_diagnostics?.top_underhedged || [];
+      // Helper to get smoothed surface Z height at any (expiry, strike) within the 3D grid
+      const minGridStrike = strikes[0];
+      const maxGridStrike = strikes[strikes.length - 1];
+      const expSet = new Set(expirations);
+      const getSurfaceZAt = (exp, strikeVal, fallbackIv) => {
+        const eIdx = expirations.indexOf(exp);
+        if (eIdx === -1) return fallbackIv;
+        // Find bracketing strikes in `strikes`
+        for (let j = 0; j < strikes.length - 1; j++) {
+          if (strikeVal >= strikes[j] && strikeVal <= strikes[j + 1]) {
+            const w = (strikes[j + 1] - strikes[j]) > 0 ? (strikeVal - strikes[j]) / (strikes[j + 1] - strikes[j]) : 0;
+            return zData[eIdx][j] + w * (zData[eIdx][j + 1] - zData[eIdx][j]);
+          }
+        }
+        return fallbackIv;
+      };
 
-      // Alternating label positions to guarantee zero overlap
-      const overPositions = ['top center', 'top right', 'top left', 'middle right'];
-      const underPositions = ['bottom center', 'bottom left', 'bottom right', 'middle left'];
+      // Floating 3D Overhedge / Underhedge Radar Callout Pins (Strictly Clamped to Core Surface Grid & Deduplicated)
+      const rawTopOver = activeData.hedging_diagnostics?.top_overhedged || [];
+      const rawTopUnder = activeData.hedging_diagnostics?.top_underhedged || [];
+      const topOver = rawTopOver
+        .filter(h => expSet.has(h.expiry) && h.strike >= minGridStrike && h.strike <= maxGridStrike)
+        .slice(0, 3);
+      const topUnder = rawTopUnder
+        .filter(h => expSet.has(h.expiry) && h.strike >= minGridStrike && h.strike <= maxGridStrike)
+        .slice(0, 3);
+
+      const overPositions = ['top center', 'top right', 'top left'];
+      const underPositions = ['bottom center', 'bottom left', 'bottom right'];
 
       if (topOver.length > 0) {
         plotData.push({
@@ -383,10 +687,10 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           name: '🔴 Overhedged Peaks',
           x: topOver.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
           y: topOver.map(h => h.expiry),
-          z: topOver.map(h => h.iv * 1.05),
-          text: topOver.map(h => `+$${h.strike} (+${Math.round(h.dislocation_pct)}%)`),
+          z: topOver.map(h => +(getSurfaceZAt(h.expiry, h.strike, h.iv) + 0.6).toFixed(2)),
+          text: topOver.map(h => `$${h.strike} (+${Math.round(h.dislocation_pct)}%)`),
           textposition: topOver.map((_, idx) => overPositions[idx % overPositions.length]),
-          textfont: { color: '#ef4444', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' },
+          textfont: { color: '#f87171', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
           hoverinfo: 'text',
           hovertext: topOver.map(h => 
             `<b>🔴 OVERHEDGED PEAK (Rich Premium)</b><br>` +
@@ -396,7 +700,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             `Dislocation: <b>+${h.dislocation_pct}% Rich</b><br>` +
             `<i>Strategy: ${h.strategy || 'Sell Vol / Credit Spread'}</i>`
           ),
-          marker: { size: 10, color: '#ef4444', symbol: 'diamond', line: { color: '#ffffff', width: 2 } }
+          marker: { size: 7, color: '#ef4444', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
         });
       }
 
@@ -407,10 +711,10 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           name: '🟢 Underhedged Valleys',
           x: topUnder.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
           y: topUnder.map(h => h.expiry),
-          z: topUnder.map(h => h.iv * 0.95),
-          text: topUnder.map(h => `-$${h.strike} (${Math.round(h.dislocation_pct)}%)`),
+          z: topUnder.map(h => +(getSurfaceZAt(h.expiry, h.strike, h.iv) - 0.5).toFixed(2)),
+          text: topUnder.map(h => `$${h.strike} (${Math.round(h.dislocation_pct)}%)`),
           textposition: topUnder.map((_, idx) => underPositions[idx % underPositions.length]),
-          textfont: { color: '#10b981', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' },
+          textfont: { color: '#4ade80', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
           hoverinfo: 'text',
           hovertext: topUnder.map(h => 
             `<b>🟢 UNDERHEDGED VOL VALLEY (Cheap Convexity)</b><br>` +
@@ -421,7 +725,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             `<b>Trader Meaning:</b> Statistical IV discount. Buy cheap gamma/vega with asymmetric upside.<br>` +
             `<i>Strategy: ${h.strategy || 'Buy Cheap Wings / Diagonal'}</i>`
           ),
-          marker: { size: 10, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 2 } }
+          marker: { size: 7, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
         });
       }
 
@@ -440,7 +744,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           y: [expirations[0], expirations[expirations.length - 1]],
           z: [[hvLevel, hvLevel], [hvLevel, hvLevel]],
           showscale: false,
-          opacity: 0.22,
+          opacity: 0.20,
           colorscale: [[0, '#38bdf8'], [1, '#38bdf8']],
           hoverinfo: 'text',
           text: [
@@ -450,79 +754,48 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         });
       }
 
-      // Golden ATM Ridge Line
-      if (term_structure.length > 0) {
-        const atmX = strikeMode === 'moneyness' ? 1.00 : spot;
-        plotData.push({
-          type: 'scatter3d',
-          mode: 'lines+markers',
-          name: 'ATM Ridge Spine',
-          x: term_structure.map(() => atmX),
-          y: term_structure.map(ts => ts.expiry),
-          z: term_structure.map(ts => ts.atm_iv),
-          line: { color: '#fbbf24', width: 6 },
-          marker: { size: 5, color: '#fbbf24' }
-        });
-      }
-
-      // Hotspot Pinpoints (Where trader should focus!)
-      if (hotspots.length > 0) {
-        const richSpots = hotspots.filter(h => h.type === 'overpriced');
-        const cheapSpots = hotspots.filter(h => h.type === 'underpriced');
-
-        if (richSpots.length > 0) {
+      // Golden ATM Ridge Line (snapped to the smoothed surface spine)
+      if (term_structure.length > 0 && spot) {
+        const clampedSpot = Math.min(maxGridStrike, Math.max(minGridStrike, spot));
+        const atmX = strikeMode === 'moneyness' ? 1.00 : clampedSpot;
+        const ridgeTerms = term_structure.filter(ts => expSet.has(ts.expiry));
+        if (ridgeTerms.length > 0) {
           plotData.push({
             type: 'scatter3d',
-            mode: 'markers+text',
-            name: 'Overpriced (Sell Vol)',
-            x: richSpots.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
-            y: richSpots.map(h => h.expiry),
-            z: richSpots.map(h => h.iv),
-            text: richSpots.map(h => `🔴 Sell +${h.edge_pct}%`),
-            textposition: 'top center',
-            textfont: { color: '#f87171', family: 'monospace', size: 10 },
-            marker: { size: 7, color: '#ef4444', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
-          });
-        }
-
-        if (cheapSpots.length > 0) {
-          plotData.push({
-            type: 'scatter3d',
-            mode: 'markers+text',
-            name: 'Underpriced (Buy Vol)',
-            x: cheapSpots.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
-            y: cheapSpots.map(h => h.expiry),
-            z: cheapSpots.map(h => h.iv),
-            text: cheapSpots.map(h => `🟢 Buy -${h.edge_pct}%`),
-            textposition: 'bottom center',
-            textfont: { color: '#4ade80', family: 'monospace', size: 10 },
-            marker: { size: 7, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
+            mode: 'lines+markers',
+            name: 'ATM Ridge Spine',
+            x: ridgeTerms.map(() => atmX),
+            y: ridgeTerms.map(ts => ts.expiry),
+            z: ridgeTerms.map(ts => +(getSurfaceZAt(ts.expiry, clampedSpot, ts.atm_iv) + 0.25).toFixed(2)),
+            line: { color: '#fbbf24', width: 5 },
+            marker: { size: 4, color: '#fbbf24' }
           });
         }
       }
 
-      // If a trade setup is focused, render an illuminated radar target marker
+      // If a trade setup is focused, render an illuminated radar target marker clamped to the grid
       if (focusedHotspot && focusedHotspot.strike) {
         const matchedExpiry = expirations.find(e => e === focusedHotspot.expiry) || expirations[0];
+        const clampedFocusStrike = Math.min(maxGridStrike, Math.max(minGridStrike, focusedHotspot.strike));
         if (matchedExpiry) {
           plotData.push({
             type: 'scatter3d',
             mode: 'markers+text',
             name: '🎯 Target Lock',
-            x: [strikeMode === 'moneyness' ? +(focusedHotspot.strike / (spot || 1)).toFixed(3) : focusedHotspot.strike],
+            x: [strikeMode === 'moneyness' ? +(clampedFocusStrike / (spot || 1)).toFixed(3) : clampedFocusStrike],
             y: [matchedExpiry],
-            z: [focusedHotspot.iv || 20],
-            text: ['🎯 FOCUS TARGET'],
+            z: [+(getSurfaceZAt(matchedExpiry, clampedFocusStrike, focusedHotspot.iv || 20) + 0.8).toFixed(2)],
+            text: [`🎯 $${focusedHotspot.strike}`],
             textposition: 'top center',
             textfont: { color: '#00F0FF', family: 'monospace', size: 12 },
-            marker: { size: 12, color: '#00F0FF', symbol: 'cross', line: { color: '#ffffff', width: 2 } }
+            marker: { size: 10, color: '#00F0FF', symbol: 'cross', line: { color: '#ffffff', width: 2 } }
           });
         }
       }
 
       const cameraEye = focusedHotspot
-        ? { x: 1.1, y: 1.1, z: 0.85 }
-        : (CAMERA_PRESETS[cameraPreset]?.eye || { x: 1.6, y: 1.6, z: 0.7 });
+        ? { x: 1.15, y: 1.15, z: 0.82 }
+        : (CAMERA_PRESETS[cameraPreset]?.eye || { x: 1.55, y: 1.55, z: 0.68 });
 
       const layout = {
         autosize: true,
@@ -532,36 +805,38 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         plot_bgcolor: 'transparent',
         showlegend: true,
         legend: { 
-          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' }, 
-          x: 0, 
-          y: 1,
-          bgcolor: 'rgba(15, 23, 42, 0.85)',
-          bordercolor: 'rgba(255, 255, 255, 0.15)',
+          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' }, 
+          x: 0.01, 
+          y: 0.99,
+          bgcolor: 'rgba(15, 23, 42, 0.82)',
+          bordercolor: 'rgba(255, 255, 255, 0.12)',
           borderwidth: 1
         },
         scene: {
+          aspectmode: 'manual',
+          aspectratio: { x: 1.35, y: 1.25, z: 0.72 },
           xaxis: { 
-            title: { text: xAxisTitle, font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
-            gridcolor: 'rgba(255, 255, 255, 0.12)', 
+            title: { text: xAxisTitle, font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            gridcolor: 'rgba(255, 255, 255, 0.10)', 
             color: '#f8fafc', 
-            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
-            backgroundcolor: 'rgba(15, 23, 42, 0.5)',
+            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 10 },
+            backgroundcolor: 'rgba(15, 23, 42, 0.45)',
             showbackground: true
           },
           yaxis: { 
-            title: { text: 'Expiration Date', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
-            gridcolor: 'rgba(255, 255, 255, 0.12)', 
+            title: { text: 'Expiration Tenor', font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            gridcolor: 'rgba(255, 255, 255, 0.10)', 
             color: '#f8fafc', 
-            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
-            backgroundcolor: 'rgba(15, 23, 42, 0.5)',
+            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 10 },
+            backgroundcolor: 'rgba(15, 23, 42, 0.45)',
             showbackground: true
           },
           zaxis: { 
-            title: { text: 'Implied Volatility (%)', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
-            gridcolor: 'rgba(255, 255, 255, 0.12)', 
+            title: { text: 'Implied Volatility (%)', font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            gridcolor: 'rgba(255, 255, 255, 0.10)', 
             color: '#f8fafc', 
-            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
-            backgroundcolor: 'rgba(15, 23, 42, 0.5)',
+            tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 10 },
+            backgroundcolor: 'rgba(15, 23, 42, 0.45)',
             showbackground: true
           },
           camera: { eye: cameraEye }
@@ -575,77 +850,203 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
       }
 
     } else if (activeViewMode === '2d_skew') {
-      // 2. BUILD 2D SKEW SLICE
-      const activeExp = selectedExpiry === 'All' ? expirations[0] : selectedExpiry;
-      const filtered = surface.filter(p => p.expiry === activeExp).sort((a,b) => a.strike - b.strike);
-      
-      const hvLevel = data.desk_metrics?.realized_hv_30d;
+      // 2. BUILD INSTITUTIONAL 2D VOLATILITY SKEW SLICE (+ MULTI-TENOR BENCHMARK OVERLAY)
+      const expirations = allExpirations;
+      const bench30Term = term_structure.length > 0
+        ? term_structure.reduce((prev, curr) => Math.abs((curr.dte || 30) - 30) < Math.abs((prev.dte || 30) - 30) ? curr : prev, term_structure[0])
+        : null;
+      const defaultBenchmarkExp = bench30Term?.expiry || expirations[Math.min(2, expirations.length - 1)] || expirations[0];
+      const isMultiTenorMode = selectedExpiry === 'All' || !expirations.includes(selectedExpiry);
+      const activeExp = isMultiTenorMode ? defaultBenchmarkExp : selectedExpiry;
+      const activeTermMeta = term_structure.find(t => t.expiry === activeExp);
+
+      // Filter to liquid tradable core band (±22% of spot) so deep illiquid LEAPS tails don't squash the smile
+      const filterCoreBand = (pts) => {
+        const sorted = [...pts].sort((a, b) => a.strike - b.strike);
+        if (!spot || sorted.length <= 10) return sorted;
+        const core = sorted.filter(p => Math.abs(p.strike - spot) / spot <= 0.22);
+        return core.length >= 6 ? core : sorted;
+      };
+
+      const filtered = filterCoreBand(surface.filter(p => p.expiry === activeExp));
+      const hvLevel = activeData.desk_metrics?.realized_hv_30d;
+
       const plotData = [
         {
           x: filtered.map(p => p.strike),
           y: filtered.map(p => p.iv),
           type: 'scatter',
           mode: 'lines+markers',
-          name: `Market IV Skew (${activeExp})`,
-          line: { color: '#00F0FF', width: 3, shape: 'spline' },
+          name: `Market Smile (${activeExp}${activeTermMeta?.dte ? ` · ${activeTermMeta.dte}D` : ''})`,
+          line: { color: '#00F0FF', width: 3.5, shape: 'spline', smoothing: 0.6 },
           marker: { 
             size: 7, 
-            color: filtered.map(p => p.hedge_state === 'overhedged' ? '#ef4444' : (p.hedge_state === 'underhedged' ? '#10b981' : '#38bdf8'))
+            color: filtered.map(p => p.hedge_state === 'overhedged' ? '#ef4444' : (p.hedge_state === 'underhedged' ? '#10b981' : '#00F0FF')),
+            line: { color: '#0f172a', width: 1 }
           },
-          text: filtered.map(p => `${p.strike} (${p.type}): IV ${p.iv}% | Baseline ${p.fit_iv || p.iv}% | ${p.hedge_label || 'Balanced'}`),
-          hoverinfo: 'text',
-          fill: 'tozeroy',
-          fillcolor: 'rgba(6, 182, 212, 0.06)'
+          text: filtered.map(p => (
+            `<b>Strike $${p.strike} (${p.type === 'otm_put' ? 'OTM PUT' : (p.type === 'otm_call' ? 'OTM CALL' : 'ATM')})</b><br>` +
+            `Tenor: ${p.expiry} (${p.dte}D)<br>` +
+            `Market IV: <b>${p.iv}%</b> | Wing-Damped Baseline: <b>${p.fit_iv || p.iv}%</b><br>` +
+            `Dislocation: <b>${p.dislocation_pct > 0 ? `+${p.dislocation_pct}%` : `${p.dislocation_pct || 0}%`}</b> (${p.hedge_label || 'Balanced'})`
+          )),
+          hoverinfo: 'text'
         },
         {
           x: filtered.map(p => p.strike),
           y: filtered.map(p => p.fit_iv || p.iv),
           type: 'scatter',
           mode: 'lines',
-          name: 'Fair Value Smile Baseline',
-          line: { color: 'rgba(255, 255, 255, 0.35)', width: 1.5, dash: 'dash' },
+          name: `Fair Smile Fit`,
+          line: { color: 'rgba(255, 255, 255, 0.45)', width: 2, dash: 'dash' },
           hoverinfo: 'none'
         }
       ];
 
+      // In 'All' (Multi-Tenor Benchmark) mode, overlay Front (~10D), Quarter (~90D), and Long (~250D) reference smiles
+      const allYValues = [...filtered.map(p => p.iv), ...filtered.map(p => p.fit_iv || p.iv)];
+      if (isMultiTenorMode && term_structure.length >= 3) {
+        const compTargets = [
+          { label: 'Front', targetDte: 10, color: '#f43f5e', dash: 'dot' },
+          { label: 'Quarter', targetDte: 90, color: '#a855f7', dash: 'dashdot' },
+          { label: 'LEAPS', targetDte: 250, color: '#10b981', dash: 'dot' }
+        ];
+        const usedExps = new Set([activeExp]);
+        compTargets.forEach(ct => {
+          const best = term_structure.reduce((prev, curr) => (
+            Math.abs((curr.dte || 30) - ct.targetDte) < Math.abs((prev.dte || 30) - ct.targetDte) ? curr : prev
+          ), term_structure[0]);
+          if (best && !usedExps.has(best.expiry)) {
+            usedExps.add(best.expiry);
+            const compPts = filterCoreBand(surface.filter(p => p.expiry === best.expiry));
+            if (compPts.length >= 5) {
+              compPts.forEach(cp => allYValues.push(cp.iv));
+              plotData.push({
+                x: compPts.map(p => p.strike),
+                y: compPts.map(p => p.iv),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${ct.label} (${best.dte}D)`,
+                line: { color: ct.color, width: 2, dash: ct.dash, shape: 'spline', smoothing: 0.6 },
+                opacity: 0.82,
+                text: compPts.map(p => `<b>${best.expiry} (${best.dte}D)</b> · Strike $${p.strike}: IV <b>${p.iv}%</b>`),
+                hoverinfo: 'text'
+              });
+            }
+          }
+        });
+      }
+
+      const put25Strike = activeTermMeta?.put_25d_strike;
+      const call25Strike = activeTermMeta?.call_25d_strike;
+      const put25Iv = activeTermMeta?.put_25d_iv;
+      const call25Iv = activeTermMeta?.call_25d_iv;
+      const atmIvVal = activeTermMeta?.atm_iv;
+
+      const minXStrike = filtered.length > 0 ? filtered[0].strike : (spot ? spot * 0.85 : 0);
+      const maxXStrike = filtered.length > 0 ? filtered[filtered.length - 1].strike : (spot ? spot * 1.15 : 100);
+
+      // Plot glowing diamond markers for 25D Put, ATM, and 25D Call (no floating text boxes that can collide!)
+      if (put25Strike && put25Iv && put25Strike >= minXStrike && put25Strike <= maxXStrike) {
+        allYValues.push(put25Iv);
+        plotData.push({
+          x: [put25Strike],
+          y: [put25Iv],
+          type: 'scatter',
+          mode: 'markers',
+          name: `25Δ Put ($${put25Strike} · ${put25Iv}%)`,
+          marker: { size: 11, color: '#f43f5e', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } },
+          text: [`<b>25Δ OTM Put Anchor</b><br>Strike: $${put25Strike}<br>IV: <b>${put25Iv}%</b>`],
+          hoverinfo: 'text'
+        });
+      }
+      if (spot && atmIvVal && spot >= minXStrike && spot <= maxXStrike) {
+        allYValues.push(atmIvVal);
+        plotData.push({
+          x: [spot],
+          y: [atmIvVal],
+          type: 'scatter',
+          mode: 'markers',
+          name: `ATM Spot ($${spot.toFixed(2)} · ${atmIvVal}%)`,
+          marker: { size: 11, color: '#fbbf24', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } },
+          text: [`<b>ATM Spot Anchor</b><br>Spot: $${spot.toFixed(2)}<br>ATM IV: <b>${atmIvVal}%</b>`],
+          hoverinfo: 'text'
+        });
+      }
+      if (call25Strike && call25Iv && call25Strike >= minXStrike && call25Strike <= maxXStrike) {
+        allYValues.push(call25Iv);
+        plotData.push({
+          x: [call25Strike],
+          y: [call25Iv],
+          type: 'scatter',
+          mode: 'markers',
+          name: `25Δ Call ($${call25Strike} · ${call25Iv}%)`,
+          marker: { size: 11, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } },
+          text: [`<b>25Δ OTM Call Anchor</b><br>Strike: $${call25Strike}<br>IV: <b>${call25Iv}%</b>`],
+          hoverinfo: 'text'
+        });
+      }
+
+      if (hvLevel) allYValues.push(hvLevel);
+      const rawMinY = allYValues.length > 0 ? Math.min(...allYValues) : 12;
+      const rawMaxY = allYValues.length > 0 ? Math.max(...allYValues) : 40;
+      const yPad = Math.max(2.5, (rawMaxY - rawMinY) * 0.18);
+      const minY = Math.max(1, +(rawMinY - yPad).toFixed(1));
+      const maxY = +(rawMaxY + yPad).toFixed(1);
+
       const layout = {
         autosize: true,
-        height: 520,
-        margin: { l: 50, r: 30, b: 50, t: 30 },
+        height: 530,
+        margin: { l: 62, r: 28, b: 56, t: 52 },
         paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
-        title: { text: `Volatility Skew Curve · ${activeExp}`, font: { color: '#f8fafc', family: 'monospace', size: 14 } },
-        xaxis: { title: 'Strike Price ($)', gridcolor: '#1e293b', color: '#94a3b8', tickfont: { family: 'monospace' } },
-        yaxis: { title: 'Implied Volatility (%)', gridcolor: '#1e293b', color: '#94a3b8', tickfont: { family: 'monospace' } },
+        plot_bgcolor: '#090d16',
+        legend: {
+          orientation: 'h',
+          x: 0,
+          xanchor: 'left',
+          y: 1.03,
+          yanchor: 'bottom',
+          font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 10 },
+          bgcolor: 'rgba(15, 23, 42, 0.78)',
+          bordercolor: 'rgba(255, 255, 255, 0.08)',
+          borderwidth: 1
+        },
+        xaxis: {
+          title: { text: 'Strike Price ($)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12 }, standoff: 10 },
+          gridcolor: 'rgba(255, 255, 255, 0.08)',
+          color: '#cbd5e1',
+          tickfont: { family: "'JetBrains Mono', monospace", size: 11 }
+        },
+        yaxis: {
+          title: { text: 'Implied Volatility (%)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12 } },
+          gridcolor: 'rgba(255, 255, 255, 0.08)',
+          color: '#cbd5e1',
+          tickfont: { family: "'JetBrains Mono', monospace", size: 11 },
+          range: [minY, maxY]
+        },
         shapes: [
           ...(spot && filtered.length > 0 ? [{
-            type: 'line', x0: spot, x1: spot, y0: 0, y1: (Math.max(...filtered.map(p => p.iv)) || 30) * 1.05,
-            line: { color: '#fbbf24', width: 2, dash: 'dash' }
+            type: 'line', x0: spot, x1: spot, y0: minY, y1: maxY,
+            line: { color: 'rgba(251, 191, 36, 0.65)', width: 1.75, dash: 'dash' }
+          }] : []),
+          ...(put25Strike && filtered.length > 0 && put25Strike >= minXStrike ? [{
+            type: 'line', x0: put25Strike, x1: put25Strike, y0: minY, y1: maxY,
+            line: { color: 'rgba(244, 63, 94, 0.38)', width: 1.25, dash: 'dot' }
+          }] : []),
+          ...(call25Strike && filtered.length > 0 && call25Strike <= maxXStrike ? [{
+            type: 'line', x0: call25Strike, x1: call25Strike, y0: minY, y1: maxY,
+            line: { color: 'rgba(16, 185, 129, 0.38)', width: 1.25, dash: 'dot' }
           }] : []),
           ...(hvLevel && filtered.length > 0 ? [{
             type: 'line',
-            x0: filtered[0].strike,
-            x1: filtered[filtered.length - 1].strike,
+            x0: minXStrike,
+            x1: maxXStrike,
             y0: hvLevel,
             y1: hvLevel,
-            line: { color: '#38bdf8', width: 1.5, dash: 'dot' }
+            line: { color: 'rgba(56, 189, 248, 0.55)', width: 1.5, dash: 'dot' }
           }] : [])
         ],
-        annotations: [
-          ...(spot && filtered.length > 0 ? [{
-            x: spot, y: Math.max(...filtered.map(p => p.iv)) || 30, text: `Spot $${spot.toFixed(2)}`,
-            showarrow: true, arrowcolor: '#fbbf24', font: { color: '#fbbf24', family: 'monospace', size: 11 }
-          }] : []),
-          ...(hvLevel && filtered.length > 0 ? [{
-            x: filtered[filtered.length - 1].strike,
-            y: hvLevel,
-            text: `30D HV ${hvLevel}%`,
-            showarrow: false,
-            xanchor: 'right',
-            yanchor: 'bottom',
-            font: { color: '#38bdf8', family: 'monospace', size: 10 }
-          }] : [])
-        ]
+        annotations: []
       };
 
       try {
@@ -655,32 +1056,114 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
       }
 
     } else if (activeViewMode === 'term_structure') {
-      // 3. BUILD TERM STRUCTURE CURVE
-      const hvLevel = data.desk_metrics?.realized_hv_30d;
-      const plotData = [{
-        x: term_structure.map(ts => `${ts.dte}D (${ts.expiry})`),
-        y: term_structure.map(ts => ts.atm_iv),
-        type: 'scatter',
-        mode: 'lines+markers+text',
-        name: 'ATM Term Structure',
-        text: term_structure.map(ts => `±${ts.expected_move_pct}%`),
-        textposition: 'top center',
-        textfont: { color: '#38bdf8', family: 'monospace', size: 10 },
-        line: { color: '#a855f7', width: 3, shape: 'spline' },
-        marker: { size: 8, color: '#c084fc' },
-        fill: 'tozeroy',
-        fillcolor: 'rgba(168, 85, 247, 0.08)'
-      }];
+      // 3. BUILD INSTITUTIONAL TERM STRUCTURE CURVE (ATM + 25D PUT + 25D CALL + EVENT PEAK)
+      const hvLevel = activeData.desk_metrics?.realized_hv_30d;
+      const xLabels = term_structure.map(ts => `${ts.dte}D`);
+
+      let peakIdx = 0;
+      term_structure.forEach((ts, idx) => {
+        if ((ts.atm_iv || 0) > (term_structure[peakIdx]?.atm_iv || 0)) peakIdx = idx;
+      });
+
+      const atmY = term_structure.map(ts => ts.atm_iv);
+      const put25Y = term_structure.map(ts => ts.put_25d_iv || ts.atm_iv);
+      const call25Y = term_structure.map(ts => ts.call_25d_iv || ts.atm_iv);
+      const allTermY = [...atmY, ...put25Y, ...call25Y, ...(hvLevel ? [hvLevel] : [])].filter(v => v !== undefined && !isNaN(v));
+      const rawMinTerm = allTermY.length > 0 ? Math.min(...allTermY) : 12;
+      const rawMaxTerm = allTermY.length > 0 ? Math.max(...allTermY) : 40;
+      const termPad = Math.max(2.5, (rawMaxTerm - rawMinTerm) * 0.18);
+      const minTermY = Math.max(1, +(rawMinTerm - termPad).toFixed(1));
+      const maxTermY = +(rawMaxTerm + termPad).toFixed(1);
+
+      const peakTs = term_structure[peakIdx];
+
+      const plotData = [
+        {
+          x: xLabels,
+          y: atmY,
+          type: 'scatter',
+          mode: 'lines+markers',
+          name: 'ATM Implied Vol (%)',
+          line: { color: '#a855f7', width: 3.5, shape: 'spline', smoothing: 0.55 },
+          marker: {
+            size: term_structure.map((_, idx) => idx === peakIdx ? 11 : 7),
+            color: term_structure.map((_, idx) => idx === peakIdx ? '#f59e0b' : '#c084fc'),
+            symbol: term_structure.map((_, idx) => idx === peakIdx ? 'diamond' : 'circle'),
+            line: { color: '#ffffff', width: 1 }
+          },
+          hovertext: term_structure.map(ts => (
+            `<b>Tenor: ${ts.expiry} (${ts.dte} DTE)</b><br>` +
+            `ATM IV: <b>${ts.atm_iv}%</b><br>` +
+            `Implied Move: <b>±${ts.expected_move_pct}% (±$${ts.expected_move_pts})</b><br>` +
+            `25Δ Put IV: ${ts.put_25d_iv || ts.atm_iv}% | 25Δ Call IV: ${ts.call_25d_iv || ts.atm_iv}%<br>` +
+            `25Δ Skew Spread: <b>+${ts.skew_25d ?? 0}%</b>`
+          )),
+          hoverinfo: 'text'
+        },
+        {
+          x: xLabels,
+          y: put25Y,
+          type: 'scatter',
+          mode: 'lines',
+          name: '25Δ OTM Put Skew IV (%)',
+          line: { color: '#f43f5e', width: 2, dash: 'dash', shape: 'spline', smoothing: 0.55 },
+          opacity: 0.85,
+          hoverinfo: 'skip'
+        },
+        {
+          x: xLabels,
+          y: call25Y,
+          type: 'scatter',
+          mode: 'lines',
+          name: '25Δ OTM Call Wing IV (%)',
+          line: { color: '#10b981', width: 2, dash: 'dot', shape: 'spline', smoothing: 0.55 },
+          opacity: 0.85,
+          hoverinfo: 'skip'
+        },
+        ...(peakTs ? [{
+          x: [xLabels[peakIdx]],
+          y: [peakTs.atm_iv],
+          type: 'scatter',
+          mode: 'markers',
+          name: `Peak Event IV (${peakTs.atm_iv}% @ ${peakTs.dte}D · ±${peakTs.expected_move_pct}%)`,
+          marker: { size: 12, color: '#f59e0b', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } },
+          hoverinfo: 'skip'
+        }] : [])
+      ];
 
       const layout = {
         autosize: true,
-        height: 520,
-        margin: { l: 50, r: 30, b: 60, t: 30 },
+        height: 530,
+        margin: { l: 62, r: 28, b: 58, t: 52 },
         paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
-        title: { text: `Implied Volatility Term Structure Curve (ATM)`, font: { color: '#f8fafc', family: 'monospace', size: 14 } },
-        xaxis: { title: 'Days to Expiration (DTE)', gridcolor: '#1e293b', color: '#94a3b8', tickfont: { family: 'monospace' } },
-        yaxis: { title: 'ATM Implied Volatility (%)', gridcolor: '#1e293b', color: '#94a3b8', tickfont: { family: 'monospace' } },
+        plot_bgcolor: '#090d16',
+        legend: {
+          orientation: 'h',
+          x: 0,
+          xanchor: 'left',
+          y: 1.03,
+          yanchor: 'bottom',
+          font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 10 },
+          bgcolor: 'rgba(15, 23, 42, 0.78)',
+          bordercolor: 'rgba(255, 255, 255, 0.08)',
+          borderwidth: 1
+        },
+        xaxis: {
+          title: { text: 'Expiration Tenor (Days to Expiration)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12 }, standoff: 10 },
+          gridcolor: 'rgba(255, 255, 255, 0.08)',
+          color: '#cbd5e1',
+          tickmode: 'auto',
+          nticks: 15,
+          tickangle: 0,
+          tickfont: { family: "'JetBrains Mono', monospace", size: 10.5 }
+        },
+        yaxis: {
+          title: { text: 'Implied Volatility (%)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12 } },
+          gridcolor: 'rgba(255, 255, 255, 0.08)',
+          color: '#cbd5e1',
+          tickfont: { family: "'JetBrains Mono', monospace", size: 11 },
+          range: [minTermY, maxTermY]
+        },
         shapes: hvLevel ? [{
           type: 'line',
           xref: 'paper',
@@ -688,18 +1171,9 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           x1: 1,
           y0: hvLevel,
           y1: hvLevel,
-          line: { color: '#38bdf8', width: 1.5, dash: 'dot' }
+          line: { color: 'rgba(56, 189, 248, 0.55)', width: 1.5, dash: 'dot' }
         }] : [],
-        annotations: hvLevel ? [{
-          xref: 'paper',
-          x: 0.98,
-          y: hvLevel,
-          text: `30D Realized HV Benchmark (${hvLevel}%)`,
-          showarrow: false,
-          xanchor: 'right',
-          yanchor: 'bottom',
-          font: { color: '#38bdf8', family: 'monospace', size: 10 }
-        }] : []
+        annotations: []
       };
 
       try {
@@ -710,6 +1184,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
 
     } else if (activeViewMode === 'heatmap') {
       // 4. BUILD 2D VOLATILITY HEATMAP MATRIX
+      const expirations = allExpirations;
       const ptMap = new Map();
       surface.forEach(p => {
         if (p && p.expiry && p.strike !== undefined && p.iv !== undefined) {
@@ -717,9 +1192,9 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         }
       });
 
-      let displayedStrikes = strikes;
+      let displayedStrikes = rawStrikes;
       if (heatmapFilter === 'core' && spot) {
-        const coreFiltered = strikes.filter(s => Math.abs(s - spot) / spot <= 0.15);
+        const coreFiltered = rawStrikes.filter(s => Math.abs(s - spot) / spot <= 0.15);
         if (coreFiltered.length >= 5) {
           displayedStrikes = coreFiltered;
         }
@@ -1151,7 +1626,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
         console.error("Plotly scatter render error:", err);
       }
     }
-  }, [data, selectedExpiry, activeViewMode, focusedHotspot, plotlyReady, detectedAirPockets, surfaceColor, surfaceBg, cameraPreset, strikeMode, heatmapFilter, showHvPlane]);
+  }, [data, horizonData, tenorHorizon, selectedExpiry, activeViewMode, focusedHotspot, plotlyReady, detectedAirPockets, surfaceColor, surfaceBg, cameraPreset, strikeMode, heatmapFilter, showHvPlane, show3dLabels]);
 
   if (loading) {
     return (
@@ -1171,7 +1646,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
       >
         <Loader2 style={{ width: '40px', height: '40px', color: '#00F0FF', marginBottom: '14px' }} className="animate-spin" />
         <p style={{ fontFamily: 'monospace', fontSize: '14px', color: '#cbd5e1', margin: 0 }}>
-          Calibrating Quant Volatility Manifold for {ticker}...
+          Calibrating Multi-Year Quant Volatility Manifold for {ticker}...
         </p>
       </div>
     );
@@ -1204,8 +1679,9 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
     );
   }
 
-  const { spot, desk_metrics = {}, actionable_setups = [], hotspots = [], ai_vol_intelligence = null } = data;
-  const availableExpirations = [...new Set(data.surface.map(item => item.expiry))].sort();
+  const activeData = horizonData || data;
+  const { spot, desk_metrics = {}, actionable_setups = [], hotspots = [], ai_vol_intelligence = null, horizon_meta = null } = activeData;
+  const availableExpirations = [...new Set(activeData.surface.map(item => item.expiry))].sort();
 
   // Top-level AI Volatility Intelligence scope
   const ai = ai_vol_intelligence || {
@@ -1622,29 +2098,29 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
           <div className="hedging-spectrum-wrap">
             <div className="spectrum-labels">
               <span className="spec-lbl-green">
-                🟢 Underhedged Valleys: {data.hedging_diagnostics.counts?.underhedged} strikes ({data.hedging_diagnostics.percentages?.underhedged_pct}%) — Cheap Convexity
+                🟢 Underhedged Valleys: {activeData.hedging_diagnostics?.counts?.underhedged} strikes ({activeData.hedging_diagnostics?.percentages?.underhedged_pct}%) — Cheap Convexity
               </span>
               <span className="spec-lbl-slate">
-                ⚖️ Fair Value Balanced: {data.hedging_diagnostics.counts?.balanced} strikes ({data.hedging_diagnostics.percentages?.balanced_pct}%)
+                ⚖️ Fair Value Balanced: {activeData.hedging_diagnostics?.counts?.balanced} strikes ({activeData.hedging_diagnostics?.percentages?.balanced_pct}%)
               </span>
               <span className="spec-lbl-red">
-                🔴 Overhedged Peaks: {data.hedging_diagnostics.counts?.overhedged} strikes ({data.hedging_diagnostics.percentages?.overhedged_pct}%) — Expensive Panic
+                🔴 Overhedged Peaks: {activeData.hedging_diagnostics?.counts?.overhedged} strikes ({activeData.hedging_diagnostics?.percentages?.overhedged_pct}%) — Expensive Panic
               </span>
             </div>
             <div className="hedging-bar-track">
               <div 
                 className="bar-segment bar-underhedged" 
-                style={{ width: `${data.hedging_diagnostics.percentages?.underhedged_pct}%` }} 
+                style={{ width: `${activeData.hedging_diagnostics?.percentages?.underhedged_pct}%` }} 
                 title="Underhedged: Cheap protection / convexity" 
               />
               <div 
                 className="bar-segment bar-balanced" 
-                style={{ width: `${data.hedging_diagnostics.percentages?.balanced_pct}%` }} 
+                style={{ width: `${activeData.hedging_diagnostics?.percentages?.balanced_pct}%` }} 
                 title="Balanced: Orderly fair value smile pricing" 
               />
               <div 
                 className="bar-segment bar-overhedged" 
-                style={{ width: `${data.hedging_diagnostics.percentages?.overhedged_pct}%` }} 
+                style={{ width: `${activeData.hedging_diagnostics?.percentages?.overhedged_pct}%` }} 
                 title="Overhedged: Expensive crash puts / call FOMO" 
               />
             </div>
@@ -1657,7 +2133,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
               <span>Dealer Gamma & Vanna Flow Dynamics:</span>
             </div>
             <p className="dealer-insight-text">
-              {data.hedging_diagnostics.dealer_flow_insight}
+              {activeData.hedging_diagnostics?.dealer_flow_insight}
             </p>
           </div>
 
@@ -1669,11 +2145,11 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
                 <span className="col-sub">Overpriced tail panic wings — Sell premium</span>
               </div>
               <div className="target-cards-list">
-                {data.hedging_diagnostics.top_overhedged?.map((item, idx) => (
+                {activeData.hedging_diagnostics?.top_overhedged?.map((item, idx) => (
                   <div key={idx} className="target-micro-card">
                     <div className="tmc-top">
                       <span className="tmc-strike">${item.strike} {item.type === 'otm_put' ? 'PUT' : 'CALL'}</span>
-                      <span className="tmc-exp">{item.expiry}</span>
+                      <span className="tmc-exp">{item.expiry} {item.dte ? `(${item.dte}d)` : ''}</span>
                       <span className="tmc-edge">+{item.dislocation_pct}% Rich</span>
                     </div>
                     <div className="tmc-strat">{item.strategy}</div>
@@ -1688,11 +2164,11 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
                 <span className="col-sub">Depressed vol valleys & cheap wings — Buy gamma</span>
               </div>
               <div className="target-cards-list">
-                {data.hedging_diagnostics.top_underhedged?.map((item, idx) => (
+                {activeData.hedging_diagnostics?.top_underhedged?.map((item, idx) => (
                   <div key={idx} className="target-micro-card">
                     <div className="tmc-top">
                       <span className="tmc-strike">${item.strike} {item.type === 'otm_put' ? 'PUT' : 'CALL'}</span>
-                      <span className="tmc-exp">{item.expiry}</span>
+                      <span className="tmc-exp">{item.expiry} {item.dte ? `(${item.dte}d)` : ''}</span>
                       <span className="tmc-edge green-edge">{item.dislocation_pct}% Cheap</span>
                     </div>
                     <div className="tmc-strat">{item.strategy}</div>
@@ -1758,7 +2234,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #fbbf24' }}>
               <strong style={{ color: '#fbbf24', fontSize: '12px', display: 'block', marginBottom: '4px' }}>2. Y-Axis (Front-to-Back)</strong>
               <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
-                <strong>Expiration Dates:</strong> Near-term (near front) to long-term LEAPS (in back).
+                <strong>Expiration Dates ({horizon_meta?.label || '1–2 Years'}):</strong> Near-term weeklies in front out to {horizon_meta?.max_dte || 730}D LEAPS in back.
               </span>
             </div>
 
@@ -1770,7 +2246,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             </div>
           </div>
         </div>
-        {/* Section Title */}
+        {/* Section Title + Multi-Year Horizon Selector (1M, 3M, 6M, 1Y, 2Y, All LEAPS) */}
         <div 
           className="vol-surface-header"
           style={{
@@ -1783,15 +2259,80 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
           }}
         >
-          <div className="vol-surface-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="vol-surface-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <Compass style={{ width: '18px', height: '18px', color: '#00F0FF' }} />
             <h3 style={{ margin: 0, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#00F0FF' }}>
-              Quantitative Volatility Surface & Smile Topology
+              Quantitative Volatility Surface & Smile Topology ({horizon_meta?.label || '2 Years'})
             </h3>
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '11px',
+              padding: '3px 9px',
+              borderRadius: '6px',
+              background: 'rgba(0, 240, 255, 0.12)',
+              border: '1px solid rgba(0, 240, 255, 0.35)',
+              color: '#00F0FF',
+              fontWeight: 700
+            }}>
+              {availableExpirations.length} Expirations · {horizon_meta?.min_dte || 1}D to {horizon_meta?.max_dte || 730}D ({availableExpirations[0]} → {availableExpirations[availableExpirations.length - 1]})
+            </span>
           </div>
-          <span className="vol-surface-expirations-count">
-            Interactive Multi-Tenor Manifold across {availableExpirations.length} Expirations
-          </span>
+
+          {/* Interactive Tenor Horizon Selector (1M, 3M, 6M, 1Y, 2Y, All LEAPS) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flexWrap: 'wrap',
+            background: 'rgba(15, 23, 42, 0.92)',
+            padding: '5px 8px',
+            borderRadius: '10px',
+            border: '1px solid rgba(0, 240, 255, 0.3)'
+          }}>
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '11px',
+              fontWeight: 800,
+              color: '#94a3b8',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              paddingLeft: '4px'
+            }}>
+              ⏳ Surface Horizon:
+            </span>
+            {HORIZON_OPTIONS.map(opt => {
+              const isSelected = tenorHorizon === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    setTenorHorizon(opt.id);
+                    setSelectedExpiry('All');
+                    setFocusedHotspot(null);
+                  }}
+                  title={opt.desc}
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    padding: '5px 11px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    border: isSelected ? '1px solid #00F0FF' : '1px solid rgba(255,255,255,0.08)',
+                    background: isSelected
+                      ? 'linear-gradient(135deg, rgba(0, 240, 255, 0.28), rgba(59, 130, 246, 0.32))'
+                      : 'rgba(255, 255, 255, 0.04)',
+                    color: isSelected ? '#ffffff' : '#94a3b8',
+                    boxShadow: isSelected ? '0 0 12px rgba(0, 240, 255, 0.25)' : 'none'
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* QUANT VOLATILITY DESK KPI STRIP */}
@@ -1879,12 +2420,12 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
 
           {/* TERM STRUCTURE */}
           <div className="vol-kpi-tile">
-            <span className="vol-kpi-label">Term Regime</span>
+            <span className="vol-kpi-label">Term Regime ({tenorHorizon})</span>
             <span className={`vol-kpi-val ${desk_metrics?.term_structure_regime === 'Backwardation' ? 'rose' : 'purple'}`}>
               {desk_metrics?.term_structure_regime}
             </span>
             <span className="vol-kpi-sub">
-              {desk_metrics?.term_structure_slope > 0 ? `+${desk_metrics?.term_structure_slope}% Slope` : `${desk_metrics?.term_structure_slope}% Slope`}
+              {desk_metrics?.term_structure_slope > 0 ? `+${desk_metrics?.term_structure_slope}% Slope` : `${desk_metrics?.term_structure_slope}% Slope`} ({availableExpirations.length} Tenors)
             </span>
           </div>
 
@@ -1974,9 +2515,14 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
               onChange={(e) => setSelectedExpiry(e.target.value)}
               className="vol-expiry-select"
             >
-              {availableExpirations.map(exp => (
-                <option key={exp} value={exp}>{exp}</option>
-              ))}
+              <option value="All">📊 30D Benchmark + Multi-Tenor Overlay</option>
+              {availableExpirations.map(exp => {
+                const tsItem = (activeData.term_structure || []).find(t => t.expiry === exp);
+                const labelSuffix = tsItem ? ` (${tsItem.dte}D · ATM ${tsItem.atm_iv}%)` : '';
+                return (
+                  <option key={exp} value={exp}>{exp}{labelSuffix}</option>
+                );
+              })}
             </select>
           )}
 
@@ -2220,6 +2766,111 @@ const VolatilitySurface3D = ({ ticker = 'SPY' }) => {
             </div>
           )}
         </div>
+
+        {/* Clean Non-Overlapping Telemetry Strip for 2D Skew & Term Structure */}
+        {(activeViewMode === '2d_skew' || activeViewMode === 'term_structure') && (() => {
+          const tsList = activeData.term_structure || [];
+          const bench30 = tsList.length > 0
+            ? tsList.reduce((p, c) => Math.abs((c.dte || 30) - 30) < Math.abs((p.dte || 30) - 30) ? c : p, tsList[0])
+            : null;
+          const activeExp = (selectedExpiry === 'All' || !availableExpirations.includes(selectedExpiry))
+            ? (bench30?.expiry || availableExpirations[0])
+            : selectedExpiry;
+          const activeTs = tsList.find(t => t.expiry === activeExp) || bench30 || {};
+          const peakTs = tsList.length > 0
+            ? tsList.reduce((p, c) => (c.atm_iv || 0) > (p.atm_iv || 0) ? c : p, tsList[0])
+            : null;
+
+          if (activeViewMode === '2d_skew') {
+            return (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  border: '1px solid rgba(0, 240, 255, 0.22)',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '11px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#00F0FF', fontWeight: 800 }}>
+                    2D VOLATILITY SKEW · {activeExp} ({activeTs.dte || 30}D)
+                  </span>
+                  {selectedExpiry === 'All' && (
+                    <span style={{ color: '#94a3b8', fontSize: '10px' }}>
+                      (+ Front / Quarter / LEAPS Multi-Tenor Overlay)
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {activeTs.put_25d_strike && (
+                    <span style={{ padding: '3px 8px', borderRadius: '5px', background: 'rgba(244,63,94,0.14)', border: '1px solid rgba(244,63,94,0.35)', color: '#fda4af' }}>
+                      25Δ Put: <strong>${activeTs.put_25d_strike} ({activeTs.put_25d_iv}%)</strong>
+                    </span>
+                  )}
+                  {spot && (
+                    <span style={{ padding: '3px 8px', borderRadius: '5px', background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.35)', color: '#fde68a' }}>
+                      ATM Spot: <strong>${spot.toFixed(2)} ({activeTs.atm_iv || '--'}%)</strong>
+                    </span>
+                  )}
+                  {activeTs.call_25d_strike && (
+                    <span style={{ padding: '3px 8px', borderRadius: '5px', background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.35)', color: '#6ee7b7' }}>
+                      25Δ Call: <strong>${activeTs.call_25d_strike} ({activeTs.call_25d_iv}%)</strong>
+                    </span>
+                  )}
+                  <span style={{ padding: '3px 8px', borderRadius: '5px', background: 'rgba(0,240,255,0.12)', border: '1px solid rgba(0,240,255,0.3)', color: '#00F0FF' }}>
+                    25Δ Skew: <strong>{(activeTs.skew_25d ?? desk_metrics?.skew_spread ?? 0) >= 0 ? '+' : ''}{activeTs.skew_25d ?? desk_metrics?.skew_spread ?? 0}%</strong>
+                  </span>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '10px',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                background: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(168, 85, 247, 0.28)',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '11px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ color: '#c084fc', fontWeight: 800 }}>
+                  IV TERM STRUCTURE · {activeData.horizon_meta?.label || tenorHorizon} ({tsList.length} EXPIRATIONS)
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ padding: '3px 8px', borderRadius: '5px', background: 'rgba(168,85,247,0.14)', border: '1px solid rgba(168,85,247,0.35)', color: '#e9d5ff' }}>
+                  Regime: <strong>{desk_metrics?.term_structure_regime || 'Flat'} ({(desk_metrics?.term_structure_slope || 0) > 0 ? '+' : ''}{desk_metrics?.term_structure_slope || 0}% Slope)</strong>
+                </span>
+                {peakTs && (
+                  <span style={{ padding: '3px 8px', borderRadius: '5px', background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)', color: '#fde68a' }}>
+                    Peak IV: <strong>{peakTs.atm_iv}% @ {peakTs.dte}D (±{peakTs.expected_move_pct}%)</strong>
+                  </span>
+                )}
+                {desk_metrics?.realized_hv_30d && (
+                  <span style={{ padding: '3px 8px', borderRadius: '5px', background: 'rgba(56,189,248,0.14)', border: '1px solid rgba(56,189,248,0.35)', color: '#7dd3fc' }}>
+                    30D Realized HV: <strong>{desk_metrics.realized_hv_30d}%</strong>
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Plotly Canvas Container */}
         <div 

@@ -1,12 +1,12 @@
 /* ==========================================================================
-   AI PLAYBOOK COMMAND CENTER CSS
+   AI PLAYBOOK 3.0 — INSTITUTIONAL EXECUTION COMMAND DECK CSS
    Cyberpunk dark terminal aesthetic, high-density telemetry, glowing borders
    ========================================================================== */
 
 .ai-playbook-root {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   width: 100%;
   animation: fadeInPlaybook 0.3s ease-in-out;
 }
@@ -16,13 +16,13 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* 1. Header Card */
+/* 1. Executive Header Card & Sizer Ribbon */
 .playbook-header-card {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 14, 23, 0.98) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(10, 14, 23, 0.99) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 14px;
-  padding: 22px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  padding: 20px 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
   position: relative;
   overflow: hidden;
 }
@@ -34,7 +34,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #00F0FF, #00E676, #a855f7);
+  background: linear-gradient(90deg, #00F0FF, #00E676, #a855f7, #fbbf24);
 }
 
 .playbook-header-top {
@@ -48,7 +48,7 @@
 .playbook-identity {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 15px;
 }
 
 .playbook-icon-box {
@@ -74,7 +74,7 @@
 .playbook-title-row h1 {
   margin: 0;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 900;
   letter-spacing: 0.05em;
   color: #ffffff;
@@ -84,9 +84,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 10px;
+  padding: 3px 10px;
   border-radius: 9999px;
-  background: rgba(0, 240, 255, 0.15);
+  background: rgba(0, 240, 255, 0.14);
   border: 1px solid rgba(0, 240, 255, 0.4);
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
@@ -107,7 +107,7 @@
   margin: 4px 0 0 0;
   font-size: 12px;
   color: #94a3b8;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .playbook-header-actions {
@@ -120,30 +120,36 @@
 .playbook-regime-pill {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 9px;
+  padding: 7px 14px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
 }
 
+.regime-pill-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .regime-guidance {
   color: #cbd5e1;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .btn-playbook-regenerate {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 18px;
+  padding: 10px 18px;
   border-radius: 8px;
   background: linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(16, 185, 129, 0.25) 100%);
   border: 1px solid rgba(0, 240, 255, 0.5);
   color: #00F0FF;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -155,41 +161,116 @@
   transform: translateY(-1px);
 }
 
-/* Substrip */
-.playbook-substrip {
+/* Interactive Portfolio Position Sizer Ribbon */
+.playbook-sizer-ribbon {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.playbook-search-box {
+.sizer-controls-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 6px 12px;
-  width: 320px;
+  flex-wrap: wrap;
+  gap: 14px;
 }
 
-.playbook-search-box input {
+.sizer-title-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #00F0FF;
+  letter-spacing: 0.05em;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+.sizer-control-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ctrl-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.ctrl-pill-group {
+  display: inline-flex;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.ctrl-pill {
   background: transparent;
   border: none;
-  outline: none;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ctrl-pill:hover {
   color: #ffffff;
-  font-size: 12px;
-  width: 100%;
+}
+
+.ctrl-pill.active {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00F0FF;
+  font-weight: 800;
+}
+
+.ctrl-pill.risk.active {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+}
+
+.sizer-1r-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+}
+
+.sizer-1r-readout .label {
+  color: #fda4af;
+  font-weight: 700;
+}
+
+.sizer-1r-readout .val {
+  color: #f43f5e;
+  font-weight: 900;
 }
 
 .playbook-stats-pills {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 14px;
 }
 
 .stat-pill {
@@ -198,7 +279,7 @@
   color: #94a3b8;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .stat-pill .val {
@@ -206,25 +287,327 @@
   font-weight: 800;
 }
 
-/* 2. Category Filter Tabs */
+/* ==========================================================================
+   2. #1 TRADE OF THE DAY SPOTLIGHT + TOP 5 FOCUS STRIP
+   ========================================================================== */
+.playbook-spotlight-banner {
+  display: grid;
+  grid-template-columns: 1.85fr 1fr;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(15, 23, 42, 0.95) 55%, rgba(10, 14, 23, 0.98) 100%);
+  border: 1px solid rgba(0, 230, 118, 0.35);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 1150px) {
+  .playbook-spotlight-banner {
+    grid-template-columns: 1fr;
+  }
+}
+
+.spotlight-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.spotlight-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.spotlight-badge-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.spotlight-crown-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(245, 158, 11, 0.15) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.55);
+  color: #fbbf24;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.spotlight-conviction-pill {
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba(0, 230, 118, 0.15);
+  border: 1px solid rgba(0, 230, 118, 0.4);
+  color: #00E676;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.spotlight-action-pill {
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.spotlight-sector-pill {
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.spotlight-ticker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.spotlight-ticker-btn:hover {
+  background: rgba(0, 240, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.spotlight-ticker-btn .spot-price {
+  color: #00F0FF;
+  font-size: 14px;
+}
+
+.spotlight-ticker-btn .spot-chg {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.spotlight-ticker-btn .spot-chg.pos {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+}
+
+.spotlight-ticker-btn .spot-chg.neg {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+}
+
+.spotlight-thesis-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #e2e8f0;
+  background: rgba(0, 0, 0, 0.28);
+  border-left: 3px solid #00E676;
+  padding: 9px 12px;
+  border-radius: 0 8px 8px 0;
+}
+
+.spotlight-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .spotlight-metrics-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.spot-metric-box {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.spot-metric-box .lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+.spot-metric-box .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.spot-metric-box .val.green { color: #00E676; }
+.spot-metric-box .val.rose { color: #f43f5e; }
+.spot-metric-box .val.emerald { color: #34d399; }
+.spot-metric-box .val.cyan { color: #00F0FF; }
+.spot-metric-box .val.amber { color: #fbbf24; }
+
+/* Focus List Sidebar */
+.spotlight-focus-sidebar {
+  background: rgba(10, 14, 23, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.focus-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #00F0FF;
+  letter-spacing: 0.05em;
+}
+
+.focus-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.focus-mini-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.focus-mini-row:hover {
+  border-color: rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.08);
+}
+
+.focus-mini-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.focus-rank {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.focus-sym {
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.focus-score {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.focus-entry {
+  color: #00E676;
+  font-size: 10px;
+}
+
+.focus-mini-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.focus-rr {
+  color: #38bdf8;
+  font-weight: 800;
+  font-size: 10px;
+}
+
+.focus-eng {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9.5px;
+}
+
+.focus-clear-btn {
+  margin-top: 2px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  color: #00F0FF;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   3. CATEGORY TABS + FILTER & SORT BAR
+   ========================================================================== */
+.playbook-controls-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .playbook-tabs-nav {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
 .playbook-tab-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 16px;
+  padding: 9px 15px;
   border-radius: 8px;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #94a3b8;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -233,7 +616,7 @@
 
 .playbook-tab-btn:hover {
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .playbook-tab-btn.active {
@@ -274,18 +657,135 @@
   font-weight: 800;
 }
 
-/* 3. Playbook Cards Grid */
+.playbook-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 9px 14px;
+}
+
+.playbook-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  padding: 6px 12px;
+  width: 290px;
+}
+
+.playbook-search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 12px;
+  width: 100%;
+}
+
+.clear-search-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.status-filter-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.status-filter-btn {
+  padding: 5px 11px;
+  border-radius: 6px;
+  background: rgba(10, 14, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.status-filter-btn:hover {
+  color: #ffffff;
+}
+
+.status-filter-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+
+.status-filter-btn.green.active {
+  background: rgba(0, 230, 118, 0.16);
+  border-color: rgba(0, 230, 118, 0.45);
+  color: #00E676;
+}
+
+.status-filter-btn.cyan.active {
+  background: rgba(0, 240, 255, 0.16);
+  border-color: rgba(0, 240, 255, 0.45);
+  color: #00F0FF;
+}
+
+.status-filter-btn.amber.active {
+  background: rgba(251, 191, 36, 0.16);
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fbbf24;
+}
+
+.sort-selector-box {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+}
+
+.sort-lbl {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.sort-selector-box select {
+  background: rgba(10, 14, 23, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   4. PLAYBOOK 3.0 CARDS GRID & ANATOMY
+   ========================================================================== */
 .ai-playbook-grid,
 .ai-playbook-root .playbook-grid,
 .playbook-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 18px;
   width: 100%;
   box-sizing: border-box;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
   .ai-playbook-grid,
   .ai-playbook-root .playbook-grid,
   .playbook-grid {
@@ -299,20 +799,19 @@
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 14, 23, 0.95) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(10, 14, 23, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 13px;
   padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  gap: 13px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
   transition: all 0.2s ease;
 }
 
 .ai-playbook-card:hover,
 .playbook-card:hover {
-  transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.22);
 }
 
@@ -321,19 +820,30 @@
 .ai-playbook-card.border-purple, .playbook-card.border-purple { border-top: 3px solid #a855f7; }
 .ai-playbook-card.border-amber, .playbook-card.border-amber { border-top: 3px solid #fbbf24; }
 
-/* Card Top Row */
+/* 4A. Card Header */
 .card-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .card-identity-box {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rank-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .ticker-btn {
@@ -342,7 +852,7 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   padding: 0;
 }
 
@@ -360,7 +870,7 @@
 
 .arrow-hover {
   color: #94a3b8;
-  opacity: 0;
+  opacity: 0.6;
   transition: all 0.15s ease;
 }
 
@@ -373,24 +883,65 @@
 .curr-price {
   font-family: 'JetBrains Mono', monospace;
   font-size: 15px;
-  font-weight: 700;
-  color: #cbd5e1;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.chg-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.chg-pill.pos {
+  background: rgba(0, 230, 118, 0.15);
+  color: #00E676;
+}
+
+.chg-pill.neg {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+}
+
+.sector-quad-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.sector-quad-pill strong {
+  color: #38bdf8;
 }
 
 .card-badges-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+}
+
+.action-status-pill {
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
 }
 
 .regime-badge {
   padding: 3px 8px;
   border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -410,18 +961,226 @@
   border-radius: 4px;
 }
 
-.strategy-subtitle {
-  margin-top: -6px;
-  font-size: 12px;
-  color: #94a3b8;
-  font-weight: 600;
+/* 4B. Institutional Thesis Banner */
+.card-thesis-banner {
+  background: rgba(15, 23, 42, 0.65);
+  border-left: 2.5px solid #00F0FF;
+  border-radius: 0 7px 7px 0;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  line-height: 1.48;
+  color: #cbd5e1;
 }
 
-/* 6-Tile Execution Deck */
+.thesis-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #00F0FF;
+  letter-spacing: 0.04em;
+}
+
+/* 4C. Visual Telemetry Row: Sparkline + 5-Pillar Bars */
+.card-visual-telemetry-row {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .card-visual-telemetry-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.setup-sparkline-box,
+.pillar-telemetry-box {
+  background: rgba(10, 14, 23, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sparkline-header-strip,
+.pillar-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.sparkline-legend {
+  display: flex;
+  gap: 6px;
+  font-size: 8.5px;
+}
+
+.leg-item.price { color: #00E676; }
+.leg-item.ema10 { color: #00F0FF; }
+.leg-item.ema21 { color: #c084fc; }
+
+.setup-sparkline-svg {
+  width: 100%;
+  height: 82px;
+  display: block;
+}
+
+.sparkline-empty {
+  height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #64748b;
+}
+
+.confluence-count-tag {
+  color: #00F0FF;
+  background: rgba(0, 240, 255, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.pillar-bars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pillar-bar-row {
+  display: grid;
+  grid-template-columns: 108px 1fr 26px;
+  align-items: center;
+  gap: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+}
+
+.pillar-name {
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pillar-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pillar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.pillar-val {
+  text-align: right;
+  font-weight: 800;
+}
+
+/* 4D. Visual Execution Price Ruler */
+.price-ruler-container {
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 9px 12px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.price-ruler-labels-top {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.ruler-tag.stop { color: #f43f5e; }
+.ruler-tag.entry { color: #00E676; }
+.ruler-tag.t1 { color: #38bdf8; }
+.ruler-tag.t2 { color: #c084fc; }
+
+.price-ruler-track {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+}
+
+.ruler-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+}
+
+.ruler-zone.risk {
+  background: rgba(244, 63, 94, 0.28);
+}
+
+.ruler-zone.entry {
+  background: rgba(0, 230, 118, 0.45);
+  box-shadow: 0 0 8px rgba(0, 230, 118, 0.35);
+}
+
+.ruler-zone.reward {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.25), rgba(168, 85, 247, 0.3));
+}
+
+.ruler-marker {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+
+.ruler-marker.stop { background: #f43f5e; }
+.ruler-marker.t1 { background: #38bdf8; }
+.ruler-marker.t2 { background: #c084fc; }
+
+.ruler-marker.spot {
+  top: -4px;
+  width: 10px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #00F0FF;
+  box-shadow: 0 0 8px #00F0FF;
+}
+
+.spot-pin-label {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #00F0FF;
+}
+
+/* 4E. 6-Tile Execution Deck */
 .playbook-execution-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -434,10 +1193,10 @@
 .exec-tile {
   min-width: 0;
   overflow: hidden;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 9px 11px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -457,7 +1216,7 @@
 
 .exec-tile-top .label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
   color: #94a3b8;
   text-transform: uppercase;
@@ -481,7 +1240,7 @@
 
 .exec-val {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 800;
   margin-top: 4px;
 }
@@ -494,12 +1253,10 @@
 .exec-val.amber { color: #fbbf24; }
 
 .exec-val.options-text {
-  font-size: 10.5px;
+  font-size: 10px;
   line-height: 1.35;
   color: #38bdf8;
   word-break: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;
 }
 
 .exec-sub {
@@ -509,18 +1266,150 @@
   margin-top: 3px;
 }
 
-/* Confluence Strip */
+/* 4F. CBOE Options Flow & IV Intelligence Strip */
+.options-intel-strip {
+  background: rgba(10, 14, 23, 0.72);
+  border: 1px solid rgba(0, 240, 255, 0.16);
+  border-radius: 8px;
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.options-intel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.opt-badge-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.opt-flow-pill {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.opt-stat-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.opt-stat-chip strong {
+  color: #e2e8f0;
+}
+
+.opt-advice-line {
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.opt-whale-callout {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+
+/* 4G. 3-Tranche Progressive Exposure Pyramid Ticket */
+.pyramid-ticket-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pyramid-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #00E676;
+  letter-spacing: 0.04em;
+}
+
+.pyramid-tranches-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+@media (max-width: 640px) {
+  .pyramid-tranches-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pyramid-tranche-card {
+  background: rgba(10, 14, 23, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tranche-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+}
+
+.tranche-tier {
+  color: #38bdf8;
+  font-weight: 800;
+}
+
+.tranche-shs {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.tranche-cond {
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+/* 4H. Confluence Strip */
 .card-confluence-strip {
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 9px 11px;
 }
 
 .confluence-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   color: #94a3b8;
@@ -535,23 +1424,57 @@
 .confluence-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .confluence-tag {
   padding: 2px 7px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   font-size: 10px;
   color: #e2e8f0;
 }
 
-/* Checklist Preview */
-.playbook-checklist-preview {
+/* 4I. Expanded Blueprint Drawer */
+.card-expanded-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 8px;
+  padding: 11px;
+}
+
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawer-sec-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #00F0FF;
+  letter-spacing: 0.04em;
+}
+
+.evidence-list {
+  margin: 0;
+  padding-left: 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.playbook-checklist-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .checklist-step {
@@ -560,10 +1483,10 @@
   gap: 8px;
   font-size: 11px;
   color: #cbd5e1;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 23, 42, 0.55);
   padding: 6px 10px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .step-num {
@@ -581,12 +1504,13 @@
   flex-shrink: 0;
 }
 
-/* Card Action Footer */
+/* 4J. Card Action Footer */
 .card-action-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -615,14 +1539,24 @@
   border-color: rgba(0, 240, 255, 0.5);
 }
 
+.action-btn.expand {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+}
+
+.action-btn.expand:hover {
+  background: rgba(168, 85, 247, 0.2);
+}
+
 .action-btn.copy {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
+  background: rgba(0, 230, 118, 0.1);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  color: #00E676;
 }
 
 .action-btn.copy:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 230, 118, 0.2);
   color: #ffffff;
 }
 
@@ -649,4 +1583,180 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+
+/* ========================================================================= */
+/* 5-DOMAIN CLUBBED DECISION MATRIX & 3-PANEL VOL/30D/RS/SEASONALITY DECK    */
+/* ========================================================================= */
+.clubbed-domain-matrix {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(8, 12, 22, 0.92));
+  border: 1px solid rgba(0, 240, 255, 0.22);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.domain-matrix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.domain-matrix-title {
+  color: #e2e8f0;
+}
+
+.domain-matrix-score {
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: rgba(0, 230, 118, 0.12);
+  border: 1px solid rgba(0, 230, 118, 0.35);
+}
+
+.domain-pills-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+@media (max-width: 720px) {
+  .domain-pills-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.domain-check-pill {
+  background: rgba(10, 14, 23, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  padding: 5px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.domain-check-pill.passed {
+  border-color: rgba(0, 230, 118, 0.38);
+  background: linear-gradient(180deg, rgba(0, 230, 118, 0.09), rgba(10, 14, 23, 0.85));
+}
+
+.domain-pill-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.8px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.domain-check-pill.passed .domain-check-icon {
+  color: #00E676;
+  font-weight: 900;
+}
+
+.domain-check-pill.neutral .domain-check-icon {
+  color: #fbbf24;
+}
+
+.domain-detail {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clubbed-intel-trio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 780px) {
+  .clubbed-intel-trio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.intel-panel-card {
+  background: rgba(10, 14, 23, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.intel-panel-card.movement {
+  border-top: 2px solid rgba(0, 230, 118, 0.55);
+}
+
+.intel-panel-card.volatility {
+  border-top: 2px solid rgba(0, 240, 255, 0.55);
+}
+
+.intel-panel-card.rs-seasonality {
+  border-top: 2px solid rgba(251, 191, 36, 0.55);
+}
+
+.intel-panel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.intel-panel-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.8px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+}
+
+.intel-panel-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.2px;
+  font-weight: 800;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.intel-kv-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3.5px;
+}
+
+.intel-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  gap: 6px;
+}
+
+.intel-kv .k {
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.intel-kv .v {
+  color: #e2e8f0;
+  text-align: right;
+  white-space: nowrap;
 }

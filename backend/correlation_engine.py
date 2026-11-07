@@ -137,17 +137,65 @@ def run_correlation_engine():
     print("Executing Institutional Macro Matrix & Correlation Engine...")
     
     all_tickers = list(MACRO_DRIVERS.keys()) + list(SECTOR_ETFS.keys()) + BENCHMARKS + STOCKS_UNIVERSE
-    df = yf.download(all_tickers, period="90d", interval="1d", group_by="ticker", progress=False)
+    df = yf.download(all_tickers, period="120d", interval="1d", group_by="ticker", progress=False)
     
     closes = pd.DataFrame()
     for t in all_tickers:
         if t in df and not df[t]['Close'].empty:
             s = df[t]['Close'].dropna()
+            s.index = pd.to_datetime(s.index).tz_localize(None).normalize()
+            s = s[~s.index.duplicated(keep='last')]
             if len(s) >= 20:
                 closes[t] = s
-                
-    returns = closes.pct_change().dropna()
-    corr_matrix = returns.corr().round(2)
+
+    # Overlay Lakehouse daily closes for all Equities, Sector ETFs & Benchmarks so today's candle is never missing
+    lakehouse_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'daily_ohlcv.parquet')
+    if os.path.exists(lakehouse_path):
+        try:
+            import duckdb
+            eq_tickers = list(SECTOR_ETFS.keys()) + BENCHMARKS + STOCKS_UNIVERSE
+            in_list = ",".join([f"'{x}'" for x in eq_tickers])
+            q = f"""
+                SELECT 
+                    Ticker,
+                    CAST(Date AS DATE) AS TradeDate,
+                    LAST(Close ORDER BY Date) AS Close
+                FROM read_parquet('{lakehouse_path}')
+                WHERE Ticker IN ({in_list}) AND Date >= current_date() - INTERVAL 140 DAY
+                GROUP BY Ticker, CAST(Date AS DATE)
+                ORDER BY TradeDate ASC
+            """
+            lh_df = duckdb.query(q).to_df()
+            if not lh_df.empty:
+                lh_piv = lh_df.pivot(index='TradeDate', columns='Ticker', values='Close')
+                lh_piv.index = pd.to_datetime(lh_piv.index).tz_localize(None).normalize()
+                lh_piv = lh_piv[~lh_piv.index.duplicated(keep='last')].sort_index()
+                # Reindex closes to union of dates up to latest Lakehouse equity date
+                max_eq_date = lh_piv.index.max()
+                union_idx = closes.index.union(lh_piv.index).sort_values()
+                union_idx = union_idx[union_idx <= max_eq_date]
+                closes = closes.reindex(union_idx)
+                for col in lh_piv.columns:
+                    if col in closes.columns:
+                        closes[col] = lh_piv[col].combine_first(closes[col])
+                    else:
+                        closes[col] = lh_piv[col]
+        except Exception as lh_err:
+            print(f"Lakehouse overlay warning in correlation_engine: {lh_err}")
+
+    # Heal trailing NaN on Macro Drivers (e.g. BTC-USD or ^TNX) via fast_info if needed
+    for m_sym in MACRO_DRIVERS.keys():
+        if m_sym in closes.columns and pd.isna(closes[m_sym].iloc[-1]):
+            try:
+                lp = yf.Ticker(m_sym).fast_info.get('lastPrice')
+                if lp and lp > 0:
+                    closes.loc[closes.index[-1], m_sym] = float(lp)
+            except Exception:
+                pass
+
+    closes = closes.sort_index().ffill(limit=2)
+    returns = closes.pct_change(fill_method=None).dropna(how='all')
+    corr_matrix = returns.corr(min_periods=20).fillna(0.0).round(2)
     
     # 1. Macro Driver Quotes & Trends
     macro_quotes = {}
@@ -183,21 +231,16 @@ def run_correlation_engine():
             }
 
     # 2. Determine Active Macro Regime
-    spy_ret_20d = macro_quotes.get("SPY", {}).get("change_20d", 0) if "SPY" in macro_quotes else (
-        round(((closes['SPY'].iloc[-1] - closes['SPY'].iloc[-21]) / closes['SPY'].iloc[-21]) * 100, 2) if 'SPY' in closes else 1.5
-    )
+    spy_ret_1d = round(((closes['SPY'].iloc[-1] - closes['SPY'].iloc[-2]) / closes['SPY'].iloc[-2]) * 100, 2) if 'SPY' in closes and len(closes['SPY']) > 1 else 0.0
+    spy_ret_20d = round(((closes['SPY'].iloc[-1] - closes['SPY'].iloc[-21]) / closes['SPY'].iloc[-21]) * 100, 2) if 'SPY' in closes and len(closes['SPY']) > 20 else 0.0
     vix_val = macro_quotes.get("^VIX", {}).get("current_price", 15.0)
     oil_chg = macro_quotes.get("CL=F", {}).get("change_20d", 0)
     tnx_chg = macro_quotes.get("^TNX", {}).get("change_20d", 0)
     dxy_val = macro_quotes.get("DX-Y.NYB", {}).get("current_price", 100.0)
 
-    # Regime Logic
-    # 4-Quadrant Economic Engine: Growth (SPY/QQQ) vs Inflation (10Y Yields, Oil, Commodities)
-    # Reflation vs Stagflation threshold calibration:
-    # SPY short-term pullbacks (-1% to -2%) during yield/commodity rallies reflect Reflationary Rotation, not economic stagflation.
-    # Stagflation requires genuine growth breakdown (SPY 20D < -3.5%) coupled with high volatility (VIX > 22).
-    is_growth_rising = spy_ret_20d > -2.5 and vix_val < 22.0
-    is_inflation_yields_rising = (tnx_chg > 1.5 or oil_chg > 3.0 or macro_quotes.get("^TNX", {}).get("current_price", 0) >= 4.3)
+    # 4-Quadrant Economic Engine: Growth (SPY 20D & VIX) vs Inflation/Yields (10Y Yield 20D & Oil 20D)
+    is_growth_rising = spy_ret_20d > -2.0 and vix_val < 21.0
+    is_inflation_yields_rising = (tnx_chg > 1.0 or oil_chg > 2.5)
 
     if is_growth_rising and is_inflation_yields_rising:
         regime_id = "REFLATION"
@@ -206,39 +249,39 @@ def run_correlation_engine():
         favored = ["XLE (Energy)", "XLF (Financials)", "XLI (Industrials)", "XLB (Materials)"]
         unfavored = ["XLU (Utilities)", "XLRE (Real Estate)", "TLT (Long Treasuries)"]
         prob = 78
-        driver_summary = f"Growth Resilient & Expanding (SPY 20D: {spy_ret_20d:+}%); Yields/Inflation Elevated (10Y Yield: {macro_quotes.get('^TNX', {}).get('current_price', '4.97')}%, 20D: {tnx_chg:+}%, Oil 20D: {oil_chg:+}%). Broad cyclical participation."
-    elif is_growth_rising and not is_inflation_yields_rising and vix_val < 18.0:
+        driver_summary = f"Growth Resilient & Expanding (SPY 20D: {spy_ret_20d:+}%); Yields/Inflation Rising (10Y Yield: {macro_quotes.get('^TNX', {}).get('current_price', '4.84')}%, 20D: {tnx_chg:+}%, Oil 20D: {oil_chg:+}%). Broad cyclical participation."
+    elif is_growth_rising and not is_inflation_yields_rising and vix_val < 20.0:
         regime_id = "GOLDILOCKS"
         regime_name = "Goldilocks / Disinflationary Expansion"
-        regime_desc = "Growth is expanding while inflation and bond yields are softening with compliant volatility (VIX < 18). This provides the optimal runway for Technology, Growth, and Semiconductors via valuation multiple expansion."
+        regime_desc = "Growth is expanding while inflation and bond yields are softening with compliant volatility (VIX < 20). This provides the optimal runway for Technology, Growth, and Semiconductors via valuation multiple expansion."
         favored = ["XLK (Technology)", "SMH (Semiconductors)", "XLY (Consumer Discretionary)"]
         unfavored = ["XLU (Utilities)", "XLE (Energy)", "Cash / T-Bills"]
-        prob = 74
-        driver_summary = f"VIX ({vix_val}) in low-volatility regime; Oil 20D ({oil_chg:+}%) contained; Yields softening; Equity Trend Strong."
-    elif not is_growth_rising and (oil_chg > 5.0 or tnx_chg > 5.0) and vix_val >= 22.0:
+        prob = 76
+        driver_summary = f"VIX ({vix_val}) in calm regime; Oil 20D ({oil_chg:+}%) & 10Y Yields ({tnx_chg:+}% 20D) softening; Equity Trend Constructive (SPY 20D: {spy_ret_20d:+}%)."
+    elif not is_growth_rising and is_inflation_yields_rising:
         regime_id = "STAGFLATION"
         regime_name = "Stagflationary Pressure"
         regime_desc = "Growth is contracting while inflation and yields remain stubborn or rising with elevated volatility. Cost-push inflation from energy and borrowing costs collides with softening corporate earnings. Defensive capital preservation dominates."
         favored = ["GC=F (Gold)", "XLE (Upstream Energy)", "Cash / Ultra-Short T-Bills"]
         unfavored = ["XLY (Consumer Discretionary)", "XLI (Industrials)", "High-P/E Tech"]
-        prob = 65
-        driver_summary = f"Oil/Yields compressing corporate margins; VIX elevated ({vix_val}); S&P 500 decelerating ({spy_ret_20d:+}%)."
+        prob = 72
+        driver_summary = f"Oil/Yields pressuring corporate margins; VIX elevated ({vix_val}); S&P 500 under pressure (SPY 20D: {spy_ret_20d:+}%, 1D: {spy_ret_1d:+}%)."
     elif not is_growth_rising and not is_inflation_yields_rising:
         regime_id = "DEFLATION"
-        regime_name = "Deflationary Contraction"
-        regime_desc = "Both Growth and Inflation are decelerating. Demand destruction pulls commodity prices down while central banks ease policy, sparking a flight to safety in sovereign bonds and recession-resilient sectors."
-        favored = ["TLT (Long Treasuries)", "XLU (Utilities)", "XLV (Healthcare)"]
-        unfavored = ["XLE (Energy)", "XLB (Materials)", "XLF (Banks)"]
-        prob = 70
-        driver_summary = f"Growth contracting ({spy_ret_20d:+}%); Inflation falling; Sovereign bonds and defensive yield in demand."
+        regime_name = "Deflationary / Risk-Off De-Leveraging"
+        regime_desc = "Both Growth and Inflation/Yields are decelerating amid elevated volatility (VIX > 21). Institutional de-risking pulls equity multiples, bond yields, and cyclical commodities lower simultaneously, sparking a flight to safety in sovereign bonds, gold, and defensive cash-flow sectors."
+        favored = ["TLT (Long Treasuries)", "XLU (Utilities)", "XLV (Healthcare)", "GC=F (Gold)"]
+        unfavored = ["SMH (Semiconductors)", "XLK (High-Beta Tech)", "XLE (Cyclical Energy)"]
+        prob = 82 if vix_val >= 25.0 else 72
+        driver_summary = f"Volatility Shock (VIX: {vix_val}) & Equity Drawdown (SPY 1D: {spy_ret_1d:+}%, 20D: {spy_ret_20d:+}%) paired with falling 10Y Yields ({tnx_chg:+}% 20D) and Crude Oil ({oil_chg:+}% 20D)."
     else:
         regime_id = "NEUTRAL_TRANSITION"
         regime_name = "Consolidating / Mixed Transition"
         regime_desc = "Cross-currents across rates, currencies, and corporate earnings. Focus strictly on top relative-strength industry groups and selective setups."
         favored = ["High Relative Strength Leaders", "XLF (Financials)", "SMH (Semiconductors)"]
         unfavored = ["Low Relative Strength Laggards", "High-Debt Small Caps"]
-        prob = 58
-        driver_summary = f"Mixed macro signals across yields ({tnx_chg:+}% 20D) and Dollar ({dxy_val})."
+        prob = 62
+        driver_summary = f"Mixed macro signals across yields ({tnx_chg:+}% 20D), VIX ({vix_val}), and Dollar ({dxy_val})."
 
     active_regime = {
         "id": regime_id,
@@ -258,9 +301,13 @@ def run_correlation_engine():
             
         driver_corrs = corr_matrix[driver_sym].drop(index=list(MACRO_DRIVERS.keys()) + BENCHMARKS + list(SECTOR_ETFS.keys()), errors='ignore')
         
-        # Most positive and most negative correlated individual stocks
-        pos_corrs = driver_corrs[driver_corrs > 0.15].sort_values(ascending=False).head(10)
-        neg_corrs = driver_corrs[driver_corrs < -0.15].sort_values(ascending=True).head(10)
+        # Most positive and most negative correlated individual stocks (with guaranteed fallback so no card is ever empty)
+        pos_corrs = driver_corrs[driver_corrs > 0.12].sort_values(ascending=False).head(10)
+        if len(pos_corrs) < 5:
+            pos_corrs = driver_corrs.sort_values(ascending=False).head(8)
+        neg_corrs = driver_corrs[driver_corrs < -0.12].sort_values(ascending=True).head(10)
+        if len(neg_corrs) < 5:
+            neg_corrs = driver_corrs.sort_values(ascending=True).head(8)
         
         # Format stock items with current prices and 1d change
         def build_stock_items(series, action_type):

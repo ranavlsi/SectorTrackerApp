@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Activity,
   BarChart2,
@@ -354,7 +355,14 @@ export default function DeepChartingTerminal({
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => setChartViewMode(m.id)}
+                    onClick={() => {
+                      setChartViewMode(m.id);
+                      if (m.id === 'full_price' || m.id === 'tradingview_full') {
+                        setShowRightDock(false);
+                      } else {
+                        setShowRightDock(true);
+                      }
+                    }}
                     style={{
                       padding: '3px 8px',
                       borderRadius: '4px',
@@ -421,7 +429,13 @@ export default function DeepChartingTerminal({
             {/* Full-Screen Full Chart Button */}
             <button
               type="button"
-              onClick={() => setIsFullChartScreen((f) => !f)}
+              onClick={() => {
+                setIsFullChartScreen((f) => {
+                  const next = !f;
+                  if (next) setShowRightDock(false);
+                  return next;
+                });
+              }}
               style={{
                 padding: '4px 10px',
                 borderRadius: '6px',
@@ -610,70 +624,76 @@ export default function DeepChartingTerminal({
         )}
 
         {/* Row 4: MarketSurge Pattern Recognition & Official Buy Point Strip */}
-        {chartData?.marketsurge?.detected && chartData?.marketsurge?.buy_point > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.5rem',
-              paddingTop: '0.35rem',
-              borderTop: '1px solid rgba(192, 132, 252, 0.22)',
-              fontFamily: 'monospace',
-              fontSize: '0.7rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        {chartData?.marketsurge?.buy_point > 0 && (() => {
+          const ms = chartData.marketsurge;
+          const distPct = ms.distance_to_pivot_pct ?? ms.dist_to_pivot_pct ?? 0;
+          const pColor = ms.pivot_status_color || ms.status_color || '#10b981';
+          const pStage = ms.pattern_stage || `${ms.base_length_weeks || 5}w Base`;
+          return (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                paddingTop: '0.35rem',
+                borderTop: '1px solid rgba(192, 132, 252, 0.22)',
+                fontFamily: 'monospace',
+                fontSize: '0.7rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    padding: '2px 8px',
+                    borderRadius: '5px',
+                    background: 'rgba(192, 132, 252, 0.18)',
+                    border: '1px solid rgba(192, 132, 252, 0.55)',
+                    color: '#c084fc',
+                    fontWeight: 900,
+                  }}
+                >
+                  🏆 MARKET-SURGE PATTERN: {ms.pattern_name} ({pStage})
+                </span>
+                <span style={{ color: '#e2e8f0' }}>
+                  Official Buy Pt: <strong style={{ color: '#10b981' }}>${ms.buy_point.toFixed(2)}</strong>
+                </span>
+                <span style={{ color: '#94a3b8' }}>
+                  5% Buy Zone: <strong style={{ color: '#34d399' }}>${ms.buy_point.toFixed(2)} – ${ms.buy_zone_high.toFixed(2)}</strong>
+                </span>
+                <span style={{ color: '#94a3b8' }}>
+                  -7.5% Stop: <strong style={{ color: '#ef4444' }}>${ms.stop_loss.toFixed(2)}</strong>
+                </span>
+                <span style={{ color: '#94a3b8' }}>
+                  +20-25% Goal: <strong style={{ color: '#38bdf8' }}>${ms.profit_goal_20.toFixed(2)} – ${ms.profit_goal_25.toFixed(2)}</strong>
+                </span>
+                {ms.base_depth_pct > 0 && (
+                  <span style={{ color: '#94a3b8' }}>
+                    Depth: <strong style={{ color: '#fbbf24' }}>-{ms.base_depth_pct}%</strong> ({ms.base_length_weeks}w)
+                  </span>
+                )}
+                {ms.handle_depth_pct > 0 && (
+                  <span style={{ color: '#94a3b8' }}>
+                    Handle: <strong style={{ color: '#f59e0b' }}>-{ms.handle_depth_pct}%</strong>
+                  </span>
+                )}
+              </div>
               <span
                 style={{
                   padding: '2px 8px',
                   borderRadius: '5px',
-                  background: 'rgba(192, 132, 252, 0.18)',
-                  border: '1px solid rgba(192, 132, 252, 0.55)',
-                  color: '#c084fc',
-                  fontWeight: 900,
+                  background: `${pColor}22`,
+                  border: `1px solid ${pColor}66`,
+                  color: pColor,
+                  fontWeight: 800,
                 }}
               >
-                🏆 MARKET-SURGE PATTERN: {chartData.marketsurge.pattern_name} ({chartData.marketsurge.pattern_stage})
+                {ms.pivot_badge || ms.pivot_status} ({distPct >= 0 ? '+' : ''}{distPct}% vs ${ms.buy_point.toFixed(2)})
               </span>
-              <span style={{ color: '#e2e8f0' }}>
-                Official Buy Pt: <strong style={{ color: '#10b981' }}>${chartData.marketsurge.buy_point.toFixed(2)}</strong>
-              </span>
-              <span style={{ color: '#94a3b8' }}>
-                5% Buy Zone: <strong style={{ color: '#34d399' }}>${chartData.marketsurge.buy_point.toFixed(2)} – ${chartData.marketsurge.buy_zone_high.toFixed(2)}</strong>
-              </span>
-              <span style={{ color: '#94a3b8' }}>
-                -7.5% Stop: <strong style={{ color: '#ef4444' }}>${chartData.marketsurge.stop_loss.toFixed(2)}</strong>
-              </span>
-              <span style={{ color: '#94a3b8' }}>
-                +20-25% Goal: <strong style={{ color: '#38bdf8' }}>${chartData.marketsurge.profit_goal_20.toFixed(2)} – ${chartData.marketsurge.profit_goal_25.toFixed(2)}</strong>
-              </span>
-              {chartData.marketsurge.base_depth_pct > 0 && (
-                <span style={{ color: '#94a3b8' }}>
-                  Depth: <strong style={{ color: '#fbbf24' }}>-{chartData.marketsurge.base_depth_pct}%</strong> ({chartData.marketsurge.base_length_weeks}w)
-                </span>
-              )}
-              {chartData.marketsurge.handle_depth_pct > 0 && (
-                <span style={{ color: '#94a3b8' }}>
-                  Handle: <strong style={{ color: '#f59e0b' }}>-{chartData.marketsurge.handle_depth_pct}%</strong>
-                </span>
-              )}
             </div>
-            <span
-              style={{
-                padding: '2px 8px',
-                borderRadius: '5px',
-                background: `${chartData.marketsurge.pivot_status_color || '#10b981'}22`,
-                border: `1px solid ${chartData.marketsurge.pivot_status_color || '#10b981'}66`,
-                color: chartData.marketsurge.pivot_status_color || '#10b981',
-                fontWeight: 800,
-              }}
-            >
-              {chartData.marketsurge.pivot_status} ({chartData.marketsurge.distance_to_pivot_pct >= 0 ? '+' : ''}{chartData.marketsurge.distance_to_pivot_pct}%)
-            </span>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* ===================================================================== */}
@@ -682,6 +702,7 @@ export default function DeepChartingTerminal({
       <div
         style={{
           flex: 1,
+          width: '100%',
           display: 'grid',
           gridTemplateColumns: showRightDock ? 'minmax(0, 1fr) 375px' : 'minmax(0, 1fr)',
           gap: '0.75rem',
@@ -689,122 +710,147 @@ export default function DeepChartingTerminal({
         }}
       >
         {/* LEFT: Interactive Institutional Chart (4-Pane Quant, Full Price, or TradingView Full Chart) */}
-        <div style={{ minHeight: '720px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ minHeight: '720px', width: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           {chartViewMode === 'tradingview_full' ? (
-            <div
-              style={{
-                position: isFullChartScreen ? 'fixed' : 'relative',
-                top: isFullChartScreen ? 0 : 'auto',
-                left: isFullChartScreen ? 0 : 'auto',
-                width: isFullChartScreen ? '100vw' : '100%',
-                height: isFullChartScreen ? '100vh' : '740px',
-                zIndex: isFullChartScreen ? 99999 : 1,
-                background: '#070b12',
-                border: '1px solid rgba(56, 189, 248, 0.25)',
-                borderRadius: isFullChartScreen ? 0 : '10px',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-              }}
-            >
-              {/* TradingView Full Chart Top Control Strip */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.45rem 0.85rem',
-                  background: 'rgba(15, 23, 42, 0.96)',
-                  borderBottom: '1px solid rgba(148, 163, 184, 0.16)',
-                  flexWrap: 'wrap',
-                  gap: '0.5rem',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'monospace' }}>
-                    🏛️ TRADINGVIEW FULL INTERACTIVE CHART · {activeTicker}
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                    (Full Drawing Toolbar, Fibonacci, Multi-Timeframe &amp; 100+ Indicators)
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setChartViewMode('quant_4pane')}
+            (() => {
+              const tvNode = (
+                <div
+                  style={{
+                    position: isFullChartScreen ? 'fixed' : 'relative',
+                    inset: isFullChartScreen ? 0 : 'auto',
+                    top: isFullChartScreen ? 0 : 'auto',
+                    left: isFullChartScreen ? 0 : 'auto',
+                    width: isFullChartScreen ? '100vw' : '100%',
+                    height: isFullChartScreen ? '100vh' : '760px',
+                    zIndex: isFullChartScreen ? 999999 : 1,
+                    background: '#070b12',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    borderRadius: isFullChartScreen ? 0 : '10px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* TradingView Full Chart Top Control Strip */}
+                  <div
                     style={{
-                      padding: '3px 9px',
-                      borderRadius: '5px',
-                      border: '1px solid rgba(56, 189, 248, 0.4)',
-                      background: 'rgba(56, 189, 248, 0.15)',
-                      color: '#38bdf8',
-                      fontSize: '0.7rem',
-                      fontFamily: 'monospace',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    📊 Switch to 4-Pane Quant + GEX
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsFullChartScreen((f) => !f)}
-                    style={{
-                      padding: '3px 9px',
-                      borderRadius: '5px',
-                      border: '1px solid rgba(16, 185, 129, 0.45)',
-                      background: isFullChartScreen ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.16)',
-                      color: isFullChartScreen ? '#f87171' : '#10b981',
-                      fontSize: '0.7rem',
-                      fontFamily: 'monospace',
-                      fontWeight: 800,
-                      cursor: 'pointer',
                       display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
-                      gap: '4px',
+                      padding: '0.45rem 0.85rem',
+                      background: 'rgba(15, 23, 42, 0.96)',
+                      borderBottom: '1px solid rgba(148, 163, 184, 0.16)',
+                      flexWrap: 'wrap',
+                      gap: '0.5rem',
                     }}
                   >
-                    {isFullChartScreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                    {isFullChartScreen ? 'Exit Fullscreen' : 'Fullscreen'}
-                  </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'monospace' }}>
+                        🏛️ TRADINGVIEW FULL INTERACTIVE CHART · {activeTicker}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                        (Full Drawing Toolbar, Fibonacci, Multi-Timeframe &amp; 100+ Indicators)
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChartViewMode('quant_4pane');
+                          setShowRightDock(true);
+                        }}
+                        style={{
+                          padding: '3px 9px',
+                          borderRadius: '5px',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          color: '#38bdf8',
+                          fontSize: '0.7rem',
+                          fontFamily: 'monospace',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        📊 Switch to 4-Pane Quant + GEX
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsFullChartScreen((f) => !f)}
+                        style={{
+                          padding: '3px 9px',
+                          borderRadius: '5px',
+                          border: '1px solid rgba(16, 185, 129, 0.45)',
+                          background: isFullChartScreen ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.16)',
+                          color: isFullChartScreen ? '#f87171' : '#10b981',
+                          fontSize: '0.7rem',
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        {isFullChartScreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                        {isFullChartScreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    className="tv-full-widget-host"
+                    style={{
+                      flex: 1,
+                      width: '100%',
+                      height: isFullChartScreen ? 'calc(100vh - 45px)' : '710px',
+                      minHeight: isFullChartScreen ? 'calc(100vh - 45px)' : '710px',
+                    }}
+                  >
+                    <AdvancedRealTimeChart
+                      symbol={activeTicker}
+                      theme="dark"
+                      autosize
+                      interval="D"
+                      timezone="America/New_York"
+                      style="1"
+                      locale="en"
+                      toolbar_bg="#0b101b"
+                      enable_publishing={false}
+                      withdateranges={true}
+                      hide_side_toolbar={false}
+                      allow_symbol_change={true}
+                      save_image={true}
+                      details={true}
+                      hotlist={false}
+                      calendar={false}
+                      studies={[
+                        'MASimple@tv-basicstudies',
+                        'MAExp@tv-basicstudies',
+                        'RSI@tv-basicstudies',
+                        'Volume@tv-basicstudies',
+                      ]}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div style={{ flex: 1, width: '100%', minHeight: isFullChartScreen ? 'calc(100vh - 45px)' : '690px' }}>
-                <AdvancedRealTimeChart
-                  symbol={activeTicker}
-                  theme="dark"
-                  autosize
-                  interval="D"
-                  timezone="America/New_York"
-                  style="1"
-                  locale="en"
-                  toolbar_bg="#0b101b"
-                  enable_publishing={false}
-                  withdateranges={true}
-                  hide_side_toolbar={false}
-                  allow_symbol_change={true}
-                  save_image={true}
-                  details={true}
-                  hotlist={false}
-                  calendar={false}
-                  studies={[
-                    'MASimple@tv-basicstudies',
-                    'MAExp@tv-basicstudies',
-                    'RSI@tv-basicstudies',
-                    'Volume@tv-basicstudies',
-                  ]}
-                />
-              </div>
-            </div>
+              );
+              return isFullChartScreen && typeof document !== 'undefined'
+                ? createPortal(tvNode, document.body)
+                : tvNode;
+            })()
           ) : (
             <UnifiedPlotlyChart
               ticker={activeTicker}
               onChartDataLoaded={setChartData}
               onSelectTicker={onSelectTicker}
               externalPaneLayout={chartViewMode === 'full_price' ? 'full_price' : '4pane'}
-              onPaneLayoutChange={(mode) => setChartViewMode(mode === 'full_price' ? 'full_price' : 'quant_4pane')}
+              onPaneLayoutChange={(mode) => {
+                setChartViewMode(mode === 'full_price' ? 'full_price' : 'quant_4pane');
+                if (mode === 'full_price') setShowRightDock(false);
+              }}
               externalFullscreen={isFullChartScreen}
-              onToggleFullscreen={setIsFullChartScreen}
+              onToggleFullscreen={(nextFs) => {
+                setIsFullChartScreen(nextFs);
+                if (nextFs) setShowRightDock(false);
+              }}
             />
           )}
         </div>
@@ -1181,6 +1227,95 @@ export default function DeepChartingTerminal({
                       </tbody>
                     </table>
                   </div>
+
+                  {/* 1.5 MarketSurge Official Pattern & Buy Point Card */}
+                  {chartData?.marketsurge?.buy_point > 0 && (() => {
+                    const ms = chartData.marketsurge;
+                    const distPct = ms.distance_to_pivot_pct ?? ms.dist_to_pivot_pct ?? 0;
+                    const pColor = ms.pivot_status_color || ms.status_color || '#10b981';
+                    return (
+                      <div
+                        style={{
+                          background: 'linear-gradient(145deg, rgba(88, 28, 135, 0.16), rgba(9, 13, 22, 0.92))',
+                          border: '1px solid rgba(192, 132, 252, 0.45)',
+                          borderRadius: '8px',
+                          padding: '0.65rem',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: '0.73rem',
+                            fontWeight: 800,
+                            color: '#c084fc',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            marginBottom: '0.45rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <span>🏆 MarketSurge Buy Point</span>
+                          <span
+                            style={{
+                              fontFamily: 'monospace',
+                              fontSize: '0.64rem',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: `${pColor}22`,
+                              border: `1px solid ${pColor}66`,
+                              color: pColor,
+                            }}
+                          >
+                            {ms.pivot_badge || 'PIVOT'} ({distPct >= 0 ? '+' : ''}{distPct}%)
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '0.73rem',
+                            fontWeight: 800,
+                            color: '#f8fafc',
+                            marginBottom: '0.4rem',
+                            fontFamily: 'monospace',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>{ms.pattern_name}</span>
+                          <span style={{ color: '#fbbf24', fontSize: '0.67rem' }}>
+                            -{ms.base_depth_pct}% Depth · {ms.base_length_weeks}w
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontFamily: 'monospace' }}>
+                          <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #10b981' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Official Buy Point</div>
+                            <div style={{ fontSize: '0.92rem', fontWeight: 900, color: '#10b981' }}>
+                              ${ms.buy_point.toFixed(2)}
+                            </div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #34d399' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>5% Buy Zone</div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
+                              ${ms.buy_point.toFixed(2)} – ${ms.buy_zone_high.toFixed(2)}
+                            </div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #ef4444' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>-7.5% Hard Stop</div>
+                            <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ef4444' }}>
+                              ${ms.stop_loss.toFixed(2)}
+                            </div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #38bdf8' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>+20-25% Profit Goal</div>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
+                              ${ms.profit_goal_20.toFixed(2)} – ${ms.profit_goal_25.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* 2. Algorithmic ATR Trade Plan Card */}
                   {tp && (

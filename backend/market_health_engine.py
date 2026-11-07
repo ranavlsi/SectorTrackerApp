@@ -32,32 +32,47 @@ def generate_market_health_json():
         print("Lakehouse data not found. Please run db_updater.py")
         return
         
-    lake_query = f"SELECT Ticker, Date, Close, Volume FROM read_parquet('{lakehouse_path}') WHERE Date >= current_date() - interval '1 year'"
+    lake_query = f"""
+        SELECT 
+            Ticker,
+            CAST(Date AS DATE) AS Date,
+            LAST(Close ORDER BY Date) AS Close,
+            LAST(Volume ORDER BY Date) AS Volume
+        FROM read_parquet('{lakehouse_path}')
+        WHERE Date >= current_date() - INTERVAL 420 DAY
+        GROUP BY Ticker, CAST(Date AS DATE)
+        ORDER BY Date ASC
+    """
     lake_df = duckdb.query(lake_query).to_df()
     
     breadth_df = lake_df.pivot(index='Date', columns='Ticker', values='Close')
     breadth_df.index = pd.to_datetime(breadth_df.index).tz_localize(None).normalize()
+    breadth_df = breadth_df[~breadth_df.index.duplicated(keep='last')].sort_index().ffill(limit=5)
     
     volume_df = lake_df.pivot(index='Date', columns='Ticker', values='Volume')
     volume_df.index = pd.to_datetime(volume_df.index).tz_localize(None).normalize()
+    volume_df = volume_df[~volume_df.index.duplicated(keep='last')].sort_index().fillna(0)
 
     # --- Macro Tickers ---
     macro_tickers = ['^VIX', '^VIX3M', '^IRX', 'JPY=X', '^MOVE', 'XLY', 'XLP', 'SMH', 'SPY', 'QQQ', 'RSP', 'HYG', 'IEF', 'XLU', 'XLK']
-    macro_yf = yf.download(macro_tickers, period="2y", interval="1d", progress=False)['Close'].ffill()
+    macro_yf = yf.download(macro_tickers, period="2y", interval="1d", progress=False)['Close']
     macro_yf.index = pd.to_datetime(macro_yf.index).tz_localize(None).normalize()
-    
-    if not breadth_df.empty and not macro_yf.empty:
-        last_breadth_date = breadth_df.index[-1]
-        last_macro_date = macro_yf.index[-1]
-        if last_macro_date < last_breadth_date:
-            days_diff = (last_breadth_date - last_macro_date).days
-            macro_yf.index = macro_yf.index + pd.Timedelta(days=days_diff)
+    macro_yf = macro_yf[~macro_yf.index.duplicated(keep='last')].sort_index()
 
+    # Overlay ETFs present in Lakehouse so today's close is never missing when Yahoo 1d feed returns NaN
+    for etf_col in ['XLY', 'XLP', 'SMH', 'SPY', 'QQQ', 'RSP', 'HYG', 'IEF', 'XLU', 'XLK']:
+        if etf_col in breadth_df.columns:
+            if etf_col not in macro_yf.columns:
+                macro_yf[etf_col] = breadth_df[etf_col]
+            else:
+                macro_yf[etf_col] = breadth_df[etf_col].combine_first(macro_yf[etf_col])
+
+    macro_yf = macro_yf.ffill()
     macro_yf_aligned = macro_yf.reindex(breadth_df.index).ffill().bfill()
     
     macro_df = pd.DataFrame(index=breadth_df.index)
     for idx in macro_tickers:
-        if idx in macro_yf_aligned.columns:
+        if idx in macro_yf_aligned.columns and not macro_yf_aligned[idx].isna().all():
             macro_df[idx] = macro_yf_aligned[idx]
         else:
             print(f"Warning: {idx} missing from batch fetch. Fetching individually...")
@@ -67,6 +82,7 @@ def generate_market_health_json():
                     if isinstance(single_yf, pd.DataFrame):
                         single_yf = single_yf.iloc[:, 0]
                     single_yf.index = pd.to_datetime(single_yf.index).tz_localize(None).normalize()
+                    single_yf = single_yf[~single_yf.index.duplicated(keep='last')]
                     macro_df[idx] = single_yf.reindex(breadth_df.index).ffill().bfill()
                 else:
                     macro_df[idx] = 1.0 # Safe fallback
@@ -81,7 +97,7 @@ def generate_market_health_json():
         return
     
     # --- Breadth Calculations ---
-    daily_returns = breadth_df.pct_change()
+    daily_returns = breadth_df.pct_change(fill_method=None)
     advancing_mask = daily_returns > 0
     declining_mask = daily_returns < 0
 
@@ -97,20 +113,20 @@ def generate_market_health_json():
     with np.errstate(divide='ignore', invalid='ignore'):
         trin = (advances / declines) / (adv_volume / dec_volume)
     trin = trin.replace([np.inf, -np.inf], np.nan).fillna(1.0)
-    trin_10 = trin.rolling(10).mean()
+    trin_10 = trin.rolling(10, min_periods=3).mean()
 
     ad_line = net_advances.cumsum()
     mco = calculate_mcclellan_oscillator(advances, declines)
     summation_index = mco.cumsum()
     
-    sma20 = breadth_df.rolling(20).mean()
-    sma50 = breadth_df.rolling(50).mean()
-    sma200 = breadth_df.rolling(200).mean()
+    sma20 = breadth_df.rolling(20, min_periods=15).mean()
+    sma50 = breadth_df.rolling(50, min_periods=35).mean()
+    sma200 = breadth_df.rolling(200, min_periods=140).mean()
     
-    total_valid = breadth_df.notna().sum(axis=1)
-    pct_above_20 = ((breadth_df > sma20).sum(axis=1) / total_valid) * 100
-    pct_above_50 = ((breadth_df > sma50).sum(axis=1) / total_valid) * 100
-    pct_above_200 = ((breadth_df > sma200).sum(axis=1) / total_valid) * 100
+    total_valid = breadth_df.notna().sum(axis=1).replace(0, np.nan)
+    pct_above_20 = (((breadth_df > sma20).sum(axis=1) / total_valid) * 100).fillna(50.0)
+    pct_above_50 = (((breadth_df > sma50).sum(axis=1) / total_valid) * 100).fillna(50.0)
+    pct_above_200 = (((breadth_df > sma200).sum(axis=1) / total_valid) * 100).fillna(50.0)
     
     # Breadth MACD (on % above 50)
     ema12_p50 = pct_above_50.ewm(span=12, adjust=False).mean()
@@ -119,13 +135,13 @@ def generate_market_health_json():
     signal_p50 = macd_p50.ewm(span=9, adjust=False).mean()
     hist_p50 = macd_p50 - signal_p50
 
-    rolling_max_20 = breadth_df.rolling(20).max()
-    rolling_min_20 = breadth_df.rolling(20).min()
+    rolling_max_20 = breadth_df.rolling(20, min_periods=15).max()
+    rolling_min_20 = breadth_df.rolling(20, min_periods=15).min()
     new_highs = (breadth_df >= rolling_max_20).sum(axis=1)
     new_lows = (breadth_df <= rolling_min_20).sum(axis=1)
     
     nhnl_diff = new_highs - new_lows
-    nhnl_10 = nhnl_diff.rolling(10).mean()
+    nhnl_10 = nhnl_diff.rolling(10, min_periods=3).mean()
 
     # --- Hindenburg Omen / Titanic Syndrome ---
     spy_close = macro_df['SPY']
@@ -419,7 +435,21 @@ def generate_market_health_json():
     vix_is_contango = vix_curr < vix3m_curr
     vix_ratio = round(vix_curr / vix3m_curr, 2) if vix3m_curr > 0 else 1.0
 
+    adv_curr = int(advances.iloc[curr_idx])
+    dec_curr = int(declines.iloc[curr_idx])
+    adv_dec_ratio = round(adv_curr / max(1, dec_curr), 2)
+    tot_vol_curr = float(adv_volume.iloc[curr_idx] + dec_volume.iloc[curr_idx])
+    up_vol_pct = round((float(adv_volume.iloc[curr_idx]) / tot_vol_curr) * 100.0, 1) if tot_vol_curr > 0 else 50.0
+    spy_curr = round(float(macro_df['SPY'].iloc[curr_idx]), 2)
+    spy_prev = float(macro_df['SPY'].iloc[curr_idx - 1]) if len(macro_df) > 1 else spy_curr
+    spy_1d_chg = round(((spy_curr - spy_prev) / spy_prev) * 100.0, 2) if spy_prev > 0 else 0.0
+    qqq_curr = round(float(macro_df['QQQ'].iloc[curr_idx]), 2)
+    qqq_prev = float(macro_df['QQQ'].iloc[curr_idx - 1]) if len(macro_df) > 1 else qqq_curr
+    qqq_1d_chg = round(((qqq_curr - qqq_prev) / qqq_prev) * 100.0, 2) if qqq_prev > 0 else 0.0
+
     json_payload = {
+        "last_updated": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        "trade_date": macro_df.index[curr_idx].strftime('%Y-%m-%d'),
         "current_health": {
             "score_value": normalized_score,
             "score_label": caution_level,
@@ -427,6 +457,21 @@ def generate_market_health_json():
             "health_regime": overall_regime,
             "health_regime_label": overall_regime_label,
             "health_regime_color": overall_regime_color,
+            "historical_context": hist_context,
+            "issues_list": issues,
+            "strengths_list": strengths,
+            "total_universe": int(total_valid.iloc[curr_idx]) if not pd.isna(total_valid.iloc[curr_idx]) else 0,
+            "advances_count": adv_curr,
+            "declines_count": dec_curr,
+            "adv_dec_ratio": adv_dec_ratio,
+            "up_vol_pct": up_vol_pct,
+            "summation_index_val": round(float(summation_index.iloc[curr_idx]), 1),
+            "hindenburg_active": bool(hindenburg_omen.iloc[curr_idx]),
+            "titanic_active": bool(titanic_syndrome.iloc[curr_idx]),
+            "spy_price": spy_curr,
+            "spy_1d_chg": spy_1d_chg,
+            "qqq_price": qqq_curr,
+            "qqq_1d_chg": qqq_1d_chg,
             "mco_status": "Extreme Oversold" if mco.iloc[curr_idx] < -500 else "Oversold" if mco.iloc[curr_idx] < -300 else "Extreme Overbought" if mco.iloc[curr_idx] > 500 else "Overbought" if mco.iloc[curr_idx] > 300 else "Neutral",
             "breadth_status": "Strong Bullish (>75%)" if pct_above_50.iloc[curr_idx] > 75 else "Bearish Washout (<25%)" if pct_above_50.iloc[curr_idx] < 25 else "Below 50% Waterline" if pct_above_50.iloc[curr_idx] < 50 else "Constructive (>50%)",
             "summary_text": full_summary,
