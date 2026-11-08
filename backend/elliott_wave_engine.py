@@ -3535,9 +3535,19 @@ def run_elliott_wave_screener(symbols=None, force_refresh=False):
         'stocks': results
     })
 
+    # Enrich with Elliott Wave 3.0 Multi-Engine Fusion, 30D Sparklines, Live EWO 5/35, & Repaired Trade Plans
+    try:
+        from elliott_wave_fusion import enrich_elliott_payload
+        payload = sanitize_nans(enrich_elliott_payload(payload))
+    except Exception as e:
+        print(f"[Elliott Wave Engine] Fusion enrichment warning: {e}")
+
     try:
         os.makedirs(DATA_DIR, exist_ok=True)
         with open(CACHE_FILE, 'w') as f:
+            json.dump(payload, f, indent=2)
+        public_file = os.path.join(os.path.dirname(DATA_DIR), '..', 'public', 'elliott_wave_results.json')
+        with open(public_file, 'w') as f:
             json.dump(payload, f, indent=2)
     except Exception as e:
         print(f"[Elliott Wave Engine] Cache save warning: {e}")

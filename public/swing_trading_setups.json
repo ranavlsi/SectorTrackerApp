@@ -1,5 +1,5 @@
 {
-  "generated_at": "November 07, 2026 - 03:32 PM",
+  "generated_at": "November 07, 2026 - 08:47:41 PM",
   "time_horizon": "1-3 Weeks (5-15 Trading Days)",
   "engines_integrated": 11,
   "macro_regime": {
@@ -84722,5 +84722,6 @@
       "change_pct": -1.76,
       "is_live_quote": true
     }
-  ]
+  ],
+  "is_live_market": true
 }

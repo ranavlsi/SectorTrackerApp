@@ -3,9 +3,77 @@ import {
   Waves, TrendingUp, TrendingDown, ShieldCheck, ShieldAlert, CheckCircle2, 
   Zap, Search, RefreshCw, Layers, Info, ChevronRight, X, ArrowUpRight, 
   ArrowDownRight, Sparkles, Target, Compass, SlidersHorizontal, Activity,
-  ZoomIn, ZoomOut, RotateCcw, Maximize2
+  ZoomIn, ZoomOut, RotateCcw, Maximize2, LayoutGrid, Table as TableIcon, Flame
 } from 'lucide-react';
 import './ElliottWaveScreener.css';
+
+// =========================================================================
+// 30-Day Price + EMA10/21 + Gold RS Line Sparkline (Elliott Wave 3.0)
+// =========================================================================
+const ElliottSparkline = ({ spark, width = 148, height = 44 }) => {
+  if (!spark || !Array.isArray(spark.close) || spark.close.length < 5) {
+    return (
+      <div style={{ width, height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '0.68rem' }}>
+        No 30D Curve
+      </div>
+    );
+  }
+  const closes = spark.close;
+  const ema10 = spark.ema10 || [];
+  const ema21 = spark.ema21 || [];
+  const rs = spark.rs_norm || [];
+  const allVals = [...closes, ...ema10, ...ema21].filter(v => typeof v === 'number' && !isNaN(v));
+  const minP = Math.min(...allVals);
+  const maxP = Math.max(...allVals);
+  const rng = Math.max(0.001, maxP - minP);
+  const padX = 3;
+  const padY = 4;
+  const w = width - padX * 2;
+  const h = height - padY * 2;
+
+  const toPts = (arr, lo = minP, r = rng) =>
+    arr
+      .map((v, i) => {
+        if (typeof v !== 'number' || isNaN(v)) return null;
+        const x = padX + (i / Math.max(1, arr.length - 1)) * w;
+        const y = padY + h - ((v - lo) / r) * h;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .filter(Boolean)
+      .join(' ');
+
+  const closePts = toPts(closes);
+  const ema10Pts = ema10.length === closes.length ? toPts(ema10) : '';
+  const ema21Pts = ema21.length === closes.length ? toPts(ema21) : '';
+  const rsPts = rs.length === closes.length ? toPts(rs, 0, 100) : '';
+  const isUp = closes[closes.length - 1] >= closes[0];
+  const strokeCol = isUp ? '#10b981' : '#f43f5e';
+  const lastX = padX + w;
+  const lastY = padY + h - ((closes[closes.length - 1] - minP) / rng) * h;
+
+  return (
+    <svg width={width} height={height} style={{ display: 'block', overflow: 'visible' }}>
+      {rsPts && (
+        <polyline
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth="1.15"
+          strokeDasharray="2,2"
+          opacity="0.72"
+          points={rsPts}
+        />
+      )}
+      {ema21Pts && (
+        <polyline fill="none" stroke="#a855f7" strokeWidth="1.05" opacity="0.55" points={ema21Pts} />
+      )}
+      {ema10Pts && (
+        <polyline fill="none" stroke="#38bdf8" strokeWidth="1.1" opacity="0.65" points={ema10Pts} />
+      )}
+      <polyline fill="none" stroke={strokeCol} strokeWidth="1.8" points={closePts} />
+      <circle cx={lastX} cy={lastY} r="2.5" fill={strokeCol} />
+    </svg>
+  );
+};
 
 export default function ElliottWaveScreener() {
   const [data, setData] = useState(null);
@@ -14,24 +82,43 @@ export default function ElliottWaveScreener() {
   const [error, setError] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchTicker, setSearchTicker] = useState('');
+  const [filterText, setFilterText] = useState('');
+  const [sortBy, setSortBy] = useState('conviction'); // 'conviction' | 'rr' | 'alpha' | 'ewo'
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'table'
   const [selectedTf, setSelectedTf] = useState('180D'); // '90D' | '180D' | '1Y' | 'ALL'
   
   // Modal State for deep interactive wave terminal
   const [activeStock, setActiveStock] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
 
-  // Fetch summary on mount
+  // Fetch summary on mount with resilient static JSON fallback
   const loadSummary = async (force = false) => {
     if (force) setRefreshing(true);
     else setLoading(true);
     setError(null);
     try {
       const res = await fetch(`/api/elliott_wave/summary?refresh=${force ? 'true' : 'false'}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load Elliott Wave data`);
-      const json = await res.json();
-      setData(json);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && Array.isArray(json.stocks) && json.stocks.length > 0) {
+          setData(json);
+          return;
+        }
+      }
+      // Fallback to pre-generated public JSON
+      const fb = await fetch(`/elliott_wave_results.json?t=${Date.now()}`);
+      if (!fb.ok) throw new Error('Failed to load Elliott Wave 3.0 dataset');
+      const fbJson = await fb.json();
+      setData(fbJson);
     } catch (err) {
-      console.error("Elliott Wave Screener fetch error:", err);
+      console.error("Elliott Wave Screener fetch error, trying static fallback:", err);
+      try {
+        const fb = await fetch(`/elliott_wave_results.json?t=${Date.now()}`);
+        if (fb.ok) {
+          setData(await fb.json());
+          return;
+        }
+      } catch (_) {}
       setError(err.message);
     } finally {
       setLoading(false);
@@ -90,36 +177,78 @@ export default function ElliottWaveScreener() {
     }
   };
 
-  // Filter stocks based on selected pattern category
+  // Filter & sort stocks based on selected pattern category, text filter, and sort mode
   const filteredStocks = useMemo(() => {
     if (!data || !data.stocks) return [];
-    let list = data.stocks;
+    let list = [...data.stocks];
     if (selectedFilter !== 'all') {
       list = list.filter(s => {
         const p = s.pattern || {};
+        const fu = s.fusion || {};
         const pkey = (p.pattern_key || '').toLowerCase();
         const pname = (p.pattern_name || '').toLowerCase();
         const sub = (p.sub_category || '').toLowerCase();
         const wave = (p.active_wave || '').toLowerCase();
+        const pb = (fu.playbook || '').toUpperCase();
 
+        if (selectedFilter === 'actionable') {
+          return fu.action === 'BUY_ZONE' || fu.action === 'SHORT_ZONE';
+        }
+        if (selectedFilter === 'a_plus') {
+          return fu.grade === 'A+';
+        }
+        if (selectedFilter === 'multi_engine') {
+          return (fu.confluence_engines || []).length >= 2;
+        }
         if (selectedFilter === 'wave3_ignition') {
-          return pkey === 'impulse_w3_ignition' || Boolean(p.w3_stage) || sub.includes('wave (3)') || sub.includes('ignition');
+          return pb === 'W3_IGNITION' || pkey === 'impulse_w3_ignition' || Boolean(p.w3_stage) || sub.includes('wave (3)') || sub.includes('ignition');
         }
         if (selectedFilter === 'impulse_5') return pkey.includes('impulse') || pname.includes('impulse');
-        if (selectedFilter === 'wave_3') return sub.includes('wave 3') || wave.includes('wave (3)') || pkey === 'impulse_w3_ignition';
-        if (selectedFilter === 'wave_4') return sub.includes('wave 4') || wave.includes('wave (4)') || pkey === 'impulse_w4';
-        if (selectedFilter === 'wave_5') return sub.includes('wave 5') || wave.includes('wave (5)');
+        if (selectedFilter === 'wave_3') return pb === 'W3_CRESTING' || pb === 'W3_IGNITION' || sub.includes('wave 3') || wave.includes('wave (3)');
+        if (selectedFilter === 'wave_4') return pb === 'W4_BUY_ZONE' || sub.includes('wave 4') || wave.includes('wave (4)') || pkey === 'impulse_w4';
+        if (selectedFilter === 'wave_5') return pb === 'W5_EXHAUSTION' || sub.includes('wave 5') || wave.includes('wave (5)');
         if (selectedFilter === 'flat') return pkey.includes('flat') || pname.includes('flat') || sub.includes('flat');
-        if (selectedFilter === 'triangle') return pkey.includes('triangle') || pname.includes('triangle') || sub.includes('triangle');
-        if (selectedFilter === 'zigzag') return pkey.includes('zigzag') || pname.includes('zigzag') || sub.includes('zigzag');
+        if (selectedFilter === 'triangle') return pb === 'TRIANGLE_COIL' || pkey.includes('triangle') || pname.includes('triangle') || sub.includes('triangle');
+        if (selectedFilter === 'zigzag') return pb === 'ABC_REVERSAL' || pkey.includes('zigzag') || pname.includes('zigzag') || sub.includes('zigzag');
         if (selectedFilter === 'diagonal') return pkey.includes('diagonal') || pname.includes('diagonal') || sub.includes('diagonal');
         return pkey.includes(selectedFilter) || sub.includes(selectedFilter);
       });
     }
+    if (filterText.trim()) {
+      const q = filterText.trim().toLowerCase();
+      list = list.filter(s => {
+        const fu = s.fusion || {};
+        const p = s.pattern || {};
+        return (
+          (s.ticker || '').toLowerCase().includes(q) ||
+          (fu.name || '').toLowerCase().includes(q) ||
+          (fu.sector || '').toLowerCase().includes(q) ||
+          (fu.playbook_label || '').toLowerCase().includes(q) ||
+          (p.pattern_name || '').toLowerCase().includes(q) ||
+          (p.active_wave || '').toLowerCase().includes(q)
+        );
+      });
+    }
+    list.sort((a, b) => {
+      const fa = a.fusion || {};
+      const fb = b.fusion || {};
+      if (sortBy === 'rr') {
+        return (fb.trade_plan?.rr_t1 || a.pattern?.risk_reward || 0) - (fa.trade_plan?.rr_t1 || b.pattern?.risk_reward || 0);
+      }
+      if (sortBy === 'alpha') {
+        return (fb.alpha_30d_pct || -999) - (fa.alpha_30d_pct || -999);
+      }
+      if (sortBy === 'ewo') {
+        return Math.abs(fb.momentum?.ewo_pct || 0) - Math.abs(fa.momentum?.ewo_pct || 0);
+      }
+      return (fb.conviction_score || 0) - (fa.conviction_score || 0);
+    });
     return list;
-  }, [data, selectedFilter]);
+  }, [data, selectedFilter, filterText, sortBy]);
 
   const posture = data?.market_posture;
+  const kpis = data?.summary_kpis || {};
+  const spotlight = data?.spotlight;
 
   return (
     <div className="elliott-container">
@@ -127,23 +256,119 @@ export default function ElliottWaveScreener() {
       <div className="elliott-hero">
         <div className="elliott-hero-top">
           <div className="elliott-title-area">
-            <h1><Waves size={28} className="wave-icon-spin" /> Institutional Elliott Wave Terminal</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h1><Waves size={28} className="wave-icon-spin" /> Institutional Elliott Wave Terminal 3.0</h1>
+              <span style={{
+                background: 'linear-gradient(135deg, rgba(56,189,248,0.22), rgba(168,85,247,0.22))',
+                border: '1px solid rgba(56,189,248,0.45)',
+                color: '#7dd3fc',
+                padding: '3px 10px',
+                borderRadius: '999px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase'
+              }}>
+                11-Engine Confluence + Live Wave Validation
+              </span>
+            </div>
             <div className="elliott-subtitle">
               <span>Ralph Nelson Elliott's Wave Principle</span>
               <span>•</span>
-              <span>Fractal Motive & Corrective Cycle Surveillance</span>
+              <span>Cardinal Invariant Rules + Fibonacci Harmonization</span>
               <span>•</span>
-              <span>Cardinal Invariant Rules Engine</span>
+              <span>Live EWO 5/35 & 30D RS Sparklines</span>
             </div>
           </div>
-          <button 
-            className="elliott-refresh-btn" 
-            onClick={() => loadSummary(true)} 
-            disabled={loading || refreshing}
-          >
-            <RefreshCw size={15} className={refreshing ? "spin-animation" : ""} />
-            {refreshing ? "Scanning Fractal Cycles..." : "Rescan Waves"}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* View Mode Toggle */}
+            <div style={{
+              display: 'inline-flex',
+              background: 'rgba(15,23,42,0.75)',
+              border: '1px solid rgba(148,163,184,0.22)',
+              borderRadius: '8px',
+              padding: '3px'
+            }}>
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: viewMode === 'cards' ? 'rgba(56,189,248,0.22)' : 'transparent',
+                  color: viewMode === 'cards' ? '#38bdf8' : '#94a3b8',
+                  border: 'none', padding: '6px 11px', borderRadius: '6px',
+                  fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                <LayoutGrid size={14} /> Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: viewMode === 'table' ? 'rgba(56,189,248,0.22)' : 'transparent',
+                  color: viewMode === 'table' ? '#38bdf8' : '#94a3b8',
+                  border: 'none', padding: '6px 11px', borderRadius: '6px',
+                  fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                <TableIcon size={14} /> Table
+              </button>
+            </div>
+
+            <button 
+              className="elliott-refresh-btn" 
+              onClick={() => loadSummary(true)} 
+              disabled={loading || refreshing}
+            >
+              <RefreshCw size={15} className={refreshing ? "spin-animation" : ""} />
+              {refreshing ? "Scanning Fractal Cycles..." : "Rescan Waves"}
+            </button>
+          </div>
+        </div>
+
+        {/* Executive KPI Ribbon */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '10px',
+          marginTop: '14px',
+          marginBottom: '12px'
+        }}>
+          {[
+            { key: 'all', label: 'Universe Scanned', val: kpis.total_counts || data?.stocks?.length || 0, sub: '3/3 Cardinal Checked', col: '#38bdf8' },
+            { key: 'actionable', label: '🟢 Actionable Zones', val: kpis.actionable || 0, sub: `${kpis.a_plus || 0} Grade A+ Counts`, col: '#10b981' },
+            { key: 'wave3_ignition', label: '⚡ Wave 3 Ignition', val: kpis.w3_ignition || posture?.wave3_ignition_count || 0, sub: 'Early Turn off W2 Low', col: '#f59e0b' },
+            { key: 'wave_4', label: '🎯 Wave 4 Buy Zone', val: kpis.w4_buy_zone || posture?.wave4_count || 0, sub: '38.2% Fib Pullbacks', col: '#60a5fa' },
+            { key: 'zigzag', label: '🔄 ABC Reversals', val: kpis.abc_reversal || posture?.zigzag_count || 0, sub: 'Completed C-Leg Turns', col: '#a855f7' },
+            { key: 'wave_5', label: '⚠️ Wave 5 Exhaustion', val: kpis.w5_exhaustion || posture?.wave5_count || 0, sub: 'Trail Stops / Trim', col: '#f43f5e' },
+            { key: 'multi_engine', label: '🏛️ Multi-Engine Confluence', val: kpis.multi_engine || 0, sub: '2+ Quant Engines Agree', col: '#fbbf24' }
+          ].map(card => {
+            const active = selectedFilter === card.key;
+            return (
+              <div
+                key={card.key}
+                onClick={() => setSelectedFilter(card.key)}
+                style={{
+                  background: active ? `linear-gradient(135deg, ${card.col}22, rgba(15,23,42,0.9))` : 'rgba(15,23,42,0.68)',
+                  border: active ? `1px solid ${card.col}` : '1px solid rgba(148,163,184,0.14)',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {card.label}
+                </div>
+                <div style={{ fontSize: '1.45rem', fontWeight: 900, color: card.col, lineHeight: 1.2, marginTop: '3px' }}>
+                  {card.val}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>{card.sub}</div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Market Posture Matrix */}
@@ -151,116 +376,302 @@ export default function ElliottWaveScreener() {
           <div className="posture-matrix">
             <div className="posture-breadth-left">
               <div className="posture-label-row">
-                <span style={{ color: '#38bdf8' }}>Motive Impulse Breadth: {posture.motive_pct}%</span>
-                <span style={{ color: '#ec4899' }}>Corrective Digestion: {posture.corrective_pct}%</span>
+                <span style={{ color: '#38bdf8' }}>Early/Mid Motive (W3/W4): {posture.early_motive_pct ?? posture.motive_pct}%</span>
+                <span style={{ color: '#f59e0b' }}>Terminal Wave 5: {posture.late_cycle_pct ?? 0}%</span>
+                <span style={{ color: '#ec4899' }}>Corrective (ABC / Triangle): {posture.corrective_cycle_pct ?? posture.corrective_pct}%</span>
               </div>
               <div className="breadth-meter-track">
-                <div className="breadth-fill-motive" style={{ width: `${posture.motive_pct}%` }} />
-                <div className="breadth-fill-corrective" style={{ width: `${posture.corrective_pct}%` }} />
+                <div className="breadth-fill-motive" style={{ width: `${posture.early_motive_pct ?? posture.motive_pct}%` }} />
+                <div style={{ width: `${posture.late_cycle_pct ?? 0}%`, background: 'linear-gradient(90deg, #f59e0b, #f43f5e)' }} />
+                <div className="breadth-fill-corrective" style={{ width: `${posture.corrective_cycle_pct ?? posture.corrective_pct}%` }} />
               </div>
-              <div style={{ fontSize: '0.82rem', color: '#cbd5e1', fontWeight: 600, marginTop: '5px' }}>
-                Macro Posture: <span style={{ color: posture.badge === 'MOTIVE_IMPULSE' ? '#38bdf8' : posture.badge === 'CORRECTIVE_DIGESTION' ? '#ec4899' : '#a855f7' }}>
-                  {posture.text}
-                </span>
+              <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 600, marginTop: '5px' }}>
+                Cycle Telemetry: <span style={{ color: '#38bdf8' }}>{posture.cycle_read || posture.text}</span>
               </div>
             </div>
 
             <div className="posture-stat-chips">
-              <div className="stat-chip motive">🚀 Impulses: {posture.impulse_count}</div>
-              {posture.wave3_ignition_count > 0 && (
-                <div className="stat-chip ignition">⚡ Wave 3 Ignition: {posture.wave3_ignition_count}</div>
-              )}
-              <div className="stat-chip wave4">🎯 Wave 4 Pullbacks: {posture.wave4_count}</div>
-              <div className="stat-chip wave5">⚠️ Wave 5 Exhaustions: {posture.wave5_count}</div>
-              <div className="stat-chip flat">📦 Flats (3-3-5): {posture.flat_count}</div>
-              <div className="stat-chip triangle">📐 Triangles: {posture.triangle_count}</div>
-              <div className="stat-chip zigzag">🔄 Zigzags (5-3-5): {posture.zigzag_count}</div>
+              <div className="stat-chip ignition" onClick={() => setSelectedFilter('wave3_ignition')} style={{ cursor: 'pointer' }}>
+                ⚡ W3 Ignition: {kpis.w3_ignition ?? posture.wave3_ignition_count}
+              </div>
+              <div className="stat-chip wave4" onClick={() => setSelectedFilter('wave_4')} style={{ cursor: 'pointer' }}>
+                🎯 W4 Pullbacks: {kpis.w4_buy_zone ?? posture.wave4_count}
+              </div>
+              <div className="stat-chip zigzag" onClick={() => setSelectedFilter('zigzag')} style={{ cursor: 'pointer' }}>
+                🔄 ABC Zigzags: {kpis.abc_reversal ?? posture.zigzag_count}
+              </div>
+              <div className="stat-chip triangle" onClick={() => setSelectedFilter('triangle')} style={{ cursor: 'pointer' }}>
+                📐 Triangles: {kpis.triangle ?? posture.triangle_count}
+              </div>
+              <div className="stat-chip wave5" onClick={() => setSelectedFilter('wave_5')} style={{ cursor: 'pointer' }}>
+                ⚠️ W5 Exhaustion: {kpis.w5_exhaustion ?? posture.wave5_count}
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Controls Bar: Filter Pills + Direct Search */}
-      <div className="elliott-controls-bar">
+      {/* #1 Apex Elliott Wave Spotlight Hero Card */}
+      {spotlight && spotlight.fusion && (
+        <div
+          onClick={() => openStockModal(spotlight.ticker)}
+          style={{
+            marginBottom: '16px',
+            padding: '16px 20px',
+            borderRadius: '14px',
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(15,23,42,0.92) 45%, rgba(56,189,248,0.12) 100%)',
+            border: '1px solid rgba(16,185,129,0.4)',
+            boxShadow: '0 10px 28px rgba(0,0,0,0.35)',
+            cursor: 'pointer',
+            display: 'grid',
+            gridTemplateColumns: '1.35fr 1fr 1.15fr auto',
+            gap: '18px',
+            alignItems: 'center'
+          }}
+        >
+          {/* Col 1: Identity & Playbook */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+              <span style={{
+                background: 'rgba(16,185,129,0.2)',
+                color: '#34d399',
+                border: '1px solid rgba(16,185,129,0.45)',
+                padding: '2px 9px',
+                borderRadius: '999px',
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                textTransform: 'uppercase'
+              }}>
+                ★ #1 Wave Conviction Spotlight
+              </span>
+              <span style={{
+                background: 'rgba(56,189,248,0.18)',
+                color: '#38bdf8',
+                border: '1px solid rgba(56,189,248,0.35)',
+                padding: '2px 9px',
+                borderRadius: '999px',
+                fontSize: '0.72rem',
+                fontWeight: 800
+              }}>
+                {spotlight.fusion.playbook_label}
+              </span>
+              <span style={{ fontSize: '0.73rem', color: '#34d399', fontWeight: 700 }}>
+                {spotlight.fusion.action_label}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '1.65rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
+                {spotlight.ticker}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 600 }}>
+                {spotlight.fusion.name} • {spotlight.fusion.sector}
+              </span>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#e2e8f0' }}>
+                ${spotlight.price?.toFixed(2)}
+              </span>
+              <span style={{
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: spotlight.pct_change >= 0 ? '#10b981' : '#f43f5e'
+              }}>
+                {spotlight.pct_change >= 0 ? '+' : ''}{spotlight.pct_change?.toFixed(2)}%
+              </span>
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: '5px' }}>
+              <strong>{spotlight.pattern?.active_wave}</strong> — {spotlight.fusion.state_note} {spotlight.fusion.momentum?.note}
+            </div>
+          </div>
+
+          {/* Col 2: 30D Sparkline + RS & Alpha */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div>
+              <div style={{ fontSize: '0.66rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '3px' }}>
+                30D Price + EMA10/21 + RS Line
+              </div>
+              <ElliottSparkline spark={spotlight.fusion.sparkline} width={165} height={48} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.74rem' }}>
+              <span style={{ color: '#94a3b8' }}>
+                Conviction: <strong style={{ color: '#10b981' }}>{spotlight.fusion.conviction_score} ({spotlight.fusion.grade})</strong>
+              </span>
+              <span style={{ color: '#94a3b8' }}>
+                RS Rating: <strong style={{ color: '#fbbf24' }}>{spotlight.fusion.rs_rating}</strong>
+              </span>
+              <span style={{ color: '#94a3b8' }}>
+                30D Alpha: <strong style={{ color: (spotlight.fusion.alpha_30d_pct || 0) >= 0 ? '#10b981' : '#f43f5e' }}>
+                  {(spotlight.fusion.alpha_30d_pct || 0) >= 0 ? '+' : ''}{spotlight.fusion.alpha_30d_pct ?? 0}%
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Col 3: Bracket Trade Plan */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '8px',
+            background: 'rgba(15,23,42,0.75)',
+            padding: '10px 12px',
+            borderRadius: '10px',
+            border: '1px solid rgba(148,163,184,0.16)'
+          }}>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase' }}>Entry</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8' }}>
+                ${spotlight.fusion.trade_plan?.entry?.toFixed(2)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase' }}>Tactical Stop</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f43f5e' }}>
+                ${spotlight.fusion.trade_plan?.tactical_stop?.toFixed(2)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase' }}>Wave Target 1</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#10b981' }}>
+                ${spotlight.fusion.trade_plan?.target_1?.toFixed(2) || '-'}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase' }}>R/R Ratio</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fbbf24' }}>
+                {spotlight.fusion.trade_plan?.rr_t1} : 1
+              </div>
+            </div>
+          </div>
+
+          {/* Col 4: CTA */}
+          <div>
+            <button
+              type="button"
+              className="inspect-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                openStockModal(spotlight.ticker);
+              }}
+              style={{ padding: '10px 14px', fontSize: '0.82rem', fontWeight: 800 }}
+            >
+              Open Wave Terminal <ChevronRight size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Controls Bar: Filter Pills + Sort + Search */}
+      <div className="elliott-controls-bar" style={{ flexWrap: 'wrap', gap: '10px' }}>
         <div className="filter-pills-group">
           <button 
             className={`filter-pill ${selectedFilter === 'all' ? 'active' : ''}`}
             onClick={() => setSelectedFilter('all')}
           >
-            All Wave Cycles ({data?.stocks?.length || 0})
+            All Cycles ({data?.stocks?.length || 0})
+          </button>
+          <button 
+            className={`filter-pill motive ${selectedFilter === 'actionable' ? 'active motive' : ''}`}
+            onClick={() => setSelectedFilter('actionable')}
+          >
+            🟢 Actionable ({kpis.actionable || 0})
           </button>
           <button 
             className={`filter-pill ignition ${selectedFilter === 'wave3_ignition' ? 'active ignition' : ''}`}
             onClick={() => setSelectedFilter('wave3_ignition')}
           >
-            ⚡ Wave 3 Ignition
-          </button>
-          <button 
-            className={`filter-pill motive ${selectedFilter === 'impulse_5' ? 'active motive' : ''}`}
-            onClick={() => setSelectedFilter('impulse_5')}
-          >
-            🚀 5-Wave Impulses
-          </button>
-          <button 
-            className={`filter-pill wave3 ${selectedFilter === 'wave_3' ? 'active wave3' : ''}`}
-            onClick={() => setSelectedFilter('wave_3')}
-          >
-            ⚡ Extended Wave 3
+            ⚡ Wave 3 Ignition ({kpis.w3_ignition || 0})
           </button>
           <button 
             className={`filter-pill wave4 ${selectedFilter === 'wave_4' ? 'active wave4' : ''}`}
             onClick={() => setSelectedFilter('wave_4')}
           >
-            🎯 Wave 4 Pullbacks
-          </button>
-          <button 
-            className={`filter-pill wave5 ${selectedFilter === 'wave_5' ? 'active wave5' : ''}`}
-            onClick={() => setSelectedFilter('wave_5')}
-          >
-            ⚠️ Wave 5 Blow-Offs
-          </button>
-          <button 
-            className={`filter-pill flat ${selectedFilter === 'flat' ? 'active flat' : ''}`}
-            onClick={() => setSelectedFilter('flat')}
-          >
-            📦 Flats (3-3-5)
-          </button>
-          <button 
-            className={`filter-pill triangle ${selectedFilter === 'triangle' ? 'active triangle' : ''}`}
-            onClick={() => setSelectedFilter('triangle')}
-          >
-            📐 Triangles (3-3-3-3-3)
+            🎯 Wave 4 Buy Zone ({kpis.w4_buy_zone || 0})
           </button>
           <button 
             className={`filter-pill zigzag ${selectedFilter === 'zigzag' ? 'active zigzag' : ''}`}
             onClick={() => setSelectedFilter('zigzag')}
           >
-            🔄 Zigzags (5-3-5)
+            🔄 ABC Reversals ({kpis.abc_reversal || 0})
           </button>
           <button 
-            className={`filter-pill diagonal ${selectedFilter === 'diagonal' ? 'active diagonal' : ''}`}
-            onClick={() => setSelectedFilter('diagonal')}
+            className={`filter-pill wave3 ${selectedFilter === 'wave_3' ? 'active wave3' : ''}`}
+            onClick={() => setSelectedFilter('wave_3')}
           >
-            💎 Diagonals
+            🚀 Wave 3 Cresting ({kpis.w3_cresting || 0})
+          </button>
+          <button 
+            className={`filter-pill triangle ${selectedFilter === 'triangle' ? 'active triangle' : ''}`}
+            onClick={() => setSelectedFilter('triangle')}
+          >
+            📐 Triangles ({kpis.triangle || 0})
+          </button>
+          <button 
+            className={`filter-pill wave5 ${selectedFilter === 'wave_5' ? 'active wave5' : ''}`}
+            onClick={() => setSelectedFilter('wave_5')}
+          >
+            ⚠️ Wave 5 Exhaustion ({kpis.w5_exhaustion || 0})
+          </button>
+          <button 
+            className={`filter-pill flat ${selectedFilter === 'multi_engine' ? 'active flat' : ''}`}
+            onClick={() => setSelectedFilter('multi_engine')}
+          >
+            🏛️ Multi-Engine ({kpis.multi_engine || 0})
           </button>
         </div>
 
-        {/* Direct Ticker Search */}
-        <form className="direct-search-box" onSubmit={handleDirectSearch}>
-          <Search size={16} color="#64748b" />
-          <input 
-            type="text" 
-            placeholder="Scan ticker wave (e.g. NVDA, TSLA, AAPL)..."
-            value={searchTicker}
-            onChange={(e) => setSearchTicker(e.target.value)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Quick Filter Input */}
+          <input
+            type="text"
+            placeholder="Filter list by ticker, sector, wave..."
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            style={{
+              background: 'rgba(15,23,42,0.8)',
+              border: '1px solid rgba(148,163,184,0.22)',
+              color: '#e2e8f0',
+              padding: '7px 11px',
+              borderRadius: '8px',
+              fontSize: '0.78rem',
+              width: '210px'
+            }}
           />
-          <button type="submit" disabled={!searchTicker.trim()}>
-            Scan Wave
-          </button>
-        </form>
+
+          {/* Sort Selector */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{
+              background: 'rgba(15,23,42,0.8)',
+              border: '1px solid rgba(148,163,184,0.22)',
+              color: '#e2e8f0',
+              padding: '7px 10px',
+              borderRadius: '8px',
+              fontSize: '0.78rem',
+              fontWeight: 600
+            }}
+          >
+            <option value="conviction">Sort: Conviction Score</option>
+            <option value="rr">Sort: Highest R/R Ratio</option>
+            <option value="alpha">Sort: 30D Alpha vs SPY</option>
+            <option value="ewo">Sort: EWO 5/35 Strength</option>
+          </select>
+
+          {/* Direct Ticker Deep Scan */}
+          <form className="direct-search-box" onSubmit={handleDirectSearch}>
+            <Search size={15} color="#64748b" />
+            <input 
+              type="text" 
+              placeholder="Deep scan any ticker (e.g. NVDA)..."
+              value={searchTicker}
+              onChange={(e) => setSearchTicker(e.target.value)}
+            />
+            <button type="submit" disabled={!searchTicker.trim()}>
+              Deep Scan
+            </button>
+          </form>
+        </div>
       </div>
 
-      {/* Main Screener Grid / Table */}
+      {/* Main Screener Content: Cards Grid or Institutional Table */}
       <div className="elliott-table-card">
         {loading && !refreshing ? (
           <div className="loading-state">
@@ -273,29 +684,248 @@ export default function ElliottWaveScreener() {
             <p>{error}</p>
             <button onClick={() => loadSummary(true)}>Retry Scan</button>
           </div>
+        ) : viewMode === 'cards' ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(365px, 1fr))',
+            gap: '14px',
+            padding: '14px'
+          }}>
+            {filteredStocks.map((item) => {
+              const p = item.pattern || {};
+              const fu = item.fusion || {};
+              const tp = fu.trade_plan || {};
+              const mom = fu.momentum || {};
+              const fibs = p.fibonacci || {};
+              const rulesScore = p.cardinal_score || '3/3';
+              const gradeCol = fu.grade === 'A+' ? '#10b981' : fu.grade === 'A' ? '#38bdf8' : fu.grade === 'B' ? '#f59e0b' : '#94a3b8';
+              const actionCol =
+                fu.action === 'BUY_ZONE' ? '#10b981' :
+                fu.action === 'SHORT_ZONE' ? '#f43f5e' :
+                fu.action === 'TAKE_PROFITS' ? '#f59e0b' : '#94a3b8';
+
+              return (
+                <div
+                  key={item.ticker}
+                  onClick={() => openStockModal(item.ticker)}
+                  style={{
+                    background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.78))',
+                    border: `1px solid ${fu.action === 'BUY_ZONE' ? 'rgba(16,185,129,0.32)' : 'rgba(148,163,184,0.16)'}`,
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    transition: 'transform 0.15s, border-color 0.15s'
+                  }}
+                >
+                  {/* Top Row: Ticker, Name, Grade & Conviction */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '1.28rem', fontWeight: 900, color: '#fff' }}>{item.ticker}</span>
+                        <span style={{ fontSize: '0.98rem', fontWeight: 700, color: '#e2e8f0' }}>${item.price?.toFixed(2)}</span>
+                        <span className={`ticker-change ${item.pct_change >= 0 ? 'pos' : 'neg'}`}>
+                          {item.pct_change >= 0 ? '+' : ''}{item.pct_change?.toFixed(2)}%
+                        </span>
+                        {fu.rs_rating > 0 && (
+                          <span style={{
+                            background: 'rgba(245,158,11,0.15)',
+                            color: '#fbbf24',
+                            border: '1px solid rgba(245,158,11,0.35)',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            fontSize: '0.68rem',
+                            fontWeight: 800
+                          }}>
+                            RS {fu.rs_rating}{fu.is_blue_dot ? ' 🔵' : ''}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '2px' }}>
+                        {fu.name || item.ticker} • {fu.sector || 'Equities'}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: `${gradeCol}20`,
+                        color: gradeCol,
+                        border: `1px solid ${gradeCol}55`,
+                        padding: '3px 9px',
+                        borderRadius: '999px',
+                        fontSize: '0.74rem',
+                        fontWeight: 900
+                      }}>
+                        {fu.grade || 'A'} • {fu.conviction_score ?? p.confidence ?? 80}
+                      </div>
+                      <div style={{ fontSize: '0.67rem', color: '#64748b', marginTop: '3px' }}>
+                        {rulesScore} Cardinal Rules
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Playbook Badge + Action Status */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span style={{
+                      background: 'rgba(56,189,248,0.14)',
+                      color: '#38bdf8',
+                      border: '1px solid rgba(56,189,248,0.32)',
+                      padding: '3px 9px',
+                      borderRadius: '6px',
+                      fontSize: '0.74rem',
+                      fontWeight: 800
+                    }}>
+                      {fu.playbook_label || p.pattern_name}
+                    </span>
+                    <span style={{
+                      color: actionCol,
+                      fontSize: '0.73rem',
+                      fontWeight: 800
+                    }}>
+                      {fu.action_label || p.active_wave}
+                    </span>
+                  </div>
+
+                  {/* Middle Row: 30D Sparkline + Wave & EWO Telemetry */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '10px',
+                    background: 'rgba(2,6,23,0.45)',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(148,163,184,0.1)'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.64rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '2px' }}>
+                        30D Price + EMA10/21 + RS
+                      </div>
+                      <ElliottSparkline spark={fu.sparkline} width={145} height={42} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.72rem', textAlign: 'right' }}>
+                      <span style={{ color: '#e2e8f0', fontWeight: 700 }}>{p.active_wave || 'Wave Progression'}</span>
+                      <span style={{ color: mom.aligned ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                        EWO 5/35: {mom.ewo_pct !== undefined ? `${mom.ewo_pct >= 0 ? '+' : ''}${mom.ewo_pct}%` : 'Active'}
+                        {mom.w3_peak_confirmed ? ' 🔥 Peak' : mom.w5_divergence ? ' ⚠️ Div' : ''}
+                      </span>
+                      <span style={{ color: '#94a3b8' }}>
+                        30D Alpha: <strong style={{ color: (fu.alpha_30d_pct || 0) >= 0 ? '#10b981' : '#f43f5e' }}>
+                          {(fu.alpha_30d_pct || 0) >= 0 ? '+' : ''}{fu.alpha_30d_pct ?? 0}%
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Trade Execution Strip */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '6px',
+                    background: 'rgba(15,23,42,0.75)',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(148,163,184,0.12)'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.62rem', color: '#64748b', textTransform: 'uppercase' }}>Entry</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8' }}>
+                        ${(tp.entry ?? item.price)?.toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.62rem', color: '#64748b', textTransform: 'uppercase' }}>Tactical Stop</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f43f5e' }}>
+                        ${(tp.tactical_stop ?? p.stop_loss)?.toFixed(2) || '-'}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.62rem', color: '#64748b', textTransform: 'uppercase' }}>Target 1</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#10b981' }}>
+                        ${(tp.target_1 ?? p.target_1)?.toFixed(2) || '-'}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.62rem', color: '#64748b', textTransform: 'uppercase' }}>R/R Ratio</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fbbf24' }}>
+                        {tp.rr_t1 ?? p.risk_reward ?? '-'}x
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer: Fib Harmonization + Multi-Engine Confluence + Inspect CTA */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                      {fibs.wave_3_extension_pct && (
+                        <span className="fib-tag">W3: {fibs.wave_3_extension_pct}%</span>
+                      )}
+                      {fibs.wave_4_retrace_pct && (
+                        <span className="fib-tag">W4: {fibs.wave_4_retrace_pct}%</span>
+                      )}
+                      {(fu.confluence_engines || []).map(eng => (
+                        <span
+                          key={eng}
+                          style={{
+                            background: 'rgba(168,85,247,0.16)',
+                            color: '#d8b4fe',
+                            border: '1px solid rgba(168,85,247,0.35)',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            fontSize: '0.65rem',
+                            fontWeight: 700
+                          }}
+                        >
+                          {eng}
+                        </span>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="inspect-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openStockModal(item.ticker);
+                      }}
+                    >
+                      Wave Chart <ChevronRight size={13} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="table-responsive">
             <table className="elliott-table">
               <thead>
                 <tr>
-                  <th>Ticker & Price</th>
-                  <th>Pattern Taxonomy</th>
-                  <th>Sub-Category & Degree</th>
-                  <th>Active Wave Cycle</th>
-                  <th>Cardinal Rules</th>
-                  <th>Fibonacci Harmonization</th>
-                  <th>EWO 5/35</th>
-                  <th>Trade Target & R/R</th>
+                  <th>Ticker & Sector</th>
+                  <th>30D Price + RS Curve</th>
+                  <th>Wave Playbook & Action</th>
+                  <th>Active Wave & Degree</th>
+                  <th>Conviction & Rules</th>
+                  <th>Fibonacci & Confluence</th>
+                  <th>EWO 5/35 & Alpha</th>
+                  <th>Repaired Trade Plan</th>
                   <th style={{ textAlign: 'right' }}>Terminal</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStocks.map((item) => {
                   const p = item.pattern || {};
-                  const isMotive = p.pattern_key === 'impulse_5' || p.pattern_key === 'impulse_w4';
+                  const fu = item.fusion || {};
+                  const tp = fu.trade_plan || {};
+                  const mom = fu.momentum || {};
+                  const isMotive = p.pattern_key === 'impulse_5' || p.pattern_key === 'impulse_w4' || p.pattern_key === 'impulse_w3_ignition';
                   const isFlat = p.pattern_key === 'flat';
                   const isTriangle = p.pattern_key === 'triangle';
-                  const isZigzag = p.pattern_key === 'zigzag';
+                  const isZigzag = p.pattern_key === 'zigzag' || p.pattern_key === 'abc_zigzag';
                   const rulesScore = p.cardinal_score || "3/3";
                   const fibs = p.fibonacci || {};
 
@@ -309,42 +939,45 @@ export default function ElliottWaveScreener() {
                       {/* Ticker & Price */}
                       <td>
                         <div className="ticker-cell">
-                          <span className="ticker-symbol">{item.ticker}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span className="ticker-symbol">{item.ticker}</span>
+                            {fu.rs_rating > 0 && (
+                              <span style={{ fontSize: '0.66rem', color: '#fbbf24', fontWeight: 800 }}>
+                                RS {fu.rs_rating}
+                              </span>
+                            )}
+                          </div>
                           <span className="ticker-price">${item.price?.toFixed(2)}</span>
                           <span className={`ticker-change ${item.pct_change >= 0 ? 'pos' : 'neg'}`}>
                             {item.pct_change >= 0 ? '+' : ''}{item.pct_change?.toFixed(2)}%
                           </span>
+                          <span style={{ fontSize: '0.68rem', color: '#64748b' }}>{fu.sector || ''}</span>
                         </div>
                       </td>
 
-                      {/* Pattern Taxonomy */}
+                      {/* 30D Sparkline */}
                       <td>
-                        <span className={`pattern-badge ${
-                          isMotive ? 'badge-motive' :
-                          isTriangle ? 'badge-triangle' :
-                          isFlat ? 'badge-flat' :
-                          isZigzag ? 'badge-zigzag' : 'badge-cycle'
-                        }`}>
-                          {p.pattern_name || 'Developing Wave'}
-                        </span>
+                        <ElliottSparkline spark={fu.sparkline} width={135} height={38} />
                       </td>
 
-                      {/* Sub-Category & Degree */}
+                      {/* Pattern Taxonomy & Action */}
                       <td>
-                        <div className="subcategory-cell">
-                          {p.stage_badge ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                              <span className={`w3-stage-pill ${p.stage_key || ''}`}>{p.stage_badge}</span>
-                              {p.pct_above_w2 !== undefined && (
-                                <span className="w3-early-turn-metric" title={`Wave 2 formed ${p.days_since_w2} bars ago`}>
-                                  +{p.pct_above_w2}% from W2 ({p.days_since_w2}d)
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="subcat-title">{p.sub_category || 'Elliott Cycle'}</span>
-                          )}
-                          <span className="degree-tag">{p.degree || 'Primary Degree'}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span className={`pattern-badge ${
+                            isMotive ? 'badge-motive' :
+                            isTriangle ? 'badge-triangle' :
+                            isFlat ? 'badge-flat' :
+                            isZigzag ? 'badge-zigzag' : 'badge-cycle'
+                          }`}>
+                            {fu.playbook_label || p.pattern_name || 'Developing Wave'}
+                          </span>
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            color: fu.action === 'BUY_ZONE' ? '#10b981' : fu.action === 'SHORT_ZONE' ? '#f43f5e' : '#94a3b8'
+                          }}>
+                            {fu.action_label || p.sub_category}
+                          </span>
                         </div>
                       </td>
 
@@ -352,22 +985,22 @@ export default function ElliottWaveScreener() {
                       <td>
                         <div className="active-wave-cell">
                           <span className="wave-name">{p.active_wave || 'Wave Progression'}</span>
-                          <span className="wave-subdivision">{p.subdivision || 'Fractal Subdivision'}</span>
+                          <span className="wave-subdivision">{p.degree || 'Primary Degree'} • {fu.freshness || 'ACTIVE'}</span>
                         </div>
                       </td>
 
-                      {/* Cardinal Rules */}
+                      {/* Conviction & Cardinal Rules */}
                       <td>
                         <div className="cardinal-cell">
                           <span className={`cardinal-pill ${rulesScore.startsWith('3') ? 'passed' : 'alert'}`}>
                             {rulesScore.startsWith('3') ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
-                            {rulesScore} Validated
+                            {fu.grade || 'A'} ({fu.conviction_score ?? p.confidence ?? 80})
                           </span>
-                          <span className="confidence-text">{p.confidence || 80}% Conf</span>
+                          <span className="confidence-text">{rulesScore} Rules • {p.confidence || 80}% Conf</span>
                         </div>
                       </td>
 
-                      {/* Fibonacci Harmonization */}
+                      {/* Fibonacci Harmonization & Confluence */}
                       <td>
                         <div className="fib-cell">
                           {fibs.wave_3_extension_pct && (
@@ -376,25 +1009,30 @@ export default function ElliottWaveScreener() {
                           {fibs.wave_4_retrace_pct && (
                             <span className="fib-tag">W4 Ret: <strong>{fibs.wave_4_retrace_pct}%</strong></span>
                           )}
-                          {fibs.wave_2_retrace_pct && !fibs.wave_4_retrace_pct && (
-                            <span className="fib-tag">W2 Ret: <strong>{fibs.wave_2_retrace_pct}%</strong></span>
-                          )}
+                          {(fu.confluence_engines || []).slice(0, 2).map(eng => (
+                            <span key={eng} className="fib-tag" style={{ color: '#d8b4fe' }}>★ {eng}</span>
+                          ))}
                         </div>
                       </td>
 
-                      {/* EWO 5/35 */}
+                      {/* EWO 5/35 & 30D Alpha */}
                       <td>
-                        <div className="ewo-cell">
-                          <Activity size={12} color="#38bdf8" />
-                          <span className="ewo-val">5/35 EWO</span>
+                        <div className="ewo-cell" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
+                          <span className="ewo-val" style={{ color: mom.aligned ? '#10b981' : '#38bdf8' }}>
+                            EWO: {mom.ewo_pct !== undefined ? `${mom.ewo_pct >= 0 ? '+' : ''}${mom.ewo_pct}%` : '5/35'}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: (fu.alpha_30d_pct || 0) >= 0 ? '#10b981' : '#f43f5e' }}>
+                            30D α: {(fu.alpha_30d_pct || 0) >= 0 ? '+' : ''}{fu.alpha_30d_pct ?? 0}%
+                          </span>
                         </div>
                       </td>
 
                       {/* Trade Target & R/R */}
                       <td>
                         <div className="target-cell">
-                          <span className="target-price">T1: ${p.target_1?.toFixed(2) || '-'}</span>
-                          <span className="rr-ratio">{p.risk_reward ? `${p.risk_reward} R/R` : '-'}</span>
+                          <span className="target-price">T1: ${(tp.target_1 ?? p.target_1)?.toFixed(2) || '-'}</span>
+                          <span style={{ fontSize: '0.72rem', color: '#f43f5e' }}>Stop: ${(tp.tactical_stop ?? p.stop_loss)?.toFixed(2) || '-'}</span>
+                          <span className="rr-ratio">{tp.rr_t1 ?? p.risk_reward ?? '-'} R/R</span>
                         </div>
                       </td>
 
@@ -402,7 +1040,10 @@ export default function ElliottWaveScreener() {
                       <td style={{ textAlign: 'right' }}>
                         <button 
                           className="inspect-btn"
-                          onClick={() => openStockModal(item.ticker)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openStockModal(item.ticker);
+                          }}
                         >
                           Inspect Wave <ChevronRight size={14} />
                         </button>

@@ -34,7 +34,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 39.12,
       "current_price": 38.88,
@@ -210,7 +210,7 @@
           38.88
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820436"
+      "last_updated": "2026-11-08T08:35:13.841989"
     },
     {
       "ticker": "PVLA",
@@ -222,7 +222,7 @@
         "Hve Volume"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 177.12,
       "current_price": 175.92,
@@ -397,7 +397,7 @@
           175.92
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820339"
+      "last_updated": "2026-11-08T08:35:13.841743"
     },
     {
       "ticker": "G",
@@ -410,7 +410,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 42.87,
       "current_price": 42.27,
@@ -585,7 +585,7 @@
           42.27
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819666"
+      "last_updated": "2026-11-08T08:35:13.747734"
     },
     {
       "ticker": "Q",
@@ -598,7 +598,7 @@
         "Qullamaggie Setup"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 118.08,
       "current_price": 117.0,
@@ -772,7 +772,7 @@
           123.05
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820370"
+      "last_updated": "2026-11-08T08:35:13.841812"
     },
     {
       "ticker": "AHR",
@@ -783,7 +783,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 58.7,
       "current_price": 57.91,
@@ -959,7 +959,7 @@
           57.91
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818742"
+      "last_updated": "2026-11-08T08:35:13.745554"
     },
     {
       "ticker": "GFL",
@@ -973,7 +973,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 46.51,
       "current_price": 46.32,
@@ -1148,7 +1148,7 @@
           46.32
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819692"
+      "last_updated": "2026-11-08T08:35:13.747816"
     },
     {
       "ticker": "IQV",
@@ -1162,7 +1162,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 273.73,
       "current_price": 271.83,
@@ -1337,7 +1337,7 @@
           279.36
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819940"
+      "last_updated": "2026-11-08T08:35:13.748457"
     },
     {
       "ticker": "VRNS",
@@ -1349,7 +1349,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 49.1,
       "current_price": 48.8,
@@ -1524,7 +1524,7 @@
           50.06
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820785"
+      "last_updated": "2026-11-08T08:35:13.842489"
     },
     {
       "ticker": "IBN",
@@ -1536,7 +1536,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 34.11,
       "current_price": 33.89,
@@ -1711,7 +1711,7 @@
           33.89
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819871"
+      "last_updated": "2026-11-08T08:35:13.748202"
     },
     {
       "ticker": "ABNB",
@@ -1723,7 +1723,7 @@
         "Earnings Surge"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 192.5,
       "current_price": 189.99,
@@ -1898,7 +1898,7 @@
           189.99
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818625"
+      "last_updated": "2026-11-08T08:35:13.745391"
     },
     {
       "ticker": "ELAN",
@@ -1911,7 +1911,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 26.26,
       "current_price": 25.74,
@@ -2085,7 +2085,7 @@
           25.74
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819556"
+      "last_updated": "2026-11-08T08:35:13.746984"
     },
     {
       "ticker": "COMP",
@@ -2097,7 +2097,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 10.4,
       "current_price": 10.21,
@@ -2272,7 +2272,7 @@
           10.21
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819277"
+      "last_updated": "2026-11-08T08:35:13.746616"
     }
   ],
   "categories": [
@@ -2336,7 +2336,7 @@
         "Post Earning Reaction"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 148.02,
       "current_price": 164.63,
@@ -2511,7 +2511,7 @@
           166.05
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820181"
+      "last_updated": "2026-11-08T08:35:13.749030"
     },
     {
       "ticker": "BIO",
@@ -2523,7 +2523,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 356.29,
       "current_price": 381.57,
@@ -2697,7 +2697,7 @@
           385.12
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819016"
+      "last_updated": "2026-11-08T08:35:13.746222"
     },
     {
       "ticker": "CGAU",
@@ -2708,7 +2708,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 20.34,
       "current_price": 21.78,
@@ -2883,7 +2883,7 @@
           22.54
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605204"
+      "last_updated": "2026-11-08T08:35:13.746463"
     },
     {
       "ticker": "QSR",
@@ -2894,7 +2894,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 70.49,
       "current_price": 77.69,
@@ -3068,7 +3068,7 @@
           77.78
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606415"
+      "last_updated": "2026-11-08T08:35:13.841834"
     },
     {
       "ticker": "PHM",
@@ -3079,7 +3079,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 124.1,
       "current_price": 132.49,
@@ -3253,7 +3253,7 @@
           133.33
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820300"
+      "last_updated": "2026-11-08T08:35:13.841680"
     },
     {
       "ticker": "ITT",
@@ -3265,7 +3265,7 @@
         "Universal Takeout"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 195.07,
       "current_price": 205.55,
@@ -3441,7 +3441,7 @@
           207.31
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819954"
+      "last_updated": "2026-11-08T08:35:13.748478"
     },
     {
       "ticker": "DE",
@@ -3452,7 +3452,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 644.41,
       "current_price": 671.65,
@@ -3627,7 +3627,7 @@
           689.59
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605388"
+      "last_updated": "2026-11-08T08:35:13.746766"
     },
     {
       "ticker": "NEO",
@@ -3639,7 +3639,7 @@
         "Poc Rejection Fixed"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 15.84,
       "current_price": 16.84,
@@ -3813,7 +3813,7 @@
           17.65
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606235"
+      "last_updated": "2026-11-08T08:35:13.749137"
     },
     {
       "ticker": "CRUS",
@@ -3824,7 +3824,7 @@
         "Apex Squeeze (\u26a1 Gamma Powder Keg)"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 108.63,
       "current_price": 113.58,
@@ -3998,7 +3998,7 @@
           118.82
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819346"
+      "last_updated": "2026-11-08T08:35:13.746701"
     },
     {
       "ticker": "YUM",
@@ -4009,7 +4009,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 153.58,
       "current_price": 161.14,
@@ -4183,7 +4183,7 @@
           161.8
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820947"
+      "last_updated": "2026-11-08T08:35:13.842745"
     },
     {
       "ticker": "HTO",
@@ -4194,7 +4194,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 59.1,
       "current_price": 62.95,
@@ -4369,7 +4369,7 @@
           62.95
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819835"
+      "last_updated": "2026-11-08T08:35:13.748145"
     },
     {
       "ticker": "CSL",
@@ -4380,7 +4380,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 353.07,
       "current_price": 375.74,
@@ -4553,7 +4553,7 @@
           391.14
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819363"
+      "last_updated": "2026-11-08T08:35:13.746719"
     },
     {
       "ticker": "BIPC",
@@ -4565,7 +4565,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 39.82,
       "current_price": 39.66,
@@ -4740,7 +4740,7 @@
           39.66
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819032"
+      "last_updated": "2026-11-08T08:35:14.910150"
     },
     {
       "ticker": "VTRS",
@@ -4754,7 +4754,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 19.96,
       "current_price": 19.91,
@@ -4930,7 +4930,7 @@
           19.91
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820824"
+      "last_updated": "2026-11-08T08:35:14.912333"
     },
     {
       "ticker": "APLE",
@@ -4943,7 +4943,7 @@
         "1st MA Pullback"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 18.98,
       "current_price": 18.88,
@@ -5119,7 +5119,7 @@
           18.88
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818853"
+      "last_updated": "2026-11-08T08:35:14.909933"
     },
     {
       "ticker": "ATEN",
@@ -5131,7 +5131,7 @@
         "Hve Volume"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 24.31,
       "current_price": 24.76,
@@ -5305,7 +5305,7 @@
           25.36
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818901"
+      "last_updated": "2026-11-08T08:35:14.909985"
     },
     {
       "ticker": "SARO",
@@ -5318,7 +5318,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 27.42,
       "current_price": 27.63,
@@ -5493,7 +5493,7 @@
           27.63
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820464"
+      "last_updated": "2026-11-08T08:35:14.911799"
     },
     {
       "ticker": "IMVT",
@@ -5504,7 +5504,7 @@
         "Hve Volume"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 30.64,
       "current_price": 30.53,
@@ -5679,7 +5679,7 @@
           31.67
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819913"
+      "last_updated": "2026-11-08T08:35:14.911130"
     },
     {
       "ticker": "AMD",
@@ -5691,7 +5691,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 438.0,
       "current_price": 449.04,
@@ -5865,7 +5865,7 @@
           455.68
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818781"
+      "last_updated": "2026-11-08T08:35:14.909859"
     },
     {
       "ticker": "IONQ",
@@ -5877,7 +5877,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 32.62,
       "current_price": 32.62,
@@ -6051,7 +6051,7 @@
           33.23
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819926"
+      "last_updated": "2026-11-08T08:35:14.704558"
     },
     {
       "ticker": "STGW",
@@ -6063,7 +6063,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 11.66,
       "current_price": 11.64,
@@ -6239,7 +6239,7 @@
           11.64
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820573"
+      "last_updated": "2026-11-08T08:35:14.705334"
     },
     {
       "ticker": "RGLD",
@@ -6251,7 +6251,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 266.78,
       "current_price": 265.81,
@@ -6426,7 +6426,7 @@
           265.81
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820423"
+      "last_updated": "2026-11-08T08:35:14.705154"
     },
     {
       "ticker": "ARHS",
@@ -6438,7 +6438,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 14.27,
       "current_price": 14.19,
@@ -6613,7 +6613,7 @@
           14.19
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818869"
+      "last_updated": "2026-11-08T08:35:14.703477"
     },
     {
       "ticker": "GPN",
@@ -6625,7 +6625,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 96.17,
       "current_price": 97.4,
@@ -6800,7 +6800,7 @@
           99.63
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605693"
+      "last_updated": "2026-11-08T08:35:14.704367"
     },
     {
       "ticker": "XERS",
@@ -6812,7 +6812,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 15.21,
       "current_price": 15.2,
@@ -6987,7 +6987,7 @@
           15.2
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606921"
+      "last_updated": "2026-11-08T08:35:14.705770"
     },
     {
       "ticker": "MSFT",
@@ -7004,7 +7004,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 8,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 523.44,
       "current_price": 530.61,
@@ -7178,7 +7178,7 @@
           548.79
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606202"
+      "last_updated": "2026-11-08T08:35:14.704855"
     },
     {
       "ticker": "ACVA",
@@ -7192,7 +7192,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 10.51,
       "current_price": 10.5,
@@ -7367,7 +7367,7 @@
           10.47
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604774"
+      "last_updated": "2026-11-08T08:35:14.703301"
     },
     {
       "ticker": "AAL",
@@ -7380,7 +7380,7 @@
         "Earnings Surge"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 13.01,
       "current_price": 13.18,
@@ -7555,7 +7555,7 @@
           13.63
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604667"
+      "last_updated": "2026-11-08T08:35:14.703179"
     },
     {
       "ticker": "JOYY",
@@ -7568,7 +7568,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 80.4,
       "current_price": 80.91,
@@ -7743,7 +7743,7 @@
           84.63
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605941"
+      "last_updated": "2026-11-08T08:35:14.704642"
     },
     {
       "ticker": "VRTX",
@@ -7756,7 +7756,7 @@
         "Base Pullback Ma"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 544.14,
       "current_price": 547.09,
@@ -7931,7 +7931,7 @@
           558.88
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606841"
+      "last_updated": "2026-11-08T08:35:14.705664"
     },
     {
       "ticker": "TXRH",
@@ -7942,7 +7942,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 182.97,
       "current_price": 183.88,
@@ -8117,7 +8117,7 @@
           188.51
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606682"
+      "last_updated": "2026-11-08T08:35:14.705432"
     },
     {
       "ticker": "ANET",
@@ -8129,7 +8129,7 @@
         "Post Earning Reaction"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 169.86,
       "current_price": 170.8,
@@ -8303,7 +8303,7 @@
           173.41
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604877"
+      "last_updated": "2026-11-08T08:35:14.703423"
     },
     {
       "ticker": "CNC",
@@ -8315,7 +8315,7 @@
         "1st MA Pullback"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 69.48,
       "current_price": 69.74,
@@ -8489,7 +8489,7 @@
           71.55
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605232"
+      "last_updated": "2026-11-08T08:35:14.703847"
     },
     {
       "ticker": "ALV",
@@ -8500,7 +8500,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 121.01,
       "current_price": 123.47,
@@ -8674,7 +8674,7 @@
           124.95
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604834"
+      "last_updated": "2026-11-08T08:35:14.703375"
     },
     {
       "ticker": "CNH",
@@ -8685,7 +8685,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 11.41,
       "current_price": 11.56,
@@ -8859,7 +8859,7 @@
           12.12
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605246"
+      "last_updated": "2026-11-08T08:35:14.703861"
     },
     {
       "ticker": "MANE",
@@ -8871,7 +8871,7 @@
         "Bull Flag Breakout"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 130.59,
       "current_price": 138.78,
@@ -9046,7 +9046,7 @@
           143.85
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606030"
+      "last_updated": "2026-11-08T08:35:14.704744"
     },
     {
       "ticker": "VIV",
@@ -9058,7 +9058,7 @@
         "Poc Rejection Fixed"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 11.16,
       "current_price": 11.43,
@@ -9232,7 +9232,7 @@
           11.79
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606788"
+      "last_updated": "2026-11-08T08:35:14.705586"
     },
     {
       "ticker": "ADP",
@@ -9244,7 +9244,7 @@
         "Earnings Surge"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 299.01,
       "current_price": 303.35,
@@ -9418,7 +9418,7 @@
           304.08
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604789"
+      "last_updated": "2026-11-08T08:35:14.703319"
     },
     {
       "ticker": "UAL",
@@ -9430,7 +9430,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 111.28,
       "current_price": 112.74,
@@ -9605,7 +9605,7 @@
           115.76
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606735"
+      "last_updated": "2026-11-08T08:35:14.705517"
     },
     {
       "ticker": "JOE",
@@ -9617,7 +9617,7 @@
         "Clean Uptrend 9 13"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 69.28,
       "current_price": 69.97,
@@ -9792,7 +9792,7 @@
           71.76
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605922"
+      "last_updated": "2026-11-08T08:35:14.704628"
     },
     {
       "ticker": "IDT",
@@ -9807,7 +9807,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 6,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 80.56,
       "current_price": 82.17,
@@ -9982,7 +9982,7 @@
           84.46
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605815"
+      "last_updated": "2026-11-08T08:35:14.704508"
     },
     {
       "ticker": "WAT",
@@ -9995,7 +9995,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 448.33,
       "current_price": 457.6,
@@ -10170,7 +10170,7 @@
           478.82
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606881"
+      "last_updated": "2026-11-08T08:35:14.705722"
     },
     {
       "ticker": "EBAY",
@@ -10183,7 +10183,7 @@
         "Apex Squeeze (\u26a1 Gamma Powder Keg)"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 121.16,
       "current_price": 121.96,
@@ -10357,7 +10357,7 @@
           123.59
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605487"
+      "last_updated": "2026-11-08T08:35:14.704121"
     },
     {
       "ticker": "CCC",
@@ -10370,7 +10370,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 7.69,
       "current_price": 7.68,
@@ -10545,7 +10545,7 @@
           7.81
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605134"
+      "last_updated": "2026-11-08T08:35:14.703739"
     },
     {
       "ticker": "TS",
@@ -10559,7 +10559,7 @@
         "Relative Strength Leader"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 56.53,
       "current_price": 58.85,
@@ -10733,7 +10733,7 @@
           61.31
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606656"
+      "last_updated": "2026-11-08T08:35:14.705397"
     },
     {
       "ticker": "KDP",
@@ -10747,7 +10747,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 35.8,
       "current_price": 36.63,
@@ -10921,7 +10921,7 @@
           36.59
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605957"
+      "last_updated": "2026-11-08T08:35:14.704659"
     },
     {
       "ticker": "HSIC",
@@ -10934,7 +10934,7 @@
         "Poc Rejection Fixed"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 83.81,
       "current_price": 86.05,
@@ -11108,7 +11108,7 @@
           88.24
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605759"
+      "last_updated": "2026-11-08T08:35:14.704447"
     },
     {
       "ticker": "AMZN",
@@ -11121,7 +11121,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 253.81,
       "current_price": 259.3,
@@ -11295,7 +11295,7 @@
           264.45
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604863"
+      "last_updated": "2026-11-08T08:35:14.703408"
     },
     {
       "ticker": "DHR",
@@ -11308,7 +11308,7 @@
         "Apex Squeeze (\ud83d\udca3 Short Squeeze Coil)"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 229.5,
       "current_price": 230.25,
@@ -11483,7 +11483,7 @@
           236.98
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605429"
+      "last_updated": "2026-11-08T08:35:14.704051"
     },
     {
       "ticker": "TNET",
@@ -11495,7 +11495,7 @@
         "Poc Rejection Fixed"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 64.68,
       "current_price": 66.63,
@@ -11669,7 +11669,7 @@
           69.48
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606642"
+      "last_updated": "2026-11-08T08:35:14.705380"
     },
     {
       "ticker": "BIIB",
@@ -11681,7 +11681,7 @@
         "Bull Flag Pending"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 243.91,
       "current_price": 248.35,
@@ -11856,7 +11856,7 @@
           254.46
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605049"
+      "last_updated": "2026-11-08T08:35:14.703636"
     },
     {
       "ticker": "DVA",
@@ -11868,7 +11868,7 @@
         "Apex Squeeze (\u26a1 Gamma Powder Keg)"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 188.43,
       "current_price": 191.35,
@@ -12042,7 +12042,7 @@
           191.94
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605473"
+      "last_updated": "2026-11-08T08:35:13.746909"
     },
     {
       "ticker": "PBLS",
@@ -12054,7 +12054,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 28.31,
       "current_price": 28.53,
@@ -12228,7 +12228,7 @@
           29.69
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606305"
+      "last_updated": "2026-11-08T08:35:13.841602"
     },
     {
       "ticker": "DECK",
@@ -12240,7 +12240,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 86.48,
       "current_price": 86.71,
@@ -12414,7 +12414,7 @@
           87.99
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605402"
+      "last_updated": "2026-11-08T08:35:13.746780"
     },
     {
       "ticker": "DOC",
@@ -12426,7 +12426,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 19.61,
       "current_price": 20.26,
@@ -12601,7 +12601,7 @@
           20.26
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605459"
+      "last_updated": "2026-11-08T08:35:13.746879"
     },
     {
       "ticker": "WAB",
@@ -12613,7 +12613,7 @@
         "Poc Rejection"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 276.79,
       "current_price": 283.59,
@@ -12788,7 +12788,7 @@
           294.09
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606868"
+      "last_updated": "2026-11-08T08:35:14.705706"
     },
     {
       "ticker": "UBER",
@@ -12800,7 +12800,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 66.96,
       "current_price": 68.59,
@@ -12973,7 +12973,7 @@
           71.14
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606748"
+      "last_updated": "2026-11-08T08:35:14.705535"
     },
     {
       "ticker": "AXTA",
@@ -12985,7 +12985,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 35.72,
       "current_price": 36.45,
@@ -13160,7 +13160,7 @@
           37.45
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604964"
+      "last_updated": "2026-11-08T08:35:14.703531"
     },
     {
       "ticker": "BMY",
@@ -13172,7 +13172,7 @@
         "Deepvue Launchpad"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 61.27,
       "current_price": 62.14,
@@ -13345,7 +13345,7 @@
           63.28
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605106"
+      "last_updated": "2026-11-08T08:35:14.703707"
     },
     {
       "ticker": "CRH",
@@ -13357,7 +13357,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 93.53,
       "current_price": 94.81,
@@ -13531,7 +13531,7 @@
           97.88
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605320"
+      "last_updated": "2026-11-08T08:35:14.703938"
     },
     {
       "ticker": "CDW",
@@ -13543,7 +13543,7 @@
         "Zacks Rank 1"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 155.04,
       "current_price": 157.0,
@@ -13716,7 +13716,7 @@
           163.64
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605189"
+      "last_updated": "2026-11-08T08:35:14.703799"
     },
     {
       "ticker": "CCK",
@@ -13728,7 +13728,7 @@
         "Clean Uptrend 9 13"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 119.86,
       "current_price": 121.3,
@@ -13902,7 +13902,7 @@
           123.92
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605162"
+      "last_updated": "2026-11-08T08:35:14.703769"
     },
     {
       "ticker": "CNXC",
@@ -13914,7 +13914,7 @@
         "Bull Flag Pending"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 29.97,
       "current_price": 30.32,
@@ -14088,7 +14088,7 @@
           31.64
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819259"
+      "last_updated": "2026-11-08T08:35:14.703876"
     },
     {
       "ticker": "DHI",
@@ -14099,7 +14099,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 147.49,
       "current_price": 152.28,
@@ -14273,7 +14273,7 @@
           153.18
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819428"
+      "last_updated": "2026-11-08T08:35:14.704034"
     },
     {
       "ticker": "WELL",
@@ -14284,7 +14284,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 240.33,
       "current_price": 245.01,
@@ -14459,7 +14459,7 @@
           247.13
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820867"
+      "last_updated": "2026-11-08T08:35:14.705739"
     },
     {
       "ticker": "NMRK",
@@ -14470,7 +14470,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 11.74,
       "current_price": 11.91,
@@ -14644,7 +14644,7 @@
           12.38
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820212"
+      "last_updated": "2026-11-08T08:35:14.704905"
     },
     {
       "ticker": "WMG",
@@ -14657,7 +14657,7 @@
         "Relative Strength Leader"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 31.0,
       "current_price": 31.3,
@@ -14830,7 +14830,7 @@
           31.91
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820881"
+      "last_updated": "2026-11-08T08:35:14.705754"
     },
     {
       "ticker": "VRSN",
@@ -14843,7 +14843,7 @@
         "Apex Squeeze (\ud83d\udd25 High Squeeze Pro)"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 306.16,
       "current_price": 308.67,
@@ -15017,7 +15017,7 @@
           314.22
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820798"
+      "last_updated": "2026-11-08T08:35:14.705645"
     },
     {
       "ticker": "CCL",
@@ -15029,7 +15029,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 28.98,
       "current_price": 29.58,
@@ -15203,7 +15203,7 @@
           30.85
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819158"
+      "last_updated": "2026-11-08T08:35:14.703785"
     },
     {
       "ticker": "BLK",
@@ -15215,7 +15215,7 @@
         "Zacks Rank 1"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 1156.75,
       "current_price": 1178.87,
@@ -15389,7 +15389,7 @@
           1224.37
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819052"
+      "last_updated": "2026-11-08T08:35:14.703691"
     },
     {
       "ticker": "MOH",
@@ -15401,7 +15401,7 @@
         "Apex Squeeze (\u26a1 Gamma Powder Keg)"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 207.44,
       "current_price": 208.99,
@@ -15575,7 +15575,7 @@
           217.65
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606102"
+      "last_updated": "2026-11-08T08:35:14.704822"
     },
     {
       "ticker": "CR",
@@ -15586,7 +15586,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 196.44,
       "current_price": 201.06,
@@ -15761,7 +15761,7 @@
           209.16
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605306"
+      "last_updated": "2026-11-08T08:35:14.703921"
     },
     {
       "ticker": "VKTX",
@@ -15772,7 +15772,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 26.62,
       "current_price": 26.84,
@@ -15946,7 +15946,7 @@
           27.94
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606801"
+      "last_updated": "2026-11-08T08:35:14.705607"
     },
     {
       "ticker": "TBBB",
@@ -15958,7 +15958,7 @@
         "Post Earning Reaction"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 65.91,
       "current_price": 65.62,
@@ -16133,7 +16133,7 @@
           65.62
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606616"
+      "last_updated": "2026-11-08T08:35:14.705350"
     },
     {
       "ticker": "AA",
@@ -16144,7 +16144,7 @@
         "Earnings Surge"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 39.62,
       "current_price": 39.54,
@@ -16317,7 +16317,7 @@
           41.39
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604647"
+      "last_updated": "2026-11-08T08:35:14.703158"
     },
     {
       "ticker": "FUL",
@@ -16329,7 +16329,7 @@
         "Poc Rejection Fixed"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 48.45,
       "current_price": 49.86,
@@ -16502,7 +16502,7 @@
           52.07
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605598"
+      "last_updated": "2026-11-08T08:35:14.704259"
     },
     {
       "ticker": "HQY",
@@ -16514,7 +16514,7 @@
         "Medium Base Breakout"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 101.53,
       "current_price": 103.63,
@@ -16687,7 +16687,7 @@
           108.06
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605746"
+      "last_updated": "2026-11-08T08:35:14.704431"
     },
     {
       "ticker": "EQH",
@@ -16699,7 +16699,7 @@
         "Apex Squeeze (\ud83d\udca3 Short Squeeze Coil)"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 51.71,
       "current_price": 52.66,
@@ -16872,7 +16872,7 @@
           54.82
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819570"
+      "last_updated": "2026-11-08T08:35:14.704190"
     },
     {
       "ticker": "SHW",
@@ -16884,7 +16884,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 340.57,
       "current_price": 344.1,
@@ -17057,7 +17057,7 @@
           357.91
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820521"
+      "last_updated": "2026-11-08T08:35:14.705276"
     },
     {
       "ticker": "BOX",
@@ -17069,7 +17069,7 @@
         "Zacks Rank 1"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 41.63,
       "current_price": 41.95,
@@ -17242,7 +17242,7 @@
           42.43
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819087"
+      "last_updated": "2026-11-08T08:35:14.703724"
     },
     {
       "ticker": "BALL",
@@ -17254,7 +17254,7 @@
         "Clean Uptrend 9 13"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 65.43,
       "current_price": 65.92,
@@ -17427,7 +17427,7 @@
           66.98
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818930"
+      "last_updated": "2026-11-08T08:35:14.703547"
     },
     {
       "ticker": "SIG",
@@ -17439,7 +17439,7 @@
         "1st MA Pullback"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 116.43,
       "current_price": 117.26,
@@ -17612,7 +17612,7 @@
           122.44
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820534"
+      "last_updated": "2026-11-08T08:35:14.705292"
     },
     {
       "ticker": "SBUX",
@@ -17624,7 +17624,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 104.98,
       "current_price": 105.41,
@@ -17797,7 +17797,7 @@
           108.71
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820477"
+      "last_updated": "2026-11-08T08:35:14.705230"
     },
     {
       "ticker": "URI",
@@ -17809,7 +17809,7 @@
         "Zacks Rank 1"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 1053.19,
       "current_price": 1055.57,
@@ -17982,7 +17982,7 @@
           1098.17
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820731"
+      "last_updated": "2026-11-08T08:35:14.705553"
     },
     {
       "ticker": "SRAD",
@@ -17993,7 +17993,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 13.41,
       "current_price": 13.54,
@@ -18166,7 +18166,7 @@
           13.85
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820560"
+      "last_updated": "2026-11-08T08:35:14.705320"
     },
     {
       "ticker": "HON",
@@ -18177,7 +18177,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 219.54,
       "current_price": 220.05,
@@ -18351,7 +18351,7 @@
           228.47
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819761"
+      "last_updated": "2026-11-08T08:35:14.704401"
     },
     {
       "ticker": "ROIV",
@@ -18363,7 +18363,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 39.12,
       "current_price": 38.88,
@@ -18539,7 +18539,7 @@
           38.88
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820436"
+      "last_updated": "2026-11-08T08:35:14.705173"
     },
     {
       "ticker": "G",
@@ -18552,7 +18552,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 42.87,
       "current_price": 42.27,
@@ -18727,7 +18727,7 @@
           42.27
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819666"
+      "last_updated": "2026-11-08T08:35:14.704292"
     },
     {
       "ticker": "PVLA",
@@ -18739,7 +18739,7 @@
         "Hve Volume"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 177.12,
       "current_price": 175.92,
@@ -18914,7 +18914,7 @@
           175.92
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820339"
+      "last_updated": "2026-11-08T08:35:14.705053"
     },
     {
       "ticker": "Q",
@@ -18927,7 +18927,7 @@
         "Qullamaggie Setup"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 118.08,
       "current_price": 117.0,
@@ -19101,7 +19101,7 @@
           123.05
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820370"
+      "last_updated": "2026-11-08T08:35:14.705086"
     },
     {
       "ticker": "AHR",
@@ -19112,7 +19112,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 58.7,
       "current_price": 57.91,
@@ -19288,7 +19288,7 @@
           57.91
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818742"
+      "last_updated": "2026-11-08T08:35:14.703355"
     },
     {
       "ticker": "GFL",
@@ -19302,7 +19302,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 46.51,
       "current_price": 46.32,
@@ -19477,7 +19477,7 @@
           46.32
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819692"
+      "last_updated": "2026-11-08T08:35:14.704324"
     },
     {
       "ticker": "IQV",
@@ -19491,7 +19491,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 273.73,
       "current_price": 271.83,
@@ -19666,7 +19666,7 @@
           279.36
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605870"
+      "last_updated": "2026-11-08T08:35:14.704575"
     },
     {
       "ticker": "VRNS",
@@ -19678,7 +19678,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 49.1,
       "current_price": 48.8,
@@ -19853,7 +19853,7 @@
           50.06
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606815"
+      "last_updated": "2026-11-08T08:35:14.705626"
     },
     {
       "ticker": "IBN",
@@ -19865,7 +19865,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 34.11,
       "current_price": 33.89,
@@ -20040,7 +20040,7 @@
           33.89
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819871"
+      "last_updated": "2026-11-08T08:35:14.704492"
     },
     {
       "ticker": "ELAN",
@@ -20053,7 +20053,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 26.26,
       "current_price": 25.74,
@@ -20227,7 +20227,7 @@
           25.74
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819556"
+      "last_updated": "2026-11-08T08:35:14.704172"
     },
     {
       "ticker": "ABNB",
@@ -20239,7 +20239,7 @@
         "Earnings Surge"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 192.5,
       "current_price": 189.99,
@@ -20414,7 +20414,7 @@
           189.99
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604715"
+      "last_updated": "2026-11-08T08:35:14.703231"
     },
     {
       "ticker": "COMP",
@@ -20426,7 +20426,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 10.4,
       "current_price": 10.21,
@@ -20601,7 +20601,7 @@
           10.21
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605277"
+      "last_updated": "2026-11-08T08:35:14.703890"
     },
     {
       "ticker": "FWONA",
@@ -20614,7 +20614,7 @@
         "Long Base Breakout"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 102.0,
       "current_price": 101.01,
@@ -20789,7 +20789,7 @@
           101.01
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605613"
+      "last_updated": "2026-11-08T08:35:14.704274"
     },
     {
       "ticker": "COR",
@@ -20801,7 +20801,7 @@
         "Relative Strength Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 334.67,
       "current_price": 333.56,
@@ -20974,7 +20974,7 @@
           346.47
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605291"
+      "last_updated": "2026-11-08T08:35:14.703906"
     },
     {
       "ticker": "BEP",
@@ -20985,7 +20985,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 31.44,
       "current_price": 31.14,
@@ -21160,7 +21160,7 @@
           31.14
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818987"
+      "last_updated": "2026-11-08T08:35:14.703619"
     },
     {
       "ticker": "RYAAY",
@@ -21172,7 +21172,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 59.83,
       "current_price": 59.3,
@@ -21347,7 +21347,7 @@
           59.3
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820450"
+      "last_updated": "2026-11-08T08:35:14.705193"
     },
     {
       "ticker": "BB",
@@ -21359,7 +21359,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 8.92,
       "current_price": 8.74,
@@ -21532,7 +21532,7 @@
           9.14
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818973"
+      "last_updated": "2026-11-08T08:35:14.703602"
     },
     {
       "ticker": "XMTR",
@@ -21545,7 +21545,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 117.94,
       "current_price": 114.95,
@@ -21719,7 +21719,7 @@
           114.95
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820921"
+      "last_updated": "2026-11-08T08:35:14.705805"
     },
     {
       "ticker": "BAM",
@@ -21730,7 +21730,7 @@
         "Hve Volume"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 54.72,
       "current_price": 52.95,
@@ -21905,7 +21905,7 @@
           54.11
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818945"
+      "last_updated": "2026-11-08T08:35:14.703562"
     },
     {
       "ticker": "JNJ",
@@ -21920,7 +21920,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 6,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 282.02,
       "current_price": 276.22,
@@ -22094,7 +22094,7 @@
           276.32
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819968"
+      "last_updated": "2026-11-08T08:35:14.704609"
     },
     {
       "ticker": "KO",
@@ -22106,7 +22106,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 97.49,
       "current_price": 95.67,
@@ -22280,7 +22280,7 @@
           95.58
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820035"
+      "last_updated": "2026-11-08T08:35:14.704693"
     },
     {
       "ticker": "FLYW",
@@ -22294,7 +22294,7 @@
         "Universal Takeout"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 22.17,
       "current_price": 21.57,
@@ -22468,7 +22468,7 @@
           21.81
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819598"
+      "last_updated": "2026-11-08T08:35:14.704224"
     },
     {
       "ticker": "U",
@@ -22481,7 +22481,7 @@
         "Emerging Leaders"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 52.91,
       "current_price": 51.49,
@@ -22655,7 +22655,7 @@
           51.49
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820691"
+      "last_updated": "2026-11-08T08:35:14.705498"
     },
     {
       "ticker": "DAL",
@@ -22667,7 +22667,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 90.01,
       "current_price": 87.2,
@@ -22841,7 +22841,7 @@
           89.24
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819380"
+      "last_updated": "2026-11-08T08:35:14.703986"
     },
     {
       "ticker": "LILAK",
@@ -22853,7 +22853,7 @@
         "Smc 200W Sma Reversal"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 9.27,
       "current_price": 8.95,
@@ -23027,7 +23027,7 @@
           8.95
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820063"
+      "last_updated": "2026-11-08T08:35:14.704728"
     },
     {
       "ticker": "PYPL",
@@ -23040,7 +23040,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 60.87,
       "current_price": 59.24,
@@ -23214,7 +23214,7 @@
           60.2
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820353"
+      "last_updated": "2026-11-08T08:35:14.705071"
     },
     {
       "ticker": "DIS",
@@ -23227,7 +23227,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 120.92,
       "current_price": 116.75,
@@ -23399,7 +23399,7 @@
           118.22
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819460"
+      "last_updated": "2026-11-08T08:35:14.704070"
     },
     {
       "ticker": "SG",
@@ -23411,7 +23411,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 12.48,
       "current_price": 12.01,
@@ -23586,7 +23586,7 @@
           12.01
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820507"
+      "last_updated": "2026-11-08T08:35:14.705261"
     },
     {
       "ticker": "APA",
@@ -23598,7 +23598,7 @@
         "Hve Volume"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 46.81,
       "current_price": 44.63,
@@ -23772,7 +23772,7 @@
           46.09
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818834"
+      "last_updated": "2026-11-08T08:35:14.703437"
     },
     {
       "ticker": "ONC",
@@ -23786,7 +23786,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 426.56,
       "current_price": 406.96,
@@ -23960,7 +23960,7 @@
           406.96
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820239"
+      "last_updated": "2026-11-08T08:35:14.704936"
     },
     {
       "ticker": "HUM",
@@ -23973,7 +23973,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 456.5,
       "current_price": 433.74,
@@ -24147,7 +24147,7 @@
           433.74
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819852"
+      "last_updated": "2026-11-08T08:35:14.704477"
     },
     {
       "ticker": "ASH",
@@ -24159,7 +24159,7 @@
         "Universal Takeout"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 79.5,
       "current_price": 76.62,
@@ -24333,7 +24333,7 @@
           76.62
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818887"
+      "last_updated": "2026-11-08T08:35:14.703494"
     },
     {
       "ticker": "MEOH",
@@ -24345,7 +24345,7 @@
         "Zacks Rank 1"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 70.26,
       "current_price": 66.33,
@@ -24518,7 +24518,7 @@
           68.43
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820106"
+      "last_updated": "2026-11-08T08:35:14.704783"
     },
     {
       "ticker": "XYZ",
@@ -24531,7 +24531,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 88.6,
       "current_price": 85.48,
@@ -24705,7 +24705,7 @@
           87.63
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820934"
+      "last_updated": "2026-11-08T08:35:14.705825"
     },
     {
       "ticker": "FROG",
@@ -24718,7 +24718,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 105.76,
       "current_price": 100.98,
@@ -24892,7 +24892,7 @@
           102.23
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819616"
+      "last_updated": "2026-11-08T08:35:14.704242"
     },
     {
       "ticker": "ACIW",
@@ -24904,7 +24904,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 63.1,
       "current_price": 60.02,
@@ -25078,7 +25078,7 @@
           60.02
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818655"
+      "last_updated": "2026-11-08T08:35:14.703267"
     },
     {
       "ticker": "KHC",
@@ -25090,7 +25090,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 26.27,
       "current_price": 24.61,
@@ -25262,7 +25262,7 @@
           24.83
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820022"
+      "last_updated": "2026-11-08T08:35:14.704677"
     },
     {
       "ticker": "PVH",
@@ -25274,7 +25274,7 @@
         "Base Pullback Ma"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 98.26,
       "current_price": 89.95,
@@ -25447,7 +25447,7 @@
           93.79
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820326"
+      "last_updated": "2026-11-08T08:35:14.705035"
     },
     {
       "ticker": "CGON",
@@ -25459,7 +25459,7 @@
         "Hve Volume"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 80.11,
       "current_price": 75.99,
@@ -25633,7 +25633,7 @@
           75.99
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819202"
+      "last_updated": "2026-11-08T08:35:14.703830"
     },
     {
       "ticker": "OUT",
@@ -25645,7 +25645,7 @@
         "Relative Strength Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 32.96,
       "current_price": 30.79,
@@ -25818,7 +25818,7 @@
           31.34
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820256"
+      "last_updated": "2026-11-08T08:35:14.704952"
     },
     {
       "ticker": "A",
@@ -25834,7 +25834,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 7,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 182.99,
       "current_price": 174.76,
@@ -26008,7 +26008,7 @@
           181.48
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818516"
+      "last_updated": "2026-11-08T08:35:14.703130"
     },
     {
       "ticker": "AAPL",
@@ -26022,7 +26022,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 5,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 355.38,
       "current_price": 342.37,
@@ -26195,7 +26195,7 @@
           347.61
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.818591"
+      "last_updated": "2026-11-08T08:35:14.703195"
     },
     {
       "ticker": "ECVT",
@@ -26208,7 +26208,7 @@
         "Apex Squeeze (\ud83d\udca7 VCP + VDU Coil)"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 11.07,
       "current_price": 10.49,
@@ -26382,7 +26382,7 @@
           10.49
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605500"
+      "last_updated": "2026-11-08T08:35:14.704139"
     },
     {
       "ticker": "XLV",
@@ -26394,7 +26394,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 192.51,
       "current_price": 184.8,
@@ -26568,7 +26568,7 @@
           189.08
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606934"
+      "last_updated": "2026-11-08T08:35:14.705787"
     },
     {
       "ticker": "SEPN",
@@ -26580,7 +26580,7 @@
         "Rs Divergence"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 51.05,
       "current_price": 48.85,
@@ -26754,7 +26754,7 @@
           48.85
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606524"
+      "last_updated": "2026-11-08T08:35:14.705247"
     },
     {
       "ticker": "NYT",
@@ -26766,7 +26766,7 @@
         "Apex Squeeze (\ud83d\udca3 Short Squeeze Coil)"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 71.51,
       "current_price": 68.36,
@@ -26940,7 +26940,7 @@
           70.62
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606264"
+      "last_updated": "2026-11-08T08:35:14.704921"
     },
     {
       "ticker": "V",
@@ -26952,7 +26952,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 442.67,
       "current_price": 422.65,
@@ -27125,7 +27125,7 @@
           435.34
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606775"
+      "last_updated": "2026-11-08T08:35:14.705569"
     },
     {
       "ticker": "PH",
@@ -27137,7 +27137,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 977.12,
       "current_price": 917.79,
@@ -27310,7 +27310,7 @@
           964.64
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606319"
+      "last_updated": "2026-11-08T08:35:14.704984"
     },
     {
       "ticker": "GM",
@@ -27322,7 +27322,7 @@
         "Fvg Sma Confluence"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 93.79,
       "current_price": 86.16,
@@ -27495,7 +27495,7 @@
           89.12
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605680"
+      "last_updated": "2026-11-08T08:35:14.704353"
     },
     {
       "ticker": "BAX",
@@ -27507,7 +27507,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 27.12,
       "current_price": 25.79,
@@ -27681,7 +27681,7 @@
           26.5
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605006"
+      "last_updated": "2026-11-08T08:35:14.703584"
     },
     {
       "ticker": "CCI",
@@ -27693,7 +27693,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 93.59,
       "current_price": 88.6,
@@ -27866,7 +27866,7 @@
           89.7
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605148"
+      "last_updated": "2026-11-08T08:35:14.703755"
     },
     {
       "ticker": "GDYN",
@@ -27878,7 +27878,7 @@
         "Bull Flag Pending"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 13.88,
       "current_price": 13.1,
@@ -28051,7 +28051,7 @@
           13.28
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605640"
+      "last_updated": "2026-11-08T08:35:14.704308"
     },
     {
       "ticker": "ACHC",
@@ -28063,7 +28063,7 @@
         "Earnings Surge"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 39.38,
       "current_price": 37.0,
@@ -28237,7 +28237,7 @@
           37.0
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604729"
+      "last_updated": "2026-11-08T08:35:14.703251"
     },
     {
       "ticker": "ACN",
@@ -28250,7 +28250,7 @@
         "Pre-Breakout Ignition"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 271.76,
       "current_price": 260.5,
@@ -28423,7 +28423,7 @@
           260.1
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604758"
+      "last_updated": "2026-11-08T08:35:14.703284"
     },
     {
       "ticker": "GILD",
@@ -28439,7 +28439,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 7,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 176.76,
       "current_price": 166.89,
@@ -28612,7 +28612,7 @@
           173.34
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605667"
+      "last_updated": "2026-11-08T08:35:14.704338"
     },
     {
       "ticker": "FAST",
@@ -28625,7 +28625,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 54.96,
       "current_price": 52.99,
@@ -28799,7 +28799,7 @@
           53.16
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605557"
+      "last_updated": "2026-11-08T08:35:14.704208"
     },
     {
       "ticker": "KVYO",
@@ -28811,7 +28811,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 22.22,
       "current_price": 20.71,
@@ -28984,7 +28984,7 @@
           21.21
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606000"
+      "last_updated": "2026-11-08T08:35:14.704709"
     },
     {
       "ticker": "EG",
@@ -28996,7 +28996,7 @@
         "Long Base Breakout"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 431.62,
       "current_price": 411.11,
@@ -29169,7 +29169,7 @@
           415.13
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605513"
+      "last_updated": "2026-11-08T08:35:14.704154"
     },
     {
       "ticker": "TXT",
@@ -29181,7 +29181,7 @@
         "Bull Flag Pending"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 89.26,
       "current_price": 83.54,
@@ -29354,7 +29354,7 @@
           85.86
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606695"
+      "last_updated": "2026-11-08T08:35:14.705454"
     },
     {
       "ticker": "HOOD",
@@ -29366,7 +29366,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 88.88,
       "current_price": 80.91,
@@ -29538,7 +29538,7 @@
           81.0
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.819779"
+      "last_updated": "2026-11-08T08:35:14.704415"
     },
     {
       "ticker": "PLTR",
@@ -29550,7 +29550,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 177.61,
       "current_price": 160.38,
@@ -29722,7 +29722,7 @@
           161.3
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820312"
+      "last_updated": "2026-11-08T08:35:14.705017"
     },
     {
       "ticker": "MARA",
@@ -29734,7 +29734,7 @@
         "Qullamaggie Setup"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 7.06,
       "current_price": 6.35,
@@ -29907,7 +29907,7 @@
           6.37
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.820093"
+      "last_updated": "2026-11-08T08:35:14.704762"
     },
     {
       "ticker": "SMTC",
@@ -29919,7 +29919,7 @@
         "Qullamaggie Setup"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 124.98,
       "current_price": 103.21,
@@ -30091,7 +30091,7 @@
           104.29
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606577"
+      "last_updated": "2026-11-08T08:35:14.705306"
     },
     {
       "ticker": "MHK",
@@ -30102,7 +30102,7 @@
         "Post Earning Reaction"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 156.04,
       "current_price": 150.52,
@@ -30275,7 +30275,7 @@
           152.59
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606083"
+      "last_updated": "2026-11-08T08:35:14.704802"
     },
     {
       "ticker": "MRK",
@@ -30291,7 +30291,7 @@
         "Emerging Market Leader"
       ],
       "confluence_count": 7,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 154.02,
       "current_price": 146.73,
@@ -30465,7 +30465,7 @@
           149.88
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606178"
+      "last_updated": "2026-11-08T08:35:14.704841"
     },
     {
       "ticker": "R",
@@ -30478,7 +30478,7 @@
         "1st MA Pullback"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 289.55,
       "current_price": 266.39,
@@ -30651,7 +30651,7 @@
           273.16
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606441"
+      "last_updated": "2026-11-08T08:35:14.705138"
     },
     {
       "ticker": "TZA",
@@ -30663,7 +30663,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 51.21,
       "current_price": 49.28,
@@ -30835,7 +30835,7 @@
           50.23
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606708"
+      "last_updated": "2026-11-08T08:35:14.705477"
     },
     {
       "ticker": "TDY",
@@ -30847,7 +30847,7 @@
         "Poc Rejection Fixed"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 671.12,
       "current_price": 618.6,
@@ -31020,7 +31020,7 @@
           644.86
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606629"
+      "last_updated": "2026-11-08T08:35:14.705367"
     },
     {
       "ticker": "ABBV",
@@ -31038,7 +31038,7 @@
         "ADX Best Acting Leader"
       ],
       "confluence_count": 9,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 302.93,
       "current_price": 291.31,
@@ -31211,7 +31211,7 @@
           294.89
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604699"
+      "last_updated": "2026-11-08T08:35:14.703212"
     },
     {
       "ticker": "TSLA",
@@ -31224,7 +31224,7 @@
         "RealSimple 3-Line Stack"
       ],
       "confluence_count": 4,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 392.43,
       "current_price": 358.22,
@@ -31396,7 +31396,7 @@
           365.29
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606669"
+      "last_updated": "2026-11-08T08:35:14.705410"
     },
     {
       "ticker": "QXO",
@@ -31408,7 +31408,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 3,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 12.85,
       "current_price": 11.56,
@@ -31580,7 +31580,7 @@
           12.05
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.606428"
+      "last_updated": "2026-11-08T08:35:14.705124"
     },
     {
       "ticker": "AGCO",
@@ -31591,7 +31591,7 @@
         "Earnings Surge"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 115.29,
       "current_price": 110.44,
@@ -31764,7 +31764,7 @@
           115.13
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.604804"
+      "last_updated": "2026-11-08T08:35:14.703337"
     },
     {
       "ticker": "IDXX",
@@ -31775,7 +31775,7 @@
         "Post Earning Reaction"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 714.45,
       "current_price": 676.04,
@@ -31949,7 +31949,7 @@
           698.55
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605828"
+      "last_updated": "2026-11-08T08:35:14.704526"
     },
     {
       "ticker": "HMN",
@@ -31960,7 +31960,7 @@
         "Smc Divergence Reversal"
       ],
       "confluence_count": 2,
-      "first_detected": "2026-11-07",
+      "first_detected": "2026-11-08",
       "days_tracked": 1,
       "alert_price": 55.56,
       "current_price": 53.25,
@@ -32133,8 +32133,8 @@
           53.18
         ]
       },
-      "last_updated": "2026-11-07T16:01:36.605706"
+      "last_updated": "2026-11-08T08:35:14.704384"
     }
   ],
-  "last_updated": "Nov 07, 2026 \u00b7 04:01 PM"
+  "last_updated": "Nov 08, 2026 \u00b7 08:35 AM"
 }
