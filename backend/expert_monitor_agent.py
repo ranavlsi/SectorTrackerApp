@@ -10,6 +10,7 @@ import os
 EXPERT_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_results.json'
 RS_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/public/rs_scanner_results.json'
 SQUEEZE_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/public/squeeze_results.json'
+SCREENER_MONITOR_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/public/screener_monitor.json'
 ROLLING_CACHE_FILE = '/Users/amitkumar/Desktop/SectorTrackerApp/backend/data/rolling_watch.json'
 WEBHOOK_URL = 'http://127.0.0.1:5000/api/webhook_alert'
 
@@ -25,14 +26,25 @@ def get_target_tickers():
             pass
             
     fresh_tickers = set()
+
+    # 0. Screener Monitor 3.0 (all 11 engines)
+    try:
+        with open(SCREENER_MONITOR_FILE, 'r') as f:
+            data = json.load(f)
+        for item in (data.get('stocks') or []):
+            if isinstance(item, dict) and item.get('ticker'):
+                fresh_tickers.add(item['ticker'])
+    except: pass
     
     # 1. Expert Screener
     try:
         with open(EXPERT_FILE, 'r') as f:
             data = json.load(f)
         for cat, items in data.items():
-            for item in items:
-                if 'ticker' in item: fresh_tickers.add(item['ticker'])
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict) and 'ticker' in item:
+                        fresh_tickers.add(item['ticker'])
     except: pass
     
     # 2. RS Line
@@ -40,8 +52,10 @@ def get_target_tickers():
         with open(RS_FILE, 'r') as f:
             data = json.load(f)
         for cat, items in data.items():
-            for item in items:
-                if 'ticker' in item: fresh_tickers.add(item['ticker'])
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict) and 'ticker' in item:
+                        fresh_tickers.add(item['ticker'])
     except: pass
     
     # 3. Squeeze Radar
@@ -49,8 +63,10 @@ def get_target_tickers():
         with open(SQUEEZE_FILE, 'r') as f:
             data = json.load(f)
         for cat, items in data.items():
-            for item in items:
-                if 'ticker' in item: fresh_tickers.add(item['ticker'])
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict) and 'ticker' in item:
+                        fresh_tickers.add(item['ticker'])
     except: pass
     
     # Update cache

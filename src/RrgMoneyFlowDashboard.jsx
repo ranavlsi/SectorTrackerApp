@@ -376,8 +376,12 @@ export default function RrgMoneyFlowDashboard({
   const [tableSearch, setTableSearch] = useState('');
   const [optionsMap, setOptionsMap] = useState({});
   const [optionsSyncDate, setOptionsSyncDate] = useState(null);
+  const [stockPickCategory, setStockPickCategory] = useState('ALL');
+  const [stockPickSearch, setStockPickSearch] = useState('');
+  const [pullbackScannerMap, setPullbackScannerMap] = useState({});
+  const [emergingScannerMap, setEmergingScannerMap] = useState({});
 
-  // Fetch live institutional options telemetry for all 27 ETFs and their component stocks
+  // Fetch live institutional options telemetry + cross-scanner pullback/emerging metadata
   useEffect(() => {
     let mounted = true;
     fetch('/api/options_screener/summary')
@@ -392,6 +396,31 @@ export default function RrgMoneyFlowDashboard({
         setOptionsSyncDate(json.latest_date || null);
       })
       .catch(() => {});
+
+    fetch('/first_ma_pullback_results.json')
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => {
+        if (!mounted || !json || !Array.isArray(json.results)) return;
+        const pMap = {};
+        json.results.forEach(item => {
+          if (item && item.ticker) pMap[item.ticker] = item;
+        });
+        setPullbackScannerMap(pMap);
+      })
+      .catch(() => {});
+
+    fetch('/emerging_leaders.json')
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => {
+        if (!mounted || !json || !Array.isArray(json.candidates)) return;
+        const eMap = {};
+        json.candidates.forEach(item => {
+          if (item && item.ticker) eMap[item.ticker] = item;
+        });
+        setEmergingScannerMap(eMap);
+      })
+      .catch(() => {});
+
     return () => { mounted = false; };
   }, []);
 
@@ -671,6 +700,246 @@ export default function RrgMoneyFlowDashboard({
 
     return { pullbackBuys, emergingLeaders, exhaustionWarnings, fullThrottle };
   }, [telemetryList]);
+
+  // Synthesize Institutional Top Stock Picks across all 27 RRG Sectors + Multi-Timeframe + Pullback/Emerging Scanners
+  const rrgStockPicks = useMemo(() => {
+    if (!telemetryList.length) {
+      return {
+        mtfLeaders: [],
+        emergingPicks: [],
+        meanReversionPicks: [],
+        extendedTrimPicks: []
+      };
+    }
+
+    const isDecliningStage = (stage) => {
+      if (!stage) return false;
+      const s = stage.toLowerCase();
+      return s.includes('stage 4') || s.includes('declining') || s.includes('breakdown') || s.includes('stage 3') || s.includes('distribution');
+    };
+
+    const mtfFocusSet = new Set((multiTimeframeFocusList || []).map(s => s.ticker));
+    const emergingFocusSet = new Set((emergingLeadersList || []).map(s => s.ticker));
+
+    // Aggregate all unique component stocks across all 27 RRG sectors with their richest sector context
+    const stockPoolMap = new Map();
+
+    telemetryList.forEach(sec => {
+      const mtfBullCount = [sec.mQuad, sec.wQuad, sec.dQuad].filter(q => q === 'Leading' || q === 'Improving').length;
+      const mtfLeadCount = [sec.mQuad, sec.wQuad, sec.dQuad].filter(q => q === 'Leading').length;
+
+      (sec.topStocksList || []).forEach(st => {
+        if (!st || !st.ticker) return;
+        const opt = optionsMap[st.ticker] || st.opt || null;
+        const pb = pullbackScannerMap[st.ticker] || null;
+        const em = emergingScannerMap[st.ticker] || null;
+
+        const dist200 = Number(st.dist_200sma ?? 0);
+        const rs1m = Number(st.rs_spy_1mo ?? 0);
+        const perf1d = Number(st.perf ?? 0);
+        const callPct = Number(opt?.call_vol_pct ?? 50);
+        const netDelta = Number(opt?.net_delta_flow ?? 0);
+        const pcr = Number(opt?.pcr_vol ?? 1.0);
+
+        const candidate = {
+          ticker: st.ticker,
+          perf: perf1d,
+          stage: st.stage || 'Unknown',
+          momentum_text: st.momentum_text || 'Neutral',
+          momentum_color: st.momentum_color || 'neutral',
+          rs_spy_1mo: rs1m,
+          dist_200sma: dist200,
+          sectorName: sec.name,
+          sectorTicker: sec.ticker,
+          sectorObj: sec,
+          curQuad: sec.curQuad,
+          mQuad: sec.mQuad,
+          wQuad: sec.wQuad,
+          dQuad: sec.dQuad,
+          dx: sec.dx,
+          dy: sec.dy,
+          flowScore: sec.flowScore,
+          mtfBullCount,
+          mtfLeadCount,
+          mtfTag: `${QUAD_META[sec.mQuad]?.short?.[0] || '?'}/${QUAD_META[sec.wQuad]?.short?.[0] || '?'}/${QUAD_META[sec.dQuad]?.short?.[0] || '?'}`,
+          callPct,
+          netDelta,
+          pcr,
+          optBadge: opt?.flow_signal_badge || null,
+          pbInfo: pb,
+          emInfo: em,
+          inMtfFocus: mtfFocusSet.has(st.ticker),
+          inEmergingFocus: emergingFocusSet.has(st.ticker)
+        };
+
+        const existing = stockPoolMap.get(st.ticker);
+        // If stock appears in both a broad ETF (XLK) and a pure-play ETF (SMH/IGV), keep the stronger flowScore / MTF alignment
+        if (!existing || (candidate.mtfBullCount * 10 + candidate.flowScore) > (existing.mtfBullCount * 10 + existing.flowScore)) {
+          stockPoolMap.set(st.ticker, candidate);
+        }
+      });
+    });
+
+    const allStocks = Array.from(stockPoolMap.values());
+    const q = stockPickSearch.trim().toLowerCase();
+    const matchesSearch = (s) => {
+      if (!q) return true;
+      return (
+        s.ticker.toLowerCase().includes(q) ||
+        s.sectorName.toLowerCase().includes(q) ||
+        s.sectorTicker.toLowerCase().includes(q) ||
+        s.stage.toLowerCase().includes(q) ||
+        s.momentum_text.toLowerCase().includes(q)
+      );
+    };
+
+    // 1. MULTI-TIMEFRAME LEADERS (M × W × D Aligned & Stage 2 Power Leaders)
+    const mtfLeaders = allStocks
+      .filter(s => {
+        if (!matchesSearch(s)) return false;
+        if (isDecliningStage(s.stage)) return false;
+        const isStage2 = s.stage.includes('Stage 2');
+        const hasMtfSupport = s.inMtfFocus || s.mtfBullCount >= 2 || (s.curQuad === 'Leading' && s.flowScore > 0);
+        return isStage2 && hasMtfSupport && s.rs_spy_1mo > -2;
+      })
+      .map(s => {
+        const alignBonus = s.mtfLeadCount * 8 + s.mtfBullCount * 5 + (s.inMtfFocus ? 12 : 0);
+        const optBonus = s.callPct >= 58 ? 6 : s.callPct >= 52 ? 3 : 0;
+        const momBonus = s.momentum_text.includes('Strong Bullish') ? 8 : s.momentum_text.includes('Bullish') ? 4 : 0;
+        const score = (s.rs_spy_1mo * 1.6) + (s.flowScore * 1.4) + alignBonus + optBonus + momBonus;
+
+        let setupThesis = `M/W/D (${s.mtfTag}) Aligned • ${s.sectorTicker} ${s.curQuad}`;
+        if (s.mtfLeadCount === 3) {
+          setupThesis = `Full-Throttle M+W+D Leading (${s.sectorTicker})`;
+        } else if (s.inMtfFocus) {
+          setupThesis = `MTF Institutional Focus Leader (${s.sectorTicker})`;
+        } else if (s.callPct >= 60 && s.netDelta > 0) {
+          setupThesis = `MTF Leader + Heavy Call Flow (${s.callPct.toFixed(0)}% Calls)`;
+        }
+        return { ...s, pickScore: score, setupThesis, badgeColor: '#10b981' };
+      })
+      .sort((a, b) => b.pickScore - a.pickScore)
+      .slice(0, 16);
+
+    // 2. EMERGING LEADERS (Early Stage 2 Breakouts & Improving/Hook-Up Sector Turnarounds, Unextended <= 20% vs 200-SMA)
+    const emergingPicks = allStocks
+      .filter(s => {
+        if (!matchesSearch(s)) return false;
+        if (isDecliningStage(s.stage)) return false;
+        // Must not be overextended above 200-SMA
+        if (s.dist_200sma > 20 || s.dist_200sma < -6) return false;
+        const isEarlyOrStage2 = s.stage.includes('Early Stage 2') || s.stage.includes('Stage 2') || s.stage.includes('Stage 1');
+        const isEmergingSector =
+          s.inEmergingFocus ||
+          s.curQuad === 'Improving' ||
+          s.wQuad === 'Improving' ||
+          (s.dy > 0.5 && (s.mQuad === 'Lagging' || s.mQuad === 'Improving' || s.wQuad === 'Lagging')) ||
+          Boolean(s.emInfo);
+        return isEarlyOrStage2 && isEmergingSector && (s.rs_spy_1mo > -1 || s.perf > 0 || Boolean(s.emInfo));
+      })
+      .map(s => {
+        const earlyStageBonus = s.stage.includes('Early Stage 2') ? 16 : s.stage.includes('Stage 2') ? 8 : 3;
+        const scannerBonus = s.emInfo ? 18 : 0;
+        const hookBonus = s.dy > 0 ? Math.min(12, s.dy * 2) : 0;
+        const sweetSpotBonus = (s.dist_200sma >= 0 && s.dist_200sma <= 12) ? 10 : 4;
+        const score = earlyStageBonus + scannerBonus + hookBonus + sweetSpotBonus + (s.rs_spy_1mo * 1.4) + (s.callPct >= 55 ? 5 : 0);
+
+        let setupThesis = `Fresh Rotation (${s.sectorTicker} ΔMom ${s.dy >= 0 ? '+' : ''}${s.dy.toFixed(1)}) • +${s.dist_200sma.toFixed(1)}% vs 200MA`;
+        if (s.emInfo) {
+          setupThesis = `Scanner Verified: ${s.emInfo.tier_label || 'Emerging Ignition'} (Pivot $${s.emInfo.entry_pivot || s.emInfo.price})`;
+        } else if (s.stage.includes('Early Stage 2')) {
+          setupThesis = `Early Stage 2 Breakout • Unextended (+${s.dist_200sma.toFixed(1)}% vs 200MA)`;
+        } else if (s.curQuad === 'Improving' && s.dy > 0) {
+          setupThesis = `NW Improving Hook-Up (${s.sectorTicker}) • Early Institutional Inflow`;
+        }
+        return { ...s, pickScore: score, setupThesis, badgeColor: '#3b82f6' };
+      })
+      .sort((a, b) => b.pickScore - a.pickScore)
+      .slice(0, 16);
+
+    // 3. MEAN REVERSION & EXTENDED PULLBACK LEADERS (Extended Stage 2 Leaders on Controlled Dip / First MA Retest / Oversold Bounce)
+    const meanReversionPicks = allStocks
+      .filter(s => {
+        if (!matchesSearch(s)) return false;
+        if (isDecliningStage(s.stage)) return false;
+        const isStructuralUptrend = s.stage.includes('Stage 2') || s.dist_200sma >= 6;
+        if (!isStructuralUptrend) return false;
+
+        // Condition A: Verified First MA Pullback in scanner
+        const hasPullbackScan = Boolean(s.pbInfo);
+        // Condition B: Extended leader (dist_200sma >= 10% or rs_spy_1mo >= 3%) experiencing a daily pullback or momentum breather
+        const isExtendedDip = (s.dist_200sma >= 10 || s.rs_spy_1mo >= 3) && (
+          s.perf < 0 ||
+          s.momentum_text.includes('Oversold Bounce') ||
+          s.momentum_text.includes('Momentum Fading') ||
+          s.dQuad === 'Weakening' ||
+          s.dQuad === 'Lagging' ||
+          s.dy < 0
+        );
+        // Condition C: Macro M/W Leading sector in a Daily RRG pullback (Weakening/Lagging)
+        const isMacroPullbackSector = (s.mQuad === 'Leading' || s.wQuad === 'Leading') && (s.dQuad === 'Weakening' || s.dQuad === 'Lagging' || s.dy < -0.5);
+
+        return hasPullbackScan || isExtendedDip || isMacroPullbackSector;
+      })
+      .map(s => {
+        const pbBonus = s.pbInfo ? 22 : 0;
+        const bounceBonus = s.momentum_text.includes('Oversold Bounce') ? 16 : 0;
+        const mtfDipBonus = (s.mQuad === 'Leading' || s.wQuad === 'Leading') && (s.dQuad === 'Weakening' || s.dy < 0) ? 14 : 0;
+        const extStrengthBonus = Math.min(18, Math.max(0, s.dist_200sma * 0.45)) + Math.max(0, s.rs_spy_1mo * 1.1);
+        const dipDepthBonus = s.perf < 0 ? Math.min(10, Math.abs(s.perf) * 2.5) : 2;
+        const optSupportBonus = s.callPct >= 55 || s.netDelta > 0 ? 7 : 0;
+
+        const score = pbBonus + bounceBonus + mtfDipBonus + extStrengthBonus + dipDepthBonus + optSupportBonus;
+
+        let setupThesis = `Extended Leader (+${s.dist_200sma.toFixed(1)}% vs 200MA) • Mean-Reversion Dip`;
+        if (s.pbInfo) {
+          setupThesis = `${s.pbInfo.ma_tested} Retest (${s.pbInfo.volume_footprint || 'VDU'}) • Prior Impulse +${Number(s.pbInfo.impulse_gain_pct || 0).toFixed(0)}%`;
+        } else if (s.momentum_text.includes('Oversold Bounce')) {
+          setupThesis = `♻️ Oversold Mean-Reversion Bounce in Stage 2 (+${s.dist_200sma.toFixed(1)}% vs 200MA)`;
+        } else if ((s.mQuad === 'Leading' || s.wQuad === 'Leading') && (s.dQuad === 'Weakening' || s.dy < 0)) {
+          setupThesis = `Macro Leader (${s.sectorTicker} M:${QUAD_META[s.mQuad]?.short?.[0]}/W:${QUAD_META[s.wQuad]?.short?.[0]}) on Daily Breather`;
+        } else if (s.perf < 0) {
+          setupThesis = `Extended Stage 2 (+${s.dist_200sma.toFixed(1)}% vs 200MA) Pulling Back (${s.perf.toFixed(2)}% 1D)`;
+        }
+        return { ...s, pickScore: score, setupThesis, badgeColor: '#f59e0b' };
+      })
+      .sort((a, b) => b.pickScore - a.pickScore)
+      .slice(0, 16);
+
+    // 4. OVEREXTENDED / EXHAUSTION MEAN-REVERSION RISK WATCH (Stretched Far Above 200-SMA or Momentum Exhaustion)
+    const extendedTrimPicks = allStocks
+      .filter(s => {
+        if (!matchesSearch(s)) return false;
+        const isStretched = s.dist_200sma >= 20;
+        const hasExhaustion = s.momentum_text.includes('Exhaustion') || s.curQuad === 'Weakening' || s.wQuad === 'Weakening';
+        return isStretched || (s.dist_200sma >= 14 && hasExhaustion);
+      })
+      .map(s => {
+        const exhaustBonus = s.momentum_text.includes('Exhaustion') ? 18 : 0;
+        const weakQuadBonus = (s.curQuad === 'Weakening' || s.dQuad === 'Weakening') ? 10 : 0;
+        const bearOptBonus = (s.callPct < 48 || s.netDelta < 0) ? 10 : 0;
+        const score = (s.dist_200sma * 1.2) + exhaustBonus + weakQuadBonus + bearOptBonus;
+
+        let setupThesis = `Stretched +${s.dist_200sma.toFixed(1)}% Above 200-SMA • Mean-Reversion Risk`;
+        if (s.momentum_text.includes('Exhaustion') && s.dist_200sma >= 25) {
+          setupThesis = `Climax Extension (+${s.dist_200sma.toFixed(1)}% vs 200MA) + MACD Exhaustion Cross`;
+        } else if (s.curQuad === 'Weakening' || s.dQuad === 'Weakening') {
+          setupThesis = `Extended (+${s.dist_200sma.toFixed(1)}% vs 200MA) in Weakening Sector (${s.sectorTicker})`;
+        } else if (s.netDelta < 0) {
+          setupThesis = `Extended (+${s.dist_200sma.toFixed(1)}% vs 200MA) + Dealer Put/Delta Hedging`;
+        }
+        return { ...s, pickScore: score, setupThesis, badgeColor: '#ef4444' };
+      })
+      .sort((a, b) => b.pickScore - a.pickScore)
+      .slice(0, 16);
+
+    return {
+      mtfLeaders,
+      emergingPicks,
+      meanReversionPicks,
+      extendedTrimPicks
+    };
+  }, [telemetryList, multiTimeframeFocusList, emergingLeadersList, optionsMap, pullbackScannerMap, emergingScannerMap, stockPickSearch]);
 
   // Selected sector for the Right-Hand Under-the-Hood Inspector
   const inspectedSector = useMemo(() => {
@@ -2226,6 +2495,376 @@ export default function RrgMoneyFlowDashboard({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* =====================================================================
+          6B. RRG INSTITUTIONAL TOP STOCK PICKS MATRIX (MTF, EMERGING, MEAN REVERSION, EXTENDED)
+      ===================================================================== */}
+      <div className="glass-card" style={{
+        padding: '18px 20px',
+        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.90) 0%, rgba(9, 13, 22, 0.96) 100%)',
+        border: '1px solid rgba(56, 189, 248, 0.25)'
+      }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                color: '#10b981',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                letterSpacing: '0.07em'
+              }}>
+                RRG × STAGE ANALYSIS × OPTIONS FLOW STOCK ENGINE
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontFamily: 'monospace' }}>
+                Click any stock for Deep Technical Chart • Click Sector ETF pill for RRG Sector Breakdown
+              </span>
+            </div>
+            <h2 style={{ margin: '5px 0 3px 0', fontSize: '1.18rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Zap color="#f59e0b" size={20} /> RRG Top Stock Picks: Multi-Timeframe Leaders, Emerging Leaders & Mean-Reversion Pullbacks
+            </h2>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>
+              Isolates top underlying stocks across all 27 RRG sectors by Multi-Timeframe RRG Alignment, Early Stage 2 Turnarounds, Extended Stage 2 Mean-Reversion Pullbacks, and Climax Extension Risk.
+            </p>
+          </div>
+
+          {/* Search & Category Filter Tabs */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(9, 13, 22, 0.9)', padding: '5px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <Search size={14} color="#94a3b8" />
+              <input
+                type="text"
+                value={stockPickSearch}
+                onChange={(e) => setStockPickSearch(e.target.value)}
+                placeholder="Search ticker, ETF, stage..."
+                style={{ background: 'transparent', border: 'none', color: '#f8fafc', fontSize: '0.76rem', outline: 'none', width: '165px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', background: 'rgba(9, 13, 22, 0.85)', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {[
+                { key: 'ALL', label: 'All 4 Buckets (Grid)', color: '#38bdf8' },
+                { key: 'MTF', label: `🔥 Multi-Timeframe Leaders (${rrgStockPicks.mtfLeaders.length})`, color: '#10b981' },
+                { key: 'EMERGING', label: `🌱 Emerging Leaders (${rrgStockPicks.emergingPicks.length})`, color: '#3b82f6' },
+                { key: 'MEAN_REV', label: `🎣 Mean Reversion / Extended Dip (${rrgStockPicks.meanReversionPicks.length})`, color: '#f59e0b' },
+                { key: 'EXTENDED', label: `⚠️ Overextended / Trim Watch (${rrgStockPicks.extendedTrimPicks.length})`, color: '#ef4444' }
+              ].map(tab => {
+                const active = stockPickCategory === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setStockPickCategory(tab.key)}
+                    style={{
+                      cursor: 'pointer',
+                      padding: '5px 10px',
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      border: active ? `1px solid ${tab.color}` : '1px solid transparent',
+                      background: active ? `${tab.color}22` : 'transparent',
+                      color: active ? tab.color : '#94a3b8',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* 4-Category Stock Pick Columns / Expanded View */}
+        {(() => {
+          const allSections = [
+            {
+              key: 'MTF',
+              title: '🔥 Multi-Timeframe Leaders (M × W × D Aligned)',
+              subtitle: 'Stage 2 Uptrend Leaders in sectors Leading/Improving across Monthly, Weekly & Daily with institutional RS & Options Call flow.',
+              accent: '#10b981',
+              border: 'rgba(16, 185, 129, 0.32)',
+              bg: 'rgba(16, 185, 129, 0.05)',
+              badgeLabel: 'MTF LEADER',
+              items: rrgStockPicks.mtfLeaders
+            },
+            {
+              key: 'EMERGING',
+              title: '🌱 Emerging Leaders (Early Rotation & Stage 2 Ignition)',
+              subtitle: 'Fresh Stage 1 → Early Stage 2 turnarounds in Improving / NW Hook-Up sectors (unextended <= 20% above 200-SMA).',
+              accent: '#3b82f6',
+              border: 'rgba(59, 130, 246, 0.32)',
+              bg: 'rgba(59, 130, 246, 0.05)',
+              badgeLabel: 'EMERGING PICK',
+              items: rrgStockPicks.emergingPicks
+            },
+            {
+              key: 'MEAN_REV',
+              title: '🎣 Mean Reversion & Extended Pullback Leaders',
+              subtitle: 'Structural Stage 2 leaders & extended stocks pulling back into 10/21-EMA support, Oversold Bounce, or Daily RRG dip in Leading M/W sectors.',
+              accent: '#f59e0b',
+              border: 'rgba(245, 158, 11, 0.32)',
+              bg: 'rgba(245, 158, 11, 0.05)',
+              badgeLabel: 'MEAN-REV DIP BUY',
+              items: rrgStockPicks.meanReversionPicks
+            },
+            {
+              key: 'EXTENDED',
+              title: '⚠️ Overextended / Exhaustion Mean-Reversion Watch',
+              subtitle: 'Stocks stretched >= 20% above 200-SMA or in Weakening sectors with MACD/RSI exhaustion where profit-trimming or pullback caution is warranted.',
+              accent: '#ef4444',
+              border: 'rgba(239, 68, 68, 0.32)',
+              bg: 'rgba(239, 68, 68, 0.05)',
+              badgeLabel: 'EXTENDED / TRIM',
+              items: rrgStockPicks.extendedTrimPicks
+            }
+          ];
+
+          const visibleSections = stockPickCategory === 'ALL'
+            ? allSections
+            : allSections.filter(s => s.key === stockPickCategory);
+
+          const isSingleExpanded = visibleSections.length === 1;
+
+          return (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isSingleExpanded ? '1fr' : 'repeat(auto-fit, minmax(310px, 1fr))',
+              gap: '14px'
+            }}>
+              {visibleSections.map(section => {
+                const displayLimit = isSingleExpanded ? 16 : 8;
+                const stocks = section.items.slice(0, displayLimit);
+
+                return (
+                  <div
+                    key={section.key}
+                    style={{
+                      background: section.bg,
+                      border: `1px solid ${section.border}`,
+                      borderRadius: '12px',
+                      padding: '14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px'
+                    }}
+                  >
+                    {/* Column Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: '8px' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <h3 style={{ margin: 0, fontSize: '0.94rem', color: section.accent, fontWeight: 800 }}>
+                            {section.title}
+                          </h3>
+                          <span style={{
+                            fontSize: '0.66rem',
+                            fontFamily: 'monospace',
+                            fontWeight: 800,
+                            padding: '2px 7px',
+                            borderRadius: '999px',
+                            background: `${section.accent}22`,
+                            color: section.accent,
+                            border: `1px solid ${section.accent}55`
+                          }}>
+                            {section.items.length} PICKS
+                          </span>
+                        </div>
+                        <p style={{ margin: '3px 0 0 0', fontSize: '0.73rem', color: '#94a3b8', lineHeight: 1.35 }}>
+                          {section.subtitle}
+                        </p>
+                      </div>
+
+                      {stockPickCategory === 'ALL' && section.items.length > 8 && (
+                        <button
+                          onClick={() => setStockPickCategory(section.key)}
+                          style={{
+                            cursor: 'pointer',
+                            background: 'rgba(15, 23, 42, 0.85)',
+                            border: `1px solid ${section.accent}55`,
+                            color: section.accent,
+                            borderRadius: '6px',
+                            padding: '3px 8px',
+                            fontSize: '0.67rem',
+                            fontWeight: 800,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          View All {section.items.length} →
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Stock Cards List / Grid */}
+                    {stocks.length === 0 ? (
+                      <div style={{ padding: '16px', textAlign: 'center', color: '#64748b', fontSize: '0.8rem' }}>
+                        No stocks currently matching this RRG filter.
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: isSingleExpanded ? 'repeat(auto-fill, minmax(290px, 1fr))' : '1fr',
+                        gap: '8px',
+                        maxHeight: isSingleExpanded ? 'none' : '560px',
+                        overflowY: isSingleExpanded ? 'visible' : 'auto',
+                        paddingRight: '2px'
+                      }}>
+                        {stocks.map((st, idx) => {
+                          const stageColor = st.stage.includes('Early Stage 2')
+                            ? '#38bdf8'
+                            : st.stage.includes('Stage 2')
+                            ? '#10b981'
+                            : st.stage.includes('Stage 1')
+                            ? '#f59e0b'
+                            : '#94a3b8';
+
+                          const extPct = Number(st.dist_200sma || 0);
+                          const extColor = extPct >= 22
+                            ? '#ef4444'
+                            : extPct >= 12
+                            ? '#f59e0b'
+                            : extPct >= 0
+                            ? '#10b981'
+                            : '#38bdf8';
+
+                          return (
+                            <div
+                              key={`${section.key}-${st.ticker}`}
+                              onClick={() => fetchTickerData && fetchTickerData(st.ticker)}
+                              style={{
+                                cursor: 'pointer',
+                                background: 'rgba(9, 13, 22, 0.82)',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                borderRadius: '9px',
+                                padding: '9px 11px',
+                                transition: 'all 0.15s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = section.accent;
+                                e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                                e.currentTarget.style.background = 'rgba(9, 13, 22, 0.82)';
+                              }}
+                            >
+                              {/* Row 1: Rank + Ticker + Sector Badge + MTF Tag + 1D Perf */}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', marginBottom: '5px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: '0.66rem', fontFamily: 'monospace', color: '#64748b', fontWeight: 800 }}>
+                                    #{idx + 1}
+                                  </span>
+                                  <strong style={{ fontSize: '0.92rem', color: '#f8fafc', fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+                                    {st.ticker}
+                                  </strong>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (st.sectorObj) {
+                                        setSelectedInspectorName(st.sectorObj.name);
+                                        setModalData(st.sectorObj);
+                                      }
+                                    }}
+                                    title={`Inspect ${st.sectorName} (${st.sectorTicker}) RRG Sector`}
+                                    style={{
+                                      cursor: 'pointer',
+                                      background: 'rgba(56, 189, 248, 0.12)',
+                                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                                      color: '#38bdf8',
+                                      borderRadius: '4px',
+                                      padding: '1px 6px',
+                                      fontSize: '0.65rem',
+                                      fontFamily: 'monospace',
+                                      fontWeight: 800
+                                    }}
+                                  >
+                                    {st.sectorTicker} • {st.mtfTag}
+                                  </button>
+                                  <span style={{
+                                    fontSize: '0.63rem',
+                                    fontWeight: 800,
+                                    padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    background: `${stageColor}18`,
+                                    color: stageColor,
+                                    border: `1px solid ${stageColor}44`
+                                  }}>
+                                    {st.stage}
+                                  </span>
+                                </div>
+
+                                <span style={{
+                                  fontFamily: 'monospace',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 800,
+                                  color: st.perf >= 0 ? '#10b981' : '#f87171'
+                                }}>
+                                  {st.perf >= 0 ? '+' : ''}{st.perf.toFixed(2)}%
+                                </span>
+                              </div>
+
+                              {/* Row 2: Setup Thesis / Pullback / Ignition Reason */}
+                              <div style={{
+                                fontSize: '0.71rem',
+                                color: '#e2e8f0',
+                                fontWeight: 600,
+                                marginBottom: '6px',
+                                padding: '3px 7px',
+                                borderRadius: '5px',
+                                background: `${section.accent}12`,
+                                borderLeft: `2px solid ${section.accent}`
+                              }}>
+                                {st.setupThesis}
+                              </div>
+
+                              {/* Row 3: Quantitative Telemetry Bar (1M RS vs SPY, % vs 200-SMA, Options Call %, Momentum) */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontFamily: 'monospace' }}>
+                                <span style={{ color: '#cbd5e1' }}>
+                                  1M RS: <strong style={{ color: st.rs_spy_1mo >= 0 ? '#10b981' : '#f87171' }}>
+                                    {st.rs_spy_1mo >= 0 ? '+' : ''}{st.rs_spy_1mo.toFixed(1)}%
+                                  </strong>
+                                </span>
+
+                                <span style={{ color: '#cbd5e1' }}>
+                                  200MA: <strong style={{ color: extColor }}>
+                                    {extPct >= 0 ? '+' : ''}{extPct.toFixed(1)}%
+                                  </strong>
+                                </span>
+
+                                <span style={{ color: '#cbd5e1' }}>
+                                  Calls: <strong style={{ color: st.callPct >= 55 ? '#10b981' : st.callPct <= 45 ? '#f87171' : '#fbbf24' }}>
+                                    {st.callPct.toFixed(0)}%
+                                  </strong>
+                                  {st.netDelta !== 0 && (
+                                    <span style={{ color: st.netDelta > 0 ? '#10b981' : '#f87171', marginLeft: '4px' }}>
+                                      ({formatDollarFlow(st.netDelta)})
+                                    </span>
+                                  )}
+                                </span>
+
+                                <span style={{
+                                  color: st.momentum_color === 'bullish' ? '#10b981' : st.momentum_color === 'warning' ? '#f59e0b' : st.momentum_color === 'bearish' ? '#ef4444' : '#94a3b8',
+                                  fontWeight: 700,
+                                  fontFamily: 'sans-serif',
+                                  fontSize: '0.66rem'
+                                }}>
+                                  {st.momentum_text}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* =====================================================================

@@ -45,7 +45,7 @@ def fire_options_alert(ticker, contract_type, strike, exp_date, vol, oi, ratio):
         "ticker": ticker,
         "setup": f"🚨 HUGE {contract_type.upper()} SWEEP: Strike ${strike} expiring {exp_date}. Vol: {int(vol):,} vs OI: {int(oi):,} (Ratio: {ratio}x)",
         "color": "#3b82f6" if contract_type == 'call' else "#ef4444",
-        "send_telegram": True
+        "send_telegram": False
     }
     try:
         requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=2)

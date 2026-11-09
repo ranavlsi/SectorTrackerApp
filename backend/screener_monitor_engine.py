@@ -775,6 +775,46 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
         made_dist = max(price - alert_price, 0.0)
         progress_pct = min(max(int((made_dist / total_dist) * 100), 0), 100)
 
+        # Fire Telegram / Webhook alert on Screener Monitor lifecycle transition into TRIGGERED or TARGET_HIT
+        if prev_entry and prev_status == 'PENDING' and status == 'TRIGGERED':
+            try:
+                import requests as _req
+                _req.post(
+                    "http://127.0.0.1:5000/api/webhook_alert",
+                    json={
+                        "council": "🎯 SCREENER MONITOR",
+                        "source": "screener_monitor",
+                        "ticker": t,
+                        "setup": (
+                            f"🚀 PIVOT BREAKOUT TRIGGERED @ ${price:.2f} (Pivot: ${pivot_price:.2f} | "
+                            f"Stop: ${stop_loss:.2f} | T1: ${target_1:.2f} | RS {rs_rating} | "
+                            f"{confluence_count}x Engines: {', '.join(screeners[:3])})"
+                        ),
+                        "color": "#10b981",
+                        "send_telegram": True
+                    },
+                    timeout=1.5
+                )
+            except Exception:
+                pass
+        elif prev_entry and prev_status == 'TRIGGERED' and status in ('TARGET_HIT', 'TARGET_2_HIT'):
+            try:
+                import requests as _req
+                _req.post(
+                    "http://127.0.0.1:5000/api/webhook_alert",
+                    json={
+                        "council": "🎯 SCREENER MONITOR",
+                        "source": "screener_monitor",
+                        "ticker": t,
+                        "setup": f"{status_label} @ ${price:.2f} (+{gain_pct:.2f}% from pivot ${alert_price:.2f})",
+                        "color": "#06b6d4",
+                        "send_telegram": True
+                    },
+                    timeout=1.5
+                )
+            except Exception:
+                pass
+
         updated_state[t] = {
             'ticker': t,
             'name': name,

@@ -118,51 +118,22 @@ def get_screener_monitored_tickers():
     _monitored_tickers_last_loaded = now
     return tickers
 
-def is_screener_monitored_ticker(ticker: str) -> bool:
-    if not ticker:
-        return False
-    return ticker.upper().strip() in get_screener_monitored_tickers()
-
-def should_dispatch_alert(alert: dict) -> bool:
+def should_dispatch_telegram(alert: dict) -> bool:
     """
-    Screener-First & Institutional Council Gatekeeper:
-    1. Premarket Morning Briefing & Premarket Radar is ALWAYS permitted.
-    2. Alerts originating from the Screener Monitor OR for monitored tickers are ALWAYS permitted.
-    3. Market-wide macro, breadth, health, and GEX radar signals are ALWAYS permitted.
-    4. Autonomous AI Council alerts (Technical, Insider, Dark Pool, Synergy) are ALWAYS permitted.
-    5. Clean fallback for verified high-conviction alerts.
+    Strict Screener Monitor Telegram Gatekeeper:
+    Only dispatches to Telegram when the alert explicitly originates from
+    the Screener Monitor (`source == 'screener_monitor'` or `'SCREENER MONITOR'` in `council`).
     """
     if not alert or not isinstance(alert, dict):
         return False
 
-    alert_type = alert.get("type", "")
-    council = alert.get("council", "")
-    source = alert.get("source", "")
-    ticker = (alert.get("ticker") or "").upper().strip()
+    source = str(alert.get("source") or "").lower().strip()
+    council = str(alert.get("council") or "").upper().strip()
 
-    # 1. Premarket Briefing & Premarket Radar always permitted
-    if alert_type == "PREMARKET_BRIEFING" or "PREMARKET" in council:
-        return True
-
-    # 2. Alerts originating from the Screener Monitor always permitted
     if source == "screener_monitor" or "SCREENER MONITOR" in council or "MASTER 30-DAY RADAR" in council:
         return True
 
-    # 3. Macro / Market-wide / Health / GEX sweeps always permitted
-    if ticker in ("MARKET", "MACRO", "ALL", "SPY", "QQQ", "IWM", "VIX") or any(k in council for k in ("HEALTH", "RADAR", "GEX")):
-        return True
-
-    # 4. Official AI Council alerts always permitted
-    if any(k in council for k in ("TECHNICAL", "INSIDER", "DARK POOL", "SYNERGY", "AI COUNCIL", "OPTIONS")):
-        return True
-
-    # 5. For any specific stock ticker, allow if monitored or valid ticker
-    if ticker and ticker not in ("UNKNOWN",):
-        if is_screener_monitored_ticker(ticker):
-            return True
-        return True
-
-    return True
+    return False
 
 def telegram_worker():
     while True:
@@ -233,8 +204,8 @@ def telegram_worker():
 threading.Thread(target=telegram_worker, daemon=True).start()
 
 def send_telegram_alert(alert):
-    """Adds an alert to the Telegram queue only if it passes the screener-first gatekeeper."""
-    if should_dispatch_alert(alert):
+    """Adds an alert to the Telegram queue ONLY if it is a Screener Monitor alert."""
+    if should_dispatch_telegram(alert):
         telegram_queue.put(alert)
 
 warnings.filterwarnings('ignore')
@@ -2934,9 +2905,6 @@ def broadcast_live_alert(alert: dict):
     """
     if not alert or not isinstance(alert, dict):
         return False
-        
-    if not should_dispatch_alert(alert):
-        return False
 
     now = datetime.now()
     if "timestamp" not in alert or not alert["timestamp"]:
@@ -2983,8 +2951,8 @@ def broadcast_live_alert(alert: dict):
     except Exception as e:
         print(f"Error persisting alert to alerts.json: {e}")
         
-    # 3. Telegram
-    if alert.get("send_telegram"):
+    # 3. Telegram (Strictly restricted to Screener Monitor alerts only)
+    if alert.get("send_telegram") and should_dispatch_telegram(alert):
         threading.Thread(target=send_telegram_alert, args=(alert,), daemon=True).start()
         
     return True
@@ -3225,7 +3193,7 @@ def insider_council_worker():
             }
             if "DISPATCH_TELEGRAM" in verdict:
                 alert["setup"] = f"[TIER 2 HIGH CONVICTION] {alert['setup']}"
-                alert["send_telegram"] = True
+                alert["send_telegram"] = False
             elif verdict == "SUPPRESS_DISTRIBUTION_TRAP":
                 alert["setup"] = f"[🚨 SUPPRESSED: TRAPPED WHALE] {alert['setup']}"
                 
@@ -3386,7 +3354,7 @@ def darkpool_council_worker():
                 }
                 if "DISPATCH_TELEGRAM" in verdict:
                     alert["setup"] = f"[TIER 2 CONFLUENCE / TRAP] {alert['setup']} - Verdict: {verdict.replace('DISPATCH_TELEGRAM_', '')}"
-                    alert["send_telegram"] = True
+                    alert["send_telegram"] = False
                 elif verdict == "SUPPRESS_DISTRIBUTION_TRAP":
                     alert["setup"] = f"[🚨 SUPPRESSED: TRAPPED WHALE] {alert['setup']}"
                 
@@ -3410,7 +3378,7 @@ def darkpool_council_worker():
                                 "ticker": "MACRO",
                                 "setup": f"📉 MACRO OPTIONS IMBALANCE: Rolling 1-hour Put Premium (${p_prem:.1f}M) outweighs Call Premium (${c_prem:.1f}M) by over 3-to-1 ratio.",
                                 "color": "#ef4444",
-                                "send_telegram": True
+                                "send_telegram": False
                             }
                             broadcast_live_alert(macro_alert)
                             sweep_history = [] # Reset to avoid spam
@@ -3420,7 +3388,7 @@ def darkpool_council_worker():
                                 "ticker": "MACRO",
                                 "setup": f"📈 MACRO OPTIONS IMBALANCE: Rolling 1-hour Call Premium (${c_prem:.1f}M) outweighs Put Premium (${p_prem:.1f}M) by over 3-to-1 ratio.",
                                 "color": "#10b981",
-                                "send_telegram": True
+                                "send_telegram": False
                             }
                             broadcast_live_alert(macro_alert)
                             sweep_history = [] # Reset to avoid spam
@@ -3873,7 +3841,7 @@ def synergy_council_worker():
                 ticker = alert.get("setup", "").split(":")[0] # Hacky way to extract ticker from setup string, or just use setup
                 alert_id = alert.get("setup", "")
                 if now - last_synergy_alerts.get(alert_id, 0) > 3600:
-                    alert["send_telegram"] = True
+                    alert["send_telegram"] = False
                     broadcast_live_alert(alert)
                     last_synergy_alerts[alert_id] = now
         except Exception as e:
@@ -3924,7 +3892,7 @@ def market_health_worker():
                             "color": "#eab308" if 40 <= score <= 60 else "#ef4444" if score > 80 or score < 20 else "#10b981",
                             "council": "🏥 HEALTH COUNCIL",
                             "ticker": "MARKET",
-                            "send_telegram": True
+                            "send_telegram": False
                         }
                         broadcast_live_alert(alert)
                     
@@ -4013,7 +3981,7 @@ def gex_council_worker():
                                 "ticker": ticker,
                                 "setup": f"🚨 VOLATILITY WARNING: {ticker} is at ${spot_price:.2f}, within 0.5% of the ZERO-GAMMA Flip Point (${flip_point:.2f}). Dealer hedging will reverse from dampening to amplifying volatility.",
                                 "color": "#ef4444",
-                                "send_telegram": True
+                                "send_telegram": False
                             }
                             broadcast_live_alert(alert)
                             last_alert_time[ticker] = now

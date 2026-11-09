@@ -179,7 +179,7 @@ def fetch_premarket_briefing():
         "ticker": "MARKET",
         "setup": "\n".join(briefing_lines),
         "color": "#f59e0b",
-        "send_telegram": True,
+        "send_telegram": False,
         "type": "PREMARKET_BRIEFING"
     }
     try:

@@ -108,7 +108,7 @@ def fire_alert(ticker, setup_name, msg, color="#10b981", council="🎯 INTRADAY 
         "ticker": ticker,
         "setup": f"[{setup_name}] {msg}",
         "color": color,
-        "send_telegram": True
+        "send_telegram": False
     }
     try:
         requests.post("http://127.0.0.1:5000/api/webhook_alert", json=payload, timeout=1.5)
