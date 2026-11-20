@@ -37,6 +37,14 @@ import yfinance as yf
 
 warnings.filterwarnings("ignore")
 
+for _mod_name in ('agents_engine', 'intraday_engine'):
+    if _mod_name in sys.modules:
+        try:
+            import importlib
+            importlib.reload(sys.modules[_mod_name])
+        except Exception:
+            pass
+
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache')
 os.makedirs(CACHE_DIR, exist_ok=True)
 CACHE_FILE = os.path.join(CACHE_DIR, 'stage_canslim_cache.json')
@@ -1384,6 +1392,31 @@ def classify_12_substages(df_weekly, mansfield_df, df_daily):
                 "Decisive break below distribution neckline support",
                 "30-week MA trending downward with expanding volume on down days",
                 "Relative Strength sinking below zero line"
+            ]
+    elif curr_close <= curr_ma30 and ma30_slope_pct > 0.3:
+        if dist_ma30_pct >= -2.0:
+            sub_stage = "3A"
+            sub_stage_name = "Stage 3A: 30-Week MA Support Test"
+            stage_category = "Stage 3: Topping"
+            status_color = "#F97316"
+            stage_score = 52
+            action_directive = "TIGHTEN STOPS / TRIM INTO STRENGTH"
+            key_characteristics = [
+                f"Price testing or slightly undercutting still-rising 30-week MA ({dist_ma30_pct:+.1f}%)",
+                f"30-week MA slope remains positive ({ma30_slope_pct:+.2f}%) from prior Stage 2 advance",
+                "Watch for rapid reclaim of 30w MA vs. multi-week distribution breakdown"
+            ]
+        else:
+            sub_stage = "3C"
+            sub_stage_name = "Stage 3C: Late Distribution Breakdown Threat"
+            stage_category = "Stage 3: Topping"
+            status_color = "#F43F5E"
+            stage_score = 35
+            action_directive = "EXIT LONGS / CAPITAL DEFENSE"
+            key_characteristics = [
+                f"Price broken {abs(dist_ma30_pct):.1f}% below rising 30-week MA ({ma30_slope_pct:+.2f}% lagged slope)",
+                "10-week MA curling down toward 30-week MA as Stage 2 momentum rolls over",
+                "Mansfield Relative Strength deteriorating below zero line"
             ]
     else:
         sub_stage = "3B"

@@ -265,7 +265,7 @@ export default function ScreenerMonitorDashboard({ onTickerClick }) {
 
     if (statusFilter !== 'all') {
       if (statusFilter === 'radar') {
-        list = list.filter((s) => s.is_flashing || (s.readiness_score || 0) >= 65);
+        list = list.filter((s) => Boolean(s.is_flashing));
       } else if (statusFilter === 'triggered') {
         list = list.filter((s) => s.lifecycle_status === 'TRIGGERED');
       } else if (statusFilter === 'pending') {
@@ -524,7 +524,12 @@ RS Rating: ${stock.rs_rating || 85} | 30D Alpha: ${stock.alpha_30d_pct || 0}% | 
 
       {/* 2. KPI METRICS RIBBON */}
       <div className="monitor-kpi-grid">
-        <div className="monitor-kpi-card highlight">
+        <div
+          className={`monitor-kpi-card highlight ${statusFilter === 'all' ? 'active' : ''}`}
+          onClick={() => setStatusFilter('all')}
+          style={{ cursor: 'pointer', border: statusFilter === 'all' ? '2px solid #00F0FF' : undefined }}
+          title="Click to show all monitored setups"
+        >
           <div className="monitor-kpi-top">
             <span className="monitor-kpi-lbl">Under Surveillance</span>
             <Target size={16} color="#00F0FF" />
@@ -533,7 +538,12 @@ RS Rating: ${stock.rs_rating || 85} | 30D Alpha: ${stock.alpha_30d_pct || 0}% | 
           <span className="monitor-kpi-sub">{kpis.multi_engine_count || 0} Stocks with 3+ Engines</span>
         </div>
 
-        <div className="monitor-kpi-card radar-kpi-card">
+        <div
+          className={`monitor-kpi-card radar-kpi-card ${statusFilter === 'radar' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'radar' ? 'all' : 'radar')}
+          style={{ cursor: 'pointer', border: statusFilter === 'radar' ? '2px solid #ff3366' : undefined }}
+          title="Click to filter Pre-Fire Radar signals"
+        >
           <div className="monitor-kpi-top">
             <span className="monitor-kpi-lbl">Pre-Fire Radar Signals</span>
             <Radio size={16} color="#ff3366" className="radar-blip-icon" />
@@ -544,7 +554,12 @@ RS Rating: ${stock.rs_rating || 85} | 30D Alpha: ${stock.alpha_30d_pct || 0}% | 
           </span>
         </div>
 
-        <div className="monitor-kpi-card">
+        <div
+          className={`monitor-kpi-card ${statusFilter === 'triggered' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'triggered' ? 'all' : 'triggered')}
+          style={{ cursor: 'pointer', border: statusFilter === 'triggered' ? '2px solid #00E676' : undefined }}
+          title="Click to filter Triggered Breakouts"
+        >
           <div className="monitor-kpi-top">
             <span className="monitor-kpi-lbl">Triggered Breakouts</span>
             <Zap size={16} color="#00E676" />
@@ -553,7 +568,12 @@ RS Rating: ${stock.rs_rating || 85} | 30D Alpha: ${stock.alpha_30d_pct || 0}% | 
           <span className="monitor-kpi-sub">Pierced Pivot with Volume Surge</span>
         </div>
 
-        <div className="monitor-kpi-card">
+        <div
+          className={`monitor-kpi-card ${statusFilter === 'blue_dot' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'blue_dot' ? 'all' : 'blue_dot')}
+          style={{ cursor: 'pointer', border: statusFilter === 'blue_dot' ? '2px solid #38bdf8' : undefined }}
+          title="Click to filter RS Blue Dot Leaders"
+        >
           <div className="monitor-kpi-top">
             <span className="monitor-kpi-lbl">🔵 RS Blue Dot Leaders</span>
             <Sparkles size={16} color="#38bdf8" />
@@ -562,7 +582,12 @@ RS Rating: ${stock.rs_rating || 85} | 30D Alpha: ${stock.alpha_30d_pct || 0}% | 
           <span className="monitor-kpi-sub">RS Line Leading Price Breakout</span>
         </div>
 
-        <div className="monitor-kpi-card">
+        <div
+          className={`monitor-kpi-card ${statusFilter === 'target_hit' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'target_hit' ? 'all' : 'target_hit')}
+          style={{ cursor: 'pointer', border: statusFilter === 'target_hit' ? '2px solid #00F0FF' : undefined }}
+          title="Click to filter Target 1 Achieved"
+        >
           <div className="monitor-kpi-top">
             <span className="monitor-kpi-lbl">Target 1 Achieved</span>
             <CheckCircle2 size={16} color="#00F0FF" />
@@ -571,7 +596,12 @@ RS Rating: ${stock.rs_rating || 85} | 30D Alpha: ${stock.alpha_30d_pct || 0}% | 
           <span className="monitor-kpi-sub">Win Rate: {kpis.win_rate_pct || 71.4}%</span>
         </div>
 
-        <div className="monitor-kpi-card">
+        <div
+          className={`monitor-kpi-card ${statusFilter === 'stopped_out' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'stopped_out' ? 'all' : 'stopped_out')}
+          style={{ cursor: 'pointer', border: statusFilter === 'stopped_out' ? '2px solid #f43f5e' : undefined }}
+          title="Click to filter Stopped Out setups"
+        >
           <div className="monitor-kpi-top">
             <span className="monitor-kpi-lbl">Stopped Out</span>
             <AlertCircle size={16} color="#f43f5e" />
@@ -589,7 +619,9 @@ RS Rating: ${stock.rs_rating || 85} | 30D Alpha: ${stock.alpha_30d_pct || 0}% | 
               <span className="radar-pulse-ring" />
               <Radio size={18} color="#ff3366" className="radar-icon-pulse" />
               <h3>EARLY-WARNING PRE-FIRE RADAR (30D TRAJECTORY + MULTI-ENGINE FUSION)</h3>
-              <span className="radar-deck-counter">{radarStocks.length} FLASHING SETUPS</span>
+              <span className="radar-deck-counter">
+                {(statusFilter === 'all' ? radarStocks : filteredStocks).length} FLASHING SETUPS
+              </span>
             </div>
             <p className="radar-deck-subtitle">
               Real-time micro-structural ignition detection combining 30D Price + EMA10/21 + Gold RS Line sparklines, VCP/HV compression, CBOE Call Flow, and Pivot distance.
@@ -597,7 +629,7 @@ RS Rating: ${stock.rs_rating || 85} | 30D Alpha: ${stock.alpha_30d_pct || 0}% | 
           </div>
 
           <div className="radar-cards-grid">
-            {radarStocks.slice(0, 6).map((stock) => {
+            {(statusFilter === 'all' ? radarStocks : filteredStocks).slice(0, 6).map((stock) => {
               const tier = stock.radar_tier || 'NORMAL';
               const isImminent = tier === 'IMMINENT';
               const isCoiling = tier === 'COILING';

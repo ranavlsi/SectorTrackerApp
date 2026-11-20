@@ -1255,6 +1255,12 @@ def run_screener(custom_universe=None):
         json.dump(results, f, indent=2)
         
     print(f"Screener complete! Results saved to public/screener_results.json")
+
+    try:
+        from expert_screener_enricher import enrich_all_expert_screeners
+        enrich_all_expert_screeners()
+    except Exception as enrich_err:
+        print(f"Warning: expert_screener_enricher skipped: {enrich_err}")
     
     # Send Telegram Alert with top picks
     try:

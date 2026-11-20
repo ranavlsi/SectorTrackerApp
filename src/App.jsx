@@ -31,8 +31,11 @@ import ElliottWaveScreener from './ElliottWaveScreener';
 import GannScreener from './GannScreener';
 import StageCanslimScreener from './StageCanslimScreener';
 import RrgMoneyFlowDashboard from './RrgMoneyFlowDashboard';
+import SectorFlowTopBottomPredictor from './SectorFlowTopBottomPredictor';
 import SqueezeRadarDashboard from './SqueezeRadarDashboard';
 import IntradayRadarDashboard from './IntradayRadarDashboard';
+import CleanUptrendDashboard from './CleanUptrendDashboard';
+import ExpertScreenersHub from './ExpertScreenersHub';
 const COLORS = [
   "#4facfe", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
   "#14b8a6", "#f97316", "#06b6d4", "#84cc16", "#a855f7", "#eab308", "#f43f5e",
@@ -386,6 +389,8 @@ function App() {
   
   // Clean Untangled Uptrend (9/13 SMA) State
   const [cleanUptrendData, setCleanUptrendData] = useState(null)
+  const [realsimpleData, setRealsimpleData] = useState(null)
+  const [firstMaPullbackData, setFirstMaPullbackData] = useState(null)
   
   // Advanced Analytics State
   const [correlationData, setCorrelationData] = useState(null)
@@ -477,6 +482,7 @@ function App() {
       .then(res => res.json())
       .then(data => {
         if (data && data.results) {
+          setFirstMaPullbackData(data);
           const formatted = data.results.map(s => ({
             ticker: s.ticker,
             metric: `$${s.close} | 1st Retest ${s.ma_tested} ($${s.ma_price}) | Impulse +${s.impulse_gain_pct}% | ${s.volume_footprint}`
@@ -485,6 +491,15 @@ function App() {
         }
       })
       .catch(err => console.warn("First MA pullback results unavailable", err))
+
+    fetchNoCache('/realsimple_results.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.stocks) {
+          setRealsimpleData(data);
+        }
+      })
+      .catch(err => console.warn("RealSimple results unavailable", err))
       
     fetchNoCache('/emerging_leaders.json')
       .then(res => res.json())
@@ -676,6 +691,29 @@ function App() {
       clearInterval(dataInterval);
     };
   }, [])
+
+  // Ultra-fast 15s live tape polling while viewing Intraday Radar
+  useEffect(() => {
+    if (activeTab !== 'intraday') return;
+    let cancelled = false;
+    const pollIntraday = async () => {
+      try {
+        const res = await fetch(`/intraday_results.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled && json && Array.isArray(json.results)) {
+          setIntradayData(json);
+        }
+      } catch (err) {
+        console.debug("Intraday 15s poll skipped:", err);
+      }
+    };
+    const fastInterval = setInterval(pollIntraday, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(fastInterval);
+    };
+  }, [activeTab]);
   
   // Global Alert Polling Fallback
   useEffect(() => {
@@ -1026,15 +1064,25 @@ function App() {
     }
   }
   
-  const fetchIntradayAlerts = async () => {
+  const fetchIntradayAlerts = async (forceLive = false) => {
+    const isAlreadyOnIntraday = activeTab === 'intraday';
     setActiveTab('intraday');
     setIntradayLoading(true);
     try {
-      const res = await fetch(`/intraday_results.json?t=` + new Date().getTime());
+      const endpoint = (forceLive === true || isAlreadyOnIntraday)
+        ? `/api/intraday_radar?refresh=1&t=${Date.now()}`
+        : `/intraday_results.json?t=${Date.now()}`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
       const json = await res.json();
       setIntradayData(json);
     } catch (err) {
-      console.error(err);
+      try {
+        const resFallback = await fetch(`/intraday_results.json?t=${Date.now()}`, { cache: 'no-store' });
+        const jsonFallback = await resFallback.json();
+        setIntradayData(jsonFallback);
+      } catch (e2) {
+        console.error(e2);
+      }
     } finally {
       setIntradayLoading(false);
     }
@@ -1126,6 +1174,13 @@ function App() {
             <Bot size={18} color="#00F0FF" /> AI Market Agents 🤖
           </button>
           <button className={activeTab === 'screeners' ? 'tab-active' : ''} onClick={() => setActiveTab('screeners')}><Crosshair size={18} /> Expert Screeners</button>
+          <button
+            className={activeTab === 'clean_uptrend' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('clean_uptrend')}
+            style={{ color: activeTab === 'clean_uptrend' ? '#10b981' : '#34d399' }}
+          >
+            <TrendingUp size={18} color="#10b981" /> Clean Uptrend 🚀
+          </button>
           <button className={activeTab === 'screenermonitor' ? 'tab-active' : ''} onClick={() => setActiveTab('screenermonitor')}><Target size={18} /> Screener Monitor 🎯</button>
           <button 
             className={activeTab === 'swingsystem' ? 'tab-active' : ''} 
@@ -1375,7 +1430,7 @@ function App() {
                     type="button"
                     onClick={() => {
                       setGexSearch(sym);
-                      setSearchedGex({ ticker: sym });
+                      setSearchedGex({ ticker: sym, ts: Date.now() });
                     }}
                     style={{
                       padding: '4px 10px',
@@ -1396,7 +1451,7 @@ function App() {
               </div>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); if (gexSearch) setSearchedGex({ticker: gexSearch.toUpperCase()}); }} style={{ display: 'flex', gap: '0.75rem' }}>
+            <form onSubmit={(e) => { e.preventDefault(); const sym = (gexSearch || searchedGex?.ticker || expertTickerData?.ticker || 'SPY').toUpperCase(); setSearchedGex({ ticker: sym, ts: Date.now() }); }} style={{ display: 'flex', gap: '0.75rem' }}>
               <input 
                 type="text" 
                 placeholder="Enter ticker (e.g., TSLA, SPY, NVDA, AAPL)..." 
@@ -1436,7 +1491,7 @@ function App() {
             </form>
           </div>
 
-          <VolatilitySurface3D ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} />
+          <VolatilitySurface3D ticker={(searchedGex?.ticker) || expertTickerData?.ticker || 'SPY'} refreshKey={searchedGex?.ts || 0} />
         </div>
       )}
 
@@ -1546,298 +1601,66 @@ function App() {
         />
       )}
 
+      {activeTab === 'clean_uptrend' && (
+        <CleanUptrendDashboard
+          data={cleanUptrendData}
+          onTickerClick={fetchTickerData}
+          onOpenFundamentals={(ticker) => {
+            setDeepFundamentalsTicker(ticker);
+            setActiveTab('deepfundamentals');
+          }}
+          onRefresh={() => {
+            fetch('/api/clean_uptrend_scanner?refresh=1', { method: 'POST' })
+              .then((res) => (res.ok ? res.json() : fetch(`/clean_uptrend_results.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => r.json())))
+              .then((fresh) => {
+                if (fresh?.stocks) setCleanUptrendData(fresh);
+              })
+              .catch(() => {
+                fetch(`/clean_uptrend_results.json?t=${Date.now()}`, { cache: 'no-store' })
+                  .then((r) => r.json())
+                  .then((fresh) => setCleanUptrendData(fresh))
+                  .catch((err) => console.error('Error refreshing clean uptrend data:', err));
+              });
+          }}
+        />
+      )}
+
       {activeTab === 'seasonality' && (
         <SeasonalityRadarDashboard data={seasonalityData} onTickerClick={fetchTickerData} />
       )}
 
       {activeTab === 'screeners' && screenerData && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem', background: 'rgba(15, 23, 42, 0.6)', padding: '1rem 1.5rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Algorithmic Technical Setups</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', fontSize: '0.85rem', flexWrap: 'wrap' }}>
-                <span style={{ 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '0.4rem', 
-                  padding: '3px 10px', 
-                  borderRadius: '12px', 
-                  background: 'rgba(16, 185, 129, 0.15)', 
-                  color: '#10b981', 
-                  fontWeight: 600,
-                  border: '1px solid rgba(16, 185, 129, 0.3)' 
-                }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-                  LIVE MARKET DATA ({screenerData._metadata?.lakehouse_date || 'Today'})
-                </span>
-                <span style={{ color: '#94a3b8' }}>
-                  Scan Generated: {screenerData._metadata?.generated_at ? new Date(screenerData._metadata.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live'} · {screenerData._metadata?.total_tickers_scanned || '12,500+'} Tickers Scanned
-                </span>
-                <span style={{ color: '#38bdf8', fontWeight: 500 }}>
-                  ⚡ Zero-Cache Enforced
-                </span>
-              </div>
-            </div>
-            
-            <button
-              onClick={() => fetchAllData()}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                background: 'rgba(79, 172, 254, 0.12)',
-                border: '1px solid rgba(79, 172, 254, 0.4)',
-                color: '#4facfe',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(79, 172, 254, 0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(79, 172, 254, 0.12)'}
-            >
-              <RefreshCw size={15} /> Force Live Refresh
-            </button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start', marginBottom: '2rem' }}>
-            {/* DeepVue Quantitative Leaders Card */}
-            {deepvueData && deepvueData.leaders && (
-              <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-                <h3 
-                  style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#ffd700', cursor: 'pointer' }}
-                  onClick={() => setCollapsedCategories(prev => ({ ...prev, deepvue: !prev.deepvue }))}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Zap size={18} /> TraderLion / DeepVue Leaders</span>
-                  {collapsedCategories.deepvue ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-                </h3>
-                
-                {!collapsedCategories.deepvue && (
-                  <>
-                    <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1rem', marginTop: '0.5rem' }}>
-                      S.N.I.P Matrix: RS Rating &gt; 80, VCP, Earnings Growth &gt; 15%
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {deepvueData.leaders.slice(0, expandedCategories.deepvue_leaders ? 20 : 5).map(item => (
-                        <ScreenerPill 
-                          key={item.ticker} 
-                          item={{
-                            ticker: item.ticker,
-                            metric: `RS Rank ${item.rs_rating} ${item.vcp_setup ? '🔥(VCP)' : ''}`
-                          }} 
-                          onClick={() => fetchTickerData(item.ticker)} 
-                        />
-                      ))}
-                      {deepvueData.leaders.length > 5 && (
-                        <button 
-                          onClick={() => setExpandedCategories(prev => ({ ...prev, deepvue_leaders: !prev.deepvue_leaders }))}
-                          style={{ 
-                            background: 'rgba(255, 215, 0, 0.05)', 
-                            border: '1px dashed rgba(255, 215, 0, 0.3)', 
-                            color: '#ffd700', 
-                            padding: '0.5rem', 
-                            borderRadius: '4px', 
-                            cursor: 'pointer', 
-                            marginTop: '0.5rem',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                        >
-                          {expandedCategories.deepvue_leaders ? (
-                            <><ChevronUp size={16} /> Fold Up</>
-                          ) : (
-                            <><ChevronDown size={16} /> View {Math.min(20, deepvueData.leaders.length)} / {deepvueData.leaders.length} Leaders</>
-                          )}
-                        </button>
-                      )}
-                    </div>
-
-                    {deepvueData.active_vcp && deepvueData.active_vcp.length > 0 && (
-                      <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 215, 0, 0.15)' }}>
-                        <h4 style={{ color: '#ffd700', marginTop: 0, marginBottom: '0.75rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <Crosshair size={14} /> Tightly Coiled (VCP)
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {deepvueData.active_vcp.slice(0, expandedCategories.deepvue_vcp ? 20 : 5).map(item => (
-                            <ScreenerPill 
-                              key={`vcp-${item.ticker}`} 
-                              item={{
-                                ticker: item.ticker,
-                                metric: `RS Rank ${item.rs_rating}`
-                              }} 
-                              onClick={() => fetchTickerData(item.ticker)} 
-                            />
-                          ))}
-                          {deepvueData.active_vcp.length > 5 && (
-                            <button 
-                              onClick={() => setExpandedCategories(prev => ({ ...prev, deepvue_vcp: !prev.deepvue_vcp }))}
-                              style={{ 
-                                background: 'rgba(255, 215, 0, 0.05)', 
-                                border: '1px dashed rgba(255, 215, 0, 0.3)', 
-                                color: '#ffd700', 
-                                padding: '0.5rem', 
-                                borderRadius: '4px', 
-                                cursor: 'pointer', 
-                                marginTop: '0.5rem',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                gap: '5px'
-                              }}
-                            >
-                              {expandedCategories.deepvue_vcp ? (
-                                <><ChevronUp size={16} /> Fold Up</>
-                              ) : (
-                                <><ChevronDown size={16} /> View {Math.min(20, deepvueData.active_vcp.length)} / {deepvueData.active_vcp.length} VCP Setups</>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-            
-            {/* Standard Algorithmic Setups */}
-            {Object.entries(ScreenerCategories).map(([key, config]) => (
-              <div key={key} className="glass-card" style={{ padding: '1.5rem' }}>
-                <h3 
-                  style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff', cursor: 'pointer' }}
-                  onClick={() => setCollapsedCategories(prev => ({ ...prev, [key]: !prev[key] }))}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{config.icon} {config.title}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Info 
-                      size={18} 
-                      color="rgba(255,255,255,0.4)" 
-                      style={{ cursor: 'pointer', transition: 'color 0.2s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#4facfe'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          setInfoVisible(prev => ({ ...prev, [key]: !prev[key] }));
-                      }} 
-                    />
-                    {expandedCategories[key] && !collapsedCategories[key] && (
-                        <span 
-                            style={{ fontSize: '0.75rem', padding: '4px 10px', background: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderRadius: '12px', border: '1px solid #4facfe' }}
-                            onClick={(e) => { 
-                                e.stopPropagation(); 
-                                setExpandedCategories(prev => ({ ...prev, [key]: false })); 
-                            }}
-                        >
-                            Fold Up
-                        </span>
-                    )}
-                    {collapsedCategories[key] ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-                  </div>
-                </h3>
-                
-                {infoVisible[key] && (
-                  <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '6px', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '1rem', borderLeft: '3px solid #4facfe' }}>
-                    {ScreenerDescriptions[key] || config.desc}
-                  </div>
-                )}
-                
-                {!collapsedCategories[key] && (
-                  (() => {
-                    let items = [];
-                    if (key === 'clean_uptrend_9_13' && cleanUptrendData?.stocks) {
-                      items = cleanUptrendData.stocks.map(s => ({
-                        ticker: s.ticker,
-                        metric: `$${s.close.toFixed(2)} (${s.change_pct > 0 ? '+' : ''}${s.change_pct}%) · Started ${s.streak_days}d ago (${s.trend_start_date}) · 200-SMA: +${s.dist_200sma_pct}% (${s.streak_above_200}d) · 50-SMA: +${s.dist_50sma_pct}% · 9-SMA: ${s.dist_9sma_pct > 0 ? '+' : ''}${s.dist_9sma_pct}% · Respect: ${s.respect_9sma_pct}% · ${s.badges ? s.badges.join(' ') : ''}`,
-                        score: s.score,
-                        streak_days: s.streak_days,
-                        macro_breakout_bars: s.macro_breakout_bars,
-                        streak_above_200: s.streak_above_200,
-                        trend_start_date: s.trend_start_date,
-                        dist_9sma_pct: s.dist_9sma_pct,
-                        dist_50sma_pct: s.dist_50sma_pct,
-                        dist_200sma_pct: s.dist_200sma_pct,
-                        respect_9sma_pct: s.respect_9sma_pct,
-                        efficiency_ratio: s.efficiency_ratio,
-                        state_label: s.badges ? s.badges[0] : 'UNTANGLED',
-                        state_color: s.is_100_pct_rider ? '#10b981' : '#38bdf8',
-                        badges: s.badges,
-                        desk_notes: s.desk_notes
-                      }));
-                    } else if (key === 'emerging_leaders' && emergingLeadersData?.candidates) {
-                      items = emergingLeadersData.candidates.map(c => ({
-                        ticker: c.ticker,
-                        metric: `${c.tier_label} (${c.score}/100) · Pivot: $${c.entry_pivot} · ${c.badges ? c.badges.join(' ') : ''}`,
-                        score: c.score,
-                        state_label: c.tier_label,
-                        state_color: c.tier_color,
-                        has_pocket_pivot: c.has_pocket_pivot,
-                        has_rs_high: c.is_rs_leading
-                      }));
-                    } else if (key === 'best_acting_stocks' && bestActingData?.stocks) {
-                      items = bestActingData.stocks.map(s => ({
-                        ticker: s.ticker,
-                        metric: `Score: ${s.score}/100 · ADX: ${s.adx} · 21-EMA: ${s.dist_ema21_pct > 0 ? '+' : ''}${s.dist_ema21_pct}% · ${s.badges ? s.badges.join(' ') : ''}`,
-                        score: s.score
-                      }));
-                    } else if (key === 'wick_supply_absorption' && wickAbsorptionData?.results) {
-                      items = wickAbsorptionData.results.map(s => ({
-                        ticker: s.ticker,
-                        metric: `$${s.close} · ${s.tier_badge} (Score: ${s.score}) · Wick: ${s.wick_zone} · VDU: ${s.vdu_pct}% · Mcap: $${s.market_cap_b}B · Vol: ${s.avg_vol_20d_m}M`,
-                        score: s.score,
-                        state_label: s.tier_badge,
-                        state_color: s.tier_color
-                      }));
-                    } else {
-                      items = screenerData && screenerData[key] ? screenerData[key] : [];
-                    }
-
-                    return items.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                        {items
-                          .slice(0, expandedCategories[key] ? 20 : 5)
-                          .map((item, idx) => (
-                          <ScreenerPill key={item.ticker} item={item} rank={idx + 1} onClick={() => fetchTickerData(item.ticker)} />
-                        ))}
-                        {items.length > 5 && (
-                          <button 
-                            onClick={() => setExpandedCategories(prev => ({ ...prev, [key]: !prev[key] }))}
-                            style={{ 
-                              background: 'rgba(79, 172, 254, 0.05)', 
-                              border: '1px dashed rgba(79, 172, 254, 0.3)', 
-                              color: '#4facfe', 
-                              padding: '0.5rem', 
-                              borderRadius: '4px', 
-                              cursor: 'pointer', 
-                              marginTop: '0.5rem',
-                              transition: 'all 0.2s',
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              gap: '5px'
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(79, 172, 254, 0.15)'; e.currentTarget.style.borderColor = '#4facfe'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(79, 172, 254, 0.05)'; e.currentTarget.style.borderColor = 'rgba(79, 172, 254, 0.3)'; }}
-                          >
-                            {expandedCategories[key] ? (
-                              <><ChevronUp size={16}/> Fold Up</>
-                            ) : (
-                              <><ChevronDown size={16}/> Show Next 15 Stocks (Rank 6-20)</>
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <p style={{ color: '#64748b', fontStyle: 'italic', marginTop: '1rem' }}>No setups found today.</p>
-                    );
-                  })()
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <ExpertScreenersHub
+          screenerData={screenerData}
+          cleanUptrendData={cleanUptrendData}
+          emergingLeadersData={emergingLeadersData}
+          bestActingData={bestActingData}
+          wickAbsorptionData={wickAbsorptionData}
+          deepvueData={deepvueData}
+          realsimpleData={realsimpleData}
+          firstMaPullbackData={firstMaPullbackData}
+          screenerCategories={ScreenerCategories}
+          screenerDescriptions={ScreenerDescriptions}
+          onTickerClick={fetchTickerData}
+          onOpenFundamentals={(tk) => {
+            setDeepFundamentalsTicker(tk);
+            setActiveTab('deepfundamentals');
+          }}
+          onRefreshAll={fetchAllData}
+          onRefreshCleanUptrend={() => {
+            fetch('/api/clean_uptrend_scanner?refresh=1', { method: 'POST' })
+              .then((res) => (res.ok ? res.json() : fetchNoCache('/clean_uptrend_results.json').then((r) => r.json())))
+              .then((fresh) => {
+                if (fresh?.stocks) setCleanUptrendData(fresh);
+              })
+              .catch(() => {
+                fetchNoCache('/clean_uptrend_results.json')
+                  .then((r) => r.json())
+                  .then((fresh) => setCleanUptrendData(fresh))
+                  .catch((err) => console.error('Error refreshing clean uptrend data:', err));
+              });
+          }}
+        />
       )}
 
       {/* Weekly Playbook Tab */}
@@ -2429,6 +2252,9 @@ function App() {
             </div>
             )}
 
+            {/* 10-Year Sector Flow Top/Bottom Predictor at Bottom of Page */}
+            <SectorFlowTopBottomPredictor onTickerClick={fetchTickerData} />
+
           </div>
           )}
         </div>
@@ -2517,7 +2343,7 @@ function App() {
             setDeepFundamentalsTicker(ticker);
             setActiveTab('deepfundamentals');
           }}
-          onRefresh={fetchIntradayAlerts}
+          onRefresh={() => fetchIntradayAlerts(true)}
         />
       )}
 

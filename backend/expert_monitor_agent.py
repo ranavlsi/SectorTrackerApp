@@ -116,11 +116,11 @@ def monitor_loop():
     
     while True:
         try:
-            # Check if market is open (basic check, EST time)
+            # Monitor from Premarket (4:00 AM EST) through Regular Market Close (4:00 PM EST)
             est = pytz.timezone('US/Eastern')
             now = datetime.now(est)
-            if now.hour < 9 or (now.hour == 9 and now.minute < 30) or now.hour >= 16:
-                print(f"[{now.strftime('%H:%M')}] Market closed. Sleeping for 5 minutes...")
+            if now.weekday() >= 5 or now.hour < 4 or now.hour >= 16:
+                print(f"[{now.strftime('%H:%M')}] Outside Premarket/Regular hours (04:00-16:00 ET). Sleeping for 5 minutes...")
                 time.sleep(300)
                 continue
                 
@@ -130,7 +130,7 @@ def monitor_loop():
                 time.sleep(60)
                 continue
                 
-            print(f"[{now.strftime('%H:%M:%S')}] Polling {len(tickers)} tickers from Rolling 30-Day Master Screener via Alpaca...")
+            print(f"[{now.strftime('%H:%M:%S')}] Polling {len(tickers)} tickers from Rolling 30-Day Master Screener via Alpaca (Premarket + Intraday)...")
             
             import os
             from dotenv import load_dotenv
@@ -175,6 +175,7 @@ def monitor_loop():
                 time.sleep(60)
                 continue
             
+            today_str = now.strftime('%Y-%m-%d')
             for ticker in tickers:
                 if ticker.upper() not in df.index.get_level_values('Ticker').str.upper():
                     continue
@@ -193,6 +194,12 @@ def monitor_loop():
                 curr_c = curr_candle['Close']
                 curr_v = curr_candle['Volume']
                 
+                # Isolate today's Premarket (04:00 - 09:29 ET) for PMH and PML
+                today_df = ticker_df[ticker_df.index.strftime('%Y-%m-%d') == today_str]
+                pm_df = today_df.between_time('04:00', '09:29') if not today_df.empty else pd.DataFrame()
+                pmh = float(pm_df['High'].max()) if not pm_df.empty else None
+                pml = float(pm_df['Low'].min()) if not pm_df.empty else None
+                
                 # VWAP Calculation
                 ticker_df['Typical'] = (ticker_df['High'] + ticker_df['Low'] + ticker_df['Close']) / 3
                 ticker_df['CumVol'] = ticker_df['Volume'].cumsum()
@@ -203,38 +210,49 @@ def monitor_loop():
                 
                 # Volume metrics
                 avg_vol_5m = ticker_df['Volume'].iloc[-6:-1].mean()
+
+                # 0. Premarket High (PMH) Breakout
+                alert_key_pmh = f"{ticker}_pmh_{today_str}"
+                if pmh and pml and len(pm_df) >= 3 and alert_key_pmh not in fired_alerts:
+                    prev_pmh = float(pm_df['High'].iloc[:-1].max()) if len(pm_df) > 1 else pmh
+                    if curr_c > prev_pmh and ticker_df['Close'].iloc[-2] <= prev_pmh:
+                        send_alert(ticker, f"Premarket High (PMH) Breakout! Clearing PMH ${prev_pmh:.2f} (PML ${pml:.2f})", "#06b6d4")
+                        fired_alerts.add(alert_key_pmh)
                 
                 # 1. VWAP Momentum Breakout
                 # Price just crossed above VWAP, with volume > 250% of the recent 5-min average
-                alert_key_vwap = f"{ticker}_vwap"
+                alert_key_vwap = f"{ticker}_vwap_{today_str}"
                 if alert_key_vwap not in fired_alerts:
                     if curr_c > curr_vwap and ticker_df['Close'].iloc[-2] <= ticker_df['VWAP'].iloc[-2]:
                         if curr_v > (avg_vol_5m * 2.5) and curr_v > 5000:
-                            send_alert(ticker, f"Surged above VWAP with {curr_v/max(1, avg_vol_5m):.1f}x Vol", "#10b981")
+                            pm_ctx = f" | PMH: ${pmh:.2f} / PML: ${pml:.2f}" if pmh and pml else ""
+                            send_alert(ticker, f"Surged above VWAP with {curr_v/max(1, avg_vol_5m):.1f}x Vol{pm_ctx}", "#10b981")
                             fired_alerts.add(alert_key_vwap)
                 
                 # 2. ORB Reclaim
                 # Price drops below the 30-minute ORB high, then reclaims it.
-                alert_key_orb = f"{ticker}_orb"
+                alert_key_orb = f"{ticker}_orb_{today_str}"
                 if alert_key_orb not in fired_alerts:
                     # Get first 30 mins
-                    start_time = ticker_df.index[0].replace(hour=9, minute=30, second=0, microsecond=0)
+                    start_time = ticker_df.index[-1].replace(hour=9, minute=30, second=0, microsecond=0)
                     end_orb_time = start_time.replace(hour=10, minute=0)
                     
                     orb_data = ticker_df[(ticker_df.index >= start_time) & (ticker_df.index <= end_orb_time)]
                     if not orb_data.empty and len(ticker_df) > len(orb_data):
                         orb_high = orb_data['High'].max()
                         if curr_c > orb_high and ticker_df['Close'].iloc[-2] <= orb_high:
-                            send_alert(ticker, f"Reclaimed 30-Min ORB High (${orb_high:.2f})", "#3b82f6")
+                            pm_ctx = f" | PMH: ${pmh:.2f} / PML: ${pml:.2f}" if pmh and pml else ""
+                            send_alert(ticker, f"Reclaimed 30-Min ORB High (${orb_high:.2f}){pm_ctx}", "#3b82f6")
                             fired_alerts.add(alert_key_orb)
 
                 # 3. Afternoon HOD Breakout
                 # Between 1:00 PM and 4:00 PM, stock breaks the absolute highest point of the day
-                alert_key_hod = f"{ticker}_hod"
+                alert_key_hod = f"{ticker}_hod_{today_str}"
                 if alert_key_hod not in fired_alerts and now.hour >= 13:
                     hod = ticker_df['High'].iloc[:-1].max()
                     if curr_c > hod:
-                        send_alert(ticker, f"Afternoon HOD Breakout! Clearing ${hod:.2f}", "#8b5cf6")
+                        pm_ctx = f" | PMH: ${pmh:.2f}" if pmh else ""
+                        send_alert(ticker, f"Afternoon HOD Breakout! Clearing ${hod:.2f}{pm_ctx}", "#8b5cf6")
                         fired_alerts.add(alert_key_hod)
 
         except Exception as e:

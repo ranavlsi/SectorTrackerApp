@@ -134,6 +134,8 @@ export default function SqueezeRadarDashboard({
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('composite_score');
+  const [minVolM, setMinVolM] = useState(1);
+  const [minMcapB, setMinMcapB] = useState(2);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'table'
   const [copiedTicker, setCopiedTicker] = useState(null);
 
@@ -159,43 +161,68 @@ export default function SqueezeRadarDashboard({
     return Array.from(mergedMap.values());
   }, [squeezeData]);
 
+  const matchesSqueezeCategory = (x, cat) => {
+    if (!x) return false;
+    if (cat === 'ALL') return true;
+    if (cat === 'HIGH_SQUEEZE') {
+      return x.ttm_tier === 'HIGH_SQUEEZE' || (x.ttm_label || '').includes('High Squeeze');
+    }
+    if (cat === 'FIRING_NOW') {
+      return x.squeeze_category === 'SQUEEZE_FIRING' || (x.trade_plan?.dist_to_pivot_pct ?? 99) <= 1.5;
+    }
+    if (cat === 'GAMMA') {
+      return (x.gamma_score || 0) >= 78 || (x.cp_ratio || 0) >= 1.5;
+    }
+    if (cat === 'SHORT_KEG') {
+      return (x.powder_keg_score || 0) >= 70 || (x.short_pct_num || 0) >= 8.0;
+    }
+    if (cat === 'VDU_PP') {
+      return Boolean(x.is_vdu || x.is_pocket_pivot);
+    }
+    if (cat === 'BLUE_DOT') {
+      return Boolean(x.is_blue_dot);
+    }
+    if (cat === 'MULTI_ENGINE') {
+      return (x.confluence_count || 1) >= 3;
+    }
+    return true;
+  };
+
+  const liquidSqueezes = useMemo(() => {
+    return allSqueezes.filter((x) => {
+      const mcap = Number(x?.market_cap_b || 0);
+      const volM =
+        x?.avg_vol_20_m !== undefined
+          ? Number(x.avg_vol_20_m)
+          : x?.avg_vol_20
+            ? Number(x.avg_vol_20) / 1e6
+            : minVolM;
+      return mcap >= minMcapB && volM >= minVolM;
+    });
+  }, [allSqueezes, minVolM, minMcapB]);
+
   const kpis = useMemo(() => {
-    if (squeezeData?.summary_kpis) return squeezeData.summary_kpis;
     return {
-      total_coiled_squeezes: allSqueezes.length,
-      high_squeeze_pro_count: allSqueezes.filter((x) => x.ttm_tier === 'HIGH_SQUEEZE' || (x.ttm_label || '').includes('High Squeeze')).length,
-      firing_now_count: allSqueezes.filter((x) => x.squeeze_category === 'SQUEEZE_FIRING' || (x.trade_plan?.dist_to_pivot_pct ?? 99) <= 1.5).length,
-      gamma_powder_kegs: allSqueezes.filter((x) => (x.gamma_score || 0) >= 78 || (x.cp_ratio || 0) >= 1.5).length,
-      blue_dot_squeezes: allSqueezes.filter((x) => x.is_blue_dot).length,
-      vdu_pocket_pivots: allSqueezes.filter((x) => x.is_vdu || x.is_pocket_pivot).length,
-      avg_compression_score: allSqueezes.length
-        ? (allSqueezes.reduce((acc, x) => acc + (x.composite_score || 0), 0) / allSqueezes.length).toFixed(1)
+      total_coiled_squeezes: liquidSqueezes.length,
+      high_squeeze_pro_count: liquidSqueezes.filter((x) => matchesSqueezeCategory(x, 'HIGH_SQUEEZE')).length,
+      firing_now_count: liquidSqueezes.filter((x) => matchesSqueezeCategory(x, 'FIRING_NOW')).length,
+      gamma_powder_kegs: liquidSqueezes.filter((x) => matchesSqueezeCategory(x, 'GAMMA')).length,
+      short_keg_count: liquidSqueezes.filter((x) => matchesSqueezeCategory(x, 'SHORT_KEG')).length,
+      blue_dot_squeezes: liquidSqueezes.filter((x) => matchesSqueezeCategory(x, 'BLUE_DOT')).length,
+      vdu_pocket_pivots: liquidSqueezes.filter((x) => matchesSqueezeCategory(x, 'VDU_PP')).length,
+      multi_engine_count: liquidSqueezes.filter((x) => matchesSqueezeCategory(x, 'MULTI_ENGINE')).length,
+      avg_compression_score: liquidSqueezes.length
+        ? (liquidSqueezes.reduce((acc, x) => acc + (x.composite_score || 0), 0) / liquidSqueezes.length).toFixed(1)
         : 0
     };
-  }, [squeezeData, allSqueezes]);
-
-  const spotlight = useMemo(() => {
-    return squeezeData?.spotlight || allSqueezes[0] || null;
-  }, [squeezeData, allSqueezes]);
+  }, [liquidSqueezes]);
 
   const filteredSqueezes = useMemo(() => {
-    let list = [...allSqueezes];
+    let list = [...liquidSqueezes];
 
     // Category Filter
-    if (activeCategory === 'HIGH_SQUEEZE') {
-      list = list.filter((x) => x.ttm_tier === 'HIGH_SQUEEZE' || (x.ttm_label || '').includes('High Squeeze'));
-    } else if (activeCategory === 'FIRING_NOW') {
-      list = list.filter((x) => x.squeeze_category === 'SQUEEZE_FIRING' || (x.trade_plan?.dist_to_pivot_pct ?? 99) <= 1.5);
-    } else if (activeCategory === 'GAMMA') {
-      list = list.filter((x) => (x.gamma_score || 0) >= 75 || (x.cp_ratio || 0) >= 1.45);
-    } else if (activeCategory === 'SHORT_KEG') {
-      list = list.filter((x) => (x.powder_keg_score || 0) >= 70 || (x.short_pct_num || 0) >= 8.0);
-    } else if (activeCategory === 'VDU_PP') {
-      list = list.filter((x) => x.is_vdu || x.is_pocket_pivot || (x.vdu_days_10d || 0) >= 3);
-    } else if (activeCategory === 'BLUE_DOT') {
-      list = list.filter((x) => x.is_blue_dot || (x.rs_rating || 0) >= 85);
-    } else if (activeCategory === 'MULTI_ENGINE') {
-      list = list.filter((x) => (x.confluence_count || 1) >= 3);
+    if (activeCategory !== 'ALL') {
+      list = list.filter((x) => matchesSqueezeCategory(x, activeCategory));
     }
 
     // Search Filter
@@ -218,11 +245,20 @@ export default function SqueezeRadarDashboard({
       if (sortBy === 'dist_to_pivot') return (a.trade_plan?.dist_to_pivot_pct ?? 99) - (b.trade_plan?.dist_to_pivot_pct ?? 99);
       if (sortBy === 'bb_width') return (a.bb_width_pct ?? 99) - (b.bb_width_pct ?? 99);
       if (sortBy === 'alpha_30d') return (b.movement_30d?.alpha_30d_pct ?? -99) - (a.movement_30d?.alpha_30d_pct ?? -99);
+      if (sortBy === 'avg_vol') return (b.avg_vol_20 || 0) - (a.avg_vol_20 || 0);
+      if (sortBy === 'market_cap') return (b.market_cap_b || 0) - (a.market_cap_b || 0);
       return (b.composite_score || 0) - (a.composite_score || 0);
     });
 
     return list;
-  }, [allSqueezes, activeCategory, searchQuery, sortBy]);
+  }, [liquidSqueezes, activeCategory, searchQuery, sortBy]);
+
+  const spotlight = useMemo(() => {
+    if (activeCategory !== 'ALL' || searchQuery.trim() || minVolM > 1 || minMcapB > 2) {
+      return filteredSqueezes[0] || null;
+    }
+    return liquidSqueezes[0] || squeezeData?.spotlight || null;
+  }, [squeezeData, liquidSqueezes, activeCategory, searchQuery, filteredSqueezes, minVolM, minMcapB]);
 
   const handleCopyTicket = (e, item) => {
     e.stopPropagation();
@@ -273,6 +309,20 @@ export default function SqueezeRadarDashboard({
               </span>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'monospace' }}>
                 11-ENGINE CONFLUENCE • {squeezeData?.total_scanned?.toLocaleString() || '12,817'} TICKERS SCANNED
+              </span>
+              <span
+                style={{
+                  background: 'rgba(16, 185, 129, 0.14)',
+                  color: '#34d399',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  fontWeight: 800,
+                  fontSize: '0.67rem',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontFamily: 'monospace'
+                }}
+              >
+                LIQUIDITY GATE: ≥1.0M VOL • ≥$25M/D • ≥$2B CAP
               </span>
             </div>
             <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -361,27 +411,35 @@ export default function SqueezeRadarDashboard({
           }}
         >
           {[
-            { label: 'TOTAL COILED SQUEEZES', value: kpis.total_coiled_squeezes, sub: 'Stage 2 Liquid Coils', color: '#f8fafc', border: 'rgba(148,163,184,0.3)' },
-            { label: '🔥 HIGH SQUEEZE PRO', value: kpis.high_squeeze_pro_count, sub: 'BB inside 1.0x ATR KC', color: '#f43f5e', border: 'rgba(244,63,94,0.4)' },
-            { label: '🚀 IMMINENT BREAKOUT', value: kpis.firing_now_count, sub: 'Within 1.5% of Pivot', color: '#10b981', border: 'rgba(16,185,129,0.4)' },
-            { label: '⚡ GAMMA POWDER KEGS', value: kpis.gamma_powder_kegs, sub: 'Heavy Call Flow + Coil', color: '#fbbf24', border: 'rgba(251,191,36,0.4)' },
-            { label: '🔵 RS BLUE DOT COILS', value: kpis.blue_dot_squeezes, sub: 'RS Line Leading Price', color: '#38bdf8', border: 'rgba(56,189,248,0.4)' },
-            { label: '💧 VDU + POCKET PIVOTS', value: kpis.vdu_pocket_pivots, sub: 'Supply Exhaustion + Accumulation', color: '#a855f7', border: 'rgba(168,85,247,0.4)' }
-          ].map((k, idx) => (
-            <div
-              key={idx}
-              style={{
-                background: 'rgba(2, 6, 23, 0.65)',
-                border: `1px solid ${k.border}`,
-                borderRadius: '10px',
-                padding: '11px 14px'
-              }}
-            >
-              <div style={{ fontSize: '0.66rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em' }}>{k.label}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: k.color, fontFamily: 'monospace', marginTop: '3px' }}>{k.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>{k.sub}</div>
-            </div>
-          ))}
+            { id: 'ALL', label: 'TOTAL COILED SQUEEZES', value: kpis.total_coiled_squeezes, sub: 'Stage 2 Liquid Coils', color: '#f8fafc', border: 'rgba(148,163,184,0.3)' },
+            { id: 'HIGH_SQUEEZE', label: '🔥 HIGH SQUEEZE PRO', value: kpis.high_squeeze_pro_count, sub: 'BB inside 1.0x ATR KC', color: '#f43f5e', border: 'rgba(244,63,94,0.4)' },
+            { id: 'FIRING_NOW', label: '🚀 IMMINENT BREAKOUT', value: kpis.firing_now_count, sub: 'Within 1.5% of Pivot', color: '#10b981', border: 'rgba(16,185,129,0.4)' },
+            { id: 'GAMMA', label: '⚡ GAMMA POWDER KEGS', value: kpis.gamma_powder_kegs, sub: 'Heavy Call Flow + Coil', color: '#fbbf24', border: 'rgba(251,191,36,0.4)' },
+            { id: 'BLUE_DOT', label: '🔵 RS BLUE DOT COILS', value: kpis.blue_dot_squeezes, sub: 'RS Line Leading Price', color: '#38bdf8', border: 'rgba(56,189,248,0.4)' },
+            { id: 'VDU_PP', label: '💧 VDU + POCKET PIVOTS', value: kpis.vdu_pocket_pivots, sub: 'Supply Exhaustion + Accumulation', color: '#a855f7', border: 'rgba(168,85,247,0.4)' }
+          ].map((k, idx) => {
+            const isSelected = activeCategory === k.id;
+            return (
+              <div
+                key={idx}
+                onClick={() => setActiveCategory(isSelected && k.id !== 'ALL' ? 'ALL' : k.id)}
+                title={`Click to filter by ${k.label}`}
+                style={{
+                  background: isSelected ? 'rgba(30, 41, 59, 0.92)' : 'rgba(2, 6, 23, 0.65)',
+                  border: isSelected ? `2px solid ${k.color}` : `1px solid ${k.border}`,
+                  boxShadow: isSelected ? `0 0 16px ${k.border}` : 'none',
+                  borderRadius: '10px',
+                  padding: '11px 14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ fontSize: '0.66rem', fontWeight: 800, color: isSelected ? k.color : '#94a3b8', letterSpacing: '0.06em' }}>{k.label}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 900, color: k.color, fontFamily: 'monospace', marginTop: '3px' }}>{k.value}</div>
+                <div style={{ fontSize: '0.7rem', color: isSelected ? '#cbd5e1' : '#64748b', marginTop: '2px' }}>{k.sub}</div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -428,6 +486,9 @@ export default function SqueezeRadarDashboard({
               >
                 {(spotlight.day_change_pct || 0) >= 0 ? '+' : ''}
                 {(spotlight.day_change_pct || 0).toFixed(2)}%
+              </span>
+              <span style={{ fontSize: '0.74rem', color: '#7dd3fc', fontFamily: 'monospace', fontWeight: 700 }}>
+                Cap ${spotlight.market_cap_b}B{spotlight.avg_vol_20_m !== undefined ? ` • Avg Vol ${spotlight.avg_vol_20_m.toFixed(1)}M ($${spotlight.dollar_vol_m}M/d)` : ''}
               </span>
             </div>
 
@@ -501,14 +562,14 @@ export default function SqueezeRadarDashboard({
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {[
-            { id: 'ALL', label: `All Coiled Squeezes (${allSqueezes.length})` },
+            { id: 'ALL', label: `All Coiled Squeezes (${liquidSqueezes.length})` },
             { id: 'HIGH_SQUEEZE', label: `🔥 High Squeeze Pro (${kpis.high_squeeze_pro_count})` },
             { id: 'FIRING_NOW', label: `🚀 Imminent Ignition (${kpis.firing_now_count})` },
             { id: 'GAMMA', label: `⚡ Gamma Squeeze (${kpis.gamma_powder_kegs})` },
-            { id: 'SHORT_KEG', label: `💣 Short Powder Keg` },
+            { id: 'SHORT_KEG', label: `💣 Short Powder Keg (${kpis.short_keg_count || 0})` },
             { id: 'VDU_PP', label: `💧 VDU + Pocket Pivot (${kpis.vdu_pocket_pivots})` },
             { id: 'BLUE_DOT', label: `🔵 RS Blue Dot (${kpis.blue_dot_squeezes})` },
-            { id: 'MULTI_ENGINE', label: `🏛️ 3+ Engine Confluence` }
+            { id: 'MULTI_ENGINE', label: `🏛️ 3+ Engine Confluence (${kpis.multi_engine_count || 0})` }
           ].map((tab) => {
             const active = activeCategory === tab.id;
             return (
@@ -554,6 +615,46 @@ export default function SqueezeRadarDashboard({
           </div>
 
           <select
+            value={minVolM}
+            onChange={(e) => setMinVolM(Number(e.target.value))}
+            style={{
+              padding: '7px 10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(16, 185, 129, 0.45)',
+              background: 'rgba(2, 6, 23, 0.8)',
+              color: '#34d399',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            <option value={1}>Vol: ≥ 1.0M/d</option>
+            <option value={2}>Vol: ≥ 2.0M/d</option>
+            <option value={5}>Vol: ≥ 5.0M/d</option>
+            <option value={10}>Vol: ≥ 10M/d</option>
+          </select>
+
+          <select
+            value={minMcapB}
+            onChange={(e) => setMinMcapB(Number(e.target.value))}
+            style={{
+              padding: '7px 10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(56, 189, 248, 0.45)',
+              background: 'rgba(2, 6, 23, 0.8)',
+              color: '#7dd3fc',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            <option value={2}>Cap: ≥ $2B</option>
+            <option value={10}>Cap: ≥ $10B</option>
+            <option value={50}>Cap: ≥ $50B</option>
+            <option value={100}>Cap: ≥ $100B</option>
+          </select>
+
+          <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             style={{
@@ -569,6 +670,8 @@ export default function SqueezeRadarDashboard({
           >
             <option value="composite_score">Sort: Composite Squeeze Score</option>
             <option value="dist_to_pivot">Sort: Closest to Entry Pivot</option>
+            <option value="avg_vol">Sort: Highest 20D Avg Volume</option>
+            <option value="market_cap">Sort: Largest Market Cap</option>
             <option value="gamma_score">Sort: Options Gamma Score</option>
             <option value="powder_keg_score">Sort: Short Powder Keg Score</option>
             <option value="bb_width">Sort: Tightest Bollinger Width %</option>
@@ -605,6 +708,7 @@ export default function SqueezeRadarDashboard({
               <tr style={{ borderBottom: '1px solid rgba(71, 85, 105, 0.6)', background: 'rgba(2, 6, 23, 0.75)', color: '#94a3b8', fontSize: '0.68rem', textTransform: 'uppercase' }}>
                 <th style={{ padding: '12px 14px' }}>Ticker</th>
                 <th style={{ padding: '12px 10px' }}>Price / 1D</th>
+                <th style={{ padding: '12px 10px' }}>Cap / Avg Vol</th>
                 <th style={{ padding: '12px 10px' }}>Score / Grade</th>
                 <th style={{ padding: '12px 10px' }}>TTM Squeeze State</th>
                 <th style={{ padding: '12px 10px' }}>VCP / HVR / BB%</th>
@@ -640,6 +744,12 @@ export default function SqueezeRadarDashboard({
                       <div style={{ fontSize: '0.7rem', color: (item.day_change_pct || 0) >= 0 ? '#10b981' : '#f43f5e' }}>
                         {(item.day_change_pct || 0) >= 0 ? '+' : ''}
                         {(item.day_change_pct || 0).toFixed(2)}%
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px', fontFamily: 'monospace', fontSize: '0.72rem' }}>
+                      <div style={{ fontWeight: 700, color: '#7dd3fc' }}>${item.market_cap_b}B</div>
+                      <div style={{ fontSize: '0.67rem', color: '#34d399' }}>
+                        {item.avg_vol_20_m !== undefined ? `${item.avg_vol_20_m.toFixed(1)}M ($${item.dollar_vol_m}M/d)` : '—'}
                       </div>
                     </td>
                     <td style={{ padding: '10px', fontFamily: 'monospace' }}>
@@ -745,6 +855,7 @@ export default function SqueezeRadarDashboard({
                     </div>
                     <div style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '2px' }}>
                       {item.name} • <span style={{ color: '#64748b' }}>{item.sector}</span> • Cap ${item.market_cap_b}B
+                      {item.avg_vol_20_m !== undefined ? ` • Vol ${item.avg_vol_20_m.toFixed(1)}M ($${item.dollar_vol_m}M/d)` : ''}
                     </div>
                   </div>
 

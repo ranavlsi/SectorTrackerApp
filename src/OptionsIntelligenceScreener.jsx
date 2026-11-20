@@ -783,7 +783,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
               setBfViewMode('COHORT_1_3W');
               setBfOutcomeFilter('ALL');
               setBfVintageFilter('ALL');
-              setSortBy('bf_stage_rank');
+              setSortBy('flow_impact_score');
               setCurrentPage(1);
             }}
             title="Scan for oversold equities reclaiming support + track 1–3 Week Post-Signal Stage 2 Graduation vs Stage 4 Failure"
@@ -1316,6 +1316,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
               const flowChips = [
                 { id: 'ALL', label: 'All Flow Signals', count: bfPool.length, color: '#38bdf8' },
                 { id: 'OPTIONS_TAILWIND', label: '🚀 Options Tailwind', count: bfPool.filter(r => hasSignal(r, 'OPTIONS_TAILWIND')).length, color: '#10b981' },
+                { id: 'CALL_OI_UNWIND', label: '⚠️ Call OI Unwinding', count: bfPool.filter(r => hasSignal(r, 'CALL_OI_UNWIND') || r.bf_progression?.is_oi_unwinding).length, color: '#f59e0b' },
                 { id: 'VOL_SQUEEZE', label: '💥 Vol Squeeze', count: bfPool.filter(r => hasSignal(r, 'VOL_SQUEEZE')).length, color: '#c084fc' },
                 { id: 'WHALE_SWEEPS', label: '🐋 Whale Sweeps', count: bfPool.filter(r => hasSignal(r, 'WHALE_SWEEPS')).length, color: '#f59e0b' },
                 { id: 'CALL_ACCUMULATION', label: '🚀 Call Accumulation', count: bfPool.filter(r => hasSignal(r, 'CALL_ACCUMULATION')).length, color: '#10b981' },
@@ -1420,16 +1421,16 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
                         {Array.isArray(r.signal_tags) && r.signal_tags.length > 0 ? (
-                          r.signal_tags.slice(0, 3).map((tag) => (
+                          r.signal_tags.slice(0, 3).map((tag, tIdx) => (
                             <div
-                              key={tag.key}
+                              key={tag.key || tag.id || tIdx}
                               className="signal-pill"
                               style={{
                                 background: `${tag.color}18`,
                                 color: tag.color,
                                 borderColor: `${tag.color}40`,
-                                fontSize: tag.key === r.signal ? '0.74rem' : '0.67rem',
-                                padding: tag.key === r.signal ? undefined : '2px 7px'
+                                fontSize: (tag.key || tag.id) === r.signal ? '0.74rem' : '0.67rem',
+                                padding: (tag.key || tag.id) === r.signal ? undefined : '2px 7px'
                               }}
                               title={tag.desc}
                             >
@@ -1515,6 +1516,23 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                   🔥 {bfp.repeat_signals}x Signals
                                 </span>
                               )}
+                              {bfp.is_oi_unwinding && bfp.oi_status_badge && (
+                                <span
+                                  style={{
+                                    fontSize: '0.65rem',
+                                    fontFamily: 'monospace',
+                                    color: bfp.oi_status_color || '#f59e0b',
+                                    background: 'rgba(245, 158, 11, 0.16)',
+                                    border: '1px solid rgba(245, 158, 11, 0.45)',
+                                    padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    fontWeight: 800
+                                  }}
+                                  title={bfp.oi_status_desc || 'Call Open Interest has contracted materially since signal date (profit-taking / rolling)'}
+                                >
+                                  {bfp.oi_status_badge}
+                                </span>
+                              )}
                             </div>
 
                             {/* 1W / 2W / 3W / Now Return Ladder */}
@@ -1545,8 +1563,11 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 vs 50-SMA (${bfp.curr_sma50}): {bfp.dist_to_sma50_pct >= 0 ? '+' : ''}{bfp.dist_to_sma50_pct}%
                               </span>
                               <span>·</span>
-                              <span style={{ color: bfp.call_oi_chg_since_sig_pct >= 0 ? '#10b981' : '#f87171' }}>
-                                Call OI Δ: {bfp.call_oi_chg_since_sig_pct >= 0 ? '+' : ''}{bfp.call_oi_chg_since_sig_pct}%
+                              <span
+                                style={{ color: bfp.call_oi_chg_since_sig_pct >= 0 ? '#10b981' : '#f59e0b', fontWeight: bfp.is_oi_unwinding ? 800 : 400 }}
+                                title={bfp.oi_status_desc}
+                              >
+                                Call OI Δ: {bfp.call_oi_chg_since_sig_pct >= 0 ? '+' : ''}{bfp.call_oi_chg_since_sig_pct}% {bfp.is_oi_unwinding ? '(Unwinding)' : ''}
                               </span>
                               <span>·</span>
                               <span title="Pre-signal 10-day structural low invalidation level">

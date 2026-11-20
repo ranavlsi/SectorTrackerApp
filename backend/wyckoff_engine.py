@@ -264,12 +264,19 @@ def identify_trading_range(df):
     # Search for the structural base anchor: deepest structural test within last 14 to 200 bars
     max_base_lookback = min(200, len(df) - 15)
     recent_swings = [s for s in swing_lows if 14 <= (last_idx - s[0]) <= max_base_lookback]
+
+    # Guard: If a major peak (+22% above pre-peak low followed by >=22% pullback) occurred AFTER
+    # the oldest/deepest swing low, that pre-peak low belongs to a prior markup cycle (e.g. MU before $1255 peak).
+    # Re-anchor to the post-peak regime so Creek/Ice & Wyckoff markers align with the current structure.
+    search_start_idx = max(0, last_idx - max_base_lookback)
+    peak_local_offset = int(np.argmax(highs[search_start_idx:]))
+    peak_idx = search_start_idx + peak_local_offset
+    peak_high = float(highs[peak_idx])
+    post_peak_min = float(np.min(lows[peak_idx:])) if peak_idx < len(lows) else peak_high
+
     if recent_swings:
         min_swing = min(recent_swings, key=lambda x: x[1])
         min_low = min_swing[1]
-        # Anchor at the earliest swing low in the horizontal support band (within 3.5% of min_low)
-        # that halted the prior markdown (true Phase A Selling Climax SC), rather than a later
-        # Phase B Secondary Test (ST) that retested or marginally undercut the same support floor.
         support_band_swings = [
             s for s in recent_swings
             if s[0] <= min_swing[0]
@@ -277,7 +284,20 @@ def identify_trading_range(df):
             and np.max(highs[s[0]:min_swing[0] + 1]) <= min_low * 1.65
         ]
         deepest = support_band_swings[0] if support_band_swings else min_swing
-        base_bars = last_idx - deepest[0]
+
+        # Re-anchor if deepest preceded a major peak + >=22% drawdown
+        if peak_idx > deepest[0] and post_peak_min <= peak_high * 0.78 and (last_idx - peak_idx) >= 14:
+            post_peak_swings = [s for s in recent_swings if s[0] >= peak_idx]
+            if post_peak_swings:
+                pp_min = min(post_peak_swings, key=lambda x: x[1])
+                deepest = pp_min
+                base_bars = max(14, last_idx - deepest[0])
+            else:
+                base_bars = max(20, min(90, last_idx - peak_idx))
+                deepest = (last_idx - base_bars, float(np.min(lows[-base_bars:])), 1.0, dates[-base_bars])
+        else:
+            base_bars = last_idx - deepest[0]
+
         base_start_date = pd.to_datetime(deepest[3]).strftime('%Y-%m-%d')
         cal_days = (pd.to_datetime(dates[-1]) - pd.to_datetime(deepest[3])).days
         anchor_low = deepest[1]
@@ -286,6 +306,16 @@ def identify_trading_range(df):
         base_bars = min(45, len(df) - 5)
         cal_days = int(base_bars * 1.45)
         base_start_date = pd.to_datetime(dates[-base_bars]).strftime('%Y-%m-%d')
+        anchor_low = float(np.min(lows[-base_bars:]))
+
+    # Sanity check: A single Wyckoff trading range should not span a >60% vertical impulse
+    cand_df = df.iloc[-base_bars:]
+    cand_h = float(np.max(cand_df['High']))
+    cand_l = float(np.min(cand_df['Low']))
+    if cand_l > 0 and ((cand_h - cand_l) / cand_l) > 0.60 and base_bars > 45:
+        base_bars = min(65, max(25, last_idx - peak_idx if (last_idx - peak_idx) >= 20 else 45))
+        base_start_date = pd.to_datetime(dates[-base_bars]).strftime('%Y-%m-%d')
+        cal_days = (pd.to_datetime(dates[-1]) - pd.to_datetime(dates[-base_bars])).days
         anchor_low = float(np.min(lows[-base_bars:]))
         
     sub_df = df.iloc[-base_bars:]
@@ -339,15 +369,15 @@ def identify_trading_range(df):
 
     # Downside Distribution Markdown Projections (if The Ice fails)
     pf_down_t1 = round(the_ice - (base_bars * box_size * 0.20 + tr_height * 0.5), 2)
-    pf_down_t1 = max(1.0, pf_down_t1)
+    pf_down_t1 = max(round(the_ice * 0.35, 2), pf_down_t1)
     pf_down_gain_t1 = round(((pf_down_t1 - curr_close) / curr_close) * 100.0, 1)
 
     pf_down_t2 = round(the_ice - (base_bars * box_size * 0.35 + tr_height), 2)
-    pf_down_t2 = max(1.0, pf_down_t2)
+    pf_down_t2 = max(round(the_ice * 0.25, 2), pf_down_t2)
     pf_down_gain_t2 = round(((pf_down_t2 - curr_close) / curr_close) * 100.0, 1)
 
     pf_down_t3 = round(the_ice - (base_bars * box_size * 0.65 + tr_height * 1.6), 2)
-    pf_down_t3 = max(1.0, pf_down_t3)
+    pf_down_t3 = max(round(the_ice * 0.15, 2), pf_down_t3)
     pf_down_gain_t3 = round(((pf_down_t3 - curr_close) / curr_close) * 100.0, 1)
 
     pf_target = pf_target_t2

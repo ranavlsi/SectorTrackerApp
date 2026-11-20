@@ -80,11 +80,11 @@ def compute_spotgamma_trace(
     zero_gamma: float = None
 ) -> Dict[str, Any]:
     """
-    SpotGamma TRACE Engine:
-    1. Real Strike Gamma Distribution: Actual Call GEX vs Put GEX, Net GEX, and Absolute Gamma by strike.
-    2. Continuous SDE Simulation Curve: Total dealer Net Gamma Exposure (GEX), Delta (DEX), Charm (CEX)
-       simulated across S +/- range_pct.
-    3. Key Levels: Call Wall, Put Wall, Zero Gamma Flip, Key Gamma Strike (Abs Pin), and Convexity Slope.
+    SpotGamma TRACE Engine v2.0:
+    1. Real Strike Distribution: Actual Call vs Put, Net, and Absolute Gamma, Delta, Charm & Vanna by strike.
+    2. Continuous SDE Simulation Curve: Total dealer Net GEX, DEX, CEX, and VEX across S +/- range_pct,
+       plus +/- 3% IV-Shock Gamma Stress Curves (vol crush vs vol spike).
+    3. Key Levels: Call Wall, Put Wall, Zero Gamma / Delta / Charm / Vanna Flips, Key Pin Strikes, Convexity Slope.
     """
     if spot_price <= 0 or not all_contracts:
         return {}
@@ -102,6 +102,10 @@ def compute_spotgamma_trace(
         tot_put_dex = 0.0
         tot_call_cex = 0.0
         tot_put_cex = 0.0
+        tot_call_vex = 0.0
+        tot_put_vex = 0.0
+        tot_gex_iv_dn = 0.0
+        tot_gex_iv_up = 0.0
 
         for c in all_contracts:
             k = c["strike"]
@@ -113,21 +117,34 @@ def compute_spotgamma_trace(
             gamma = calculate_gamma(p_val, k, T, r, iv)
             delta = calculate_delta(p_val, k, T, r, iv, "call" if is_call else "put")
             charm = calculate_charm(p_val, k, T, r, iv)
+            vanna = calculate_vanna(p_val, k, T, r, iv)
+
+            iv_dn = max(0.05, iv - 0.03)
+            iv_up = min(2.50, iv + 0.03)
+            gamma_dn = calculate_gamma(p_val, k, T, r, iv_dn)
+            gamma_up = calculate_gamma(p_val, k, T, r, iv_up)
 
             if is_call:
                 gex = gamma * wt * 100.0 * (p_val ** 2) * 0.01
                 tot_call_gex += gex
                 tot_call_dex += delta * wt * 100.0 * p_val
                 tot_call_cex += charm * wt * 100.0 * p_val * (1.0 / 365.25)
+                tot_call_vex += vanna * wt * 100.0 * p_val * 0.01
+                tot_gex_iv_dn += gamma_dn * wt * 100.0 * (p_val ** 2) * 0.01
+                tot_gex_iv_up += gamma_up * wt * 100.0 * (p_val ** 2) * 0.01
             else:
                 gex = -gamma * wt * 100.0 * (p_val ** 2) * 0.01
                 tot_put_gex += gex
                 tot_put_dex += delta * wt * 100.0 * p_val
                 tot_put_cex += -charm * wt * 100.0 * p_val * (1.0 / 365.25)
+                tot_put_vex += -vanna * wt * 100.0 * p_val * 0.01
+                tot_gex_iv_dn += -gamma_dn * wt * 100.0 * (p_val ** 2) * 0.01
+                tot_gex_iv_up += -gamma_up * wt * 100.0 * (p_val ** 2) * 0.01
 
         tot_net_gex = tot_call_gex + tot_put_gex
         tot_net_dex = tot_call_dex + tot_put_dex
         tot_net_cex = tot_call_cex + tot_put_cex
+        tot_net_vex = tot_call_vex + tot_put_vex
         regime = "POSITIVE GAMMA (Dampening)" if tot_net_gex >= 0 else "NEGATIVE GAMMA (Accelerating)"
 
         curve.append({
@@ -136,16 +153,21 @@ def compute_spotgamma_trace(
             "net_gex": round(tot_net_gex, 2),
             "call_gex": round(tot_call_gex, 2),
             "put_gex": round(tot_put_gex, 2),
+            "net_gex_iv_down": round(tot_gex_iv_dn, 2),
+            "net_gex_iv_up": round(tot_gex_iv_up, 2),
             "net_dex": round(tot_net_dex, 2),
             "call_dex": round(tot_call_dex, 2),
             "put_dex": round(tot_put_dex, 2),
             "net_cex": round(tot_net_cex, 2),
             "call_cex": round(tot_call_cex, 2),
             "put_cex": round(tot_put_cex, 2),
+            "net_vex": round(tot_net_vex, 2),
+            "call_vex": round(tot_call_vex, 2),
+            "put_vex": round(tot_put_vex, 2),
             "regime": regime
         })
 
-    # Zero Crossing Detection for Gamma, Delta, and Charm
+    # Zero Crossing Detection for Gamma, Delta, Charm, and Vanna
     def find_zero_crossing(data_key: str, fallback: float) -> float:
         for i in range(len(curve) - 1):
             pt1 = curve[i]
@@ -162,6 +184,7 @@ def compute_spotgamma_trace(
     trace_zero_gamma = find_zero_crossing("net_gex", zero_gamma if zero_gamma else spot_price)
     trace_zero_delta = find_zero_crossing("net_dex", spot_price)
     trace_zero_charm = find_zero_crossing("net_cex", spot_price)
+    trace_zero_vanna = find_zero_crossing("net_vex", spot_price)
 
     peak_pt = max(curve, key=lambda x: x["net_gex"])
     trough_pt = min(curve, key=lambda x: x["net_gex"])
@@ -172,15 +195,18 @@ def compute_spotgamma_trace(
         dg = curve[closest_idx + 1]["net_gex"] - curve[closest_idx - 1]["net_gex"]
         dd = curve[closest_idx + 1]["net_dex"] - curve[closest_idx - 1]["net_dex"]
         dc = curve[closest_idx + 1]["net_cex"] - curve[closest_idx - 1]["net_cex"]
+        dv = curve[closest_idx + 1]["net_vex"] - curve[closest_idx - 1]["net_vex"]
         slope_gex = round(dg / dp, 2) if dp != 0 else 0.0
         slope_dex = round(dd / dp, 2) if dp != 0 else 0.0
         slope_cex = round(dc / dp, 2) if dp != 0 else 0.0
+        slope_vex = round(dv / dp, 2) if dp != 0 else 0.0
     else:
         slope_gex = 0.0
         slope_dex = 0.0
         slope_cex = 0.0
+        slope_vex = 0.0
 
-    # Build Real Strike Distribution across Gamma, Delta, and Charm
+    # Build Real Strike Distribution across Gamma, Delta, Charm, and Vanna
     strike_distribution = []
     key_gamma_strike = spot_price
     key_gamma_val = 0.0
@@ -188,16 +214,22 @@ def compute_spotgamma_trace(
     key_delta_val = 0.0
     key_charm_strike = spot_price
     key_charm_val = 0.0
+    key_vanna_strike = spot_price
+    key_vanna_val = 0.0
 
     max_abs_g = 0.0
     max_abs_d = 0.0
     max_abs_c = 0.0
+    max_abs_v = 0.0
 
     if gex_profile:
         curve_prices = np.array([c["price"] for c in curve])
         curve_net_gex = np.array([c["net_gex"] for c in curve])
+        curve_gex_iv_dn = np.array([c["net_gex_iv_down"] for c in curve])
+        curve_gex_iv_up = np.array([c["net_gex_iv_up"] for c in curve])
         curve_net_dex = np.array([c["net_dex"] for c in curve])
         curve_net_cex = np.array([c["net_cex"] for c in curve])
+        curve_net_vex = np.array([c["net_vex"] for c in curve])
 
         near_profile = [p for p in gex_profile if abs(p["strike"] - spot_price) / spot_price <= 0.10]
         if not near_profile:
@@ -220,6 +252,11 @@ def compute_spotgamma_trace(
             n_cex = p.get("net_cex", c_cex + p_cex)
             abs_c = abs(c_cex) + abs(p_cex)
 
+            c_vex = p.get("call_vex", 0.0)
+            p_vex = p.get("put_vex", 0.0)
+            n_vex = p.get("net_vex", c_vex + p_vex)
+            abs_v = abs(c_vex) + abs(p_vex)
+
             if abs_g > max_abs_g:
                 max_abs_g = abs_g
                 key_gamma_strike = st
@@ -235,10 +272,18 @@ def compute_spotgamma_trace(
                 key_charm_strike = st
                 key_charm_val = abs_c
 
+            if abs_v > max_abs_v:
+                max_abs_v = abs_v
+                key_vanna_strike = st
+                key_vanna_val = abs_v
+
             # Theoretical TRACE model curves evaluated at this exact strike
             trace_model_gex = float(np.interp(st, curve_prices, curve_net_gex))
+            trace_model_gex_iv_dn = float(np.interp(st, curve_prices, curve_gex_iv_dn))
+            trace_model_gex_iv_up = float(np.interp(st, curve_prices, curve_gex_iv_up))
             trace_model_dex = float(np.interp(st, curve_prices, curve_net_dex))
             trace_model_cex = float(np.interp(st, curve_prices, curve_net_cex))
+            trace_model_vex = float(np.interp(st, curve_prices, curve_net_vex))
 
             dist_from_spot = round(((st - spot_price) / spot_price) * 100, 2)
 
@@ -252,6 +297,8 @@ def compute_spotgamma_trace(
                 "net_gex": round(n_gex, 2),
                 "abs_gex": round(abs_g, 2),
                 "trace_model_gex": round(trace_model_gex, 2),
+                "trace_model_gex_iv_down": round(trace_model_gex_iv_dn, 2),
+                "trace_model_gex_iv_up": round(trace_model_gex_iv_up, 2),
                 # Delta
                 "call_dex": round(c_dex, 2),
                 "put_dex": round(p_dex, 2),
@@ -264,22 +311,31 @@ def compute_spotgamma_trace(
                 "net_cex": round(n_cex, 2),
                 "abs_cex": round(abs_c, 2),
                 "trace_model_cex": round(trace_model_cex, 2),
+                # Vanna
+                "call_vex": round(c_vex, 2),
+                "put_vex": round(p_vex, 2),
+                "net_vex": round(n_vex, 2),
+                "abs_vex": round(abs_v, 2),
+                "trace_model_vex": round(trace_model_vex, 2),
                 # Reference flags
                 "is_call_wall": st == call_wall,
                 "is_put_wall": st == put_wall,
                 "is_spot": abs(st - spot_price) / spot_price < 0.005,
                 "is_zero_gamma": abs(st - trace_zero_gamma) / spot_price < 0.005,
                 "is_zero_delta": abs(st - trace_zero_delta) / spot_price < 0.005,
-                "is_zero_charm": abs(st - trace_zero_charm) / spot_price < 0.005
+                "is_zero_charm": abs(st - trace_zero_charm) / spot_price < 0.005,
+                "is_zero_vanna": abs(st - trace_zero_vanna) / spot_price < 0.005
             })
 
     current_spot_gex = curve[closest_idx]["net_gex"]
     current_spot_dex = curve[closest_idx]["net_dex"]
     current_spot_cex = curve[closest_idx]["net_cex"]
+    current_spot_vex = curve[closest_idx]["net_vex"]
     regime_title = "POSITIVE GAMMA (Dampening)" if current_spot_gex >= 0 else "NEGATIVE GAMMA (Accelerating)"
     vol_trigger_dist = round(((spot_price - trace_zero_gamma) / spot_price) * 100, 2)
     delta_trigger_dist = round(((spot_price - trace_zero_delta) / spot_price) * 100, 2)
     charm_trigger_dist = round(((spot_price - trace_zero_charm) / spot_price) * 100, 2)
+    vanna_trigger_dist = round(((spot_price - trace_zero_vanna) / spot_price) * 100, 2)
 
     return {
         "curve": curve,
@@ -287,15 +343,19 @@ def compute_spotgamma_trace(
         "trace_zero_gamma": trace_zero_gamma,
         "trace_zero_delta": trace_zero_delta,
         "trace_zero_charm": trace_zero_charm,
+        "trace_zero_vanna": trace_zero_vanna,
         "vol_trigger_dist_pct": vol_trigger_dist,
         "delta_trigger_dist_pct": delta_trigger_dist,
         "charm_trigger_dist_pct": charm_trigger_dist,
+        "vanna_trigger_dist_pct": vanna_trigger_dist,
         "key_gamma_strike": key_gamma_strike,
         "key_gamma_val": round(key_gamma_val, 2),
         "key_delta_strike": key_delta_strike,
         "key_delta_val": round(key_delta_val, 2),
         "key_charm_strike": key_charm_strike,
         "key_charm_val": round(key_charm_val, 2),
+        "key_vanna_strike": key_vanna_strike,
+        "key_vanna_val": round(key_vanna_val, 2),
         "peak_gamma_price": peak_pt["price"],
         "peak_gamma_val": peak_pt["net_gex"],
         "trough_gamma_price": trough_pt["price"],
@@ -303,12 +363,167 @@ def compute_spotgamma_trace(
         "gamma_convexity_slope": slope_gex,
         "delta_slope": slope_dex,
         "charm_slope": slope_cex,
+        "vanna_slope": slope_vex,
         "current_spot_gex": current_spot_gex,
         "current_spot_dex": current_spot_dex,
         "current_spot_cex": current_spot_cex,
+        "current_spot_vex": current_spot_vex,
         "current_regime": regime_title,
         "num_simulated_points": len(curve),
         "num_strikes": len(strike_distribution)
+    }
+
+
+def compute_volland_analytics(
+    spot_price: float,
+    spotgamma_trace: Dict[str, Any],
+    call_wall: float = None,
+    put_wall: float = None,
+    zero_gamma: float = None,
+    spot_vol_corr: float = -0.55
+) -> Dict[str, Any]:
+    """
+    Volland-Style Institutional Dealer Positioning Engine:
+    - Classifies Market Paradigm (Positive Pin, Vanna + Charm Tailwind, Charm Drag, Negative Acceleration, Bifurcated).
+    - Computes Composite Pinning Gravity (45% Gamma + 30% Charm + 25% Vanna) per strike to detect Magnets, Targets, and Air Pockets.
+    - Models 1% Spot Move Dealer Hedging Liquidity and Intraday Charm + Vanna Flow Clock (09:30 -> 15:45 MOC).
+    """
+    strike_dist = (spotgamma_trace or {}).get("strike_distribution") or []
+    if spot_price <= 0 or not strike_dist:
+        return {}
+
+    spot_gex = float(spotgamma_trace.get("current_spot_gex", 0.0) or 0.0)
+    spot_vex = float(spotgamma_trace.get("current_spot_vex", 0.0) or 0.0)
+    spot_cex = float(spotgamma_trace.get("current_spot_cex", 0.0) or 0.0)
+    vol_trigger = float(spotgamma_trace.get("trace_zero_gamma") or zero_gamma or spot_price)
+
+    if spot_gex >= 0 and spot_vex > 0 and spot_cex >= 0:
+        paradigm_name = "VANNA + CHARM TAILWIND"
+        paradigm_code = "BULLISH_PIN"
+        paradigm_color = "#00E676"
+        paradigm_summary = "Dealers are long Gamma & positive Vanna/Charm: dips are mechanically bought and IV compression forces steady buybacks toward upper magnets."
+    elif spot_gex >= 0 and spot_vex >= 0:
+        paradigm_name = "POSITIVE GAMMA PIN"
+        paradigm_code = "RANGE_PIN"
+        paradigm_color = "#00F0FF"
+        paradigm_summary = "Mean-reverting dealer book: market makers sell strength into Call Walls and buy dips into Put Walls, compressing realized volatility."
+    elif spot_gex >= 0 and spot_cex < 0:
+        paradigm_name = "CHARM DRAG / CONTAINED"
+        paradigm_code = "CHARM_DRAG"
+        paradigm_color = "#fbbf24"
+        paradigm_summary = "Positive Gamma cushions sharp drops, but negative Charm decay creates subtle mechanical selling pressure into the afternoon."
+    elif spot_gex < 0 and spot_vex < 0:
+        paradigm_name = "NEGATIVE GAMMA ACCELERATION"
+        paradigm_code = "VOL_EXPANSION"
+        paradigm_color = "#f43f5e"
+        paradigm_summary = "Destabilizing dealer posture: short Gamma + negative Vanna forces market makers to chase price directionally and amplify volatility spikes."
+    else:
+        paradigm_name = "BIFURCATED / VOL-TRAP"
+        paradigm_code = "BIFURCATED"
+        paradigm_color = "#c084fc"
+        paradigm_summary = "Mixed Gamma vs Vanna/Charm signals: expect sharp tactical rotations around the Vol Trigger before pinning into the nearest high-gravity strike."
+
+    max_g = max((abs(s.get("abs_gex", 0.0)) for s in strike_dist), default=1.0) or 1.0
+    max_c = max((abs(s.get("abs_cex", 0.0)) for s in strike_dist), default=1.0) or 1.0
+    max_v = max((abs(s.get("abs_vex", 0.0)) for s in strike_dist), default=1.0) or 1.0
+
+    scored = []
+    for s in strike_dist:
+        st = float(s["strike"])
+        g_norm = abs(s.get("abs_gex", 0.0)) / max_g
+        c_norm = abs(s.get("abs_cex", 0.0)) / max_c
+        v_norm = abs(s.get("abs_vex", 0.0)) / max_v
+        dist_penalty = max(0.35, 1.0 - min(0.65, abs(st - spot_price) / spot_price * 4.5))
+        gravity = round((0.45 * g_norm + 0.30 * c_norm + 0.25 * v_norm) * dist_penalty * 100.0, 1)
+
+        gamma_p = round(float(s.get("net_gex", 0.0)), 2)
+        vanna_p = round(float(s.get("net_vex", 0.0)), 2)
+        charm_p = round(float(s.get("net_cex", 0.0)), 2)
+        total_flow = round(gamma_p + vanna_p + charm_p, 2)
+
+        scored.append({
+            "strike": st,
+            "pct_from_spot": s.get("pct_from_spot", 0.0),
+            "gamma_pressure": gamma_p,
+            "vanna_pressure": vanna_p,
+            "charm_pressure": charm_p,
+            "total_volland_flow": total_flow,
+            "gravity_score": gravity,
+            "role": "NEUTRAL",
+        })
+
+    primary_pt = max(scored, key=lambda x: x["gravity_score"])
+    primary_magnet = primary_pt["strike"]
+
+    above_pts = [x for x in scored if x["strike"] > spot_price]
+    below_pts = [x for x in scored if x["strike"] < spot_price]
+    upper_target = call_wall if call_wall else (max(above_pts, key=lambda x: x["gravity_score"])["strike"] if above_pts else primary_magnet)
+    lower_target = put_wall if put_wall else (max(below_pts, key=lambda x: x["gravity_score"])["strike"] if below_pts else primary_magnet)
+
+    near_void_candidates = [x for x in scored if abs(x["strike"] - spot_price) / spot_price <= 0.045]
+    void_pt = min(near_void_candidates, key=lambda x: x["gravity_score"]) if near_void_candidates else min(scored, key=lambda x: x["gravity_score"])
+    acceleration_void = void_pt["strike"]
+
+    for item in scored:
+        st = item["strike"]
+        if st == primary_magnet:
+            item["role"] = "PRIMARY MAGNET"
+        elif upper_target and abs(st - upper_target) < 1e-6:
+            item["role"] = "UPPER TARGET"
+        elif lower_target and abs(st - lower_target) < 1e-6:
+            item["role"] = "LOWER FLOOR"
+        elif abs(st - vol_trigger) / spot_price < 0.006:
+            item["role"] = "VOL TRIGGER"
+        elif st == acceleration_void:
+            item["role"] = "AIR POCKET"
+
+    grav_vals = sorted([x["gravity_score"] for x in scored], reverse=True)
+    top_share = grav_vals[0] / (sum(grav_vals[:5]) or 1.0)
+    pin_prob = min(92, max(28, int(round(42 + (30 if spot_gex >= 0 else -12) + top_share * 45))))
+
+    dealer_1pct_up = round(-spot_gex, 2)
+    dealer_1pct_down = round(spot_gex, 2)
+
+    vanna_1vol_m = round(spot_vex * (-1.0 if spot_vol_corr < 0 else 1.0), 2)
+    net_drift_m = round(spot_cex + 0.5 * vanna_1vol_m, 2)
+
+    session_weights = [
+        ("09:30 Open", 0.12),
+        ("11:00 Morning", 0.28),
+        ("12:30 Midday", 0.45),
+        ("14:00 Afternoon", 0.68),
+        ("15:00 Power Hr", 0.85),
+        ("15:45 MOC Pin", 1.00),
+    ]
+    intraday_flow_schedule = []
+    for label, frac in session_weights:
+        c_flow = round(spot_cex * frac, 2)
+        v_flow = round(vanna_1vol_m * (frac ** 0.85) * 0.5, 2)
+        intraday_flow_schedule.append({
+            "time": label,
+            "charm_flow_m": c_flow,
+            "vanna_flow_m": v_flow,
+            "net_dealer_flow_m": round(c_flow + v_flow, 2),
+        })
+
+    return {
+        "paradigm_name": paradigm_name,
+        "paradigm_code": paradigm_code,
+        "paradigm_color": paradigm_color,
+        "paradigm_summary": paradigm_summary,
+        "primary_magnet": primary_magnet,
+        "pin_probability_pct": pin_prob,
+        "upper_target": upper_target,
+        "lower_target": lower_target,
+        "acceleration_void": acceleration_void,
+        "vol_trigger": vol_trigger,
+        "dealer_action_1pct_up_m": dealer_1pct_up,
+        "dealer_action_1pct_down_m": dealer_1pct_down,
+        "net_charm_daily_m": round(spot_cex, 2),
+        "vanna_1vol_m": vanna_1vol_m,
+        "net_vanna_charm_drift_m": net_drift_m,
+        "strike_map": scored,
+        "intraday_flow_schedule": intraday_flow_schedule,
     }
 
 def compute_greek_projections(
@@ -1673,6 +1888,71 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
             )
         }
 
+        # Compute Spot-Vol Correlation (10D EWMA + 5D True-Range + 25D Skew Asymmetry) to contextualize VEX
+        spot_vol_corr = -0.55
+        spot_vol_badge = "LEVERAGE (-)"
+        spot_vol_regime = "Standard Equity Leverage (Spot ↑ → IV ↓)"
+        spot_vol_color = "#38bdf8"
+        try:
+            sv_ticker = t if t is not None else yf.Ticker(ticker)
+            sv_hist = sv_ticker.history(period="3mo")
+            if sv_hist is not None and not sv_hist.empty and len(sv_hist) >= 10:
+                c_s = sv_hist['Close']
+                h_s = sv_hist['High']
+                l_s = sv_hist['Low']
+                pc_s = c_s.shift(1)
+                s_rets = np.log(c_s / pc_s) * 100.0
+                ewma10_d = (s_rets.ewm(span=10, min_periods=5).std() * np.sqrt(252)).diff() / np.sqrt(252) * 2.5
+                tr_hi = np.maximum(h_s, pc_s)
+                tr_lo = np.minimum(l_s, pc_s)
+                tr_pk = np.sqrt((np.log(tr_hi / tr_lo) ** 2) / (4.0 * np.log(2.0))) * 100.0
+                tr_d = tr_pk - tr_pk.ewm(span=5, min_periods=2).mean().shift(1)
+
+                p_ivs = [c["iv"] for c in all_contracts_list if c.get("type") == "put" and 0.88 * spot_price <= c["strike"] <= 0.96 * spot_price and c["iv"] > 0.02]
+                c_ivs = [c["iv"] for c in all_contracts_list if c.get("type") == "call" and 1.04 * spot_price <= c["strike"] <= 1.12 * spot_price and c["iv"] > 0.02]
+                atm_ivs_sv = [c["iv"] for c in all_contracts_list if 0.98 * spot_price <= c["strike"] <= 1.02 * spot_price and c["iv"] > 0.02]
+                atm_base = float(np.median(atm_ivs_sv)) if atm_ivs_sv else 0.30
+                put_sk = (float(np.median(p_ivs)) / atm_base) if p_ivs else 1.12
+                call_sk = (float(np.median(c_ivs)) / atm_base) if c_ivs else 0.96
+                skew_asym = float(put_sk - call_sk)
+
+                df_sv = pd.DataFrame({
+                    "spot": s_rets,
+                    "ewma_d": ewma10_d.fillna(tr_d),
+                    "tr_d": tr_d,
+                }).dropna(subset=["spot", "ewma_d", "tr_d"])
+                if len(df_sv) >= 5:
+                    skew_iv_d = -(skew_asym * 1.35) * df_sv["spot"]
+                    eff_vol_d = (0.60 * df_sv["ewma_d"]) + (0.20 * df_sv["tr_d"]) + (0.20 * skew_iv_d)
+                    c_val = float(df_sv["spot"].corr(eff_vol_d))
+                    if not math.isnan(c_val):
+                        spot_vol_corr = round(c_val, 2)
+        except Exception:
+            pass
+
+        if spot_vol_corr <= -0.15:
+            spot_vol_regime = "Standard Equity Leverage (Spot ↑ → IV ↓)"
+            spot_vol_badge = "LEVERAGE (-)"
+            spot_vol_color = "#38bdf8"
+        elif spot_vol_corr >= 0.15:
+            spot_vol_regime = "Call Squeeze Dislocation (Spot ↑ → IV ↑)"
+            spot_vol_badge = "CALL SQUEEZE (+)"
+            spot_vol_color = "#10b981"
+        else:
+            spot_vol_regime = "Decoupled Spot-Vol Co-movement"
+            spot_vol_badge = "DECOUPLED"
+            spot_vol_color = "#fbbf24"
+
+        # Compute Volland Institutional Dealer Positioning, Magnets & Intraday Flow Clock
+        volland_data = compute_volland_analytics(
+            spot_price=spot_price,
+            spotgamma_trace=spotgamma_trace,
+            call_wall=call_wall,
+            put_wall=put_wall,
+            zero_gamma=zero_gamma,
+            spot_vol_corr=spot_vol_corr
+        )
+
         pillars = [
             {
                 "id": "gamma_regime",
@@ -1694,9 +1974,9 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                 "id": "vanna_exposure",
                 "title": "Net Vanna Exposure (VEX)",
                 "metric": f"{'+$' if total_net_vex >= 0 else '-$'}{abs(round(total_net_vex / 1e6, 1))}M/1% IV",
-                "status": "Vanna Fuel Bullish" if total_net_vex >= 0 else "Vanna Drag Bearish",
+                "status": f"{'Vanna Fuel Bullish' if total_net_vex >= 0 else 'Vanna Drag Bearish'} · ρ(S,σ) {spot_vol_corr:+.2f}",
                 "color": "cyan" if total_net_vex >= 0 else "rose",
-                "takeaway": f"Sensitivity to IV crush. When IV contracts, dealers {'buy' if total_net_vex >= 0 else 'sell'} shares to maintain delta neutrality."
+                "takeaway": f"Spot-Vol Corr: {spot_vol_corr:+.2f} ({spot_vol_badge}). When IV contracts, dealers {'buy' if total_net_vex >= 0 else 'sell'} shares to maintain delta neutrality."
             },
             {
                 "id": "expected_move",
@@ -1746,9 +2026,14 @@ def get_gex_profile(ticker: str, expiry_filter: str = "ALL") -> Dict[str, Any]:
                 "total_put_vol": total_put_vol,
                 "is_oi_clearing": is_oi_clearing,
                 "put_call_oi_ratio": put_call_oi_ratio,
-                "put_call_vol_ratio": put_call_vol_ratio
+                "put_call_vol_ratio": put_call_vol_ratio,
+                "spot_vol_corr": spot_vol_corr,
+                "spot_vol_badge": spot_vol_badge,
+                "spot_vol_regime": spot_vol_regime,
+                "spot_vol_color": spot_vol_color
             },
             "spotgamma_trace": spotgamma_trace,
+            "volland": volland_data,
             "options_hedging_impact": options_hedging_impact,
             "hedge_pressure_map": hedge_pressure_map,
             "delta_matrix": delta_matrix,

@@ -7,6 +7,7 @@ import {
   TrendingUp, TrendingDown, AlertCircle, Activity, ActivitySquare,
   Compass, Zap, List, Layers, ShieldAlert, ShieldCheck, Search, BarChart2
 } from 'lucide-react';
+import SectorFlowTopBottomPredictor from './SectorFlowTopBottomPredictor';
 
 const COLORS = [
   "#38bdf8", "#00f2fe", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899",
@@ -242,6 +243,45 @@ const classifyOptionsConfluence = (curQuad, dx, dy, flowScore, opt) => {
     headline: `Two-way options positioning (${callPct.toFixed(0)}% Calls, ${formatDollarFlow(netDelta)} Net Δ)`,
     detail: `Dealer GEX ${netGex >= 0 ? '+' : ''}${netGex.toFixed(1)}M • 5D Net Call OI ${formatSignedInt(netCallOi5d)}`
   };
+};
+
+const renderRrgArrowNode = (props, color, isHovered = false, showTrailDots = true) => {
+  const { cx, cy, payload } = props;
+  if (typeof cx !== 'number' || typeof cy !== 'number' || Number.isNaN(cx) || Number.isNaN(cy)) {
+    return null;
+  }
+  const isLast = Boolean(payload?.isLast);
+  const isStart = Boolean(payload?.isStart);
+
+  if (!isLast) {
+    if (!showTrailDots) return null;
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={isStart ? 3 : 2}
+        fill={color}
+        opacity={0.45}
+      />
+    );
+  }
+
+  const size = isHovered ? 9.5 : (showTrailDots ? 7.5 : 5.5);
+  const angle = Number(payload?.arrowAngleDeg || 0);
+  const pts = `${size * 1.45},0 ${-size * 0.9},${-size * 0.85} ${-size * 0.42},0 ${-size * 0.9},${size * 0.85}`;
+
+  return (
+    <g transform={`translate(${cx}, ${cy}) rotate(${angle})`}>
+      <polygon
+        points={pts}
+        fill={color}
+        stroke={isHovered ? '#ffffff' : '#090d16'}
+        strokeWidth={isHovered ? 1.8 : 1.2}
+        strokeLinejoin="round"
+        style={{ filter: `drop-shadow(0 0 ${isHovered ? 7 : 4}px ${color})` }}
+      />
+    </g>
+  );
 };
 
 const EnhancedRrgTooltip = ({ active, payload, lookback }) => {
@@ -1918,13 +1958,23 @@ export default function RrgMoneyFlowDashboard({
                           : sector.confluence?.type === 'CONFIRMED_BULLISH'
                             ? ' ✓'
                             : '';
-                      const mappedTrail = slicedTrail.map((pt, i) => ({
-                        ...pt,
-                        sectorName: sector.name,
-                        sectorTelemetry: sector,
-                        stepLabel: i === slicedTrail.length - 1 ? 'Current Head' : `-${slicedTrail.length - 1 - i} sess`,
-                        labelName: i === slicedTrail.length - 1 ? `${sector.ticker}${divMarker}` : ''
-                      }));
+                      const mappedTrail = slicedTrail.map((pt, i) => {
+                        const prev = i > 0 ? slicedTrail[i - 1] : pt;
+                        const dx = (pt.x ?? 0) - (prev.x ?? 0);
+                        const dy = (pt.y ?? 0) - (prev.y ?? 0);
+                        const arrowAngleDeg = (dx === 0 && dy === 0) ? 0 : (Math.atan2(-dy, dx) * (180 / Math.PI));
+                        const isLast = i === slicedTrail.length - 1;
+                        return {
+                          ...pt,
+                          isLast,
+                          isStart: i === 0,
+                          arrowAngleDeg,
+                          sectorName: sector.name,
+                          sectorTelemetry: sector,
+                          stepLabel: isLast ? 'Current Head' : `-${slicedTrail.length - 1 - i} sess`,
+                          labelName: isLast ? `${sector.ticker}${divMarker}` : ''
+                        };
+                      });
 
                       return (
                         <Scatter
@@ -1934,6 +1984,7 @@ export default function RrgMoneyFlowDashboard({
                           fill={sector.color}
                           line={{ type: 'monotone', stroke: sector.color, strokeWidth: isHovered ? 3.8 : 2 }}
                           opacity={isAnotherHovered ? 0.14 : 1}
+                          shape={(props) => renderRrgArrowNode(props, sector.color, isHovered, true)}
                           style={{ cursor: 'pointer' }}
                           onClick={() => { setSelectedInspectorName(sector.name); setModalData(sector); }}
                           onMouseEnter={() => setHoveredSector(sector.name)}
@@ -1942,7 +1993,7 @@ export default function RrgMoneyFlowDashboard({
                           <LabelList
                             dataKey="labelName"
                             position="right"
-                            offset={7}
+                            offset={10}
                             style={{
                               fill: '#f8fafc',
                               fontSize: isHovered ? '13px' : '11px',
@@ -1951,18 +2002,6 @@ export default function RrgMoneyFlowDashboard({
                               textShadow: `0px 0px 4px ${sector.color}, 0px 0px 8px #000`
                             }}
                           />
-                          {mappedTrail.map((entry, index) => {
-                            const isLast = index === mappedTrail.length - 1;
-                            const isStart = index === 0;
-                            return (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={sector.color}
-                                r={isLast ? (isHovered ? 10 : 7) : isStart ? 3 : 2}
-                                opacity={isLast ? 1 : 0.45}
-                              />
-                            );
-                          })}
                         </Scatter>
                       );
                     })}
@@ -2049,15 +2088,21 @@ export default function RrgMoneyFlowDashboard({
                         <YAxis type="number" dataKey="y" domain={['dataMin - 2', 'dataMax + 2']} hide />
                         <Scatter
                           name={sector.name}
-                          data={(sector.trail || []).slice(-tailLength)}
+                          data={(sector.trail || []).slice(-tailLength).map((pt, i, arr) => {
+                            const prev = i > 0 ? arr[i - 1] : pt;
+                            const dx = (pt.x ?? 0) - (prev.x ?? 0);
+                            const dy = (pt.y ?? 0) - (prev.y ?? 0);
+                            return {
+                              ...pt,
+                              isLast: i === arr.length - 1,
+                              isStart: i === 0,
+                              arrowAngleDeg: (dx === 0 && dy === 0) ? 0 : (Math.atan2(-dy, dx) * (180 / Math.PI)),
+                            };
+                          })}
                           fill={sector.color}
                           line={{ type: 'monotone', stroke: sector.color, strokeWidth: 2 }}
-                        >
-                          {(sector.trail || []).slice(-tailLength).map((entry, index, arr) => {
-                            const isLast = index === arr.length - 1;
-                            return <Cell key={`mini-${index}`} fill={sector.color} r={isLast ? 5 : 0} opacity={isLast ? 1 : 0} />;
-                          })}
-                        </Scatter>
+                          shape={(props) => renderRrgArrowNode(props, sector.color, false, false)}
+                        />
                       </ScatterChart>
                     </ResponsiveContainer>
                   </div>
@@ -3012,6 +3057,13 @@ export default function RrgMoneyFlowDashboard({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* =====================================================================
+          10-YEAR SECTOR FLOW MARKET TOP / BOTTOM PREDICTOR (2016-2026)
+      ===================================================================== */}
+      <div style={{ marginTop: '24px' }}>
+        <SectorFlowTopBottomPredictor onTickerClick={fetchTickerData} />
       </div>
 
     </div>

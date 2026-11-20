@@ -1231,3 +1231,521 @@
   color: #ffffff;
   border-color: #38bdf8;
 }
+
+
+/* ============================================================
+   WYCKOFF 3.0 REDESIGN EXTENSIONS
+   ============================================================ */
+.wyckoff-kicker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.wyckoff-kicker-badge {
+  background: linear-gradient(135deg, #0ea5e9, #10b981);
+  color: #020617;
+  font-weight: 900;
+  font-size: 0.7rem;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+}
+
+.wyckoff-kicker-meta {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.wyckoff-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wyckoff-view-toggle {
+  display: flex;
+  background: rgba(2, 6, 23, 0.75);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.wyckoff-view-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wyckoff-view-btn.active {
+  background: rgba(56, 189, 248, 0.22);
+  color: #7dd3fc;
+}
+
+.wyckoff-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 8px;
+}
+
+.wyckoff-kpi-card {
+  background: rgba(2, 6, 23, 0.65);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 9px;
+  padding: 9px 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wyckoff-kpi-card:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.wyckoff-kpi-card.selected {
+  border-width: 2px;
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.wyckoff-kpi-lbl {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.wyckoff-kpi-val {
+  font-size: 1.35rem;
+  font-weight: 900;
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.wyckoff-kpi-sub {
+  font-size: 0.66rem;
+  color: #64748b;
+}
+
+/* Dual Spotlight Arena */
+.wyckoff-spotlight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.wyckoff-spotlight-card {
+  border-radius: 12px;
+  padding: 15px 18px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wyckoff-spotlight-card.bull {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95) 55%);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+.wyckoff-spotlight-card.bear {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.12), rgba(15, 23, 42, 0.95) 55%);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+}
+
+.wyckoff-spotlight-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+
+.spotlight-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.spotlight-tag {
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.05em;
+}
+
+.spotlight-tag.bull {
+  background: rgba(16, 185, 129, 0.22);
+  color: #34d399;
+}
+
+.spotlight-tag.bear {
+  background: rgba(244, 63, 94, 0.22);
+  color: #fb7185;
+}
+
+.spotlight-score {
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.spotlight-score.bull { color: #34d399; }
+.spotlight-score.bear { color: #fb7185; }
+
+.spotlight-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.spotlight-ticker-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.spotlight-ticker {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: #f8fafc;
+  font-family: monospace;
+}
+
+.spotlight-price {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  font-family: monospace;
+}
+
+.spotlight-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  background: rgba(2, 6, 23, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.55);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: monospace;
+}
+
+.spotlight-metrics-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spotlight-metrics-row span {
+  font-size: 0.58rem;
+  color: #94a3b8;
+}
+
+.spotlight-metrics-row strong {
+  font-size: 0.78rem;
+  color: #f8fafc;
+}
+
+/* Subcontrols Bar */
+.wyckoff-subcontrols {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.wyckoff-dir-toggle {
+  display: flex;
+  background: rgba(2, 6, 23, 0.75);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.dir-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dir-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #f8fafc;
+}
+
+.wyckoff-inline-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(2, 6, 23, 0.75);
+  border: 1px solid rgba(71, 85, 105, 0.6);
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+
+.wyckoff-inline-search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f8fafc;
+  font-size: 0.78rem;
+  width: 150px;
+}
+
+.clear-mini-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.wyckoff-sort-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(71, 85, 105, 0.6);
+  background: rgba(2, 6, 23, 0.75);
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Radar Cards Grid */
+.wyckoff-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(365px, 1fr));
+  gap: 14px;
+}
+
+.wyckoff-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(9, 14, 28, 0.98));
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 13px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wyckoff-card.bullish:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 10px 26px rgba(16, 185, 129, 0.12);
+  transform: translateY(-2px);
+}
+
+.wyckoff-card.bearish:hover {
+  border-color: rgba(244, 63, 94, 0.6);
+  box-shadow: 0 10px 26px rgba(244, 63, 94, 0.12);
+  transform: translateY(-2px);
+}
+
+.wyckoff-card-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.wyckoff-card-sym-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wyckoff-card-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.card-spot {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+  font-family: monospace;
+}
+
+.bias-mini-tag {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.bias-mini-tag.bull {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+}
+
+.bias-mini-tag.bear {
+  background: rgba(244, 63, 94, 0.16);
+  color: #fb7185;
+}
+
+.wyckoff-score-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1.5px solid;
+  background: rgba(2, 6, 23, 0.75);
+  font-family: monospace;
+}
+
+.ws-num {
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.ws-lbl {
+  font-size: 0.52rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.wyckoff-card-setup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.rr-chip {
+  font-family: monospace;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.wyckoff-channel-box {
+  background: rgba(2, 6, 23, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.55);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.channel-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.67rem;
+  font-family: monospace;
+}
+
+.pos-tag {
+  font-weight: 800;
+}
+
+.range-mid-tick {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 1px;
+  height: 10px;
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.wyckoff-card-telemetry {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.tele-cell {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(51, 65, 85, 0.45);
+  border-radius: 7px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: monospace;
+}
+
+.tele-lbl {
+  font-size: 0.56rem;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.tele-val {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.tele-sub {
+  font-size: 0.64rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wyckoff-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(51, 65, 85, 0.45);
+  margin-top: auto;
+}
+
+.footer-levels {
+  display: flex;
+  gap: 10px;
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.modal-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.14);
+  color: #7dd3fc;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-copy-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+}

@@ -1,35 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import './DeepFundamentals.css';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  TrendingUp,
-  AlertTriangle,
-  Briefcase,
-  FileText,
-  Activity,
-  Layers,
-  DollarSign,
-  PieChart,
-  ShieldCheck,
-  BarChart2,
-  Target,
-  Search,
-  RefreshCw,
-  Sparkles,
-  Scale,
-  Sliders,
-  Award,
-  ExternalLink,
-  Compass,
-  Gauge,
-  Flame,
-  Brain,
-  Cpu,
-  Bot,
-  ArrowUpRight,
-  ArrowDownRight,
-  CheckCircle2,
-  ChevronRight
+  Search, ShieldCheck, Activity, Layers, Award, FileText,
+  Gauge, Sliders, BarChart2, TrendingUp, AlertTriangle,
+  CheckCircle2, ExternalLink, Compass, Target, Sparkles,
+  Briefcase, ChevronRight, ChevronDown, ChevronUp, BrainCircuit,
+  ArrowUpRight, ArrowDownRight, Scale
 } from 'lucide-react';
+import './DeepFundamentals.css';
 
 import CockpitOverviewView from './components/deep_fundamentals/CockpitOverviewView';
 import ExecutiveMoatView from './components/deep_fundamentals/ExecutiveMoatView';
@@ -41,664 +18,649 @@ import CapitalAllocationView from './components/deep_fundamentals/CapitalAllocat
 import PlainEnglishExplainer from './components/deep_fundamentals/PlainEnglishExplainer';
 import DeepBriefDocumentView from './components/deep_fundamentals/DeepBriefDocumentView';
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:5000';
+
+const QUICK_TICKERS = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'AMD'];
+
+const TABS = [
+  { id: 'overview', label: 'Cockpit Overview', icon: Gauge },
+  { id: 'valuation', label: 'Dynamic Valuation', icon: Sliders },
+  { id: 'earnings', label: 'Earnings Teardown', icon: BarChart2 },
+  { id: 'statements', label: 'Financial Anatomy', icon: Layers },
+  { id: 'forensics', label: 'Forensic Health', icon: ShieldCheck },
+  { id: 'capital', label: 'Capital Allocation', icon: Activity },
+  { id: 'moat', label: 'Moat & Catalysts', icon: Award },
+  { id: 'deep_brief', label: 'Desk Deep-Brief v2', icon: FileText },
+  { id: 'peers_sec', label: 'Peers & SEC Filings', icon: Scale },
+];
+
+function parseNumericMultiple(val) {
+  if (val === null || val === undefined) return null;
+  const num = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(num) && num > 0 ? num : null;
+}
+
+function ConvictionRing({ score = 0, recommendation = 'HOLD' }) {
+  const clamped = Math.max(0, Math.min(100, Number(score) || 0));
+  const radius = 23;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (clamped / 100) * circumference;
+
+  const color =
+    clamped >= 75 ? '#00E676' :
+    clamped >= 55 ? '#00F0FF' :
+    clamped >= 40 ? '#fbbf24' : '#f43f5e';
+
+  return (
+    <div className="df2-conviction-badge">
+      <div style={{ position: 'relative', width: '56px', height: '56px', flexShrink: 0 }}>
+        <svg width="56" height="56" viewBox="0 0 56 56" style={{ transform: 'rotate(-90deg)' }}>
+          <circle
+            cx="28"
+            cy="28"
+            r={radius}
+            fill="none"
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth="5"
+          />
+          <circle
+            cx="28"
+            cy="28"
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          />
+        </svg>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          <span style={{ fontSize: '14px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+            {Math.round(clamped)}
+          </span>
+          <span style={{ fontSize: '8px', color: '#64748b', fontWeight: 700 }}>/100</span>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <span style={{ fontSize: '9px', fontFamily: 'monospace', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
+          Quant Rating
+        </span>
+        <span
+          style={{
+            fontSize: '12px',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontWeight: 900,
+            color,
+            letterSpacing: '0.4px',
+          }}
+        >
+          {recommendation}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function PriceExecutionLadder({ entryPricing, currentPrice, discountPct }) {
+  if (!entryPricing) return null;
+
+  const stop = Number(entryPricing.stop_loss) || 0;
+  const ideal = Number(entryPricing.ideal_entry) || 0;
+  const spot = Number(entryPricing.current_price || currentPrice) || 0;
+  const target1 = Number(entryPricing.target_conservative) || 0;
+  const target2 = Number(entryPricing.target_bull) || 0;
+
+  const validPoints = [stop, ideal, spot, target1, target2].filter((v) => v > 0);
+  if (validPoints.length < 2) return null;
+
+  const minVal = Math.min(...validPoints) * 0.94;
+  const maxVal = Math.max(...validPoints) * 1.04;
+  const span = Math.max(1, maxVal - minVal);
+  const pctOf = (v) => Math.max(3, Math.min(97, ((v - minVal) / span) * 100));
+
+  const markers = [
+    { key: 'stop', label: 'STOP', price: stop, color: '#f43f5e', pos: pctOf(stop), top: true },
+    { key: 'ideal', label: 'ENTRY', price: ideal, color: '#00E676', pos: pctOf(ideal), top: false },
+    { key: 'spot', label: 'SPOT', price: spot, color: '#ffffff', pos: pctOf(spot), top: true },
+    { key: 't1', label: 'DCF', price: target1, color: '#00F0FF', pos: pctOf(target1), top: false },
+    { key: 't2', label: 'BULL', price: target2, color: '#c084fc', pos: pctOf(target2), top: true },
+  ].filter((m) => m.price > 0);
+
+  return (
+    <div className="df2-ladder-wrap">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Target size={15} style={{ color: '#00E676' }} />
+          <span style={{ fontSize: '12px', fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, color: '#f8fafc' }}>
+            Valuation & Execution Price Ladder
+          </span>
+          <span
+            className="df2-pill"
+            style={{ background: 'rgba(0, 230, 118, 0.14)', color: '#00E676', border: '1px solid rgba(0, 230, 118, 0.35)' }}
+          >
+            R:R {entryPricing.risk_reward || 'N/A'}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '11px', fontFamily: 'monospace' }}>
+          <span style={{ color: '#94a3b8' }}>
+            Accum Zone: <strong style={{ color: '#00F0FF' }}>{entryPricing.accumulation_zone}</strong>
+          </span>
+          <span style={{ color: '#94a3b8' }}>
+            DCF Upside: <strong style={{ color: Number(entryPricing.upside_pct) >= 0 ? '#00E676' : '#f43f5e' }}>
+              {Number(entryPricing.upside_pct) >= 0 ? '+' : ''}{entryPricing.upside_pct}%
+            </strong>
+          </span>
+          <span style={{ color: '#94a3b8' }}>
+            Bull Target: <strong style={{ color: '#c084fc' }}>+{entryPricing.bull_upside_pct}%</strong>
+          </span>
+        </div>
+      </div>
+
+      <div className="df2-ladder-track">
+        {markers.map((m) => (
+          <div key={m.key} className="df2-ladder-marker" style={{ left: `${m.pos}%` }}>
+            {m.top ? (
+              <span className="df2-ladder-label-top" style={{ color: m.color }}>
+                {m.label} ${m.price.toFixed(0)}
+              </span>
+            ) : (
+              <span className="df2-ladder-label-bot" style={{ color: m.color }}>
+                {m.label} ${m.price.toFixed(0)}
+              </span>
+            )}
+            <div
+              className="df2-ladder-dot"
+              style={{
+                background: m.color,
+                boxShadow: `0 0 10px ${m.color}`,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', fontSize: '11px', color: '#94a3b8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Briefcase size={13} style={{ color: '#00F0FF', flexShrink: 0 }} />
+          <span><strong style={{ color: '#e2e8f0' }}>Allocation:</strong> {entryPricing.allocation_strategy}</span>
+        </div>
+        {entryPricing.entry_rationale && (
+          <span style={{ color: '#cbd5e1' }}>
+            <strong style={{ color: '#00E676' }}>Execution Note:</strong> {entryPricing.entry_rationale}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
   const [selectedTicker, setSelectedTicker] = useState(currentTicker || 'NVDA');
-  const [inputTicker, setInputTicker] = useState('');
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'valuation' | 'earnings' | 'statements' | 'forensics' | 'capital' | 'moat' | 'peers_sec'
-  const [secFilter, setSecFilter] = useState('ALL'); // 'ALL' | '10-K' | '10-Q' | '8-K'
+  const [inputTicker, setInputTicker] = useState(currentTicker || 'NVDA');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showAiBrief, setShowAiBrief] = useState(true);
+  const [secFilter, setSecFilter] = useState('ALL');
   const [secSearchQuery, setSecSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const [data, setData] = useState({
     fundamentals: null,
     secFilings: null,
     peerValuation: null,
-    macroOutlook: null
+    macroOutlook: null,
   });
-  const [loading, setLoading] = useState(true);
 
-  // Sync with prop if changed externally
   useEffect(() => {
-    if (currentTicker && currentTicker !== selectedTicker) {
-      setSelectedTicker(currentTicker);
+    if (currentTicker && currentTicker.toUpperCase() !== selectedTicker) {
+      const upper = currentTicker.toUpperCase();
+      setSelectedTicker(upper);
+      setInputTicker(upper);
     }
   }, [currentTicker]);
 
   useEffect(() => {
-    const fetchAllData = async () => {
+    let isMounted = true;
+    const fetchAll = async () => {
       setLoading(true);
+      setErrorMsg('');
       try {
         const [fundRes, secRes, peerRes, macroRes] = await Promise.all([
-          fetch(`/api/deep_fundamentals?ticker=${selectedTicker}`),
-          fetch(`/api/sec_filings?ticker=${selectedTicker}`),
-          fetch(`/api/peer_valuation?ticker=${selectedTicker}`),
-          fetch(`/api/macro_outlook?ticker=${selectedTicker}`)
+          fetch(`${API_BASE}/api/deep_fundamentals?ticker=${selectedTicker}`).then((r) => r.json()),
+          fetch(`${API_BASE}/api/sec_filings?ticker=${selectedTicker}`).then((r) => r.json()).catch(() => null),
+          fetch(`${API_BASE}/api/peer_valuation?ticker=${selectedTicker}`).then((r) => r.json()).catch(() => null),
+          fetch(`${API_BASE}/api/macro_outlook?ticker=${selectedTicker}`).then((r) => r.json()).catch(() => null),
         ]);
 
+        if (!isMounted) return;
         setData({
-          fundamentals: await fundRes.json(),
-          secFilings: await secRes.json(),
-          peerValuation: await peerRes.json(),
-          macroOutlook: await macroRes.json()
+          fundamentals: fundRes?.error ? null : fundRes,
+          secFilings: secRes?.error ? null : secRes,
+          peerValuation: peerRes?.error ? null : peerRes,
+          macroOutlook: macroRes?.error ? null : macroRes,
         });
+        if (fundRes?.error) {
+          setErrorMsg(fundRes.error);
+        }
       } catch (err) {
-        console.error("Error fetching institutional deep fundamentals:", err);
+        if (isMounted) setErrorMsg(err?.message || 'Failed to load fundamental telemetry.');
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
-
-    if (selectedTicker) fetchAllData();
+    fetchAll();
+    return () => {
+      isMounted = false;
+    };
   }, [selectedTicker]);
+
+  const selectNewTicker = (tickerStr) => {
+    const clean = (tickerStr || '').trim().toUpperCase();
+    if (!clean) return;
+    setSelectedTicker(clean);
+    setInputTicker(clean);
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (inputTicker.trim()) {
-      setSelectedTicker(inputTicker.trim().toUpperCase());
-      setInputTicker('');
-    }
+    selectNewTicker(inputTicker);
   };
 
-  const quickTickers = ['NVDA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'TSLA', 'AMD', 'PLTR', 'SMCI'];
   const { fundamentals, secFilings, peerValuation, macroOutlook } = data;
+  const profile = fundamentals?.profile || {};
+  const fairValueData = fundamentals?.fair_value_data || {};
+  const currentPrice = Number(fairValueData.current_price || profile.current_price || 0);
+  const fairValue = Number(fairValueData.fair_value || 0);
+  const discountPct =
+    fairValue > 0 && currentPrice > 0
+      ? ((fairValue - currentPrice) / currentPrice) * 100
+      : Number(fairValueData.discount_pct || 0);
 
-  const tabs = [
-    { id: 'overview', label: 'Cockpit Overview', icon: Gauge },
-    { id: 'valuation', label: 'Dynamic Valuation', icon: Sliders },
-    { id: 'earnings', label: 'Earnings Teardown', icon: BarChart2 },
-    { id: 'statements', label: 'Financial Anatomy', icon: Layers },
-    { id: 'forensics', label: 'Forensic Health', icon: ShieldCheck },
-    { id: 'capital', label: 'Capital Allocation', icon: Activity },
-    { id: 'moat', label: 'Moat & Catalysts', icon: Award },
-    { id: 'deep_brief', label: 'Desk Deep-Brief v2', icon: FileText },
-    { id: 'peers_sec', label: 'Peers & SEC Filings', icon: FileText },
-  ];
+  const ai = fundamentals?.ai_synthesis || null;
+  const score = Number(ai?.conviction_score ?? fundamentals?.scorecard?.overall_score ?? 0);
+  const recommendation = ai?.recommendation || (score >= 75 ? 'STRONG BUY' : score >= 55 ? 'ACCUMULATE' : 'HOLD');
 
-  // Derived Values for AI Intelligence & Vitals
-  const currentPrice = fundamentals?.fair_value_data?.current_price || fundamentals?.profile?.current_price || 100;
-  const fairValue = fundamentals?.fair_value_data?.fair_value || currentPrice * 1.15;
-  const discountPct = fundamentals?.fair_value_data?.discount_pct ?? ((fairValue - currentPrice) / fairValue * 100);
-  const companyName = fundamentals?.company_name || fundamentals?.profile?.company_name || selectedTicker;
-  
-  const rawScore = fundamentals?.score;
-  const score = typeof rawScore === 'number'
-    ? (rawScore <= 5 && rawScore >= -5 ? Math.min(98, Math.max(35, Math.round(50 + rawScore * 10))) : rawScore)
-    : 92;
+  const piotroskiScore = fundamentals?.forensic_dupont?.piotroski?.score ?? '—';
+  const altmanScore = fundamentals?.forensic_dupont?.altman_z?.score;
+  const altmanZone = fundamentals?.forensic_dupont?.altman_z?.zone || 'N/A';
+  const surpriseStreak = fundamentals?.earnings_deconstruction?.surprise_streak || {};
+  const beatStreak = surpriseStreak.current_beat_streak ?? fundamentals?.earnings_deconstruction?.beat_streak ?? 0;
+  const beatWinRate = surpriseStreak.beat_win_rate_pct;
+  const totalQuartersTracked = surpriseStreak.total_quarters_tracked;
+  const moatType = fundamentals?.moat_catalyst?.moat_rating || 'Narrow Moat';
+  const moatScore = fundamentals?.moat_catalyst?.moat_score ?? '—';
 
-  const recommendation = fundamentals?.recommendation || 'Strong Buy';
-  const beatStreak = fundamentals?.earnings_deconstruction?.beat_streak?.consecutive_beats 
-    || fundamentals?.earnings_deconstruction?.surprise_streak?.current_beat_streak 
-    || 4;
-  const moatType = fundamentals?.moat_catalyst?.moat_classification 
-    || fundamentals?.moat_catalyst?.moat_pillars?.moat_rating 
-    || 'Wide Moat';
-  const moatScore = fundamentals?.moat_catalyst?.overall_moat_score 
-    || fundamentals?.moat_catalyst?.moat_pillars?.composite_score 
-    || 88;
-  const altmanScore = fundamentals?.forensic_dupont?.altman_z?.score ?? 4.2;
-  const piotroskiScore = fundamentals?.forensic_dupont?.piotroski_f?.score ?? 8;
-  const grossMargin = fundamentals?.profile?.gross_margin 
-    ? (fundamentals.profile.gross_margin * 100).toFixed(1)
-    : (fundamentals?.history?.length ? fundamentals.history[fundamentals.history.length - 1].gross_margin?.toFixed(1) : '48.5');
+  const bestPeerMultiples = useMemo(() => {
+    const rows = peerValuation?.valuation || [];
+    const fwdPEs = rows.map((r) => parseNumericMultiple(r['Forward P/E'])).filter(Boolean);
+    const evEbitdas = rows.map((r) => parseNumericMultiple(r['EV/EBITDA'])).filter(Boolean);
+    return {
+      minFwdPE: fwdPEs.length ? Math.min(...fwdPEs) : null,
+      minEvEbitda: evEbitdas.length ? Math.min(...evEbitdas) : null,
+    };
+  }, [peerValuation]);
 
-  // Institutional Fundamental Entry Pricing Engine (DCF Margin of Safety + Valuation Bands + Support Floors)
-  const low52 = fundamentals?.profile?.fifty_two_week_low || (currentPrice * 0.75);
-  const high52 = fundamentals?.profile?.fifty_two_week_high || (currentPrice * 1.25);
-  const analystTargetMean = fundamentals?.profile?.analyst_target_mean || (currentPrice * 1.15);
-  const rawAnalystHigh = fundamentals?.profile?.analyst_target_high;
-  const analystTargetHigh = rawAnalystHigh && rawAnalystHigh > 0 ? Number(rawAnalystHigh) : null;
-  
-  // 1. Ideal Entry Price: If undervalued, spot/minor dip; if at premium, anchor to intrinsic DCF fair value or conservative margin of safety
-  const idealEntry = discountPct >= 0 
-    ? +(currentPrice * 0.98).toFixed(2) // 2% liquidity dip
-    : +(Math.min(currentPrice * 0.92, fairValue)).toFixed(2); // Wait for multiple compression or fair value
-  
-  // 2. Accumulation Zone Range
-  const accumLower = +(idealEntry * 0.95).toFixed(2);
-  const accumUpper = +(idealEntry * 1.03).toFixed(2);
-  
-  // 3. Fundamental Invalidation / Capital Preservation Stop
-  // Grounded in worst-case downside (e.g., Bear Case DCF or 8-15% below ideal entry)
-  const intrinsicFloor = +(fairValue * 0.78).toFixed(2);
-  const stopLoss = +(Math.min(idealEntry * 0.89, Math.max(low52 * 0.95, idealEntry * 0.84))).toFixed(2);
-  const riskPerShare = +(idealEntry - stopLoss).toFixed(2);
-  
-  // 4. Intrinsic Profit Targets
-  // Target 1: Base DCF Fair Value (or conservative floor +8% if already priced at premium)
-  const targetConservative = +(fairValue > currentPrice 
-    ? fairValue 
-    : Math.max(currentPrice * 1.08, (fundamentals?.profile?.analyst_target_mean || currentPrice * 1.10))).toFixed(2);
+  const mosColor = discountPct >= 10 ? '#00E676' : discountPct >= -5 ? '#00F0FF' : '#f43f5e';
+  const mosLabel =
+    discountPct >= 10
+      ? `+${discountPct.toFixed(1)}% Undervalued`
+      : discountPct >= -5
+        ? `${discountPct >= 0 ? '+' : ''}${discountPct.toFixed(1)}% Fair Value`
+        : `${discountPct.toFixed(1)}% Premium`;
 
-  // Target 2: Wall Street Consensus High if available; otherwise institutional Bull expansion multiple
-  const targetBull = +(analystTargetHigh && analystTargetHigh > currentPrice
-    ? analystTargetHigh
-    : Math.max(targetConservative * 1.15, Math.max(currentPrice * 1.25, fairValue * 1.18))).toFixed(2);
-
-  const rewardPerShare = +(targetConservative - idealEntry).toFixed(2);
-  const riskRewardRatio = riskPerShare > 0 ? (rewardPerShare / riskPerShare).toFixed(2) : '3.20';
-  const upsidePct = (((targetConservative - idealEntry) / idealEntry) * 100).toFixed(1);
-  const bullUpsidePct = (((targetBull - idealEntry) / idealEntry) * 100).toFixed(1);
-
-  // AI Fundamental Intelligence Synthesis Object
-  const ai = {
-    verdict_title: discountPct > 15
-      ? "HIGH-CONVICTION COMPOUNDER · ASYMMETRIC DISCOUNT REGIME"
-      : (discountPct < -15
-          ? "PREMIUM MOMENTUM MULTIPLE · PRICED FOR PERFECTION REGIME"
-          : "BALANCED FAIR VALUE & STEADY CAPITAL ALLOCATION REGIME"),
-    verdict_posture: discountPct > 10 
-      ? "STRONG FUNDAMENTAL BUY · WIDE MOAT COMPOUNDER" 
-      : (discountPct < -10 ? "TACTICAL HOLD · FULLY VALUED GROWTH" : "ACCUMULATE ON PULLBACKS · CORE HOLDING"),
-    verdict_badge: discountPct > 10 ? "UNDERVALUED QUALITY" : (discountPct < -10 ? "PREMIUM GROWTH" : "CORE COMPOUNDER"),
-    conviction_score: score,
-    conviction_grade: score >= 90 ? "S+ INSTITUTIONAL TIER" : (score >= 80 ? "TIER-1 CORE ASSET" : "TACTICAL CANDIDATE"),
-    executive_summary: `${companyName} (${selectedTicker}) trades at $${currentPrice.toFixed(2)}, offering a ${Math.abs(discountPct).toFixed(1)}% ${discountPct >= 0 ? 'undervaluation margin of safety' : 'premium'} against intrinsic DCF Fair Value ($${fairValue.toFixed(2)}). Operational vitality is anchored by ${grossMargin}% gross margins, ${moatType} (${moatScore}/100) competitive positioning, and an exceptional ${piotroskiScore}/9 Piotroski financial health score with ${beatStreak} consecutive quarterly EPS beats.`,
-    entry_pricing: {
-      ideal_entry: idealEntry,
-      current_price: currentPrice,
-      accumulation_zone: `$${accumLower} – $${accumUpper}`,
-      accum_lower: accumLower,
-      accum_upper: accumUpper,
-      stop_loss: stopLoss,
-      target_conservative: targetConservative,
-      target_bull: targetBull,
-      risk_reward: `${riskRewardRatio}:1`,
-      upside_pct: upsidePct,
-      bull_upside_pct: bullUpsidePct,
-      entry_rationale: discountPct >= 0
-        ? `Spot price ($${currentPrice.toFixed(2)}) is fundamentally underpriced by ${discountPct.toFixed(1)}% vs DCF Fair Value ($${fairValue.toFixed(2)}). Optimal accumulation trigger is $${idealEntry} (at or near spot) with asymmetric ${riskRewardRatio}:1 R/R.`
-        : `Trading at a ${Math.abs(discountPct).toFixed(1)}% premium to DCF intrinsic value. Highest-probability institutional entry trigger sits at $${idealEntry} (pullback into value support / multiple compression zone).`,
-      allocation_strategy: score >= 85 ? "Full Core Institutional Sizing (8-10% Portfolio Weight)" : "Tactical Growth Tranche (3-5% Sizing on Dips)"
-    },
-    four_pillars: [
-      {
-        id: "valuation_spread",
-        title: "Intrinsic Valuation & Margin of Safety",
-        metric: `${discountPct >= 0 ? '+' : ''}${discountPct.toFixed(1)}% Spread`,
-        status: discountPct >= 10 ? "Favorable Discount" : (discountPct < -10 ? "Stretched Multiple" : "Fair Value"),
-        color: discountPct >= 0 ? "emerald" : "rose",
-        takeaway: `Multi-stage DCF intrinsic model values equity at $${fairValue.toFixed(2)} per share vs current market quote $${currentPrice.toFixed(2)}.`
-      },
-      {
-        id: "earnings_momentum",
-        title: "Earnings Quality & Beat Streak",
-        metric: `🔥 ${beatStreak} Consecutive Beats`,
-        status: beatStreak >= 4 ? "Accelerating Beats" : "Consistent Execution",
-        color: "cyan",
-        takeaway: `Operating leverage and product expansion drive consistent Wall Street top and bottom-line beats.`
-      },
-      {
-        id: "solvency_health",
-        title: "Forensic Solvency & Health Audit",
-        metric: `Altman Z: ${altmanScore.toFixed(1)} · F-Score: ${piotroskiScore}/9`,
-        status: altmanScore > 3.0 ? "Safe Zone / Distress Immune" : "Adequate Liquidity",
-        color: "emerald",
-        takeaway: `Pristine balance sheet structure with minimal bankruptcy distress risk and high operating cash flow accruals.`
-      },
-      {
-        id: "economic_moat",
-        title: "Economic Moat & Capital Allocation",
-        metric: `${moatType} (${moatScore}/100)`,
-        status: "Positive ROIC Spread",
-        color: "purple",
-        takeaway: `Formidable competitive moat backed by intellectual property, high switching costs, and accretive capital return.`
-      }
-    ],
-    tail_risk_warning: "Monitor supply chain bottlenecks, customer concentration, and macro rate sensitivity into next fiscal quarter."
-  };
+  const shouldRenderBrief = Boolean(ai) && (showAiBrief || activeTab === 'overview');
 
   return (
-    <div className="fund-root" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
-      
-      {/* ========================================================================= */}
-      {/* 1. MASTER TERMINAL COMMAND & IDENTITY BANNER                              */}
-      {/* ========================================================================= */}
-      <div className="fund-header-banner">
-        <div className="fund-header-glow" />
+    <div className="fund-root">
+      {/* ===================================================================== */}
+      {/* 1. UNIFIED INSTITUTIONAL COMMAND HEADER + CONVICTION RING + VITALS    */}
+      {/* ===================================================================== */}
+      <div className="df2-command-shell">
+        <div className="df2-command-glow" />
 
-        <div className="fund-header-top-row">
-          {/* Left: Ticker & Brand Identity */}
-          <div className="fund-identity-wrap">
-            <div className="fund-logo-box">
-              {fundamentals?.logo_url ? (
-                <img
-                  src={fundamentals.logo_url}
-                  alt={selectedTicker}
-                  style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              ) : (
-                <span>{selectedTicker}</span>
-              )}
-            </div>
-
-            <div className="fund-titles-block">
-              <div className="fund-title-line">
-                <h1>{selectedTicker}</h1>
-                <span className="fund-sector-badge">
-                  {fundamentals?.sector || 'Institutional Coverage'}
-                </span>
-                {fundamentals?.website && (
-                  <a
-                    href={fundamentals.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: '#64748b', display: 'flex', alignItems: 'center' }}
-                    title="Official Investor Relations"
+        <div className="df2-header-main">
+          {/* Left: Identity + Price + Margin of Safety */}
+          <div className="df2-identity-cluster">
+            <div className="df2-ticker-avatar">{selectedTicker}</div>
+            <div>
+              <div className="df2-title-row">
+                <h1 className="df2-ticker-name">{selectedTicker}</h1>
+                {currentPrice > 0 && (
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '1.15rem', fontWeight: 800, color: '#e2e8f0' }}>
+                    ${currentPrice.toFixed(2)}
+                  </span>
+                )}
+                {fairValue > 0 && (
+                  <span
+                    className="df2-pill"
+                    style={{
+                      background: `${mosColor}1a`,
+                      color: mosColor,
+                      border: `1px solid ${mosColor}55`,
+                    }}
                   >
-                    <ExternalLink size={14} />
-                  </a>
+                    {discountPct >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                    {mosLabel}
+                  </span>
                 )}
               </div>
-              <p className="fund-company-sub">
-                {companyName} · Institutional Fundamental Research Terminal · {fundamentals?.industry || 'Multi-Engine Synthesis'}
-              </p>
+
+              <div className="df2-company-sub">
+                <span style={{ color: '#e2e8f0', fontWeight: 600 }}>
+                  {profile.company_name || `${selectedTicker} Institutional Dossier`}
+                </span>
+                {profile.sector && (
+                  <span className="df2-pill" style={{ background: 'rgba(148,163,184,0.12)', color: '#cbd5e1', border: '1px solid rgba(148,163,184,0.2)' }}>
+                    {profile.sector}
+                  </span>
+                )}
+                {profile.industry && (
+                  <span style={{ color: '#64748b', fontSize: '11px' }}>· {profile.industry}</span>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Right: Quick Ticker Switcher & Search */}
-          <div className="fund-controls-wrap">
-            <div className="fund-quick-chips">
-              {quickTickers.map((t) => (
+          {/* Right: Quick Tickers + Search + Conviction Ring */}
+          <div className="df2-controls-cluster">
+            <div className="df2-quick-strip">
+              {QUICK_TICKERS.map((tk) => (
                 <button
-                  key={t}
+                  key={tk}
                   type="button"
-                  onClick={() => setSelectedTicker(t)}
-                  className={`fund-chip-btn ${selectedTicker === t ? 'active' : ''}`}
+                  onClick={() => selectNewTicker(tk)}
+                  className={`df2-quick-btn ${selectedTicker === tk ? 'active' : ''}`}
                 >
-                  {t}
+                  {tk}
                 </button>
               ))}
             </div>
 
-            <form onSubmit={handleSearch} className="fund-search-form">
-              <Search size={14} style={{ position: 'absolute', left: '10px', color: '#64748b' }} />
+            <form onSubmit={handleSearch} className="df2-search-form">
+              <Search size={13} style={{ color: '#64748b' }} />
               <input
                 type="text"
-                placeholder="Symbol..."
                 value={inputTicker}
-                onChange={(e) => setInputTicker(e.target.value)}
-                className="fund-search-input"
+                onChange={(e) => setInputTicker(e.target.value.toUpperCase())}
+                placeholder="TICKER"
+                className="df2-search-input"
               />
+              <button type="submit" className="df2-search-btn">
+                ANALYZE
+              </button>
             </form>
+
+            {ai && <ConvictionRing score={score} recommendation={recommendation} />}
           </div>
         </div>
 
-        {/* 6-TILE VITALS STRIP */}
-        {fundamentals && !loading && (
-          <div className="fund-kpis-strip" style={{ marginTop: '18px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            {/* Conviction Score */}
-            <div className="fund-kpi-tile featured">
-              <span className="fund-kpi-label">Conviction</span>
-              <span className="fund-kpi-val cyan">{score}/100</span>
-              <span className="fund-kpi-sub cyan">S+ Institutional</span>
+        {/* 6-Metric Vitals Ribbon */}
+        <div className="df2-vitals-grid">
+          <div className="df2-vital-cell">
+            <div className="df2-vital-label">
+              <span>Market Cap</span>
+              <span style={{ color: '#00F0FF' }}>SIZE</span>
             </div>
+            <div className="df2-vital-val">{profile.market_cap_fmt || profile.market_cap || '—'}</div>
+            <div className="df2-vital-sub">{profile.exchange || 'US Equity'}</div>
+          </div>
 
-            {/* Wall St Consensus */}
-            <div className="fund-kpi-tile">
-              <span className="fund-kpi-label">Consensus Rating</span>
-              <span className="fund-kpi-val emerald">{recommendation}</span>
-              <span className="fund-kpi-sub">Wall Street Bias</span>
+          <div className="df2-vital-cell">
+            <div className="df2-vital-label">
+              <span>DCF Intrinsic Value</span>
+              <span style={{ color: mosColor }}>TARGET</span>
             </div>
-
-            {/* DCF Fair Value */}
-            <div className="fund-kpi-tile">
-              <span className="fund-kpi-label">DCF Fair Value</span>
-              <span className="fund-kpi-val">
-                ${fairValue.toFixed(2)}
-              </span>
-              <span className={`fund-kpi-sub ${discountPct >= 0 ? 'emerald' : 'rose'}`}>
-                {discountPct >= 0 ? `+${discountPct.toFixed(0)}% Undervalued` : `${discountPct.toFixed(0)}% Premium`}
-              </span>
+            <div className="df2-vital-val" style={{ color: mosColor }}>
+              {fairValue > 0 ? `$${fairValue.toFixed(2)}` : '—'}
             </div>
+            <div className="df2-vital-sub">{mosLabel}</div>
+          </div>
 
-            {/* Economic Moat */}
-            <div className="fund-kpi-tile">
-              <span className="fund-kpi-label">Economic Moat</span>
-              <span className="fund-kpi-val amber">{moatType}</span>
-              <span className="fund-kpi-sub">Score: {moatScore}/100</span>
+          <div className="df2-vital-cell">
+            <div className="df2-vital-label">
+              <span>Piotroski F-Score</span>
+              <span style={{ color: Number(piotroskiScore) >= 7 ? '#00E676' : '#fbbf24' }}>QUALITY</span>
             </div>
-
-            {/* Beat Streak */}
-            <div className="fund-kpi-tile">
-              <span className="fund-kpi-label">EPS Beat Streak</span>
-              <span className="fund-kpi-val emerald">🔥 {beatStreak} Qtrs</span>
-              <span className="fund-kpi-sub">Zero EPS Misses</span>
+            <div className="df2-vital-val">
+              {piotroskiScore !== '—' ? `${piotroskiScore} / 9` : '—'}
             </div>
-
-            {/* Solvency Health */}
-            <div className="fund-kpi-tile">
-              <span className="fund-kpi-label">Solvency (Altman Z)</span>
-              <span className="fund-kpi-val purple">{altmanScore.toFixed(2)}</span>
-              <span className="fund-kpi-sub">Safe / Distress Free</span>
+            <div className="df2-vital-sub">
+              {Number(piotroskiScore) >= 7 ? 'Institutional Grade' : Number(piotroskiScore) >= 4 ? 'Neutral Core' : 'Weak Fundamentals'}
             </div>
           </div>
+
+          <div className="df2-vital-cell">
+            <div className="df2-vital-label">
+              <span>Altman Z-Score</span>
+              <span style={{ color: Number(altmanScore) >= 3 ? '#00E676' : '#fbbf24' }}>SOLVENCY</span>
+            </div>
+            <div className="df2-vital-val">
+              {altmanScore !== undefined && altmanScore !== null ? Number(altmanScore).toFixed(2) : '—'}
+            </div>
+            <div className="df2-vital-sub">{altmanZone}</div>
+          </div>
+
+          <div className="df2-vital-cell">
+            <div className="df2-vital-label">
+              <span>EPS Beat Streak</span>
+              <span style={{ color: '#00F0FF' }}>EXECUTION</span>
+            </div>
+            <div className="df2-vital-val">{beatStreak} Qtrs</div>
+            <div className="df2-vital-sub">
+              {beatWinRate != null && totalQuartersTracked
+                ? `${beatWinRate}% Win Rate (${totalQuartersTracked}Q)`
+                : 'Consecutive Beats'}
+            </div>
+          </div>
+
+          <div className="df2-vital-cell">
+            <div className="df2-vital-label">
+              <span>Economic Moat</span>
+              <span style={{ color: '#c084fc' }}>DURABILITY</span>
+            </div>
+            <div className="df2-vital-val" style={{ fontSize: '0.95rem' }}>{moatType}</div>
+            <div className="df2-vital-sub">Moat Index: {moatScore}/100</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===================================================================== */}
+      {/* 2. ABOVE-THE-FOLD PILL NAVIGATION DOCK + AI BRIEF TOGGLE              */}
+      {/* ===================================================================== */}
+      <div className="df2-nav-dock">
+        <div className="df2-tabs-scroll">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`df2-tab-pill ${isActive ? 'active' : ''}`}
+              >
+                <Icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {ai && activeTab !== 'overview' && (
+          <button
+            type="button"
+            onClick={() => setShowAiBrief((v) => !v)}
+            className={`df2-ai-toggle-btn ${showAiBrief ? 'open' : ''}`}
+          >
+            <BrainCircuit size={14} />
+            <span>AI Thesis & Ladder</span>
+            {showAiBrief ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </button>
         )}
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. EXECUTIVE AI FUNDAMENTAL INTELLIGENCE HERO (STAGE 1 VIEW)              */}
-      {/* ========================================================================= */}
-      {!loading && fundamentals && (
-        <div className="fund-ai-hero-card">
-          <div className="fund-ai-glow-purple" />
-          <div className="fund-ai-glow-cyan" />
-
-          {/* AI Header Ribbon */}
-          <div className="fund-ai-header">
-            <div className="fund-ai-titles-left">
-              <div className="fund-ai-icon-box">
-                <Brain style={{ width: '22px', height: '22px', color: '#00F0FF' }} />
+      {/* ===================================================================== */}
+      {/* 3. AI EXECUTIVE SYNTHESIS + PRICE EXECUTION LADDER                    */}
+      {/* ===================================================================== */}
+      {!loading && shouldRenderBrief && (
+        <div className="df2-brief-panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 520px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <Sparkles size={14} style={{ color: '#c084fc' }} />
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', fontWeight: 800, color: '#c084fc', letterSpacing: '0.5px' }}>
+                  INSTITUTIONAL AI RESEARCH SYNTHESIS
+                </span>
               </div>
-              <div>
-                <div className="fund-ai-main-title">
-                  <h2>Quant AI Fundamental Intelligence · {selectedTicker} Vital Signs</h2>
-                  <span className="fund-ai-tag">
-                    <Sparkles style={{ width: '12px', height: '12px', color: '#00F0FF' }} />
-                    AI SYNTHESIS ACTIVE
-                  </span>
-                </div>
-                <p className="fund-ai-subtitle">
-                  Autonomous 5-engine institutional fundamental synthesis · DCF sensitivity, forensic accounting & moat modeling
-                </p>
-              </div>
-            </div>
-
-            <div className="fund-ai-badges-right">
-              <div className="fund-ai-conviction-pill">
-                <span className="label">Conviction:</span>
-                <span className="score">{ai.conviction_score}/100</span>
-                <span className="fund-pulse-dot" />
-              </div>
-              <div className="fund-ai-posture-pill">
-                {ai.verdict_posture}
-              </div>
-            </div>
-          </div>
-
-          {/* Executive Verdict Hero Box */}
-          <div className="fund-ai-verdict-box">
-            <div className="fund-ai-verdict-text">
-              <div className="fund-ai-verdict-header">
-                <span className="fund-ai-verdict-badge">{ai.verdict_badge}</span>
-                <h3 className="fund-ai-verdict-title">{ai.verdict_title}</h3>
-              </div>
-              <p className="fund-ai-verdict-summary">
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
+                {ai.headline || `${selectedTicker} Fundamental Verdict: ${recommendation}`}
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.84rem', color: '#cbd5e1', lineHeight: 1.55 }}>
                 {ai.executive_summary}
               </p>
             </div>
 
-            {/* DCF Fair Value Range Card */}
-            <div className="fund-fair-value-box">
-              <div className="fund-fair-value-top">
-                <span>DCF Intrinsic Fair Value</span>
-                <span style={{ color: '#00F0FF', fontWeight: 700 }}>10-Yr Cash Model</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                <span className="fund-fair-value-num">${fairValue.toFixed(2)}</span>
-                <span className={`fund-fair-value-spread ${discountPct >= 0 ? 'pos' : 'neg'}`}>
-                  ({discountPct >= 0 ? `+${discountPct.toFixed(1)}%` : `${discountPct.toFixed(1)}%`})
-                </span>
-              </div>
-              <div className="fund-fair-value-targets">
-                <span>Bear: <strong style={{ color: '#f43f5e' }}>${(fairValue * 0.8).toFixed(0)}</strong></span>
-                <span>Spot: <strong style={{ color: '#ffffff' }}>${currentPrice.toFixed(0)}</strong></span>
-                <span>Bull: <strong style={{ color: '#00E676' }}>${(fairValue * 1.25).toFixed(0)}</strong></span>
-              </div>
-              <div className="fund-fair-value-bar">
-                <div className="fund-fair-value-bar-left" />
-                <div className="fund-fair-value-bar-center" />
-                <div className="fund-fair-value-bar-right" />
-              </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('valuation')}
+                className="fund-entry-tab-link"
+              >
+                <span>DCF Sliders</span>
+                <ChevronRight size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('forensics')}
+                className="fund-entry-tab-link secondary"
+              >
+                <span>Solvency Audit</span>
+                <ChevronRight size={13} />
+              </button>
             </div>
           </div>
 
-          {/* 4-Pillar AI Diagnostic Grid */}
-          <div className="fund-pillars-grid">
-            {ai.four_pillars.map((pillar) => {
-              const borderClass = `border-${pillar.color}`;
-              return (
-                <div key={pillar.id} className={`fund-pillar-card ${borderClass}`}>
-                  <div>
-                    <div className="fund-pillar-header">
-                      <span className="fund-pillar-title">{pillar.title}</span>
-                      <span className={`fund-pillar-status ${pillar.color}`}>{pillar.status}</span>
-                    </div>
-                    <div className={`fund-pillar-metric ${pillar.color}`}>
-                      {pillar.metric}
-                    </div>
-                    <p className="fund-pillar-takeaway">
-                      {pillar.takeaway}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <PriceExecutionLadder
+            entryPricing={ai.entry_pricing}
+            currentPrice={currentPrice}
+            discountPct={discountPct}
+          />
 
-          {/* ===================================================================== */}
-          {/* 5. INSTITUTIONAL ENTRY PRICE & CAPITAL ALLOCATION DECK                */}
-          {/* ===================================================================== */}
-          {ai.entry_pricing && (
-            <div className="fund-entry-plan-card">
-              <div className="fund-entry-plan-header">
-                <div className="fund-entry-plan-title-box">
-                  <div className="fund-entry-icon-box">
-                    <Target style={{ width: '18px', height: '18px', color: '#00E676' }} />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <h4 className="fund-entry-main-heading">
-                        Quant AI Entry Execution & Position Architecture
-                      </h4>
-                      <span className="fund-entry-badge">
-                        <Sparkles style={{ width: '10px', height: '10px' }} />
-                        ASYMMETRIC SETUP
+          {Array.isArray(ai.pillars) && ai.pillars.length > 0 && (
+            <div className="df2-pillars-grid">
+              {ai.pillars.map((pillar, idx) => {
+                const statusColor =
+                  pillar.status === 'BULLISH' || pillar.status === 'STRONG'
+                    ? '#00E676'
+                    : pillar.status === 'NEUTRAL'
+                      ? '#00F0FF'
+                      : '#fbbf24';
+                return (
+                  <div key={idx} className="df2-pillar-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, color: '#f1f5f9' }}>
+                        {pillar.name}
+                      </span>
+                      <span
+                        className="df2-pill"
+                        style={{
+                          background: `${statusColor}18`,
+                          color: statusColor,
+                          border: `1px solid ${statusColor}44`,
+                        }}
+                      >
+                        {pillar.status}
                       </span>
                     </div>
-                    <p className="fund-entry-subheading">
-                      Algorithmic accumulation triggers calculated via DCF Margin of Safety, 52-week support floors, and Wall Street target consensus
+                    <p style={{ margin: 0, fontSize: '11.5px', color: '#94a3b8', lineHeight: 1.45 }}>
+                      {pillar.summary}
                     </p>
                   </div>
-                </div>
-
-                <div className="fund-entry-allocation-pill">
-                  <Briefcase style={{ width: '13px', height: '13px', color: '#00F0FF' }} />
-                  <span>{ai.entry_pricing.allocation_strategy}</span>
-                </div>
-              </div>
-
-              {/* Entry Pricing Grid */}
-              <div className="fund-entry-metrics-grid">
-                {/* 1. Ideal Entry Price */}
-                <div className="fund-entry-tile primary">
-                  <div className="fund-entry-tile-top">
-                    <span className="label">Optimal Entry Trigger</span>
-                    <span className="tag green">ACCUMULATION</span>
-                  </div>
-                  <div className="fund-entry-val green">
-                    ${ai.entry_pricing.ideal_entry}
-                  </div>
-                  <div className="fund-entry-sub">
-                    Spot: ${ai.entry_pricing.current_price.toFixed(2)} ({discountPct >= 0 ? `${Math.abs(((ai.entry_pricing.ideal_entry - ai.entry_pricing.current_price)/ai.entry_pricing.current_price)*100).toFixed(1)}% dip limit` : 'fair value anchor'})
-                  </div>
-                </div>
-
-                {/* 2. Accumulation Range */}
-                <div className="fund-entry-tile">
-                  <div className="fund-entry-tile-top">
-                    <span className="label">Institutional Accumulation Zone</span>
-                    <span className="tag cyan">SCALE-IN BAND</span>
-                  </div>
-                  <div className="fund-entry-val cyan">
-                    {ai.entry_pricing.accumulation_zone}
-                  </div>
-                  <div className="fund-entry-sub">
-                    DCA tranche accumulation corridor
-                  </div>
-                </div>
-
-                {/* 3. Invalidation / Capital Preservation Stop */}
-                <div className="fund-entry-tile">
-                  <div className="fund-entry-tile-top">
-                    <span className="label">Capital Preservation Stop</span>
-                    <span className="tag rose">STRUCTURAL INVALIDATION</span>
-                  </div>
-                  <div className="fund-entry-val rose">
-                    ${ai.entry_pricing.stop_loss}
-                  </div>
-                  <div className="fund-entry-sub">
-                    Max downside: -{Math.abs(((ai.entry_pricing.ideal_entry - ai.entry_pricing.stop_loss) / ai.entry_pricing.ideal_entry) * 100).toFixed(1)}% from entry
-                  </div>
-                </div>
-
-                {/* 4. DCF Intrinsic Target 1 */}
-                <div className="fund-entry-tile">
-                  <div className="fund-entry-tile-top">
-                    <span className="label">Intrinsic DCF Target (Base)</span>
-                    <span className="tag emerald">TARGET 1</span>
-                  </div>
-                  <div className="fund-entry-val emerald">
-                    ${ai.entry_pricing.target_conservative}
-                  </div>
-                  <div className="fund-entry-sub" style={{ color: '#00E676' }}>
-                    +{ai.entry_pricing.upside_pct}% intrinsic upside
-                  </div>
-                </div>
-
-                {/* 5. Multi-Year Compounder Target (Bull) */}
-                <div className="fund-entry-tile">
-                  <div className="fund-entry-tile-top">
-                    <span className="label">Wall Street / Bull Multiple</span>
-                    <span className="tag purple">TARGET 2</span>
-                  </div>
-                  <div className="fund-entry-val purple">
-                    ${ai.entry_pricing.target_bull}
-                  </div>
-                  <div className="fund-entry-sub" style={{ color: '#c084fc' }}>
-                    +{ai.entry_pricing.bull_upside_pct}% expansion target
-                  </div>
-                </div>
-
-                {/* 6. Asymmetric Risk/Reward Ratio */}
-                <div className="fund-entry-tile">
-                  <div className="fund-entry-tile-top">
-                    <span className="label">Quant Risk / Reward</span>
-                    <span className="tag amber">ASYMMETRY</span>
-                  </div>
-                  <div className="fund-entry-val amber">
-                    {ai.entry_pricing.risk_reward}
-                  </div>
-                  <div className="fund-entry-sub">
-                    Expectancy: Top-tier asymmetric setup
-                  </div>
-                </div>
-              </div>
-
-              {/* Tactical Actionable Commentary Ribbon */}
-              <div className="fund-entry-footer-ribbon">
-                <div className="fund-entry-rationale">
-                  <ShieldCheck style={{ width: '16px', height: '16px', color: '#00F0FF', flexShrink: 0 }} />
-                  <span>
-                    <strong style={{ color: '#ffffff' }}>Execution Thesis:</strong> {ai.entry_pricing.entry_rationale}
-                  </span>
-                </div>
-                <div className="fund-entry-quick-actions">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('valuation')}
-                    className="fund-entry-tab-link"
-                  >
-                    <span>Test DCF Sensitivities</span>
-                    <ChevronRight size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('forensics')}
-                    className="fund-entry-tab-link secondary"
-                  >
-                    <span>Audit Solvency Floor</span>
-                    <ChevronRight size={13} />
-                  </button>
-                </div>
-              </div>
+                );
+              })}
             </div>
           )}
 
-          {/* Tail Risk & Directive Strip */}
-          <div className="fund-risk-directive-strip">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle style={{ width: '15px', height: '15px', color: '#fbbf24', flexShrink: 0 }} />
-              <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
-                <strong style={{ color: '#e2e8f0' }}>Risk Directive:</strong> {ai.tail_risk_warning}
+          {ai.tail_risk_warning && (
+            <div className="fund-risk-directive-strip" style={{ marginTop: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={14} style={{ color: '#fbbf24', flexShrink: 0 }} />
+                <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                  <strong style={{ color: '#e2e8f0' }}>Risk Directive:</strong> {ai.tail_risk_warning}
+                </span>
+              </div>
+              <span style={{ fontSize: '10px', color: '#64748b', fontFamily: 'monospace' }}>
+                REVISE ON EARNINGS INFLECTION · DYNAMIC HEDGE ACTIVE
               </span>
             </div>
-            <span style={{ fontSize: '10px', color: '#64748b', fontFamily: 'monospace' }}>
-              REVISE ON EARNINGS INFLECTION · DYNAMIC HEDGE ACTIVE
-            </span>
-          </div>
+          )}
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* 3. SUBNAV CYBER TABS STRIP                                                */}
-      {/* ========================================================================= */}
-      <div className="fund-subnav-strip">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`fund-tab-btn ${isActive ? 'active' : ''}`}
-            >
-              <Icon size={15} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 4. ACTIVE VIEW WORKSPACE                                                  */}
-      {/* ========================================================================= */}
+      {/* ===================================================================== */}
+      {/* 4. ACTIVE VIEW WORKSPACE                                              */}
+      {/* ===================================================================== */}
       {loading ? (
-        <div 
+        <div
           style={{
             padding: '4rem 2rem',
             textAlign: 'center',
             color: '#94a3b8',
             background: 'linear-gradient(135deg, #0d121f 0%, #080c14 100%)',
             borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           <Compass size={40} className="animate-spin" style={{ color: '#00F0FF', margin: '0 auto 1rem auto' }} />
-          <h3 style={{ color: 'white', margin: '0 0 0.5rem 0', fontSize: '1.3rem', fontFamily: 'monospace' }}>
+          <h3 style={{ color: 'white', margin: '0 0 0.5rem 0', fontSize: '1.2rem', fontFamily: 'monospace' }}>
             Compiling Institutional Telemetry for {selectedTicker}...
           </h3>
-          <p style={{ fontSize: '0.85rem', fontFamily: 'monospace', color: '#64748b' }}>
-            Running 5 institutional engines: Moat Pillars, DCF Sensitivities, DuPont 5-Way, and Capital Allocation.
+          <p style={{ fontSize: '0.82rem', fontFamily: 'monospace', color: '#64748b' }}>
+            Running Moat Pillars, DCF Sensitivities, DuPont 5-Way, and Capital Allocation engines.
           </p>
         </div>
+      ) : errorMsg && !fundamentals ? (
+        <div
+          style={{
+            padding: '2.5rem',
+            textAlign: 'center',
+            background: 'rgba(15, 23, 42, 0.85)',
+            borderRadius: '16px',
+            border: '1px solid rgba(244, 63, 94, 0.35)',
+          }}
+        >
+          <AlertTriangle size={32} style={{ color: '#f43f5e', margin: '0 auto 10px auto' }} />
+          <h3 style={{ color: '#fff', fontFamily: 'monospace', margin: '0 0 6px 0' }}>
+            Unable to Load Telemetry for {selectedTicker}
+          </h3>
+          <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>{errorMsg}</p>
+        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
-          {/* 12TH GRADER PLAIN ENGLISH EXPLAINER SUITE */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Compact 1-click Plain English Explainer */}
           <PlainEnglishExplainer
             ticker={selectedTicker}
             profile={fundamentals?.profile}
             fundamentals={fundamentals}
-            isExpandedDefault={true}
+            isExpandedDefault={false}
           />
 
-          {/* TAB: INSTITUTIONAL DEEP BRIEF V2 */}
-          {activeTab === 'deep_brief' && (
-            <DeepBriefDocumentView ticker={selectedTicker} />
-          )}
+          {activeTab === 'deep_brief' && <DeepBriefDocumentView ticker={selectedTicker} />}
 
-          {/* TAB 0: COCKPIT OVERVIEW (DEFAULT) */}
           {activeTab === 'overview' && (
             <CockpitOverviewView
               ticker={selectedTicker}
@@ -708,7 +670,6 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
             />
           )}
 
-          {/* TAB 1: DYNAMIC VALUATION & SLIDERS */}
           {activeTab === 'valuation' && (
             <DynamicValuationView
               currentTicker={selectedTicker}
@@ -718,7 +679,6 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
             />
           )}
 
-          {/* TAB 2: QUARTERLY EARNINGS & KPI TEARDOWN */}
           {activeTab === 'earnings' && (
             <EarningsDeconstructorView
               ticker={selectedTicker}
@@ -728,7 +688,6 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
             />
           )}
 
-          {/* TAB 3: FINANCIAL ANATOMY & DUPONT */}
           {activeTab === 'statements' && (
             <StatementDuPontView
               forensicData={fundamentals?.forensic_dupont}
@@ -736,7 +695,6 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
             />
           )}
 
-          {/* TAB 4: FORENSIC HEALTH & SOLVENCY */}
           {activeTab === 'forensics' && (
             <ForensicHealthView
               forensicData={fundamentals?.forensic_dupont}
@@ -744,36 +702,103 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
             />
           )}
 
-          {/* TAB 5: CAPITAL ALLOCATION & OWNERSHIP */}
           {activeTab === 'capital' && (
-            <CapitalAllocationView
-              capitalData={fundamentals?.capital_allocation}
-            />
+            <CapitalAllocationView capitalData={fundamentals?.capital_allocation} />
           )}
 
-          {/* TAB 6: EXECUTIVE MOAT & CATALYSTS */}
           {activeTab === 'moat' && (
-            <ExecutiveMoatView
-              moatData={fundamentals?.moat_catalyst}
-            />
+            <ExecutiveMoatView moatData={fundamentals?.moat_catalyst} />
           )}
 
-          {/* TAB 9: PEERS, SEC FILINGS & MACRO OUTLOOK */}
           {activeTab === 'peers_sec' && (
             <div className="space-y-6">
-              {/* 1. SEC FILINGS & DISCLOSURE EXPLORER */}
+              {/* 1. SECTOR PEER VALUATION MATRIX (Interactive Peer Switcher + Best-Multiple Highlights) */}
+              {peerValuation?.valuation && (
+                <div
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 14, 23, 0.95) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                  }}
+                  className="rounded-2xl p-5"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <h3 className="text-base font-mono font-bold text-white flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-emerald-400" /> Sector Peer Valuation Matrix
+                    </h3>
+                    <span className="text-[11px] font-mono text-slate-400">
+                      Click any peer ticker to pivot dossier · Green = lowest sector multiple
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="text-slate-400 uppercase bg-slate-950/60 font-mono text-[11px]">
+                        <tr>
+                          <th className="p-3 rounded-l-lg font-sans">Ticker</th>
+                          <th className="p-3">Market Cap</th>
+                          <th className="p-3">EV / EBITDA</th>
+                          <th className="p-3">Forward P/E</th>
+                          <th className="p-3">Price / Sales</th>
+                          <th className="p-3 rounded-r-lg">Price / Book</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-mono">
+                        {peerValuation.valuation.map((peer, i) => {
+                          const isCurrent = peer.Ticker === selectedTicker;
+                          const evVal = parseNumericMultiple(peer['EV/EBITDA']);
+                          const peVal = parseNumericMultiple(peer['Forward P/E']);
+                          const isLowestEv = evVal !== null && bestPeerMultiples.minEvEbitda === evVal;
+                          const isLowestPe = peVal !== null && bestPeerMultiples.minFwdPE === peVal;
+                          return (
+                            <tr
+                              key={i}
+                              className={`hover:bg-slate-800/30 transition-colors ${isCurrent ? 'bg-cyan-500/15' : ''}`}
+                            >
+                              <td className="p-3">
+                                <button
+                                  type="button"
+                                  onClick={() => selectNewTicker(peer.Ticker)}
+                                  className="df2-peer-chip-btn"
+                                  style={
+                                    isCurrent
+                                      ? { borderColor: '#00F0FF', color: '#00F0FF', background: 'rgba(0,240,255,0.14)' }
+                                      : undefined
+                                  }
+                                >
+                                  {isCurrent && <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00F0FF]" />}
+                                  <span>{peer.Ticker}</span>
+                                </button>
+                              </td>
+                              <td className="p-3 text-slate-300">{peer['Market Cap']}</td>
+                              <td className="p-3" style={{ color: isLowestEv ? '#00E676' : '#cbd5e1', fontWeight: isLowestEv ? 800 : 500 }}>
+                                {peer['EV/EBITDA']}
+                              </td>
+                              <td className="p-3" style={{ color: isLowestPe ? '#00E676' : '#cbd5e1', fontWeight: isLowestPe ? 800 : 500 }}>
+                                {peer['Forward P/E']}
+                              </td>
+                              <td className="p-3 text-slate-300">{peer['Price/Sales']}</td>
+                              <td className="p-3 text-slate-300">{peer['Price/Book']}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. SEC FILINGS & DISCLOSURE EXPLORER */}
               <div
                 style={{
                   background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 14, 23, 0.95) 100%)',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 }}
                 className="rounded-2xl p-5 space-y-4"
               >
-                {/* Header & Meta Bar */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="p-1.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
                         <FileText size={18} />
                       </span>
@@ -794,37 +819,34 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={secFilings?.sec_profile_url || `https://www.sec.gov/edgar/browse/?CIK=${selectedTicker}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181E2B] text-cyan-400 border border-cyan-500/30 text-xs font-mono font-bold hover:bg-cyan-500/10 transition-all shadow-sm"
-                    >
-                      <ExternalLink size={13} /> View on SEC.gov ↗
-                    </a>
-                  </div>
+                  <a
+                    href={secFilings?.sec_profile_url || `https://www.sec.gov/edgar/browse/?CIK=${selectedTicker}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181E2B] text-cyan-400 border border-cyan-500/30 text-xs font-mono font-bold hover:bg-cyan-500/10 transition-all shadow-sm shrink-0"
+                  >
+                    <ExternalLink size={13} /> View on SEC.gov ↗
+                  </a>
                 </div>
 
-                {/* Filter Toolbar & Search */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
-                  {/* Category Filter Pills */}
                   <div className="flex flex-wrap items-center gap-1.5">
                     {[
                       { id: 'ALL', label: 'All Filings' },
                       { id: '10-K', label: '10-K (Annual)' },
                       { id: '10-Q', label: '10-Q (Quarterly)' },
-                      { id: '8-K', label: '8-K (Events)' }
-                    ].map(tab => {
+                      { id: '8-K', label: '8-K (Events)' },
+                    ].map((tab) => {
                       const count = secFilings?.filings
                         ? (tab.id === 'ALL'
                             ? secFilings.filings.length
-                            : secFilings.filings.filter(f => f.form.includes(tab.id)).length)
+                            : secFilings.filings.filter((f) => f.form.includes(tab.id)).length)
                         : 0;
                       const isActive = secFilter === tab.id;
                       return (
                         <button
                           key={tab.id}
+                          type="button"
                           onClick={() => setSecFilter(tab.id)}
                           className={`px-3 py-1 rounded-md text-xs font-mono font-bold transition-all border ${
                             isActive
@@ -838,7 +860,6 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                     })}
                   </div>
 
-                  {/* Search Filter Input */}
                   <div className="relative w-full sm:w-64">
                     <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
@@ -851,12 +872,12 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                   </div>
                 </div>
 
-                {/* Filings List Cards */}
                 {(() => {
                   const allFilings = secFilings?.filings || [];
-                  const filtered = allFilings.filter(f => {
+                  const filtered = allFilings.filter((f) => {
                     const matchCategory = secFilter === 'ALL' || f.form.includes(secFilter);
-                    const matchQuery = !secSearchQuery || 
+                    const matchQuery =
+                      !secSearchQuery ||
                       f.form.toLowerCase().includes(secSearchQuery.toLowerCase()) ||
                       (f.description && f.description.toLowerCase().includes(secSearchQuery.toLowerCase())) ||
                       (f.summary && f.summary.toLowerCase().includes(secSearchQuery.toLowerCase())) ||
@@ -877,7 +898,6 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                       {filtered.map((filing, idx) => {
                         const is10K = filing.form.includes('10-K');
                         const is10Q = filing.form.includes('10-Q');
-                        const is8K = filing.form.includes('8-K');
 
                         const badgeClass = is10K
                           ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
@@ -912,9 +932,7 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                                 )}
                               </div>
 
-                              <p className="text-xs text-slate-300 font-sans leading-relaxed">
-                                {filing.summary}
-                              </p>
+                              <p className="text-xs text-slate-300 font-sans leading-relaxed">{filing.summary}</p>
 
                               {filing.accession_no && (
                                 <div className="text-[10px] font-mono text-slate-500">
@@ -923,7 +941,6 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                               )}
                             </div>
 
-                            {/* Action Buttons */}
                             <div className="flex items-center gap-2 shrink-0">
                               {filing.viewer_url && (
                                 <a
@@ -954,61 +971,13 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
                 })()}
               </div>
 
-              {/* 2. SECTOR PEER VALUATION MATRIX */}
-              {peerValuation?.valuation && (
-                <div
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 14, 23, 0.95) 100%)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
-                  }}
-                  className="rounded-2xl p-5"
-                >
-                  <h3 className="text-base font-mono font-bold text-white flex items-center gap-2 mb-3">
-                    <Layers className="w-4 h-4 text-emerald-400" /> Sector Peer Valuation Matrix
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="text-slate-400 uppercase bg-slate-950/60 font-mono text-[11px]">
-                        <tr>
-                          <th className="p-3 rounded-l-lg font-sans">Ticker</th>
-                          <th className="p-3">Market Cap</th>
-                          <th className="p-3">EV / EBITDA</th>
-                          <th className="p-3">Forward P/E</th>
-                          <th className="p-3">Price / Sales</th>
-                          <th className="p-3 rounded-r-lg">Price / Book</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60 font-mono">
-                        {peerValuation.valuation.map((peer, i) => (
-                          <tr
-                            key={i}
-                            className={`hover:bg-slate-800/30 transition-colors ${peer.Ticker === selectedTicker ? 'bg-cyan-500/15' : ''}`}
-                          >
-                            <td className="p-3 font-sans font-bold text-white flex items-center gap-2">
-                              {peer.Ticker === selectedTicker && <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00F0FF]"></span>}
-                              {peer.Ticker}
-                            </td>
-                            <td className="p-3 text-slate-300">{peer['Market Cap']}</td>
-                            <td className="p-3 text-slate-300">{peer['EV/EBITDA']}</td>
-                            <td className="p-3 text-slate-300">{peer['Forward P/E']}</td>
-                            <td className="p-3 text-slate-300">{peer['Price/Sales']}</td>
-                            <td className="p-3 text-slate-300">{peer['Price/Book']}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
               {/* 3. MACRO ECONOMIC CLIMATE & SECTOR SENSITIVITY */}
               {macroOutlook?.outlook && (
                 <div
                   style={{
                     background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 14, 23, 0.95) 100%)',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                   }}
                   className="rounded-2xl p-5 space-y-3"
                 >
@@ -1035,7 +1004,6 @@ export default function DeepFundamentalsDashboard({ currentTicker = 'NVDA' }) {
           )}
         </div>
       )}
-
     </div>
   );
 }

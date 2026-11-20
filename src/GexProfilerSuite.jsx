@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import {
   ComposedChart, Bar, Cell, XAxis, YAxis, CartesianGrid,
-  Tooltip as RechartsTooltip, ReferenceLine, ResponsiveContainer,
+  Tooltip as RechartsTooltip, ReferenceLine, ReferenceArea, ResponsiveContainer,
   Line, Area, Legend
 } from 'recharts';
 
@@ -19,9 +19,10 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
   const [ticker, setTicker] = useState(initialTicker || 'SPY');
   const [searchInput, setSearchInput] = useState('');
   const [selectedExpiry, setSelectedExpiry] = useState('ALL');
-  const [activeChartMode, setActiveChartMode] = useState('spotgamma_trace'); // 'spotgamma_trace' | 'delta_charm_map' | 'net_gex' | 'call_put_split' | 'vanna_vex' | 'term_structure' | 'price_projection' | 'oi_heatmap' | 'cumulative'
-  const [traceLens, setTraceLens] = useState('gex'); // 'gex' | 'dex' | 'cex'
+  const [activeChartMode, setActiveChartMode] = useState('spotgamma_trace'); // 'spotgamma_trace' | 'volland' | 'delta_charm_map' | 'net_gex' | 'call_put_split' | 'vanna_vex' | 'term_structure' | 'price_projection' | 'oi_heatmap' | 'cumulative'
+  const [traceLens, setTraceLens] = useState('gex'); // 'gex' | 'dex' | 'cex' | 'vex'
   const [traceDistributionMode, setTraceDistributionMode] = useState('combined'); // 'combined' | 'call_put_split' | 'net_gex' | 'abs_gex' | 'curve'
+  const [showIvShockBands, setShowIvShockBands] = useState(false);
   const [matrixLens, setMatrixLens] = useState('dex'); // 'dex' | 'cex' | 'gex' | 'vex'
   const [showTraceGuide, setShowTraceGuide] = useState(true);
   const [oiVolSubMode, setOiVolSubMode] = useState('both'); // 'both' | 'volume' | 'oi'
@@ -100,6 +101,85 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
   const termStructure = data?.term_structure || [];
   const matrixData = data?.matrix_data || [];
   const spotgammaTrace = data?.spotgamma_trace || null;
+  const volland = useMemo(() => {
+    const rawSpot = Number(data?.spot_price) || 0;
+    const trimNearSpot = (rows) => {
+      if (!Array.isArray(rows) || rows.length <= 42 || rawSpot <= 0) return rows || [];
+      const sorted = [...rows].sort((a, b) => Math.abs(a.strike - rawSpot) - Math.abs(b.strike - rawSpot));
+      const nearest = sorted.slice(0, 38).sort((a, b) => a.strike - b.strike);
+      return nearest;
+    };
+
+    if (data?.volland && Array.isArray(data.volland.strike_map) && data.volland.strike_map.length > 0) {
+      return {
+        ...data.volland,
+        chart_strike_map: trimNearSpot(data.volland.strike_map),
+      };
+    }
+
+    // Resilient client-side synthesis fallback if cached payload predates backend volland key
+    const sourceRows = (data?.spotgamma_trace?.strike_distribution?.length ? data.spotgamma_trace.strike_distribution : data?.gex_profile) || [];
+    if (!rawSpot || sourceRows.length === 0) return null;
+
+    const nearRows = trimNearSpot(sourceRows);
+    const maxG = Math.max(...nearRows.map((r) => Math.abs(r.abs_gex ?? r.net_gex ?? 0)), 1);
+    const maxC = Math.max(...nearRows.map((r) => Math.abs(r.abs_cex ?? r.net_cex ?? 0)), 1);
+    const maxV = Math.max(...nearRows.map((r) => Math.abs(r.abs_vex ?? r.net_vex ?? 0)), 1);
+
+    const strike_map = nearRows.map((r) => {
+      const st = Number(r.strike);
+      const gp = Number(r.net_gex || 0);
+      const vp = Number(r.net_vex || 0);
+      const cp = Number(r.net_cex || 0);
+      const gNorm = Math.abs(r.abs_gex ?? gp) / maxG;
+      const cNorm = Math.abs(r.abs_cex ?? cp) / maxC;
+      const vNorm = Math.abs(r.abs_vex ?? vp) / maxV;
+      const distPen = Math.max(0.35, 1 - Math.min(0.65, (Math.abs(st - rawSpot) / rawSpot) * 4.5));
+      const gravity_score = Number(((0.45 * gNorm + 0.3 * cNorm + 0.25 * vNorm) * distPen * 100).toFixed(1));
+      return {
+        strike: st,
+        pct_from_spot: Number((((st - rawSpot) / rawSpot) * 100).toFixed(2)),
+        gamma_pressure: gp,
+        vanna_pressure: vp,
+        charm_pressure: cp,
+        total_volland_flow: gp + vp + cp,
+        gravity_score,
+        role: 'NEUTRAL',
+      };
+    });
+
+    const primaryPt = strike_map.reduce((best, cur) => (cur.gravity_score > best.gravity_score ? cur : best), strike_map[0]);
+    const voidPt = strike_map.reduce((best, cur) => (cur.gravity_score < best.gravity_score ? cur : best), strike_map[0]);
+    const netGex = Number(data?.totals?.total_net_gex || 0);
+    const netVex = Number(data?.totals?.total_net_vex || 0);
+    const netCex = Number(data?.totals?.total_net_cex || 0);
+    const isPos = netGex >= 0;
+
+    return {
+      paradigm_name: isPos ? 'POSITIVE GAMMA PIN' : 'NEGATIVE GAMMA ACCELERATION',
+      paradigm_color: isPos ? '#00F0FF' : '#f43f5e',
+      paradigm_summary: isPos
+        ? 'Mean-reverting dealer book: market makers sell rallies into Call Walls and buy dips into Put Walls.'
+        : 'Destabilizing dealer posture: short Gamma forces market makers to chase directional breakouts.',
+      primary_magnet: primaryPt?.strike,
+      pin_probability_pct: isPos ? 76 : 41,
+      upper_target: data?.key_levels?.call_wall || primaryPt?.strike,
+      lower_target: data?.key_levels?.put_wall || primaryPt?.strike,
+      acceleration_void: voidPt?.strike,
+      dealer_action_1pct_up_m: Number((-netGex).toFixed(2)),
+      net_vanna_charm_drift_m: Number((netCex + 0.5 * netVex).toFixed(2)),
+      strike_map,
+      chart_strike_map: strike_map,
+      intraday_flow_schedule: [
+        { time: '09:30 Open', charm_flow_m: netCex * 0.12, vanna_flow_m: netVex * 0.08, net_dealer_flow_m: netCex * 0.12 + netVex * 0.08 },
+        { time: '11:00 Morning', charm_flow_m: netCex * 0.28, vanna_flow_m: netVex * 0.17, net_dealer_flow_m: netCex * 0.28 + netVex * 0.17 },
+        { time: '12:30 Midday', charm_flow_m: netCex * 0.45, vanna_flow_m: netVex * 0.26, net_dealer_flow_m: netCex * 0.45 + netVex * 0.26 },
+        { time: '14:00 Afternoon', charm_flow_m: netCex * 0.68, vanna_flow_m: netVex * 0.36, net_dealer_flow_m: netCex * 0.68 + netVex * 0.36 },
+        { time: '15:00 Power Hr', charm_flow_m: netCex * 0.85, vanna_flow_m: netVex * 0.43, net_dealer_flow_m: netCex * 0.85 + netVex * 0.43 },
+        { time: '15:45 MOC Pin', charm_flow_m: netCex, vanna_flow_m: netVex * 0.5, net_dealer_flow_m: netCex + netVex * 0.5 },
+      ],
+    };
+  }, [data]);
   const deltaMatrix = data?.delta_matrix || [];
   const charmMatrix = data?.charm_matrix || [];
   // Resilient Options Hedging Impact & Tail-Wags-The-Dog Engine
@@ -1362,6 +1442,13 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setActiveChartMode('volland')}
+                    className={`gex-mode-btn spotgamma-trace-btn ${activeChartMode === 'volland' ? 'active' : ''}`}
+                  >
+                    🧲 Volland Flow
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setActiveChartMode('delta_charm_map')}
                     className={`gex-mode-btn delta-charm-btn ${activeChartMode === 'delta_charm_map' ? 'active' : ''}`}
                   >
@@ -1502,6 +1589,69 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
               </div>
             )}
 
+            {/* VANNA (VEX) SPOT-VOL CORRELATION SUB-TOOLBAR */}
+            {activeChartMode === 'vanna_vex' && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  padding: '8px 14px',
+                  marginBottom: '8px',
+                  background: 'rgba(15, 23, 42, 0.72)',
+                  border: `1px solid ${(totals?.spot_vol_color || '#38bdf8')}44`,
+                  borderRadius: '8px',
+                  fontFamily: 'monospace',
+                  fontSize: '12px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#94a3b8', fontWeight: 700, letterSpacing: '0.04em' }}>
+                    SPOT-VOL CORRELATION ρ(S,σ):
+                  </span>
+                  <span
+                    style={{
+                      color: totals?.spot_vol_color || '#38bdf8',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      background: `${totals?.spot_vol_color || '#38bdf8'}18`,
+                      border: `1px solid ${totals?.spot_vol_color || '#38bdf8'}55`
+                    }}
+                  >
+                    {totals?.spot_vol_corr !== undefined
+                      ? `${totals.spot_vol_corr >= 0 ? '+' : ''}${Number(totals.spot_vol_corr).toFixed(2)}`
+                      : 'N/A'}
+                  </span>
+                  <span
+                    style={{
+                      color: '#0f172a',
+                      background: totals?.spot_vol_color || '#38bdf8',
+                      fontWeight: 800,
+                      fontSize: '11px',
+                      padding: '2px 8px',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    {totals?.spot_vol_badge || 'LEVERAGE (-)'}
+                  </span>
+                  <span style={{ color: '#e2e8f0', fontSize: '11px' }}>
+                    {totals?.spot_vol_regime || 'Standard Equity Leverage (Spot ↑ → IV ↓)'}
+                  </span>
+                </div>
+                <span style={{ color: '#94a3b8', fontSize: '11px' }}>
+                  {(totals?.spot_vol_corr ?? -0.5) >= 0.15
+                    ? 'Spot ↑ + IV ↑ → Call-buying squeeze amplifies dealer delta-hedging'
+                    : ((totals?.spot_vol_corr ?? -0.5) <= -0.15
+                      ? `Spot ↑ + IV ↓ → Vol crush triggers ${(totals?.total_net_vex ?? 0) >= 0 ? 'dealer share buybacks (+VEX fuel)' : 'dealer share selling (-VEX drag)'}`
+                      : 'Decoupled Spot-Vol → Watch post-event IV crush for Vanna hedge flows')}
+                </span>
+              </div>
+            )}
+
             {/* SPOTGAMMA TRACE SUB-TOOLBAR */}
             {activeChartMode === 'spotgamma_trace' && (
               <div className="gex-trace-subtoolbar">
@@ -1574,6 +1724,25 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                   >
                     ⏳ Charm
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setTraceLens('vex')}
+                    className={`gex-trace-lens-btn ${traceLens === 'vex' ? 'active' : ''}`}
+                    style={traceLens === 'vex' ? { borderColor: '#38bdf8', color: '#38bdf8', background: 'rgba(56,189,248,0.16)' } : undefined}
+                  >
+                    ✨ Vanna
+                  </button>
+                  {traceLens === 'gex' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowIvShockBands((v) => !v)}
+                      className={`gex-trace-lens-btn ${showIvShockBands ? 'active' : ''}`}
+                      title="Overlay ±3% Implied Volatility Stress Curves on the TRACE Model"
+                      style={showIvShockBands ? { borderColor: '#fbbf24', color: '#fbbf24', background: 'rgba(251,191,36,0.12)' } : undefined}
+                    >
+                      📊 ±3% IV Shock
+                    </button>
+                  )}
                 </div>
 
                 <div className="gex-trace-stats-row">
@@ -1700,6 +1869,41 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     </>
                   )}
 
+                  {traceLens === 'vex' && (
+                    <>
+                      <div className="gex-trace-chip" style={{ borderLeft: `3px solid ${(spotgammaTrace?.current_spot_vex || 0) >= 0 ? '#38bdf8' : '#f43f5e'}` }}>
+                        <span className="lbl">Vanna Regime:</span>
+                        <span className="val" style={{ color: (spotgammaTrace?.current_spot_vex || 0) >= 0 ? '#38bdf8' : '#f43f5e' }}>
+                          {(spotgammaTrace?.current_spot_vex || 0) >= 0 ? '🟢 IV CRUSH = BUYING' : '🔴 IV SPIKE = SELLING'}
+                        </span>
+                      </div>
+                      <div className="gex-trace-chip">
+                        <span className="lbl">Vanna Zero Flip:</span>
+                        <span className="val" style={{ color: '#00F0FF' }}>
+                          ${spotgammaTrace?.trace_zero_vanna || spot.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="gex-trace-chip">
+                        <span className="lbl">Key Vanna Strike:</span>
+                        <span className="val" style={{ color: '#f59e0b' }}>
+                          ${spotgammaTrace?.key_vanna_strike || spot.toFixed(2)} ({formatDollarGex(spotgammaTrace?.key_vanna_val || 0)})
+                        </span>
+                      </div>
+                      <div className="gex-trace-chip">
+                        <span className="lbl">Spot Net Vanna:</span>
+                        <span className="val" style={{ color: (spotgammaTrace?.current_spot_vex || 0) >= 0 ? '#38bdf8' : '#f43f5e' }}>
+                          {formatDollarGex(spotgammaTrace?.current_spot_vex || 0)}/vol
+                        </span>
+                      </div>
+                      <div className="gex-trace-chip">
+                        <span className="lbl">Slope dVEX/dS:</span>
+                        <span className="val" style={{ color: '#cbd5e1' }}>
+                          {spotgammaTrace?.vanna_slope || 0.0}/$
+                        </span>
+                      </div>
+                    </>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setShowTraceGuide(prev => !prev)}
@@ -1709,6 +1913,126 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     <span>Guide: What is TRACE?</span>
                     {showTraceGuide ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                   </button>
+                </div>
+
+                {/* Plain-English Dealer Flow Playbook */}
+                {spotgammaTrace?.curve && spotgammaTrace.curve.length > 0 && (() => {
+                  const crv = spotgammaTrace.curve;
+                  const downPt = crv.reduce((b, c) => (Math.abs(c.pct_from_spot + 2) < Math.abs(b.pct_from_spot + 2) ? c : b), crv[0]);
+                  const upPt = crv.reduce((b, c) => (Math.abs(c.pct_from_spot - 2) < Math.abs(b.pct_from_spot - 2) ? c : b), crv[crv.length - 1]);
+                  const isSpotPos = (spotgammaTrace.current_spot_gex || 0) >= 0;
+                  const isDownPos = (downPt?.net_gex || 0) >= 0;
+                  const isUpPos = (upPt?.net_gex || 0) >= 0;
+
+                  return (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+                        gap: '10px',
+                        width: '100%',
+                        marginTop: '6px',
+                      }}
+                    >
+                      <div style={{ background: 'rgba(8, 12, 20, 0.85)', border: `1px solid ${isDownPos ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.35)'}`, borderRadius: '10px', padding: '8px 12px' }}>
+                        <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#94a3b8', fontWeight: 700 }}>
+                          📉 IF SPOT DROPS -2% (${downPt.price})
+                        </div>
+                        <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 800, color: isDownPos ? '#00E676' : '#f43f5e', marginTop: '2px' }}>
+                          {isDownPos ? 'Dealers BUY Dips (Supportive)' : 'Dealers SELL Drops (Accelerating)'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '2px' }}>
+                          Curve GEX: <strong>{formatDollarGex(downPt.net_gex)}</strong> · Floor: <strong>${keyLevels.put_wall}</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ background: 'rgba(8, 12, 20, 0.85)', border: `1px solid ${isSpotPos ? 'rgba(0,240,255,0.35)' : 'rgba(244,63,94,0.35)'}`, borderRadius: '10px', padding: '8px 12px' }}>
+                        <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#94a3b8', fontWeight: 700 }}>
+                          🎯 AT CURRENT SPOT (${spot.toFixed(2)})
+                        </div>
+                        <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 800, color: isSpotPos ? '#00F0FF' : '#f43f5e', marginTop: '2px' }}>
+                          {isSpotPos ? 'Mean-Reverting Chop / Pin Zone' : 'Volatility Expansion / Trend Zone'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '2px' }}>
+                          Vol Trigger: <strong>${spotgammaTrace.trace_zero_gamma || keyLevels.zero_gamma}</strong> · Charm: <strong>{formatDollarGex(spotgammaTrace.current_spot_cex || 0)}/d</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ background: 'rgba(8, 12, 20, 0.85)', border: `1px solid ${isUpPos ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.35)'}`, borderRadius: '10px', padding: '8px 12px' }}>
+                        <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#94a3b8', fontWeight: 700 }}>
+                          📈 IF SPOT RALLIES +2% (${upPt.price})
+                        </div>
+                        <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 800, color: isUpPos ? '#fbbf24' : '#38bdf8', marginTop: '2px' }}>
+                          {isUpPos ? 'Dealers SELL Rallies (Supply Cap)' : 'Dealers BUY Rallies (Squeeze Fuel)'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '2px' }}>
+                          Curve GEX: <strong>{formatDollarGex(upPt.net_gex)}</strong> · Cap: <strong>${keyLevels.call_wall}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* VOLLAND PARADIGM & MAGNET SUB-TOOLBAR */}
+            {activeChartMode === 'volland' && volland && (
+              <div className="gex-trace-subtoolbar" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '8px',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: '11px',
+                        fontWeight: 900,
+                        background: `${volland.paradigm_color || '#00F0FF'}22`,
+                        color: volland.paradigm_color || '#00F0FF',
+                        border: `1px solid ${volland.paradigm_color || '#00F0FF'}55`,
+                      }}
+                    >
+                      🧲 PARADIGM: {volland.paradigm_name}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#cbd5e1', maxWidth: '720px' }}>
+                      {volland.paradigm_summary}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="gex-trace-stats-row">
+                  <div className="gex-trace-chip" style={{ borderLeft: '3px solid #f59e0b' }}>
+                    <span className="lbl">Primary Magnet:</span>
+                    <span className="val" style={{ color: '#f59e0b' }}>
+                      ${volland.primary_magnet} ({volland.pin_probability_pct}% Pin)
+                    </span>
+                  </div>
+                  <div className="gex-trace-chip">
+                    <span className="lbl">Upper Target:</span>
+                    <span className="val" style={{ color: '#00E676' }}>${volland.upper_target}</span>
+                  </div>
+                  <div className="gex-trace-chip">
+                    <span className="lbl">Lower Floor:</span>
+                    <span className="val" style={{ color: '#f43f5e' }}>${volland.lower_target}</span>
+                  </div>
+                  <div className="gex-trace-chip">
+                    <span className="lbl">Air Pocket (Void):</span>
+                    <span className="val" style={{ color: '#c084fc' }}>${volland.acceleration_void}</span>
+                  </div>
+                  <div className="gex-trace-chip">
+                    <span className="lbl">+1% Spot Dealer Flow:</span>
+                    <span className="val" style={{ color: (volland.dealer_action_1pct_up_m || 0) >= 0 ? '#00E676' : '#f43f5e' }}>
+                      {(volland.dealer_action_1pct_up_m || 0) >= 0 ? 'BUY ' : 'SELL '}
+                      {formatDollarGex(Math.abs(volland.dealer_action_1pct_up_m || 0))}
+                    </span>
+                  </div>
+                  <div className="gex-trace-chip">
+                    <span className="lbl">Charm + Vanna Drift:</span>
+                    <span className="val" style={{ color: (volland.net_vanna_charm_drift_m || 0) >= 0 ? '#00F0FF' : '#f43f5e' }}>
+                      {(volland.net_vanna_charm_drift_m || 0) >= 0 ? '+' : ''}
+                      {formatDollarGex(volland.net_vanna_charm_drift_m || 0)}/day
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -2165,11 +2489,17 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
               <ResponsiveContainer width="100%" height="100%">
                 {activeChartMode === 'spotgamma_trace' && (() => {
                   const isPureCurve = traceDistributionMode === 'curve';
-                  const traceData = isPureCurve 
-                    ? (spotgammaTrace?.curve || []) 
-                    : ((spotgammaTrace?.strike_distribution && spotgammaTrace.strike_distribution.length > 0) 
-                        ? spotgammaTrace.strike_distribution 
+                  const rawTraceData = isPureCurve
+                    ? (spotgammaTrace?.curve || [])
+                    : ((spotgammaTrace?.strike_distribution && spotgammaTrace.strike_distribution.length > 0)
+                        ? spotgammaTrace.strike_distribution
                         : filteredProfile);
+                  const traceData = !isPureCurve && rawTraceData.length > 32 && spot > 0
+                    ? [...rawTraceData]
+                        .sort((a, b) => Math.abs((a.strike || a.price) - spot) - Math.abs((b.strike || b.price) - spot))
+                        .slice(0, 28)
+                        .sort((a, b) => (a.strike || a.price) - (b.strike || b.price))
+                    : rawTraceData;
                   const xKey = isPureCurve ? 'price' : 'strike';
 
                   // Dynamic Greek Lens Configuration
@@ -2235,14 +2565,40 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                     flipLabel = 'Charm Neutral';
                     yAxisLabel = 'Daily Charm Decay ($M/day)';
                     unitSuffix = '/d';
+                  } else if (traceLens === 'vex') {
+                    callKey = 'call_vex';
+                    putKey = 'put_vex';
+                    netKey = 'net_vex';
+                    absKey = 'abs_vex';
+                    curveKey = 'trace_model_vex';
+                    simCurveKey = 'net_vex';
+                    callName = 'Call Vanna (IV Crush Buy)';
+                    putName = 'Put Vanna (IV Spike Sell)';
+                    netName = 'Net Strike Vanna Pressure';
+                    absName = 'Absolute Vanna Concentration';
+                    curveName = 'TRACE Vanna Model Curve';
+                    callColor = '#38bdf8';
+                    putColor = '#fb7185';
+                    curveColor = '#00F0FF';
+                    keyStrike = spotgammaTrace?.key_vanna_strike || spot;
+                    keyLabel = 'Key Vanna';
+                    flipLevel = spotgammaTrace?.trace_zero_vanna;
+                    flipLabel = 'Vanna Zero';
+                    yAxisLabel = 'Dealer Vanna Exposure ($M/vol)';
+                    unitSuffix = '/v';
                   }
 
+                  const hasCurveOverlay = traceDistributionMode === 'combined' || traceDistributionMode === 'net_gex';
+                  const ivDownKey = isPureCurve ? 'net_gex_iv_down' : 'trace_model_gex_iv_down';
+                  const ivUpKey = isPureCurve ? 'net_gex_iv_up' : 'trace_model_gex_iv_up';
+                  const showIvOverlay = traceLens === 'gex' && showIvShockBands && (hasCurveOverlay || isPureCurve);
+
                   return (
-                    <ComposedChart data={traceData} margin={{ top: 25, right: 35, left: 25, bottom: 25 }}>
+                    <ComposedChart data={traceData} margin={{ top: 25, right: 45, left: 25, bottom: 25 }}>
                       <defs>
                         <linearGradient id="traceGexAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={traceLens === 'cex' ? '#c084fc' : (traceLens === 'dex' ? '#38bdf8' : '#00E676')} stopOpacity={0.4} />
-                          <stop offset="95%" stopColor={traceLens === 'cex' ? '#f43f5e' : (traceLens === 'dex' ? '#fb7185' : '#f43f5e')} stopOpacity={0.4} />
+                          <stop offset="5%" stopColor={traceLens === 'cex' ? '#c084fc' : (traceLens === 'dex' || traceLens === 'vex' ? '#38bdf8' : '#00E676')} stopOpacity={0.4} />
+                          <stop offset="95%" stopColor={traceLens === 'cex' ? '#f43f5e' : (traceLens === 'dex' || traceLens === 'vex' ? '#fb7185' : '#f43f5e')} stopOpacity={0.4} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -2265,6 +2621,7 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                         }}
                       />
                       <YAxis
+                        yAxisId="bars"
                         stroke="#94a3b8"
                         tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
                         tickFormatter={(val) => formatDollarGex(val) + unitSuffix}
@@ -2277,6 +2634,23 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                           fontFamily: 'monospace' 
                         }}
                       />
+                      {hasCurveOverlay && (
+                        <YAxis
+                          yAxisId="curve"
+                          orientation="right"
+                          stroke={curveColor}
+                          tick={{ fill: curveColor, fontSize: 10, fontFamily: 'monospace' }}
+                          tickFormatter={(val) => formatDollarGex(val) + unitSuffix}
+                          label={{
+                            value: 'Portfolio TRACE Curve ($M)',
+                            angle: 90,
+                            position: 'insideRight',
+                            fill: curveColor,
+                            fontSize: 10,
+                            fontFamily: 'monospace'
+                          }}
+                        />
+                      )}
                       <RechartsTooltip
                         contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.95)', borderColor: curveColor, borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
                         formatter={(val, name, item) => {
@@ -2301,10 +2675,13 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                         labelFormatter={(val) => `Strike / Price: $${Number(val).toFixed(2)}`}
                       />
                       <Legend wrapperStyle={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} />
-                      <ReferenceLine y={0} stroke="#64748b" strokeWidth={1.5} />
+                      <ReferenceLine yAxisId="bars" y={0} stroke="#64748b" strokeWidth={1.5} />
+                      <ReferenceArea yAxisId="bars" y1={0} fill="rgba(16, 185, 129, 0.05)" ifOverflow="extendDomain" />
+                      <ReferenceArea yAxisId="bars" y2={0} fill="rgba(244, 63, 94, 0.05)" ifOverflow="extendDomain" />
 
                       {spot > 0 && (
                         <ReferenceLine
+                          yAxisId="bars"
                           x={isPureCurve ? spot : (closestStrikeToSpot || spot)}
                           stroke="#ffffff"
                           strokeDasharray="4 4"
@@ -2314,6 +2691,7 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                       )}
                       {flipLevel && (
                         <ReferenceLine
+                          yAxisId="bars"
                           x={flipLevel}
                           stroke={curveColor}
                           strokeDasharray="2 2"
@@ -2323,6 +2701,7 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                       )}
                       {keyLevels.call_wall && (
                         <ReferenceLine
+                          yAxisId="bars"
                           x={keyLevels.call_wall}
                           stroke="#10b981"
                           strokeDasharray="3 3"
@@ -2332,6 +2711,7 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                       )}
                       {keyLevels.put_wall && (
                         <ReferenceLine
+                          yAxisId="bars"
                           x={keyLevels.put_wall}
                           stroke="#ef4444"
                           strokeDasharray="3 3"
@@ -2339,8 +2719,9 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                           label={{ position: 'top', value: `PW $${keyLevels.put_wall}`, fill: '#ef4444', fontSize: 10 }}
                         />
                       )}
-                      {keyStrike && !isPureCurve && (
+                      {keyStrike && !isPureCurve && keyStrike !== keyLevels.call_wall && keyStrike !== keyLevels.put_wall && (
                         <ReferenceLine
+                          yAxisId="bars"
                           x={keyStrike}
                           stroke="#f59e0b"
                           strokeDasharray="3 3"
@@ -2349,12 +2730,19 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                         />
                       )}
 
-                      {/* 1. Combined Mode: Real Strike Distribution Bars + Smooth TRACE Line */}
+                      {/* 1. Combined Mode: Clean Net Strike Flow Bars (Green=Support, Red=Accel) + Smooth TRACE Curve */}
                       {traceDistributionMode === 'combined' && (
                         <>
-                          <Bar dataKey={callKey} name={callName} fill={callColor} opacity={0.75} radius={[3, 3, 0, 0]} />
-                          <Bar dataKey={putKey} name={putName} fill={putColor} opacity={0.75} radius={[0, 0, 3, 3]} />
+                          <Bar yAxisId="bars" dataKey={netKey} name={netName} radius={[4, 4, 4, 4]}>
+                            {traceData.map((entry, idx) => {
+                              const val = entry[netKey] || 0;
+                              return (
+                                <Cell key={`comb-cell-${idx}`} fill={val >= 0 ? callColor : putColor} opacity={0.85} />
+                              );
+                            })}
+                          </Bar>
                           <Line
+                            yAxisId="curve"
                             type="monotone"
                             dataKey={curveKey}
                             name={curveName}
@@ -2368,15 +2756,15 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                       {/* 2. Call vs Put Split Bars */}
                       {traceDistributionMode === 'call_put_split' && (
                         <>
-                          <Bar dataKey={callKey} name={callName} fill={callColor} opacity={0.85} radius={[4, 4, 0, 0]} />
-                          <Bar dataKey={putKey} name={putName} fill={putColor} opacity={0.85} radius={[0, 0, 4, 4]} />
+                          <Bar yAxisId="bars" dataKey={callKey} name={callName} fill={callColor} opacity={0.85} radius={[4, 4, 0, 0]} />
+                          <Bar yAxisId="bars" dataKey={putKey} name={putName} fill={putColor} opacity={0.85} radius={[0, 0, 4, 4]} />
                         </>
                       )}
 
-                      {/* 3. Net Strike Bars */}
+                      {/* 3. Net Strike Bars (Left Axis) + Smooth TRACE Curve (Right Axis) */}
                       {traceDistributionMode === 'net_gex' && (
                         <>
-                          <Bar dataKey={netKey} name={netName} radius={[3, 3, 3, 3]}>
+                          <Bar yAxisId="bars" dataKey={netKey} name={netName} radius={[3, 3, 3, 3]}>
                             {traceData.map((entry, idx) => {
                               const val = entry[netKey] || 0;
                               return (
@@ -2385,6 +2773,7 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                             })}
                           </Bar>
                           <Line
+                            yAxisId="curve"
                             type="monotone"
                             dataKey={curveKey}
                             name={curveName}
@@ -2397,11 +2786,11 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
 
                       {/* 4. Absolute Concentration (Pins) */}
                       {traceDistributionMode === 'abs_gex' && (
-                        <Bar dataKey={absKey} name={absName} radius={[4, 4, 0, 0]}>
+                        <Bar yAxisId="bars" dataKey={absKey} name={absName} radius={[4, 4, 0, 0]}>
                           {traceData.map((entry, idx) => (
                             <Cell 
                               key={`cell-${idx}`} 
-                              fill={entry.strike === keyStrike ? '#f59e0b' : (traceLens === 'dex' ? '#38bdf8' : (traceLens === 'cex' ? '#c084fc' : '#38bdf8'))} 
+                              fill={entry.strike === keyStrike ? '#f59e0b' : (traceLens === 'dex' || traceLens === 'vex' ? '#38bdf8' : (traceLens === 'cex' ? '#c084fc' : '#38bdf8'))} 
                               opacity={entry.strike === keyStrike ? 1.0 : 0.65} 
                             />
                           ))}
@@ -2411,6 +2800,7 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                       {/* 5. Pure SDE Continuous Simulated Curve */}
                       {traceDistributionMode === 'curve' && (
                         <Area
+                          yAxisId="bars"
                           type="monotone"
                           dataKey={simCurveKey}
                           name={curveName}
@@ -2419,9 +2809,129 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                           fill="url(#traceGexAreaGrad)"
                         />
                       )}
+
+                      {/* ±3% IV Stress Curves (Vol Crush vs Vol Spike) */}
+                      {showIvOverlay && (
+                        <>
+                          <Line
+                            yAxisId={isPureCurve ? 'bars' : 'curve'}
+                            type="monotone"
+                            dataKey={ivDownKey}
+                            name="IV -3% (Vol Crush)"
+                            stroke="#00E676"
+                            strokeWidth={1.8}
+                            strokeDasharray="5 4"
+                            dot={false}
+                          />
+                          <Line
+                            yAxisId={isPureCurve ? 'bars' : 'curve'}
+                            type="monotone"
+                            dataKey={ivUpKey}
+                            name="IV +3% (Vol Spike)"
+                            stroke="#f43f5e"
+                            strokeWidth={1.8}
+                            strokeDasharray="5 4"
+                            dot={false}
+                          />
+                        </>
+                      )}
                     </ComposedChart>
                   );
                 })()}
+
+                {activeChartMode === 'volland' && (
+                  <ComposedChart data={volland?.chart_strike_map || volland?.strike_map || []} margin={{ top: 25, right: 45, left: 25, bottom: 25 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis
+                      dataKey="strike"
+                      stroke="#94a3b8"
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
+                      tickFormatter={(val) => `$${val}`}
+                      label={{ value: 'Strike Price ($)', position: 'insideBottom', offset: -12, fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }}
+                    />
+                    <YAxis
+                      yAxisId="flow"
+                      stroke="#94a3b8"
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
+                      tickFormatter={(val) => formatDollarGex(val)}
+                      label={{ value: 'Dealer Greek Pressure ($M)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }}
+                    />
+                    <YAxis
+                      yAxisId="gravity"
+                      orientation="right"
+                      domain={[0, 100]}
+                      stroke="#f59e0b"
+                      tick={{ fill: '#f59e0b', fontSize: 10, fontFamily: 'monospace' }}
+                      tickFormatter={(val) => `${val}%`}
+                      label={{ value: 'Pinning Gravity (%)', angle: 90, position: 'insideRight', fill: '#f59e0b', fontSize: 10, fontFamily: 'monospace' }}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{ backgroundColor: 'rgba(10, 14, 23, 0.96)', borderColor: '#f59e0b', borderRadius: '8px', color: 'white', fontFamily: 'monospace' }}
+                      formatter={(val, name) => {
+                        if (name === 'Pinning Gravity') return [`${val}%`, name];
+                        return [formatDollarGex(val), name];
+                      }}
+                      labelFormatter={(val, payload) => {
+                        const role = payload?.[0]?.payload?.role;
+                        return `Strike $${val}${role && role !== 'NEUTRAL' ? ` · [${role}]` : ''}`;
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} />
+                    <ReferenceLine yAxisId="flow" y={0} stroke="#64748b" strokeWidth={1.5} />
+                    {spot > 0 && (
+                      <ReferenceLine
+                        yAxisId="flow"
+                        x={closestStrikeToSpot || spot}
+                        stroke="#ffffff"
+                        strokeDasharray="4 4"
+                        strokeWidth={2}
+                        label={{ position: 'top', value: `Spot $${spot.toFixed(2)}`, fill: '#ffffff', fontSize: 11, fontWeight: 800 }}
+                      />
+                    )}
+                    {volland?.primary_magnet && (
+                      <ReferenceLine
+                        yAxisId="flow"
+                        x={volland.primary_magnet}
+                        stroke="#f59e0b"
+                        strokeDasharray="3 3"
+                        strokeWidth={2}
+                        label={{ position: 'top', value: `🧲 Magnet $${volland.primary_magnet}`, fill: '#f59e0b', fontSize: 10, fontWeight: 800 }}
+                      />
+                    )}
+                    {volland?.upper_target && (
+                      <ReferenceLine
+                        yAxisId="flow"
+                        x={volland.upper_target}
+                        stroke="#10b981"
+                        strokeDasharray="3 3"
+                        strokeWidth={1.5}
+                        label={{ position: 'bottom', value: `Target $${volland.upper_target}`, fill: '#10b981', fontSize: 10 }}
+                      />
+                    )}
+                    {volland?.lower_target && (
+                      <ReferenceLine
+                        yAxisId="flow"
+                        x={volland.lower_target}
+                        stroke="#ef4444"
+                        strokeDasharray="3 3"
+                        strokeWidth={1.5}
+                        label={{ position: 'bottom', value: `Floor $${volland.lower_target}`, fill: '#ef4444', fontSize: 10 }}
+                      />
+                    )}
+                    <Bar yAxisId="flow" dataKey="gamma_pressure" name="Gamma (GEX)" fill="#10b981" opacity={0.8} radius={[3, 3, 0, 0]} />
+                    <Bar yAxisId="flow" dataKey="vanna_pressure" name="Vanna (VEX)" fill="#38bdf8" opacity={0.8} radius={[3, 3, 0, 0]} />
+                    <Bar yAxisId="flow" dataKey="charm_pressure" name="Charm (CEX)" fill="#c084fc" opacity={0.8} radius={[3, 3, 0, 0]} />
+                    <Line
+                      yAxisId="gravity"
+                      type="monotone"
+                      dataKey="gravity_score"
+                      name="Pinning Gravity"
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      dot={{ r: 3, fill: '#f59e0b' }}
+                    />
+                  </ComposedChart>
+                )}
 
                 {activeChartMode === 'net_gex' && (
                   <ComposedChart data={filteredProfile} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
@@ -2889,6 +3399,51 @@ export default function GexProfilerSuite({ initialTicker = 'SPY' }) {
                 )}
               </ResponsiveContainer>
             </div>
+
+            {/* Volland Intraday Charm + Vanna Flow Clock & Key Roles Footer */}
+            {activeChartMode === 'volland' && volland && (
+              <div className="gex-impact-chart-footer" style={{ marginTop: '14px' }}>
+                <div className="impact-footer-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Activity size={16} color="#f59e0b" />
+                    <span style={{ fontWeight: 800, color: '#ffffff', fontFamily: 'monospace', fontSize: '12px' }}>
+                      VOLLAND INTRADAY CHARM + VANNA DEALER FLOW CLOCK (09:30 → 15:45 MOC)
+                    </span>
+                  </div>
+                  <span className="impact-footer-badge" style={{ color: '#00F0FF', borderColor: 'rgba(0,240,255,0.4)' }}>
+                    {(volland.net_vanna_charm_drift_m || 0) >= 0 ? 'NET SUPPORTIVE BUY FLOW' : 'NET DEALER SELL FLOW'}
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginTop: '10px' }}>
+                  {(volland.intraday_flow_schedule || []).map((slot) => {
+                    const isPos = (slot.net_dealer_flow_m || 0) >= 0;
+                    return (
+                      <div
+                        key={slot.time}
+                        style={{
+                          background: 'rgba(8, 12, 20, 0.85)',
+                          border: `1px solid ${isPos ? 'rgba(0, 230, 118, 0.25)' : 'rgba(244, 63, 94, 0.25)'}`,
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700 }}>{slot.time}</span>
+                        <span style={{ fontSize: '14px', fontWeight: 900, color: isPos ? '#00E676' : '#f43f5e' }}>
+                          {isPos ? '+' : ''}{formatDollarGex(slot.net_dealer_flow_m)}
+                        </span>
+                        <span style={{ fontSize: '10px', color: '#64748b' }}>
+                          Charm: {formatDollarGex(slot.charm_flow_m)} · Vanna: {formatDollarGex(slot.vanna_flow_m)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Microstructure Rulebook Strip for Options Impact Mode */}
             {activeChartMode === 'options_impact' && optionsImpact && (

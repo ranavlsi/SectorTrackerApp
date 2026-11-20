@@ -776,7 +776,7 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
         progress_pct = min(max(int((made_dist / total_dist) * 100), 0), 100)
 
         # Fire Telegram / Webhook alert on Screener Monitor lifecycle transition into TRIGGERED or TARGET_HIT
-        if prev_entry and prev_status == 'PENDING' and status == 'TRIGGERED':
+        if (t in existing_state) and prev_status == 'PENDING' and status == 'TRIGGERED':
             try:
                 import requests as _req
                 _req.post(
@@ -797,7 +797,7 @@ def update_screener_monitor(force_refresh: bool = False) -> Dict[str, Any]:
                 )
             except Exception:
                 pass
-        elif prev_entry and prev_status == 'TRIGGERED' and status in ('TARGET_HIT', 'TARGET_2_HIT'):
+        elif (t in existing_state) and prev_status == 'TRIGGERED' and status in ('TARGET_HIT', 'TARGET_2_HIT'):
             try:
                 import requests as _req
                 _req.post(

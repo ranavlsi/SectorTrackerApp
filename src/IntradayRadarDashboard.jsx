@@ -6,23 +6,28 @@ import {
 } from 'lucide-react';
 
 /**
- * Intraday Session Curve + Anchored VWAP + 15m ORB High/Low Band Sparkline
+ * Premarket (04:00-09:30 ET) + Intraday Session Curve + PMH/PML + Anchored VWAP + 15m ORB Sparkline
  */
 const IntradaySessionSparkline = ({ intradaySpark, height = 74, width = 280 }) => {
   if (!intradaySpark || !Array.isArray(intradaySpark.price) || intradaySpark.price.length < 5) {
     return (
       <div style={{ width: '100%', height, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(2,6,23,0.5)', borderRadius: 8, fontSize: '0.68rem', color: '#64748b' }}>
-        Intraday Tape Loading...
+        Premarket &amp; Intraday Tape Loading...
       </div>
     );
   }
 
   const prices = intradaySpark.price;
   const vwap = intradaySpark.vwap || [];
+  const pmh = intradaySpark.pmh;
+  const pml = intradaySpark.pml;
+  const pmSplitIdx = intradaySpark.pm_split_idx ?? 6;
   const orbHigh = intradaySpark.orb_high;
   const orbLow = intradaySpark.orb_low;
 
   const allVals = [...prices, ...vwap];
+  if (pmh) allVals.push(pmh);
+  if (pml) allVals.push(pml);
   if (orbHigh) allVals.push(orbHigh);
   if (orbLow) allVals.push(orbLow);
 
@@ -49,22 +54,40 @@ const IntradaySessionSparkline = ({ intradaySpark, height = 74, width = 280 }) =
   const isUp = prices[prices.length - 1] >= prices[0];
   const strokeColor = isUp ? '#10b981' : '#f43f5e';
 
+  const pmhY = pmh ? Math.max(padY, Math.min(height - padY, toY(pmh))) : null;
+  const pmlY = pml ? Math.max(padY, Math.min(height - padY, toY(pml))) : null;
   const orbHighY = orbHigh ? Math.max(padY, Math.min(height - padY, toY(orbHigh))) : null;
   const orbLowY = orbLow ? Math.max(padY, Math.min(height - padY, toY(orbLow))) : null;
+  const pmSplitX = padX + (Math.min(pmSplitIdx, prices.length - 1) / Math.max(1, prices.length - 1)) * innerW;
   const lastX = padX + innerW;
   const lastY = toY(prices[prices.length - 1]);
 
   return (
     <div style={{ background: 'rgba(2, 6, 23, 0.68)', borderRadius: '8px', border: '1px solid rgba(51, 65, 85, 0.5)', padding: '6px 8px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3, fontSize: '0.62rem', color: '#94a3b8' }}>
-        <span style={{ fontWeight: 800, color: '#cbd5e1', letterSpacing: '0.03em' }}>INTRADAY TAPE + VWAP + 15M ORB</span>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3, fontSize: '0.6rem', color: '#94a3b8' }}>
+        <span style={{ fontWeight: 800, color: '#cbd5e1', letterSpacing: '0.03em' }}>04:00 PREMARKET + INTRADAY TAPE</span>
+        <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
+          <span style={{ color: '#38bdf8', fontWeight: 700 }}>-- PMH</span>
           <span style={{ color: '#fbbf24', fontWeight: 700 }}>― VWAP</span>
-          <span style={{ color: '#ec4899', fontWeight: 700 }}>-- ORB HIGH</span>
+          <span style={{ color: '#ec4899', fontWeight: 700 }}>-- ORB</span>
         </div>
       </div>
 
       <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: `${height}px`, display: 'block', overflow: 'visible' }}>
+        {/* Premarket Session Shaded Zone (04:00 - 09:30 ET) */}
+        {pmSplitX > padX + 4 && (
+          <rect
+            x={padX}
+            y={padY - 2}
+            width={Math.max(8, pmSplitX - padX)}
+            height={innerH + 4}
+            fill="rgba(56, 189, 248, 0.07)"
+          />
+        )}
+        {pmSplitX > padX + 4 && pmSplitX < width - padX - 4 && (
+          <line x1={pmSplitX} y1={padY - 2} x2={pmSplitX} y2={height - padY + 2} stroke="rgba(56, 189, 248, 0.35)" strokeWidth="1" strokeDasharray="2,2" />
+        )}
+
         {/* 15m ORB Shaded Zone */}
         {orbHighY !== null && orbLowY !== null && (
           <rect
@@ -72,19 +95,27 @@ const IntradaySessionSparkline = ({ intradaySpark, height = 74, width = 280 }) =
             y={Math.min(orbHighY, orbLowY)}
             width={innerW}
             height={Math.max(2, Math.abs(orbLowY - orbHighY))}
-            fill="rgba(236, 72, 153, 0.08)"
+            fill="rgba(236, 72, 153, 0.07)"
           />
         )}
 
+        {/* Premarket High (PMH) & Low (PML) Reference Lines */}
+        {pmhY !== null && (
+          <line x1={padX} y1={pmhY} x2={width - padX} y2={pmhY} stroke="#38bdf8" strokeWidth="1.15" strokeDasharray="4,2" opacity="0.9" />
+        )}
+        {pmlY !== null && (
+          <line x1={padX} y1={pmlY} x2={width - padX} y2={pmlY} stroke="#64748b" strokeWidth="0.9" strokeDasharray="2,3" opacity="0.7" />
+        )}
+
         {/* ORB High Dashed Line */}
-        {orbHighY !== null && (
+        {orbHighY !== null && Math.abs((pmhY || 0) - orbHighY) > 1.5 && (
           <line x1={padX} y1={orbHighY} x2={width - padX} y2={orbHighY} stroke="#ec4899" strokeWidth="1" strokeDasharray="3,3" opacity="0.85" />
         )}
 
         {/* Intraday VWAP Line */}
         {vwapPts && <polyline fill="none" stroke="#fbbf24" strokeWidth="1.4" strokeDasharray="2,2" points={vwapPts} opacity="0.9" />}
 
-        {/* Intraday Price Curve */}
+        {/* Premarket + Intraday Price Curve */}
         <polyline fill="none" stroke={strokeColor} strokeWidth="2.1" points={pricePts} />
 
         <circle cx={lastX} cy={lastY} r="3.2" fill={strokeColor} stroke="#fff" strokeWidth="1.2" />
@@ -181,48 +212,77 @@ export default function IntradayRadarDashboard({
     return [];
   }, [intradayData]);
 
+  const matchesPlaybook = (item, pb) => {
+    if (!item) return false;
+    if (pb === 'ALL') return true;
+    if (pb === 'NEAR_PIVOT') return Boolean(item.is_near_pivot);
+    if (pb === 'BLUE_DOT') return Boolean(item.is_blue_dot);
+    return item.playbook_type === pb;
+  };
+
+  const tierPriority = (tier) => {
+    if (tier === 'BREAKING_NOW') return 0;
+    if (tier === 'IMMINENT_COIL') return 1;
+    if (tier === 'APPROACHING') return 2;
+    return 3;
+  };
+
   const kpis = useMemo(() => {
-    if (intradayData && !Array.isArray(intradayData) && intradayData.summary_kpis) {
-      return intradayData.summary_kpis;
-    }
+    const rawKpis = (intradayData && !Array.isArray(intradayData) && intradayData.summary_kpis) || {};
+    const nearPivots = results.filter((x) => Boolean(x.is_near_pivot));
     return {
+      session_phase: rawKpis.session_phase || 'REGULAR',
+      session_banner: rawKpis.session_banner,
       total_active_signals: results.length,
-      orb_ignitions: results.filter((x) => (x.all_playbooks || []).includes('ORB_IGNITION') || x.current_price >= x.orb_pivot).length,
-      vwap_reclaims: results.filter((x) => (x.all_playbooks || []).includes('VWAP_RECLAIM')).length,
-      hod_thrusts: results.filter((x) => (x.all_playbooks || []).includes('HOD_THRUST')).length,
-      gamma_sweeps: results.filter((x) => (x.all_playbooks || []).includes('GAMMA_SWEEP') || (x.call_put_ratio || 0) >= 1.65).length,
-      liquidity_sweeps: results.filter((x) => (x.all_playbooks || []).includes('LIQUIDITY_SWEEP')).length,
-      bull_flag_coils: results.filter((x) => (x.all_playbooks || []).includes('BULL_FLAG_COIL')).length,
-      blue_dot_leaders: results.filter((x) => x.is_blue_dot).length,
+      near_pivot_count: nearPivots.length,
+      breaking_now_count: nearPivots.filter((x) => x.pivot_flash_tier === 'BREAKING_NOW').length,
+      imminent_coil_count: nearPivots.filter((x) => x.pivot_flash_tier === 'IMMINENT_COIL').length,
+      approaching_count: nearPivots.filter((x) => x.pivot_flash_tier === 'APPROACHING').length,
+      pivot_approaches: results.filter((x) => x.playbook_type === 'PIVOT_APPROACH').length,
+      pmh_breakouts: results.filter((x) => matchesPlaybook(x, 'PMH_BREAKOUT')).length,
+      orb_ignitions: results.filter((x) => matchesPlaybook(x, 'ORB_IGNITION')).length,
+      vwap_reclaims: results.filter((x) => matchesPlaybook(x, 'VWAP_RECLAIM')).length,
+      hod_thrusts: results.filter((x) => matchesPlaybook(x, 'HOD_THRUST')).length,
+      gamma_sweeps: results.filter((x) => matchesPlaybook(x, 'GAMMA_SWEEP')).length,
+      liquidity_sweeps: results.filter((x) => matchesPlaybook(x, 'LIQUIDITY_SWEEP')).length,
+      bull_flag_coils: results.filter((x) => matchesPlaybook(x, 'BULL_FLAG_COIL')).length,
+      blue_dot_leaders: results.filter((x) => matchesPlaybook(x, 'BLUE_DOT')).length,
       avg_rvol: results.length
         ? (results.reduce((acc, x) => acc + (x.vol_multiplier || 1), 0) / results.length).toFixed(2)
-        : '1.85',
+        : (rawKpis.avg_rvol || '1.85'),
       avg_cp_ratio: results.length
         ? (results.reduce((acc, x) => acc + (x.call_put_ratio || 1), 0) / results.length).toFixed(2)
-        : '2.10'
+        : (rawKpis.avg_cp_ratio || '2.10')
     };
   }, [intradayData, results]);
 
-  const spotlight = useMemo(() => {
-    if (intradayData && !Array.isArray(intradayData) && intradayData.spotlight) {
-      return intradayData.spotlight;
+  const flashingStocks = useMemo(() => {
+    return results
+      .filter((x) => Boolean(x.is_near_pivot))
+      .sort((a, b) => {
+        const tp = tierPriority(a.pivot_flash_tier) - tierPriority(b.pivot_flash_tier);
+        if (tp !== 0) return tp;
+        return Math.abs(a.nearest_pivot_dist_pct ?? 99) - Math.abs(b.nearest_pivot_dist_pct ?? 99);
+      });
+  }, [results]);
+
+  const lastUpdatedLabel = useMemo(() => {
+    const ts = intradayData?.last_updated;
+    if (!ts) return '';
+    try {
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch {
+      return '';
     }
-    return results[0] || null;
-  }, [intradayData, results]);
+  }, [intradayData]);
 
   const filteredResults = useMemo(() => {
     let list = [...results];
 
     if (activePlaybook !== 'ALL') {
-      if (activePlaybook === 'BLUE_DOT') {
-        list = list.filter((x) => x.is_blue_dot || (x.rs_rating || 0) >= 88);
-      } else {
-        list = list.filter(
-          (x) =>
-            x.playbook_type === activePlaybook ||
-            (x.all_playbooks || []).includes(activePlaybook)
-        );
-      }
+      list = list.filter((x) => matchesPlaybook(x, activePlaybook));
     }
 
     if (searchQuery.trim()) {
@@ -233,28 +293,49 @@ export default function IntradayRadarDashboard({
           (x.name || '').toUpperCase().includes(q) ||
           (x.sector || '').toUpperCase().includes(q) ||
           (x.playbook_label || '').toUpperCase().includes(q) ||
+          (x.pivot_flash_label || '').toUpperCase().includes(q) ||
           (x.confluence_engines || []).some((e) => e.toUpperCase().includes(q))
       );
     }
 
     list.sort((a, b) => {
+      if (sortBy === 'pivot_proximity') {
+        const tp = tierPriority(a.pivot_flash_tier) - tierPriority(b.pivot_flash_tier);
+        if (tp !== 0) return tp;
+        const da = a.is_near_pivot ? Math.abs(a.nearest_pivot_dist_pct ?? 99) : 999;
+        const db = b.is_near_pivot ? Math.abs(b.nearest_pivot_dist_pct ?? 99) : 999;
+        if (da !== db) return da - db;
+        return (b.tape_speed_score || 0) - (a.tape_speed_score || 0);
+      }
       if (sortBy === 'tape_speed_score') return (b.tape_speed_score || 0) - (a.tape_speed_score || 0);
       if (sortBy === 'vol_multiplier') return (b.vol_multiplier || 0) - (a.vol_multiplier || 0);
       if (sortBy === 'call_put_ratio') return (b.call_put_ratio || 0) - (a.call_put_ratio || 0);
       if (sortBy === 'day_change_pct') return (b.day_change_pct || 0) - (a.day_change_pct || 0);
       if (sortBy === 'alpha_30d_pct') return (b.alpha_30d_pct || 0) - (a.alpha_30d_pct || 0);
       if (sortBy === 'vwap_slope') return (b.vwap_slope || 0) - (a.vwap_slope || 0);
+      if (sortBy === 'pm_dist_pmh_pct') return (b.pm_dist_pmh_pct || 0) - (a.pm_dist_pmh_pct || 0);
       return 0;
     });
 
     return list;
   }, [results, activePlaybook, searchQuery, sortBy]);
 
+  const spotlight = useMemo(() => {
+    if (activePlaybook !== 'ALL' || searchQuery.trim()) {
+      return filteredResults[0] || null;
+    }
+    if (intradayData && !Array.isArray(intradayData) && intradayData.spotlight) {
+      return intradayData.spotlight;
+    }
+    return results[0] || null;
+  }, [intradayData, results, activePlaybook, searchQuery, filteredResults]);
+
   const handleCopyTicket = (e, item) => {
     e.stopPropagation();
     const tp = item.trade_plan || {};
     const text = `📡 [APEX INTRADAY RADAR 3.0 TICKET] $${item.ticker} (${item.setup_grade || 'A+'} | Tape Score ${item.tape_speed_score || 90}/100)
 Playbook: ${item.playbook_label || '15m ORB Breakout'}
+Premarket Range (04:00-09:30 ET): PMH $${(item.pmh || item.orb_pivot)?.toFixed(2)} | PML $${(item.pml || item.orb_low || item.orb_pivot)?.toFixed(2)} (${item.pm_status || 'Active'})
 Entry Trigger: $${tp.entry_trigger || item.current_price} | 15m ORB Pivot: $${item.orb_pivot?.toFixed(2)} | VWAP: $${item.vwap?.toFixed(2) || 'N/A'}
 Stop Loss: $${tp.stop_loss || 'N/A'} (-${tp.risk_pct || 1.5}%) [VWAP Stop: $${tp.vwap_stop || 'N/A'}]
 Scalp Target 1 (1.8R): $${tp.scalp_target_1 || 'N/A'} | Runner Target 2 (3.2R): $${tp.runner_target_2 || 'N/A'}
@@ -274,9 +355,98 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
     return { background: 'rgba(236, 72, 153, 0.2)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.45)' };
   };
 
+  const getCardFlashClass = (item) => {
+    if (!item?.is_near_pivot) return '';
+    if (item.pivot_flash_tier === 'BREAKING_NOW') return 'pivot-card-breaking';
+    if (item.pivot_flash_tier === 'IMMINENT_COIL') return 'pivot-card-imminent';
+    if (item.pivot_flash_tier === 'APPROACHING') return 'pivot-card-approaching';
+    return '';
+  };
+
+  const getRowFlashClass = (item) => {
+    if (!item?.is_near_pivot) return '';
+    if (item.pivot_flash_tier === 'BREAKING_NOW') return 'pivot-row-breaking';
+    if (item.pivot_flash_tier === 'IMMINENT_COIL') return 'pivot-row-imminent';
+    return '';
+  };
+
+  const getFlashBadgeStyle = (tier) => {
+    if (tier === 'BREAKING_NOW') {
+      return {
+        background: 'rgba(16, 185, 129, 0.22)',
+        color: '#34d399',
+        border: '1px solid rgba(16, 185, 129, 0.7)'
+      };
+    }
+    if (tier === 'IMMINENT_COIL') {
+      return {
+        background: 'rgba(245, 158, 11, 0.22)',
+        color: '#fbbf24',
+        border: '1px solid rgba(245, 158, 11, 0.7)'
+      };
+    }
+    return {
+      background: 'rgba(6, 182, 212, 0.18)',
+      color: '#67e8f9',
+      border: '1px solid rgba(6, 182, 212, 0.55)'
+    };
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', paddingBottom: '32px' }}>
-      {/* 1. EXECUTIVE HEADER & 6-PILLAR INTRADAY KPI RIBBON */}
+      <style>{`
+        @keyframes pivotFlashEmerald {
+          0%, 100% {
+            border-color: rgba(16, 185, 129, 0.92);
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.36);
+          }
+          50% {
+            border-color: rgba(16, 185, 129, 0.32);
+            box-shadow: 0 0 6px rgba(16, 185, 129, 0.12);
+          }
+        }
+        @keyframes pivotFlashAmber {
+          0%, 100% {
+            border-color: rgba(245, 158, 11, 0.90);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.34);
+          }
+          50% {
+            border-color: rgba(245, 158, 11, 0.30);
+            box-shadow: 0 0 5px rgba(245, 158, 11, 0.10);
+          }
+        }
+        @keyframes pivotFlashCyan {
+          0%, 100% {
+            border-color: rgba(6, 182, 212, 0.75);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+          }
+          50% {
+            border-color: rgba(6, 182, 212, 0.28);
+            box-shadow: 0 0 4px rgba(6, 182, 212, 0.08);
+          }
+        }
+        @keyframes radarBeaconPing {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.45; transform: scale(1.25); }
+        }
+        .pivot-card-breaking { animation: pivotFlashEmerald 1.3s ease-in-out infinite !important; }
+        .pivot-card-imminent { animation: pivotFlashAmber 1.6s ease-in-out infinite !important; }
+        .pivot-card-approaching { animation: pivotFlashCyan 2.0s ease-in-out infinite !important; }
+        .pivot-row-breaking { animation: pivotFlashEmerald 1.3s ease-in-out infinite; background: rgba(16, 185, 129, 0.08); }
+        .pivot-row-imminent { animation: pivotFlashAmber 1.6s ease-in-out infinite; background: rgba(245, 158, 11, 0.07); }
+        .pivot-pill-flash-breaking { animation: pivotFlashEmerald 1.3s ease-in-out infinite; }
+        .pivot-pill-flash-imminent { animation: pivotFlashAmber 1.6s ease-in-out infinite; }
+        .radar-beacon-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 999px;
+          background: #10b981;
+          box-shadow: 0 0 8px #10b981;
+          display: inline-block;
+          animation: radarBeaconPing 1.4s ease-in-out infinite;
+        }
+      `}</style>
+      {/* 1. EXECUTIVE HEADER & PREMARKET + INTRADAY KPI RIBBON */}
       <div
         style={{
           background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(38, 14, 46, 0.88))',
@@ -288,7 +458,7 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
               <span
                 style={{
                   background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
@@ -302,18 +472,61 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
               >
                 APEX INTRADAY RADAR 3.0
               </span>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'monospace' }}>
-                13 MICRO-STRUCTURE ALGOS • 15M ORB • ANCHORED VWAP • VOLUME PROFILE POC • OPTIONS SWEEPS
+              <span
+                style={{
+                  background: 'rgba(6, 182, 212, 0.18)',
+                  border: '1px solid rgba(6, 182, 212, 0.45)',
+                  color: '#67e8f9',
+                  fontWeight: 800,
+                  fontSize: '0.68rem',
+                  padding: '3px 9px',
+                  borderRadius: '6px',
+                  fontFamily: 'monospace'
+                }}
+              >
+                {intradayData?.session_banner || kpis.session_banner || '🌅 PREMARKET + INTRADAY SURVEILLANCE (04:00–16:00 ET)'}
+              </span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(16, 185, 129, 0.16)',
+                  border: '1px solid rgba(16, 185, 129, 0.48)',
+                  color: '#34d399',
+                  fontWeight: 800,
+                  fontSize: '0.67rem',
+                  padding: '3px 9px',
+                  borderRadius: '6px',
+                  fontFamily: 'monospace'
+                }}
+              >
+                <span className="radar-beacon-dot" />
+                ⚡ {intradayData?.sampling_interval_sec || 15}s LIVE ALPACA TAPE{lastUpdatedLabel ? ` (${lastUpdatedLabel})` : ''}
+              </span>
+              <span
+                style={{
+                  background: 'rgba(56, 189, 248, 0.14)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  color: '#7dd3fc',
+                  fontWeight: 800,
+                  fontSize: '0.67rem',
+                  padding: '3px 9px',
+                  borderRadius: '6px',
+                  fontFamily: 'monospace'
+                }}
+              >
+                EQUITIES ONLY • CAP ≥ $2B • LIQUID VOL
               </span>
             </div>
             <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Radio size={24} color="#ec4899" className="spin-slow" />
-              Live Intraday Tape, 15m ORB, Anchored VWAP &amp; Options Gamma Sweep Terminal
+              Premarket High/Low (PMH/PML), 15m ORB, Anchored VWAP &amp; Options Gamma Sweep Terminal
             </h2>
             <p style={{ margin: '6px 0 0 0', fontSize: '0.84rem', color: '#cbd5e1', maxWidth: '890px', lineHeight: 1.45 }}>
-              Real-time institutional tape surveillance combining <strong>15-Minute Opening Range Breakouts (ORB)</strong>,{' '}
-              <strong>Anchored VWAP Reclaims &amp; Bounces</strong>, <strong>High-of-Day (HOD) / PDH Structural Breakouts</strong>,{' '}
-              <strong>Volume Profile Point-of-Control (HVN POC)</strong>, and <strong>Unusual Call Sweep Velocity</strong> with 30D Multi-Timeframe RS Context.
+              Continuous surveillance starting from <strong>04:00 AM ET Premarket</strong> tracking live <strong>Premarket High (PMH) &amp; Premarket Low (PML)</strong>,{' '}
+              <strong>15-Minute Opening Range Breakouts (ORB)</strong>, <strong>Anchored VWAP Reclaims &amp; Bounces</strong>,{' '}
+              <strong>High-of-Day (HOD) / PDH Structural Breakouts</strong>, and <strong>Unusual Call Sweep Velocity</strong>.
             </p>
           </div>
 
@@ -409,39 +622,129 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
           </div>
         </div>
 
-        {/* 6-Pillar KPI Strip */}
+        {/* 7-Pillar KPI Strip */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
             gap: '12px',
             marginTop: '18px'
           }}
         >
           {[
-            { label: 'ACTIVE TAPE SIGNALS', value: kpis.total_active_signals, sub: `Avg RVOL: ${kpis.avg_rvol}x`, color: '#f8fafc', border: 'rgba(148,163,184,0.3)' },
-            { label: '🔥 15M ORB IGNITIONS', value: kpis.orb_ignitions, sub: 'Clearing Opening Range High', color: '#ec4899', border: 'rgba(236,72,153,0.4)' },
-            { label: '⚓ VWAP RECLAIMS', value: kpis.vwap_reclaims, sub: 'Institutional AVWAP Support', color: '#fbbf24', border: 'rgba(251,191,36,0.4)' },
-            { label: '🚀 HOD / PDH THRUSTS', value: kpis.hod_thrusts, sub: 'Slicing Prev Day High', color: '#10b981', border: 'rgba(16,185,129,0.4)' },
-            { label: '⚡ GAMMA CALL SWEEPS', value: kpis.gamma_sweeps, sub: `Avg C/P Ratio: ${kpis.avg_cp_ratio}x`, color: '#a855f7', border: 'rgba(168,85,247,0.4)' },
-            { label: '🔵 RS BLUE DOT LEADERS', value: kpis.blue_dot_leaders, sub: 'Multi-Timeframe RS Alignment', color: '#38bdf8', border: 'rgba(56,189,248,0.4)' }
-          ].map((k, idx) => (
-            <div
-              key={idx}
-              style={{
-                background: 'rgba(2, 6, 23, 0.65)',
-                border: `1px solid ${k.border}`,
-                borderRadius: '10px',
-                padding: '11px 14px'
-              }}
-            >
-              <div style={{ fontSize: '0.66rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em' }}>{k.label}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: k.color, fontFamily: 'monospace', marginTop: '3px' }}>{k.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>{k.sub}</div>
-            </div>
-          ))}
+            { id: 'ALL', label: 'ACTIVE TAPE SIGNALS', value: kpis.total_active_signals, sub: `Avg RVOL: ${kpis.avg_rvol}x`, color: '#f8fafc', border: 'rgba(148,163,184,0.3)' },
+            { id: 'NEAR_PIVOT', label: '⚡ NEAR PIVOT FLASH', value: kpis.near_pivot_count, sub: `${kpis.breaking_now_count} Breaking • ${kpis.imminent_coil_count} Coiling`, color: '#34d399', border: 'rgba(16,185,129,0.55)', isFlashCard: kpis.near_pivot_count > 0 },
+            { id: 'PMH_BREAKOUT', label: '🌅 PMH BREAKOUTS', value: kpis.pmh_breakouts ?? 0, sub: 'Clearing Premarket High', color: '#06b6d4', border: 'rgba(6,182,212,0.45)' },
+            { id: 'ORB_IGNITION', label: '🔥 15M ORB IGNITIONS', value: kpis.orb_ignitions, sub: 'Clearing Opening Range High', color: '#ec4899', border: 'rgba(236,72,153,0.4)' },
+            { id: 'VWAP_RECLAIM', label: '⚓ VWAP RECLAIMS', value: kpis.vwap_reclaims, sub: 'Institutional AVWAP Support', color: '#fbbf24', border: 'rgba(251,191,36,0.4)' },
+            { id: 'HOD_THRUST', label: '🚀 HOD / PDH THRUSTS', value: kpis.hod_thrusts, sub: 'Slicing Prev Day High', color: '#10b981', border: 'rgba(16,185,129,0.4)' },
+            { id: 'GAMMA_SWEEP', label: '⚡ GAMMA CALL SWEEPS', value: kpis.gamma_sweeps, sub: `Avg C/P Ratio: ${kpis.avg_cp_ratio}x`, color: '#a855f7', border: 'rgba(168,85,247,0.4)' },
+            { id: 'BLUE_DOT', label: '🔵 RS BLUE DOT LEADERS', value: kpis.blue_dot_leaders, sub: 'Multi-Timeframe RS Alignment', color: '#38bdf8', border: 'rgba(56,189,248,0.4)' }
+          ].map((k, idx) => {
+            const isSelected = activePlaybook === k.id;
+            return (
+              <div
+                key={idx}
+                className={k.isFlashCard ? 'pivot-card-breaking' : ''}
+                onClick={() => setActivePlaybook(isSelected && k.id !== 'ALL' ? 'ALL' : k.id)}
+                title={`Click to filter by ${k.label}`}
+                style={{
+                  background: isSelected ? 'rgba(30, 41, 59, 0.92)' : 'rgba(2, 6, 23, 0.65)',
+                  border: isSelected ? `2px solid ${k.color}` : `1px solid ${k.border}`,
+                  boxShadow: isSelected ? `0 0 16px ${k.border}` : 'none',
+                  borderRadius: '10px',
+                  padding: '11px 14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ fontSize: '0.66rem', fontWeight: 800, color: isSelected ? k.color : '#94a3b8', letterSpacing: '0.06em' }}>{k.label}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 900, color: k.color, fontFamily: 'monospace', marginTop: '3px' }}>{k.value}</div>
+                <div style={{ fontSize: '0.7rem', color: isSelected ? '#cbd5e1' : '#64748b', marginTop: '2px' }}>{k.sub}</div>
+              </div>
+            );
+          })}
         </div>
       </div>
+
+      {/* 1.5 FLASHING NEAR-PIVOT RADAR BAR */}
+      {flashingStocks.length > 0 && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.42), rgba(15, 23, 42, 0.96) 55%, rgba(120, 53, 15, 0.35))',
+            border: '1px solid rgba(16, 185, 129, 0.55)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span className="radar-beacon-dot" />
+              <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#34d399', letterSpacing: '0.06em', fontFamily: 'monospace' }}>
+                ⚡ FLASHING NEAR-PIVOT RADAR ({flashingStocks.length} LIQUID $2B+ STOCKS)
+              </span>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                Within -1.50% to +0.50% of PMH / 15m ORB / PDH / PWH / HOD
+              </span>
+            </div>
+            <button
+              onClick={() => setActivePlaybook(activePlaybook === 'NEAR_PIVOT' ? 'ALL' : 'NEAR_PIVOT')}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: activePlaybook === 'NEAR_PIVOT' ? '1px solid #34d399' : '1px solid rgba(16, 185, 129, 0.45)',
+                background: activePlaybook === 'NEAR_PIVOT' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(2, 6, 23, 0.65)',
+                color: '#34d399',
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              {activePlaybook === 'NEAR_PIVOT' ? 'Showing Flashing Only (Reset)' : `Filter Flashing Only (${flashingStocks.length})`}
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {flashingStocks.slice(0, 16).map((item) => {
+              const isBreaking = item.pivot_flash_tier === 'BREAKING_NOW';
+              const isImminent = item.pivot_flash_tier === 'IMMINENT_COIL';
+              const pillCls = isBreaking
+                ? 'pivot-pill-flash-breaking'
+                : isImminent
+                ? 'pivot-pill-flash-imminent'
+                : 'pivot-card-approaching';
+              return (
+                <div
+                  key={item.ticker}
+                  className={pillCls}
+                  onClick={() => onTickerClick && onTickerClick(item.ticker)}
+                  style={{
+                    flex: '0 0 auto',
+                    minWidth: '205px',
+                    background: 'rgba(2, 6, 23, 0.88)',
+                    border: `1px solid ${isBreaking ? 'rgba(16, 185, 129, 0.7)' : isImminent ? 'rgba(245, 158, 11, 0.7)' : 'rgba(6, 182, 212, 0.55)'}`,
+                    borderRadius: '9px',
+                    padding: '8px 11px',
+                    cursor: 'pointer',
+                    fontFamily: 'monospace'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#f8fafc' }}>${item.ticker}</span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#e2e8f0' }}>${item.current_price?.toFixed(2)}</span>
+                  </div>
+                  <div style={{ fontSize: '0.67rem', fontWeight: 800, marginTop: '3px', color: isBreaking ? '#34d399' : isImminent ? '#fbbf24' : '#67e8f9' }}>
+                    {item.pivot_flash_label}
+                  </div>
+                  <div style={{ fontSize: '0.61rem', color: '#94a3b8', marginTop: '3px' }}>
+                    Cap ${item.market_cap_b?.toFixed(1) || '—'}B • Vol {item.avg_vol_20_m?.toFixed(1) || '—'}M (${Math.round(item.dollar_vol_m || 0)}M/d)
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 2. #1 INTRADAY TAPE LEADER SPOTLIGHT HERO BANNER */}
       {spotlight && (
@@ -470,6 +773,11 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
               <span style={{ background: 'rgba(16,185,129,0.18)', color: '#34d399', border: '1px solid rgba(16,185,129,0.4)', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px' }}>
                 {spotlight.playbook_label || '🚀 HOD / ORB Momentum'}
               </span>
+              {spotlight.pm_status && (
+                <span style={{ background: 'rgba(6,182,212,0.18)', color: '#67e8f9', border: '1px solid rgba(6,182,212,0.45)', fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px' }}>
+                  {spotlight.pm_status}
+                </span>
+              )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginTop: '4px' }}>
@@ -508,24 +816,30 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginTop: '12px', background: 'rgba(2,6,23,0.65)', padding: '9px 12px', borderRadius: '8px', border: '1px solid rgba(51,65,85,0.5)', fontFamily: 'monospace' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginTop: '12px', background: 'rgba(2,6,23,0.65)', padding: '9px 12px', borderRadius: '8px', border: '1px solid rgba(51,65,85,0.5)', fontFamily: 'monospace' }}>
               <div>
-                <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>15M ORB PIVOT</div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ec4899' }}>${spotlight.orb_pivot?.toFixed(2)}</div>
+                <div style={{ fontSize: '0.58rem', color: '#67e8f9' }}>PMH / PML RANGE</div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#06b6d4' }}>
+                  ${(spotlight.pmh || spotlight.orb_pivot)?.toFixed(2)} / ${(spotlight.pml || spotlight.orb_low || spotlight.orb_pivot)?.toFixed(2)}
+                </div>
               </div>
               <div>
-                <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>ANCHORED VWAP</div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#fbbf24' }}>${(spotlight.vwap || spotlight.orb_pivot)?.toFixed(2)}</div>
+                <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>15M ORB PIVOT</div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ec4899' }}>${spotlight.orb_pivot?.toFixed(2)}</div>
               </div>
               <div>
-                <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>RVOL / C:P FLOW</div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#10b981' }}>
+                <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>ANCHORED VWAP</div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#fbbf24' }}>${(spotlight.vwap || spotlight.orb_pivot)?.toFixed(2)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>RVOL / C:P FLOW</div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#10b981' }}>
                   {spotlight.vol_multiplier?.toFixed(1)}x / {spotlight.call_put_ratio?.toFixed(1)}x
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>RUNNER T2 (3.2R)</div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#38bdf8' }}>
+                <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>RUNNER T2 (3.2R)</div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#38bdf8' }}>
                   ${spotlight.trade_plan?.runner_target_2 || (spotlight.current_price * 1.04).toFixed(2)}
                 </div>
               </div>
@@ -556,12 +870,15 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {[
             { id: 'ALL', label: `All Active Signals (${results.length})` },
+            { id: 'NEAR_PIVOT', label: `⚡ Flashing Near Pivot (${kpis.near_pivot_count})` },
+            { id: 'PMH_BREAKOUT', label: `🌅 PMH Breakout (${kpis.pmh_breakouts ?? 0})` },
             { id: 'ORB_IGNITION', label: `🔥 15m ORB Ignition (${kpis.orb_ignitions})` },
             { id: 'VWAP_RECLAIM', label: `⚓ VWAP Bounce / Reclaim (${kpis.vwap_reclaims})` },
             { id: 'HOD_THRUST', label: `🚀 HOD / PDH Thrust (${kpis.hod_thrusts})` },
             { id: 'GAMMA_SWEEP', label: `⚡ Gamma Call Sweeps (${kpis.gamma_sweeps})` },
             { id: 'LIQUIDITY_SWEEP', label: `🪤 Liquidity Sweep (${kpis.liquidity_sweeps})` },
             { id: 'BULL_FLAG_COIL', label: `📐 5m Bull Flag (${kpis.bull_flag_coils})` },
+            { id: 'PIVOT_APPROACH', label: `🎯 Pivot Coil (${kpis.pivot_approaches})` },
             { id: 'BLUE_DOT', label: `🔵 RS Blue Dot (${kpis.blue_dot_leaders})` }
           ].map((tab) => {
             const active = activePlaybook === tab.id;
@@ -621,6 +938,8 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
             }}
           >
             <option value="tape_speed_score">Sort: Composite Tape Score</option>
+            <option value="pivot_proximity">Sort: ⚡ Closest to Pivot (Flash First)</option>
+            <option value="pm_dist_pmh_pct">Sort: % vs Premarket High (PMH)</option>
             <option value="vol_multiplier">Sort: Relative Volume (RVOL)</option>
             <option value="call_put_ratio">Sort: Call / Put Sweep Ratio</option>
             <option value="day_change_pct">Sort: Intraday % Gain</option>
@@ -660,6 +979,7 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
                 <th style={{ padding: '12px 10px' }}>Price / 1D %</th>
                 <th style={{ padding: '12px 10px' }}>Tape Score</th>
                 <th style={{ padding: '12px 10px' }}>Intraday Playbook</th>
+                <th style={{ padding: '12px 10px' }}>Premarket (PMH / PML)</th>
                 <th style={{ padding: '12px 10px' }}>15m ORB / VWAP / POC</th>
                 <th style={{ padding: '12px 10px' }}>RVOL &amp; Options Flow</th>
                 <th style={{ padding: '12px 10px' }}>RS &amp; 30D Alpha</th>
@@ -670,17 +990,24 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
             <tbody>
               {filteredResults.map((item) => {
                 const tp = item.trade_plan || {};
+                const rowFlashCls = getRowFlashClass(item);
                 return (
                   <tr
                     key={item.ticker}
+                    className={rowFlashCls}
                     onClick={() => onTickerClick && onTickerClick(item.ticker)}
                     style={{ borderBottom: '1px solid rgba(51, 65, 85, 0.35)', cursor: 'pointer' }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(30, 41, 59, 0.65)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = rowFlashCls ? '' : 'transparent')}
                   >
                     <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontWeight: 800, color: '#f8fafc' }}>
                       <div>${item.ticker}</div>
                       <div style={{ fontSize: '0.65rem', color: '#64748b', fontFamily: 'sans-serif' }}>{item.sector}</div>
+                      {item.market_cap_b != null && (
+                        <div style={{ fontSize: '0.6rem', color: '#7dd3fc', fontWeight: 700, marginTop: 1 }}>
+                          Cap ${item.market_cap_b?.toFixed(1)}B • {item.avg_vol_20_m?.toFixed(1) || '—'}M
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '10px', fontFamily: 'monospace' }}>
                       <div style={{ fontWeight: 800, color: '#fff' }}>${item.current_price?.toFixed(2)}</div>
@@ -696,7 +1023,16 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
                     </td>
                     <td style={{ padding: '10px' }}>
                       <div style={{ fontWeight: 700, color: '#f9a8d4', fontSize: '0.74rem' }}>{item.playbook_label || '15m ORB Ignition'}</div>
-                      <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>VWAP Slope: {item.vwap_slope >= 0 ? '+' : ''}{item.vwap_slope?.toFixed(2)}%</div>
+                      {item.is_near_pivot && item.pivot_flash_label && (
+                        <div style={{ ...getFlashBadgeStyle(item.pivot_flash_tier), display: 'inline-block', marginTop: 3, padding: '1px 6px', borderRadius: 4, fontSize: '0.62rem', fontWeight: 800, fontFamily: 'monospace' }}>
+                          {item.pivot_flash_label}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: 2 }}>VWAP Slope: {item.vwap_slope >= 0 ? '+' : ''}{item.vwap_slope?.toFixed(2)}%</div>
+                    </td>
+                    <td style={{ padding: '10px', fontFamily: 'monospace', fontSize: '0.71rem' }}>
+                      <div>PMH: <strong style={{ color: '#06b6d4' }}>${(item.pmh || item.orb_pivot)?.toFixed(2)}</strong> · PML: <strong style={{ color: '#94a3b8' }}>${(item.pml || item.orb_low || item.orb_pivot)?.toFixed(2)}</strong></div>
+                      <div style={{ fontSize: '0.63rem', color: '#67e8f9', fontWeight: 700 }}>{item.pm_status || 'Inside PM Range'}</div>
                     </td>
                     <td style={{ padding: '10px', fontFamily: 'monospace', fontSize: '0.71rem' }}>
                       <div>ORB: <strong style={{ color: '#ec4899' }}>${item.orb_pivot?.toFixed(2)}</strong> · VWAP: <strong style={{ color: '#fbbf24' }}>${(item.vwap || item.orb_pivot)?.toFixed(2)}</strong></div>
@@ -741,14 +1077,20 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
         >
           {filteredResults.map((item) => {
             const tp = item.trade_plan || {};
+            const cardFlashCls = getCardFlashClass(item);
             return (
               <div
                 key={item.ticker}
+                className={cardFlashCls}
                 onClick={() => onTickerClick && onTickerClick(item.ticker)}
                 style={{
                   background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(9, 14, 28, 0.98))',
                   border:
-                    (item.tape_speed_score || 0) >= 90
+                    item.pivot_flash_tier === 'BREAKING_NOW'
+                      ? '1px solid rgba(16, 185, 129, 0.75)'
+                      : item.pivot_flash_tier === 'IMMINENT_COIL'
+                      ? '1px solid rgba(245, 158, 11, 0.72)'
+                      : (item.tape_speed_score || 0) >= 90
                       ? '1px solid rgba(236, 72, 153, 0.55)'
                       : '1px solid rgba(51, 65, 85, 0.65)',
                   borderRadius: '14px',
@@ -770,15 +1112,33 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
                       <span style={{ ...getGradeStyle(item.setup_grade || 'A+'), fontSize: '0.68rem', fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>
                         {item.setup_grade || 'A+'} • {item.tape_speed_score || 88}/100
                       </span>
+                      {item.is_near_pivot && item.pivot_flash_label && (
+                        <span
+                          className={item.pivot_flash_tier === 'BREAKING_NOW' ? 'pivot-pill-flash-breaking' : item.pivot_flash_tier === 'IMMINENT_COIL' ? 'pivot-pill-flash-imminent' : ''}
+                          style={{ ...getFlashBadgeStyle(item.pivot_flash_tier), fontSize: '0.63rem', fontWeight: 900, padding: '2px 7px', borderRadius: 5, fontFamily: 'monospace' }}
+                        >
+                          {item.pivot_flash_label}
+                        </span>
+                      )}
                       {item.is_blue_dot && (
                         <span style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.45)', fontSize: '0.64rem', fontWeight: 800, padding: '2px 6px', borderRadius: 5 }}>
                           🔵 RS {item.rs_rating || 88}
                         </span>
                       )}
+                      {item.pm_status && (
+                        <span style={{ background: 'rgba(6,182,212,0.16)', color: '#67e8f9', border: '1px solid rgba(6,182,212,0.4)', fontSize: '0.62rem', fontWeight: 800, padding: '2px 6px', borderRadius: 5 }}>
+                          {item.pm_status}
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2 }}>
-                      {item.name || item.ticker} • <span style={{ color: '#64748b' }}>{item.sector || 'Technology'}</span>
+                      {item.name || item.ticker} • <span style={{ color: '#64748b' }}>{item.sector || 'Equities'}</span>
                     </div>
+                    {item.market_cap_b != null && (
+                      <div style={{ fontSize: '0.65rem', color: '#7dd3fc', fontFamily: 'monospace', fontWeight: 700, marginTop: 2 }}>
+                        Cap ${item.market_cap_b?.toFixed(1)}B • Vol {item.avg_vol_20_m?.toFixed(2) || '—'}M (${Math.round(item.dollar_vol_m || 0)}M/d)
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ textAlign: 'right', fontFamily: 'monospace' }}>
@@ -827,8 +1187,14 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
                   <MultiDayContextSparkline sparkline30d={item.sparkline_30d} isBlueDot={item.is_blue_dot} height={64} />
                 )}
 
-                {/* Structural Key Levels Matrix (15m ORB, VWAP, POC, PDH, 30D Alpha, 10Y Seasonality) */}
+                {/* Structural Key Levels Matrix (Premarket PMH/PML, 15m ORB, VWAP, POC, PDH, 30D Alpha) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', fontSize: '0.68rem', fontFamily: 'monospace' }}>
+                  <div style={{ background: 'rgba(6, 182, 212, 0.1)', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(6, 182, 212, 0.4)' }}>
+                    <div style={{ fontSize: '0.56rem', color: '#67e8f9', fontWeight: 800 }}>PMH / PML (04:00 ET)</div>
+                    <div style={{ fontWeight: 800, color: '#06b6d4' }}>
+                      ${(item.pmh || item.orb_pivot)?.toFixed(2)} / ${(item.pml || item.orb_low || item.orb_pivot)?.toFixed(2)}
+                    </div>
+                  </div>
                   <div style={{ background: 'rgba(15, 23, 42, 0.85)', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(51, 65, 85, 0.45)' }}>
                     <div style={{ fontSize: '0.56rem', color: '#94a3b8' }}>15M ORB PIVOT</div>
                     <div style={{ fontWeight: 800, color: '#ec4899' }}>${item.orb_pivot?.toFixed(2)}</div>
@@ -840,13 +1206,9 @@ RVOL: ${item.vol_multiplier?.toFixed(2)}x | Call/Put: ${item.call_put_ratio?.toF
                     </div>
                   </div>
                   <div style={{ background: 'rgba(15, 23, 42, 0.85)', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(51, 65, 85, 0.45)' }}>
-                    <div style={{ fontSize: '0.56rem', color: '#94a3b8' }}>BLOCK POC (HVN)</div>
-                    <div style={{ fontWeight: 800, color: '#38bdf8' }}>${item.hvn_proxy?.toFixed(2)}</div>
-                  </div>
-                  <div style={{ background: 'rgba(15, 23, 42, 0.85)', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(51, 65, 85, 0.45)' }}>
-                    <div style={{ fontSize: '0.56rem', color: '#94a3b8' }}>PDH / PDL RANGE</div>
+                    <div style={{ fontSize: '0.56rem', color: '#94a3b8' }}>PDH / POC (HVN)</div>
                     <div style={{ fontWeight: 700, color: '#e2e8f0' }}>
-                      ${(item.pdh || item.orb_pivot)?.toFixed(1)} / ${(item.pdl || item.orb_low || item.orb_pivot)?.toFixed(1)}
+                      ${(item.pdh || item.orb_pivot)?.toFixed(1)} / <span style={{ color: '#38bdf8' }}>${item.hvn_proxy?.toFixed(1)}</span>
                     </div>
                   </div>
                   <div style={{ background: 'rgba(15, 23, 42, 0.85)', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(51, 65, 85, 0.45)' }}>

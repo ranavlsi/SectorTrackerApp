@@ -619,7 +619,11 @@ def get_options_screener_summary(force_refresh=False):
         drawdown_252d = tech_info.get("drawdown_252d", 0.0)
 
         is_clean_bullish = bool(is_sound_setup and call_vol_pct >= 60.0 and curr_vol >= 300)
-        is_bottom_fisher = bool(is_tech_bottoming and (call_vol_pct >= 55.0 or curr_pcr_vol <= 0.85) and curr_vol >= 150)
+        is_bottom_fisher = bool(
+            is_tech_bottoming
+            and (call_vol_pct >= 55.0 or curr_pcr_vol <= 0.85)
+            and curr_vol >= 150
+        )
 
         curr_gex = today_row.get("net_gex", 0.0)
         is_tailwind = bool(call_vol_pct >= 60.0 and vol_ratio >= 1.2 and (curr_gex >= 0 or (today_row.get("spot_price") and abs(today_row.get("spot_price", 0) - today_row.get("max_pain", 0)) < 10)))
@@ -755,9 +759,39 @@ def get_options_screener_summary(force_refresh=False):
         if bf_prog:
             sig_c_oi = float(bf_prog.get("sig_call_oi") or 0.0)
             call_oi_chg_sig_pct = round(((curr_call_oi - sig_c_oi) / max(sig_c_oi, 1.0)) * 100.0, 1) if sig_c_oi > 0 else 0.0
+            is_oi_unwinding = bool(call_oi_chg_sig_pct <= -10.0 or oi_chg_5d_pct <= -10.0 or oi_chg_1d_pct <= -10.0)
+            if is_oi_unwinding:
+                oi_status_badge = f"⚠️ Call OI Unwinding ({call_oi_chg_sig_pct:+.1f}% Since Signal)"
+                oi_status_color = "#f59e0b"
+                oi_status_desc = (
+                    f"Profit-Taking / Rolling Detected: Call OI has contracted {call_oi_chg_sig_pct:+.1f}% since the "
+                    f"{bf_prog.get('first_signal_date')} signal (5D OI Δ: {oi_chg_5d_pct:+.1f}%). High call volume reflects position closing/rolling rather than fresh accumulation."
+                )
+                active_signals.append("CALL_OI_UNWIND")
+                insert_idx = 1 if signal_tags else 0
+                signal_tags.insert(insert_idx, {
+                    "id": "CALL_OI_UNWIND",
+                    "key": "CALL_OI_UNWIND",
+                    "badge": f"⚠️ Call OI Unwinding ({call_oi_chg_sig_pct:+.1f}% Since Signal)",
+                    "color": "#f59e0b",
+                    "desc": oi_status_desc
+                })
+            elif call_oi_chg_sig_pct >= 5.0 or oi_chg_5d_pct >= 2.0:
+                oi_status_badge = f"✅ Call OI Expanding ({call_oi_chg_sig_pct:+.1f}% Since Signal)"
+                oi_status_color = "#10b981"
+                oi_status_desc = f"Sustained Accumulation: Call OI expanded {call_oi_chg_sig_pct:+.1f}% since the {bf_prog.get('first_signal_date')} signal."
+            else:
+                oi_status_badge = f"⚖️ Call OI Holding ({call_oi_chg_sig_pct:+.1f}% Since Signal)"
+                oi_status_color = "#38bdf8"
+                oi_status_desc = f"Steady Open Interest: Call OI is {call_oi_chg_sig_pct:+.1f}% since the {bf_prog.get('first_signal_date')} signal."
+
             bf_prog = {
                 **bf_prog,
-                "call_oi_chg_since_sig_pct": call_oi_chg_sig_pct
+                "call_oi_chg_since_sig_pct": call_oi_chg_sig_pct,
+                "is_oi_unwinding": is_oi_unwinding,
+                "oi_status_badge": oi_status_badge,
+                "oi_status_color": oi_status_color,
+                "oi_status_desc": oi_status_desc
             }
 
         results.append({

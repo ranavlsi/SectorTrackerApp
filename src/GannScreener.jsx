@@ -484,7 +484,7 @@ export default function GannScreener() {
                 className={`modal-sub-tab ${modalTab === 'SQ9_MATRIX' ? 'active' : ''}`}
                 onClick={() => setModalTab('SQ9_MATRIX')}
               >
-                <Grid size={15} /> Square of 9 Numerical Spiral Matrix (81 Cells)
+                <Compass size={15} /> Interactive Gann Wheel & Square of 9 Studio
               </button>
               <button 
                 className={`modal-sub-tab ${modalTab === 'PLAYBOOK' ? 'active' : ''}`}
@@ -507,58 +507,11 @@ export default function GannScreener() {
                   <p>{activeStock.error}</p>
                 </div>
               ) : modalTab === 'SQ9_MATRIX' ? (
-                /* Square of 9 Spiral Matrix Grid View */
-                <div className="sq9-matrix-full-view">
-                  <div className="sq9-matrix-header-card">
-                    <div className="matrix-card-left">
-                      <h3><Grid size={18} color="#fbbf24" /> Authentic Square of 9 Numerical Spiral Matrix</h3>
-                      <p>
-                        Concentric 81-cell matrix radiating from anchor (${activeStock.anchors?.primary_anchor?.anchor_price}).
-                        Gold cells define the <strong>Cardinal Cross</strong> (0°, 90°, 180°, 270° axes). Cyan cells define the <strong>Fixed Cross</strong> (45°, 135°, 225°, 315° diagonals).
-                      </p>
-                    </div>
-                    {selectedMatrixCell && (
-                      <div className="matrix-selected-cell-pill">
-                        <span>Selected Cell #{selectedMatrixCell.num}</span>
-                        <strong>${selectedMatrixCell.price?.toFixed(2)}</strong>
-                        <span style={{ color: selectedMatrixCell.is_cardinal ? '#fbbf24' : selectedMatrixCell.is_fixed ? '#38bdf8' : '#cbd5e1' }}>
-                          {selectedMatrixCell.axis_name || `Ring #${selectedMatrixCell.ring} (${selectedMatrixCell.degrees}°)`}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="sq9-matrix-table-container">
-                    <div className="sq9-matrix-grid">
-                      {(activeStock.square_of_9?.matrix_grid?.cells || []).map((c, i) => {
-                        const isSelected = selectedMatrixCell && selectedMatrixCell.row === c.row && selectedMatrixCell.col === c.col;
-                        const isCenter = c.row === 4 && c.col === 4;
-                        const isCurrentActive = activeStock.square_of_9?.matrix_grid?.active_cell?.row === c.row && activeStock.square_of_9?.matrix_grid?.active_cell?.col === c.col;
-
-                        let cellClass = 'matrix-cell';
-                        if (isCenter) cellClass += ' center-cell';
-                        else if (c.is_cardinal) cellClass += ' cardinal-cell';
-                        else if (c.is_fixed) cellClass += ' fixed-cell';
-                        if (isCurrentActive) cellClass += ' current-price-cell';
-                        if (isSelected) cellClass += ' selected-cell';
-
-                        return (
-                          <div 
-                            key={i} 
-                            className={cellClass}
-                            onClick={() => setSelectedMatrixCell(c)}
-                            title={`Cell #${c.num}: $${c.price} | ${c.axis_name || `${c.degrees}°`} | Ring #${c.ring}`}
-                          >
-                            <div className="cell-num">{c.num}</div>
-                            <div className="cell-price">${c.price?.toFixed(0)}</div>
-                            {c.axis_name && <div className="cell-axis">{c.axis_name}</div>}
-                            {isCurrentActive && <div className="current-indicator">PRICE HERE</div>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                <GannMasterWheelStudio
+                  activeStock={activeStock}
+                  selectedMatrixCell={selectedMatrixCell}
+                  setSelectedMatrixCell={setSelectedMatrixCell}
+                />
               ) : (
                 /* Default Chart & Analysis View or Playbook View */
                 <>
@@ -755,7 +708,11 @@ export default function GannScreener() {
                       <div className="sq9-circular-dial-wrapper">
                         <SquareOf9WheelWidget 
                           degree={activeStock.square_of_9?.current_degree || 0} 
-                          ring={activeStock.square_of_9?.ring_level || 1} 
+                          ring={activeStock.square_of_9?.ring_level || 1}
+                          sq9={activeStock.square_of_9}
+                          currentPrice={activeStock.current_price}
+                          elapsedDays={activeStock.time_cycles?.elapsed_days || 0}
+                          onOpenWheel={() => setModalTab('SQ9_MATRIX')}
                         />
                       </div>
 
@@ -1049,57 +1006,829 @@ function GannPlaybookCard({ activeStock }) {
 }
 
 // ---------------------------------------------------------------------------------
-// Square of 9 Circular Aspect Wheel Widget (Celestial Dial)
+// Redesigned Pillar 2: Multi-Ring Celestial Gann Wheel (Wheel of 24 + Sq9 Harmonics)
 // ---------------------------------------------------------------------------------
-function SquareOf9WheelWidget({ degree = 0, ring = 1 }) {
-  const size = 180;
+function SquareOf9WheelWidget({ degree = 0, ring = 1, sq9 = {}, currentPrice = 0, elapsedDays = 0, onOpenWheel }) {
+  const size = 256;
   const center = size / 2;
-  const radius = center - 18;
+  const outerR = center - 16;
+  const ringR1 = outerR * 0.78;
+  const ringR2 = outerR * 0.54;
+  const ringR3 = outerR * 0.30;
 
-  const rad = ((degree - 90) * Math.PI) / 180.0;
-  const markerX = center + radius * Math.cos(rad);
-  const markerY = center + radius * Math.sin(rad);
+  const degToXY = (degVal, rVal) => {
+    const rad = ((degVal - 90) * Math.PI) / 180.0;
+    return {
+      x: center + rVal * Math.cos(rad),
+      y: center + rVal * Math.sin(rad),
+    };
+  };
 
-  const cardinalAngles = [0, 90, 180, 270];
-  const fixedAngles = [45, 135, 225, 315];
+  // Build swept arc path from 0° to degree
+  const buildArcPath = (endDeg, rVal) => {
+    const clamped = Math.max(1, Math.min(359.5, endDeg || 1));
+    const start = degToXY(0, rVal);
+    const end = degToXY(clamped, rVal);
+    const largeArc = clamped > 180 ? 1 : 0;
+    return `M ${center} ${center} L ${start.x.toFixed(1)} ${start.y.toFixed(1)} A ${rVal} ${rVal} 0 ${largeArc} 1 ${end.x.toFixed(1)} ${end.y.toFixed(1)} Z`;
+  };
+
+  // Inscribed Square (0° - 90° - 180° - 270°) & Grand Trine (0° - 120° - 240°)
+  const sqPts = [0, 90, 180, 270].map((d) => {
+    const p = degToXY(d, ringR1);
+    return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+  }).join(' ');
+
+  const trine1Pts = [0, 120, 240].map((d) => {
+    const p = degToXY(d, ringR1);
+    return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+  }).join(' ');
+
+  const trine2Pts = [60, 180, 300].map((d) => {
+    const p = degToXY(d, ringR1);
+    return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+  }).join(' ');
+
+  const spotPos = degToXY(degree, ringR1);
+  const timeDeg = ((elapsedDays || 0) % 360 + 360) % 360;
+  const timePos = degToXY(timeDeg, outerR);
+
+  // Extract key harmonic prices for display around the mini wheel
+  const upTargets = sq9?.upside_targets || [];
+  const p45 = upTargets.find((t) => t.deg === 45)?.price;
+  const p90 = upTargets.find((t) => t.deg === 90)?.price;
+  const p180 = upTargets.find((t) => t.deg === 180)?.price;
+  const p270 = upTargets.find((t) => t.deg === 270)?.price;
+
+  const compassLabels = [
+    { deg: 0, label: '0° N', sub: sq9?.anchor_price ? `$${Number(sq9.anchor_price).toFixed(0)}` : '', color: '#fbbf24' },
+    { deg: 45, label: '45°', sub: p45 ? `$${Number(p45).toFixed(0)}` : '', color: '#38bdf8' },
+    { deg: 90, label: '90° E', sub: p90 ? `$${Number(p90).toFixed(0)}` : '', color: '#10b981' },
+    { deg: 135, label: '135°', sub: '', color: '#38bdf8' },
+    { deg: 180, label: '180° S', sub: p180 ? `$${Number(p180).toFixed(0)}` : '', color: '#f43f5e' },
+    { deg: 225, label: '225°', sub: '', color: '#38bdf8' },
+    { deg: 270, label: '270° W', sub: p270 ? `$${Number(p270).toFixed(0)}` : '', color: '#10b981' },
+    { deg: 315, label: '315°', sub: '', color: '#38bdf8' },
+  ];
 
   return (
-    <div className="sq9-wheel-container">
-      <svg width={size} height={size} className="sq9-wheel-svg">
-        <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="2" />
-        <circle cx={center} cy={center} r={radius * 0.65} fill="none" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="2,2" />
-        <circle cx={center} cy={center} r={radius * 0.35} fill="none" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="2,2" />
+    <div
+      className="sq9-wheel-container"
+      onClick={onOpenWheel}
+      style={{ cursor: onOpenWheel ? 'pointer' : 'default', width: '100%' }}
+      title="Click to open Full Interactive W.D. Gann Master Wheel & Square of 9 Studio"
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="sq9-wheel-svg">
+        <defs>
+          <radialGradient id="gannMiniWheelBg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(56, 189, 248, 0.14)" />
+            <stop offset="65%" stopColor="rgba(15, 23, 42, 0.92)" />
+            <stop offset="100%" stopColor="rgba(9, 14, 28, 0.98)" />
+          </radialGradient>
+        </defs>
 
-        {fixedAngles.map(a => {
-          const r = ((a - 90) * Math.PI) / 180.0;
-          const x2 = center + radius * Math.cos(r);
-          const y2 = center + radius * Math.sin(r);
+        {/* Outer Bezel & Concentric Harmonic Rings */}
+        <circle cx={center} cy={center} r={outerR} fill="url(#gannMiniWheelBg)" stroke="rgba(251, 191, 36, 0.45)" strokeWidth="1.6" />
+        <circle cx={center} cy={center} r={ringR1} fill="none" stroke="rgba(56, 189, 248, 0.35)" strokeWidth="1.1" />
+        <circle cx={center} cy={center} r={ringR2} fill="none" stroke="rgba(148, 163, 184, 0.2)" strokeDasharray="3,3" />
+        <circle cx={center} cy={center} r={ringR3} fill="none" stroke="rgba(251, 191, 36, 0.22)" />
+
+        {/* 24-Division (15°) Protractor Bezel Ticks */}
+        {Array.from({ length: 24 }, (_, idx) => idx * 15).map((degVal) => {
+          const isCard = degVal % 90 === 0;
+          const isFix = degVal % 45 === 0 && !isCard;
+          const p1 = degToXY(degVal, outerR);
+          const p2 = degToXY(degVal, outerR - (isCard ? 8 : isFix ? 6 : 4));
           return (
-            <line key={a} x1={center} y1={center} x2={x2} y2={y2} stroke="rgba(56, 189, 248, 0.3)" strokeWidth="1" strokeDasharray="3,3" />
+            <line
+              key={`tick-${degVal}`}
+              x1={p1.x}
+              y1={p1.y}
+              x2={p2.x}
+              y2={p2.y}
+              stroke={isCard ? '#fbbf24' : isFix ? '#38bdf8' : 'rgba(148, 163, 184, 0.35)'}
+              strokeWidth={isCard ? 1.8 : 1}
+            />
           );
         })}
 
-        {cardinalAngles.map(a => {
-          const r = ((a - 90) * Math.PI) / 180.0;
-          const x2 = center + radius * Math.cos(r);
-          const y2 = center + radius * Math.sin(r);
+        {/* Sacred Geometry: Grand Trine Hexagram (120° Triangles) */}
+        <polygon points={trine1Pts} fill="rgba(168, 85, 247, 0.04)" stroke="rgba(168, 85, 247, 0.28)" strokeWidth="1" strokeDasharray="2,2" />
+        <polygon points={trine2Pts} fill="none" stroke="rgba(236, 72, 153, 0.22)" strokeWidth="0.9" strokeDasharray="2,2" />
+
+        {/* Sacred Geometry: Inscribed Gann Square (0°-90°-180°-270°) */}
+        <polygon points={sqPts} fill="rgba(251, 191, 36, 0.03)" stroke="rgba(251, 191, 36, 0.35)" strokeWidth="1.1" />
+
+        {/* Fixed Cross (45°, 135°, 225°, 315°) */}
+        {[45, 135, 225, 315].map((a) => {
+          const p = degToXY(a, outerR);
+          return <line key={`fix-${a}`} x1={center} y1={center} x2={p.x} y2={p.y} stroke="rgba(56, 189, 248, 0.28)" strokeWidth="1" strokeDasharray="3,3" />;
+        })}
+
+        {/* Cardinal Cross (0°, 90°, 180°, 270°) */}
+        {[0, 90, 180, 270].map((a) => {
+          const p = degToXY(a, outerR);
+          return <line key={`card-${a}`} x1={center} y1={center} x2={p.x} y2={p.y} stroke="rgba(251, 191, 36, 0.55)" strokeWidth="1.4" />;
+        })}
+
+        {/* Swept Orbital Progress Wedge */}
+        <path d={buildArcPath(degree, ringR1)} fill="rgba(56, 189, 248, 0.13)" stroke="none" />
+
+        {/* Compass Labels + Live Harmonic Target Prices */}
+        {compassLabels.map((item) => {
+          const pos = degToXY(item.deg, outerR - 14);
           return (
-            <line key={a} x1={center} y1={center} x2={x2} y2={y2} stroke="rgba(251, 191, 36, 0.5)" strokeWidth="1.5" />
+            <g key={`lbl-${item.deg}`}>
+              <text x={pos.x} y={pos.y} fill={item.color} fontSize="8.5" fontWeight="800" textAnchor="middle" dominantBaseline="middle">
+                {item.label}
+              </text>
+              {item.sub && (
+                <text x={pos.x} y={pos.y + 9} fill="#e2e8f0" fontSize="7.5" fontFamily="monospace" fontWeight="700" textAnchor="middle">
+                  {item.sub}
+                </text>
+              )}
+            </g>
           );
         })}
 
-        <text x={center} y={12} fill="#fbbf24" fontSize="9" fontWeight="800" textAnchor="middle">0° (N)</text>
-        <text x={size - 8} y={center + 3} fill="#10b981" fontSize="9" fontWeight="800" textAnchor="middle">90°</text>
-        <text x={center} y={size - 4} fill="#f43f5e" fontSize="9" fontWeight="800" textAnchor="middle">180°</text>
-        <text x={12} y={center + 3} fill="#10b981" fontSize="9" fontWeight="800" textAnchor="middle">270°</text>
+        {/* Time Cycle Degree Marker on Outer Bezel */}
+        <circle cx={timePos.x} cy={timePos.y} r={4} fill="#ec4899" stroke="#0f172a" strokeWidth="1.2" />
 
-        <line x1={center} y1={center} x2={markerX} y2={markerY} stroke="#38bdf8" strokeWidth="2" />
-        <circle cx={markerX} cy={markerY} r={5} fill="#38bdf8" stroke="#0f172a" strokeWidth={1.5} />
-        <circle cx={center} cy={center} r={4} fill="#fbbf24" />
+        {/* Live Price Vector Needle & Beacon */}
+        <line x1={center} y1={center} x2={spotPos.x} y2={spotPos.y} stroke="#38bdf8" strokeWidth="2.5" />
+        <circle cx={spotPos.x} cy={spotPos.y} r={8} fill="rgba(56, 189, 248, 0.25)" />
+        <circle cx={spotPos.x} cy={spotPos.y} r={4.5} fill="#38bdf8" stroke="#f8fafc" strokeWidth="1.5" />
+
+        {/* Center Hub */}
+        <circle cx={center} cy={center} r={22} fill="rgba(15, 23, 42, 0.95)" stroke="#fbbf24" strokeWidth="1.5" />
+        <text x={center} y={center - 3} fill="#f8fafc" fontSize="9.5" fontWeight="900" fontFamily="monospace" textAnchor="middle">
+          {degree.toFixed(0)}°
+        </text>
+        <text x={center} y={center + 8} fill="#fbbf24" fontSize="7.5" fontWeight="700" textAnchor="middle">
+          Ring #{ring}
+        </text>
       </svg>
-      <div className="sq9-wheel-legend">
-        <span style={{ color: '#38bdf8', fontWeight: 800 }}>{degree.toFixed(1)}° Position</span>
-        <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>Spiral Ring #{ring}</span>
+
+      <div className="sq9-wheel-legend" style={{ justifyContent: 'space-between', width: '100%', padding: '0 6px', fontSize: '0.74rem' }}>
+        <span style={{ color: '#38bdf8', fontWeight: 800 }}>● Price Orbit: {degree.toFixed(1)}°</span>
+        <span style={{ color: '#ec4899', fontWeight: 700 }}>● Time Orbit: {timeDeg.toFixed(0)}° ({elapsedDays}d)</span>
+        <span style={{ color: '#fbbf24', fontWeight: 700, textDecoration: 'underline' }}>Expand Studio ↗</span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------------
+// Full Interactive W.D. Gann Master Emblem Wheel & Square of 9 Studio
+// ---------------------------------------------------------------------------------
+function GannMasterWheelStudio({ activeStock, selectedMatrixCell, setSelectedMatrixCell }) {
+  const sq9 = activeStock?.square_of_9 || {};
+  const spotPrice = Number(activeStock?.current_price || sq9?.sr_ladder?.current_price || 100);
+  const anchorPrice = Number(sq9?.anchor_price || activeStock?.anchors?.primary_anchor?.anchor_price || spotPrice);
+  const anchorDate = activeStock?.anchors?.primary_anchor?.anchor_date || '';
+  const elapsedDays = Number(activeStock?.time_cycles?.elapsed_days || 0);
+  const currentDeg = Number(sq9?.current_degree || 0);
+  const ringLevel = Number(sq9?.ring_level || 1);
+
+  const [studioView, setStudioView] = useState('SPLIT'); // 'SPLIT' | 'WHEEL' | 'MATRIX'
+  const [showCardinal, setShowCardinal] = useState(true);
+  const [showFixed, setShowFixed] = useState(true);
+  const [showTrine, setShowTrine] = useState(true);
+  const [showSquareBox, setShowSquareBox] = useState(true);
+  const [showSolarRing, setShowSolarRing] = useState(true);
+  const [protractorDeg, setProtractorDeg] = useState(90);
+  const [selectedWheelNode, setSelectedWheelNode] = useState(null);
+
+  // Solar Calendar seasonal markers around 360°
+  const solarMarkers = [
+    { deg: 0, label: '0° Vernal Eq (Mar 21)', short: 'Mar 21 (0°)' },
+    { deg: 45, label: '45° Cross-Quarter (May 5)', short: 'May 5 (45°)' },
+    { deg: 90, label: '90° Summer Sol (Jun 21)', short: 'Jun 21 (90°)' },
+    { deg: 135, label: '135° Cross-Quarter (Aug 7)', short: 'Aug 7 (135°)' },
+    { deg: 180, label: '180° Autumn Eq (Sep 23)', short: 'Sep 23 (180°)' },
+    { deg: 225, label: '225° Cross-Quarter (Nov 7)', short: 'Nov 7 (225°)' },
+    { deg: 270, label: '270° Winter Sol (Dec 21)', short: 'Dec 21 (270°)' },
+    { deg: 315, label: '315° Cross-Quarter (Feb 4)', short: 'Feb 4 (315°)' },
+  ];
+
+  // Dynamic Protractor Calculator math: P(theta) = (sqrt(P) +/- theta/180)^2
+  const rootSpot = Math.sqrt(Math.max(0.1, spotPrice));
+  const rootAnchor = Math.sqrt(Math.max(0.1, anchorPrice));
+  const shift = protractorDeg / 180.0;
+  const calcUpsidePrice = Math.pow(rootSpot + shift, 2);
+  const calcDownsidePrice = Math.pow(Math.max(0.1, rootSpot - shift), 2);
+  const calcAnchorHarmonic = Math.pow(rootAnchor + shift, 2);
+  const calcGainPct = ((calcUpsidePrice - spotPrice) / spotPrice) * 100.0;
+  const calcDropPct = ((spotPrice - calcDownsidePrice) / spotPrice) * 100.0;
+
+  // Build harmonic nodes for Outer Ring (Upside Resistance) and Inner Ring (Downside Support)
+  const upsideNodes = (sq9.upside_targets || []).map((t) => ({
+    ...t,
+    orbit: 'UPSIDE_RESISTANCE',
+  }));
+  const downsideNodes = (sq9.downside_supports || []).map((t) => ({
+    ...t,
+    orbit: 'DOWNSIDE_SUPPORT',
+  }));
+
+  // SVG Master Wheel Dimensions
+  const W = 500;
+  const C = W / 2;
+  const R_SOLAR = 228;
+  const R_BEZEL = 198;
+  const R_RES_ORBIT = 162;
+  const R_SPOT_ORBIT = 122;
+  const R_SUP_ORBIT = 84;
+  const R_CORE = 38;
+
+  const degToPt = (degVal, rVal) => {
+    const rad = ((degVal - 90) * Math.PI) / 180.0;
+    return {
+      x: C + rVal * Math.cos(rad),
+      y: C + rVal * Math.sin(rad),
+    };
+  };
+
+  const buildSweep = (endDeg, rVal) => {
+    const clamped = Math.max(1, Math.min(359.5, endDeg || 1));
+    const s = degToPt(0, rVal);
+    const e = degToPt(clamped, rVal);
+    const lg = clamped > 180 ? 1 : 0;
+    return `M ${C} ${C} L ${s.x.toFixed(1)} ${s.y.toFixed(1)} A ${rVal} ${rVal} 0 ${lg} 1 ${e.x.toFixed(1)} ${e.y.toFixed(1)} Z`;
+  };
+
+  const timeDeg = ((elapsedDays % 360) + 360) % 360;
+  const phaseDiff = Math.abs(currentDeg - timeDeg);
+  const normPhaseDiff = phaseDiff > 180 ? 360 - phaseDiff : phaseDiff;
+  const isPriceTimeAligned = normPhaseDiff <= 15 || Math.abs(normPhaseDiff - 90) <= 10 || Math.abs(normPhaseDiff - 180) <= 10;
+
+  const spotPt = degToPt(currentDeg, R_SPOT_ORBIT);
+  const timePt = degToPt(timeDeg, R_SOLAR);
+  const protractorPt = degToPt(protractorDeg % 360, R_RES_ORBIT);
+
+  const sr = sq9.sr_ladder || {};
+
+  return (
+    <div className="sq9-matrix-full-view" style={{ gap: '16px' }}>
+      {/* Top Studio Control Header */}
+      <div className="sq9-matrix-header-card" style={{ padding: '14px 18px', background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(9, 14, 28, 0.96))' }}>
+        <div className="matrix-card-left">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#f8fafc' }}>
+              🌀 W.D. Gann Master Emblem Wheel & Square of 9 Harmonic Studio
+            </h3>
+            <span style={{
+              background: isPriceTimeAligned ? 'rgba(16, 185, 129, 0.18)' : 'rgba(56, 189, 248, 0.15)',
+              border: `1px solid ${isPriceTimeAligned ? '#10b981' : '#38bdf8'}`,
+              color: isPriceTimeAligned ? '#34d399' : '#38bdf8',
+              padding: '2px 10px',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
+              fontWeight: 800
+            }}>
+              {isPriceTimeAligned ? '⚡ PRICE-TIME HARMONIC LOCK' : `${sq9.aspect_label || 'Orbital Spiral'} (${currentDeg.toFixed(1)}°)`}
+            </span>
+          </div>
+          <p style={{ marginTop: '4px', fontSize: '0.8rem', color: '#94a3b8' }}>
+            Anchor Pivot: <strong style={{ color: '#fbbf24' }}>${anchorPrice.toFixed(2)}</strong> ({anchorDate || 'Cycle Origin'}) • Spot: <strong style={{ color: '#38bdf8' }}>${spotPrice.toFixed(2)}</strong> • Total Rotation: <strong style={{ color: '#e2e8f0' }}>{sq9.degrees_traveled || 0}°</strong> (Spiral Ring #{ringLevel}) • Time Elapsed: <strong style={{ color: '#f472b6' }}>{elapsedDays}d ({timeDeg.toFixed(0)}° Solar Orbit)</strong>
+          </p>
+        </div>
+
+        {/* View Mode Switcher */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'SPLIT', label: '⚡ Split Studio (Wheel + Matrix)' },
+            { id: 'WHEEL', label: '🌀 Full Gann Wheel' },
+            { id: 'MATRIX', label: '🔢 81-Cell Spiral Grid' },
+          ].map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setStudioView(m.id)}
+              style={{
+                background: studioView === m.id ? 'rgba(251, 191, 36, 0.2)' : 'rgba(30, 41, 59, 0.7)',
+                border: studioView === m.id ? '1px solid #fbbf24' : '1px solid rgba(148, 163, 184, 0.25)',
+                color: studioView === m.id ? '#fbbf24' : '#cbd5e1',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '0.76rem',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Geometry Layer Toggles + Interactive Protractor Bar */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        background: 'rgba(15, 23, 42, 0.75)',
+        border: '1px solid rgba(148, 163, 184, 0.16)',
+        borderRadius: '10px',
+        padding: '10px 14px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 700 }}>SACRED GEOMETRY OVERLAYS:</span>
+          {[
+            { label: '➕ Cardinal Cross (0°/90°/180°/270°)', active: showCardinal, toggle: () => setShowCardinal(!showCardinal), color: '#fbbf24' },
+            { label: '✖ Fixed Cross (45°/135°/225°/315°)', active: showFixed, toggle: () => setShowFixed(!showFixed), color: '#38bdf8' },
+            { label: '✡ Grand Trine (60°/120°/240°)', active: showTrine, toggle: () => setShowTrine(!showTrine), color: '#a855f7' },
+            { label: '◇ Inscribed Square', active: showSquareBox, toggle: () => setShowSquareBox(!showSquareBox), color: '#10b981' },
+            { label: '☀️ Solar Calendar Ring', active: showSolarRing, toggle: () => setShowSolarRing(!showSolarRing), color: '#f472b6' },
+          ].map((btn, idx) => (
+            <button
+              key={idx}
+              onClick={btn.toggle}
+              style={{
+                background: btn.active ? `${btn.color}22` : 'rgba(30, 41, 59, 0.5)',
+                border: `1px solid ${btn.active ? btn.color : 'rgba(148, 163, 184, 0.2)'}`,
+                color: btn.active ? btn.color : '#64748b',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Quick Preset Harmonic Degree Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.73rem', color: '#cbd5e1', fontWeight: 700 }}>Protractor:</span>
+          {[45, 60, 90, 120, 135, 180, 240, 270, 360, 540, 720].map((d) => (
+            <button
+              key={d}
+              onClick={() => setProtractorDeg(d)}
+              style={{
+                background: protractorDeg === d ? 'rgba(56, 189, 248, 0.25)' : 'rgba(30, 41, 59, 0.65)',
+                border: protractorDeg === d ? '1px solid #38bdf8' : '1px solid rgba(148, 163, 184, 0.2)',
+                color: protractorDeg === d ? '#38bdf8' : '#94a3b8',
+                padding: '3px 7px',
+                borderRadius: '5px',
+                fontSize: '0.7rem',
+                fontFamily: 'monospace',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {d}°
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Studio Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: studioView === 'SPLIT' ? 'repeat(auto-fit, minmax(460px, 1fr))' : '1fr',
+        gap: '16px',
+        alignItems: 'start'
+      }}>
+        {/* LEFT / MAIN PANEL: INTERACTIVE 500x500 W.D. GANN MASTER EMBLEM WHEEL */}
+        {(studioView === 'SPLIT' || studioView === 'WHEEL') && (
+          <div style={{
+            background: 'linear-gradient(160deg, rgba(11, 17, 32, 0.96), rgba(7, 11, 22, 0.99))',
+            border: '1px solid rgba(251, 191, 36, 0.28)',
+            borderRadius: '14px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+          }}>
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '0.76rem' }}>
+              <span style={{ color: '#fbbf24', fontWeight: 800 }}>
+                📐 CONCENTRIC HARMONIC RINGS: Outer = Resistance (+Δ°) • Mid = Spot Orbit • Inner = Support (−Δ°)
+              </span>
+              <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>Click any node on wheel to inspect</span>
+            </div>
+
+            <svg
+              viewBox={`0 0 ${W} ${W}`}
+              style={{
+                width: '100%',
+                maxWidth: studioView === 'WHEEL' ? '640px' : '500px',
+                height: 'auto',
+                overflow: 'visible'
+              }}
+            >
+              <defs>
+                <radialGradient id="gannMasterCoreGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="rgba(56, 189, 248, 0.16)" />
+                  <stop offset="55%" stopColor="rgba(15, 23, 42, 0.94)" />
+                  <stop offset="100%" stopColor="rgba(6, 10, 21, 0.99)" />
+                </radialGradient>
+              </defs>
+
+              {/* Outer Solar Calendar Ring */}
+              {showSolarRing && (
+                <g>
+                  <circle cx={C} cy={C} r={R_SOLAR} fill="rgba(15, 23, 42, 0.5)" stroke="rgba(244, 114, 182, 0.35)" strokeWidth="1.2" strokeDasharray="4,3" />
+                  {solarMarkers.map((sm) => {
+                    const pt = degToPt(sm.deg, R_SOLAR + 13);
+                    const tick1 = degToPt(sm.deg, R_SOLAR - 4);
+                    const tick2 = degToPt(sm.deg, R_SOLAR + 4);
+                    return (
+                      <g key={`solar-${sm.deg}`}>
+                        <line x1={tick1.x} y1={tick1.y} x2={tick2.x} y2={tick2.y} stroke="#f472b6" strokeWidth="1.5" />
+                        <text x={pt.x} y={pt.y} fill="#f472b6" fontSize="8.5" fontWeight="700" textAnchor="middle" dominantBaseline="middle">
+                          {sm.short}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
+
+              {/* Primary Wheel Bezel & Concentric Orbit Circles */}
+              <circle cx={C} cy={C} r={R_BEZEL} fill="url(#gannMasterCoreGrad)" stroke="rgba(251, 191, 36, 0.55)" strokeWidth="2" />
+              <circle cx={C} cy={C} r={R_RES_ORBIT} fill="none" stroke="rgba(16, 185, 129, 0.35)" strokeWidth="1.2" strokeDasharray="3,3" />
+              <circle cx={C} cy={C} r={R_SPOT_ORBIT} fill="none" stroke="rgba(56, 189, 248, 0.45)" strokeWidth="1.5" />
+              <circle cx={C} cy={C} r={R_SUP_ORBIT} fill="none" stroke="rgba(244, 63, 94, 0.35)" strokeWidth="1.2" strokeDasharray="3,3" />
+
+              {/* 72 Degree Ticks (every 5°) + 24 Major Ticks (every 15°) */}
+              {Array.from({ length: 72 }, (_, idx) => idx * 5).map((degVal) => {
+                const isCard = degVal % 90 === 0;
+                const isFix = degVal % 45 === 0 && !isCard;
+                const is15 = degVal % 15 === 0;
+                const p1 = degToPt(degVal, R_BEZEL);
+                const p2 = degToPt(degVal, R_BEZEL - (isCard ? 12 : isFix ? 9 : is15 ? 6 : 3));
+                return (
+                  <g key={`deg5-${degVal}`}>
+                    <line
+                      x1={p1.x}
+                      y1={p1.y}
+                      x2={p2.x}
+                      y2={p2.y}
+                      stroke={isCard ? '#fbbf24' : isFix ? '#38bdf8' : is15 ? 'rgba(203, 213, 225, 0.55)' : 'rgba(148, 163, 184, 0.22)'}
+                      strokeWidth={isCard ? 2 : isFix ? 1.5 : 0.9}
+                    />
+                    {is15 && (
+                      <text
+                        x={degToPt(degVal, R_BEZEL - 18).x}
+                        y={degToPt(degVal, R_BEZEL - 18).y}
+                        fill={isCard ? '#fbbf24' : isFix ? '#38bdf8' : '#64748b'}
+                        fontSize={isCard ? '9.5' : '8'}
+                        fontWeight={isCard || isFix ? '800' : '600'}
+                        fontFamily="monospace"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                      >
+                        {degVal}°
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+
+              {/* Sacred Geometry 1: Grand Trine Hexagram (0°-120°-240° and 60°-180°-300°) */}
+              {showTrine && (
+                <g>
+                  <polygon
+                    points={[0, 120, 240].map((d) => `${degToPt(d, R_RES_ORBIT).x.toFixed(1)},${degToPt(d, R_RES_ORBIT).y.toFixed(1)}`).join(' ')}
+                    fill="rgba(168, 85, 247, 0.04)"
+                    stroke="rgba(168, 85, 247, 0.45)"
+                    strokeWidth="1.3"
+                    strokeDasharray="4,3"
+                  />
+                  <polygon
+                    points={[60, 180, 300].map((d) => `${degToPt(d, R_RES_ORBIT).x.toFixed(1)},${degToPt(d, R_RES_ORBIT).y.toFixed(1)}`).join(' ')}
+                    fill="rgba(236, 72, 153, 0.03)"
+                    stroke="rgba(236, 72, 153, 0.35)"
+                    strokeWidth="1.2"
+                    strokeDasharray="4,3"
+                  />
+                </g>
+              )}
+
+              {/* Sacred Geometry 2: Inscribed Gann Squares (Cardinal & Fixed 45° Rotated Square) */}
+              {showSquareBox && (
+                <g>
+                  <polygon
+                    points={[0, 90, 180, 270].map((d) => `${degToPt(d, R_RES_ORBIT).x.toFixed(1)},${degToPt(d, R_RES_ORBIT).y.toFixed(1)}`).join(' ')}
+                    fill="rgba(16, 185, 129, 0.03)"
+                    stroke="rgba(16, 185, 129, 0.42)"
+                    strokeWidth="1.3"
+                  />
+                  <polygon
+                    points={[45, 135, 225, 315].map((d) => `${degToPt(d, R_RES_ORBIT).x.toFixed(1)},${degToPt(d, R_RES_ORBIT).y.toFixed(1)}`).join(' ')}
+                    fill="none"
+                    stroke="rgba(56, 189, 248, 0.28)"
+                    strokeWidth="1.1"
+                    strokeDasharray="3,3"
+                  />
+                </g>
+              )}
+
+              {/* Sacred Geometry 3: Fixed Cross (45° / 135° / 225° / 315°) */}
+              {showFixed && [45, 135, 225, 315].map((d) => {
+                const p = degToPt(d, R_BEZEL);
+                return <line key={`fc-${d}`} x1={C} y1={C} x2={p.x} y2={p.y} stroke="rgba(56, 189, 248, 0.38)" strokeWidth="1.2" strokeDasharray="4,3" />;
+              })}
+
+              {/* Sacred Geometry 4: Cardinal Cross (0° / 90° / 180° / 270°) */}
+              {showCardinal && [0, 90, 180, 270].map((d) => {
+                const p = degToPt(d, R_BEZEL);
+                return <line key={`cc-${d}`} x1={C} y1={C} x2={p.x} y2={p.y} stroke="rgba(251, 191, 36, 0.65)" strokeWidth="1.8" />;
+              })}
+
+              {/* Swept Orbital Progress Sector from 0° to Current Degree */}
+              <path d={buildSweep(currentDeg, R_SPOT_ORBIT)} fill="rgba(56, 189, 248, 0.14)" />
+
+              {/* Protractor Custom Angle Ray */}
+              <line
+                x1={C}
+                y1={C}
+                x2={protractorPt.x}
+                y2={protractorPt.y}
+                stroke="#fbbf24"
+                strokeWidth="1.5"
+                strokeDasharray="3,3"
+              />
+              <circle cx={protractorPt.x} cy={protractorPt.y} r="5" fill="#fbbf24" stroke="#0f172a" strokeWidth="1.5" />
+
+              {/* OUTER ORBIT NODES: Upside Harmonic Resistance Targets (+45° to +360°) */}
+              {upsideNodes.map((node) => {
+                const pt = degToPt(node.deg % 360, R_RES_ORBIT);
+                const isSel = selectedWheelNode && selectedWheelNode.deg === node.deg && selectedWheelNode.orbit === node.orbit;
+                return (
+                  <g
+                    key={`up-${node.deg}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSelectedWheelNode(node)}
+                  >
+                    <circle
+                      cx={pt.x}
+                      cy={pt.y}
+                      r={isSel ? 17 : 14}
+                      fill="rgba(15, 23, 42, 0.94)"
+                      stroke={node.has_confluence ? '#fbbf24' : node.color || '#10b981'}
+                      strokeWidth={isSel ? 2.4 : 1.5}
+                    />
+                    <text x={pt.x} y={pt.y - 3} fill="#f8fafc" fontSize="7.5" fontWeight="800" fontFamily="monospace" textAnchor="middle">
+                      ${Number(node.price).toFixed(0)}
+                    </text>
+                    <text x={pt.x} y={pt.y + 6} fill={node.color || '#10b981'} fontSize="6.5" fontWeight="700" textAnchor="middle">
+                      +{node.deg}°{node.has_confluence ? '★' : ''}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* INNER ORBIT NODES: Downside Harmonic Supports (-45° to -270°) */}
+              {downsideNodes.filter((n) => [45, 90, 135, 180, 270, 360].includes(n.deg)).map((node) => {
+                const pt = degToPt(node.deg % 360, R_SUP_ORBIT);
+                const isSel = selectedWheelNode && selectedWheelNode.deg === node.deg && selectedWheelNode.orbit === node.orbit;
+                return (
+                  <g
+                    key={`dn-${node.deg}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSelectedWheelNode(node)}
+                  >
+                    <circle
+                      cx={pt.x}
+                      cy={pt.y}
+                      r={isSel ? 15 : 12.5}
+                      fill="rgba(15, 23, 42, 0.94)"
+                      stroke="#f43f5e"
+                      strokeWidth={isSel ? 2.2 : 1.2}
+                    />
+                    <text x={pt.x} y={pt.y - 2} fill="#fda4af" fontSize="7" fontWeight="800" fontFamily="monospace" textAnchor="middle">
+                      ${Number(node.price).toFixed(0)}
+                    </text>
+                    <text x={pt.x} y={pt.y + 6} fill="#f43f5e" fontSize="6" fontWeight="700" textAnchor="middle">
+                      -{node.deg}°
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Solar Time Vector on Outer Ring */}
+              {showSolarRing && (
+                <g>
+                  <line x1={C} y1={C} x2={timePt.x} y2={timePt.y} stroke="rgba(236, 72, 153, 0.55)" strokeWidth="1.5" strokeDasharray="2,3" />
+                  <circle cx={timePt.x} cy={timePt.y} r="7" fill="#ec4899" stroke="#f8fafc" strokeWidth="1.5" />
+                  <text x={timePt.x} y={timePt.y - 11} fill="#f472b6" fontSize="8" fontWeight="800" textAnchor="middle">
+                    TIME ({timeDeg.toFixed(0)}°)
+                  </text>
+                </g>
+              )}
+
+              {/* Live Current Spot Price Vector & Glowing Beacon */}
+              <line x1={C} y1={C} x2={spotPt.x} y2={spotPt.y} stroke="#38bdf8" strokeWidth="3" />
+              <circle cx={spotPt.x} cy={spotPt.y} r="13" fill="rgba(56, 189, 248, 0.25)" />
+              <circle cx={spotPt.x} cy={spotPt.y} r="7" fill="#38bdf8" stroke="#ffffff" strokeWidth="2" />
+              <rect x={spotPt.x - 32} y={spotPt.y - 28} width="64" height="16" rx="4" fill="#0284c7" stroke="#e0f2fe" strokeWidth="0.8" />
+              <text x={spotPt.x} y={spotPt.y - 17} fill="#ffffff" fontSize="8.5" fontWeight="900" fontFamily="monospace" textAnchor="middle">
+                ${spotPrice.toFixed(2)}
+              </text>
+
+              {/* Center Hub Emblem */}
+              <circle cx={C} cy={C} r={R_CORE} fill="rgba(9, 14, 28, 0.98)" stroke="#fbbf24" strokeWidth="2" />
+              <text x={C} y={C - 11} fill="#fbbf24" fontSize="8" fontWeight="800" textAnchor="middle">
+                ANCHOR 0°
+              </text>
+              <text x={C} y={C + 2} fill="#f8fafc" fontSize="11" fontWeight="900" fontFamily="monospace" textAnchor="middle">
+                ${anchorPrice.toFixed(1)}
+              </text>
+              <text x={C} y={C + 14} fill="#38bdf8" fontSize="8" fontWeight="700" fontFamily="monospace" textAnchor="middle">
+                {currentDeg.toFixed(1)}° • R#{ringLevel}
+              </text>
+            </svg>
+
+            {/* Selected Wheel Node Inspector Banner */}
+            {selectedWheelNode && (
+              <div style={{
+                width: '100%',
+                marginTop: '10px',
+                background: 'rgba(30, 41, 59, 0.78)',
+                border: `1px solid ${selectedWheelNode.orbit === 'UPSIDE_RESISTANCE' ? '#10b981' : '#f43f5e'}`,
+                borderRadius: '10px',
+                padding: '10px 14px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '8px',
+                fontSize: '0.78rem'
+              }}>
+                <div>
+                  <strong style={{ color: '#f8fafc' }}>
+                    {selectedWheelNode.orbit === 'UPSIDE_RESISTANCE' ? '🟢 Upside Resistance Node' : '🔻 Downside Support Node'}: {selectedWheelNode.name}
+                  </strong>
+                  <span style={{ marginLeft: '8px', color: '#94a3b8' }}>({selectedWheelNode.type})</span>
+                </div>
+                <div style={{ fontFamily: 'monospace', fontWeight: 800, color: '#fbbf24', fontSize: '0.9rem' }}>
+                  ${Number(selectedWheelNode.price).toFixed(2)}{' '}
+                  <span style={{ color: selectedWheelNode.orbit === 'UPSIDE_RESISTANCE' ? '#10b981' : '#f43f5e', fontSize: '0.78rem' }}>
+                    ({selectedWheelNode.orbit === 'UPSIDE_RESISTANCE' ? `+${selectedWheelNode.gain_pct}%` : `-${selectedWheelNode.drop_pct}%`})
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* RIGHT PANEL: PROTRACTOR CALCULATOR + S/R EQUILIBRIUM LADDER + 9x9 SPIRAL MATRIX */}
+        {(studioView === 'SPLIT' || studioView === 'MATRIX' || studioView === 'WHEEL') && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Card A: Interactive Harmonic Angle Protractor Calculator (0° to 720°) */}
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.85)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              borderRadius: '12px',
+              padding: '14px 16px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#f8fafc' }}>
+                  🧭 Interactive Square of 9 Angle Calculator (0° – 720°)
+                </span>
+                <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', fontWeight: 900, color: '#fbbf24' }}>
+                  Δθ = {protractorDeg}° ({(protractorDeg / 360).toFixed(2)} Orbits)
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min="15"
+                max="720"
+                step="15"
+                value={protractorDeg}
+                onChange={(e) => setProtractorDeg(Number(e.target.value))}
+                style={{ width: '100%', accentColor: '#38bdf8', cursor: 'pointer', marginBottom: '10px' }}
+              />
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '8px 10px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700 }}>UPSIDE TARGET (+{protractorDeg}°)</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 900, fontFamily: 'monospace', color: '#10b981', marginTop: '2px' }}>
+                    ${calcUpsidePrice.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '0.69rem', color: '#34d399', fontFamily: 'monospace' }}>+{calcGainPct.toFixed(2)}% from Spot</div>
+                </div>
+
+                <div style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '8px', padding: '8px 10px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700 }}>DOWNSIDE SUPPORT (−{protractorDeg}°)</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 900, fontFamily: 'monospace', color: '#f43f5e', marginTop: '2px' }}>
+                    ${calcDownsidePrice.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '0.69rem', color: '#fda4af', fontFamily: 'monospace' }}>−{calcDropPct.toFixed(2)}% from Spot</div>
+                </div>
+
+                <div style={{ background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '8px', padding: '8px 10px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700 }}>FROM ANCHOR (+{protractorDeg}°)</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 900, fontFamily: 'monospace', color: '#fbbf24', marginTop: '2px' }}>
+                    ${calcAnchorHarmonic.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '0.69rem', color: '#cbd5e1', fontFamily: 'monospace' }}>Anchor: ${anchorPrice.toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card B: S4 -> S1 -> SPOT -> R1 -> R4 Harmonic Support/Resistance Ladder */}
+            {sr && sr.r1 && sr.s1 && (
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                borderRadius: '12px',
+                padding: '14px 16px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#f8fafc' }}>
+                    🎯 Square of 9 S/R Equilibrium Channel (S1 ↔ R1)
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 700 }}>
+                    {sr.tactical_posture}
+                  </span>
+                </div>
+
+                {/* Progress Bar between S1 (-45°) and R1 (+45°) */}
+                <div style={{ position: 'relative', height: '10px', background: 'rgba(30, 41, 59, 0.9)', borderRadius: '999px', margin: '8px 0 12px 0', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${Math.max(3, Math.min(97, sr.channel_position_pct || 50))}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #f43f5e, #fbbf24, #10b981)'
+                  }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', fontSize: '0.72rem', fontFamily: 'monospace' }}>
+                  {[
+                    { tag: 'S2 (−90°)', val: sr.s2?.price, pct: `-${sr.s2?.drop_pct}%`, col: '#f43f5e' },
+                    { tag: 'S1 (−45°)', val: sr.s1?.price, pct: `-${sr.s1?.drop_pct}%`, col: '#fb7185' },
+                    { tag: 'R1 (+45°)', val: sr.r1?.price, pct: `+${sr.r1?.gain_pct}%`, col: '#34d399' },
+                    { tag: 'R2 (+90°)', val: sr.r2?.price, pct: `+${sr.r2?.gain_pct}%`, col: '#10b981' },
+                  ].map((item, idx) => (
+                    <div key={idx} style={{ background: 'rgba(30, 41, 59, 0.55)', border: `1px solid ${item.col}44`, borderRadius: '7px', padding: '6px 8px', textAlign: 'center' }}>
+                      <div style={{ color: '#94a3b8', fontSize: '0.66rem', fontWeight: 700 }}>{item.tag}</div>
+                      <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '0.82rem' }}>${Number(item.val || 0).toFixed(2)}</div>
+                      <div style={{ color: item.col, fontWeight: 700 }}>{item.pct}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Card C: Authentic 81-Cell Concentric Spiral Matrix */}
+            {(studioView === 'SPLIT' || studioView === 'MATRIX') && (
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(251, 191, 36, 0.25)',
+                borderRadius: '12px',
+                padding: '14px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#fbbf24' }}>
+                    🔢 9×9 Concentric Square of 9 Spiral Matrix (81 Cells)
+                  </span>
+                  {selectedMatrixCell && (
+                    <span style={{ fontSize: '0.74rem', fontFamily: 'monospace', color: '#e2e8f0', background: 'rgba(30, 41, 59, 0.85)', padding: '3px 9px', borderRadius: '6px', border: '1px solid rgba(251, 191, 36, 0.4)' }}>
+                      Cell #{selectedMatrixCell.num}: <strong style={{ color: '#fbbf24' }}>${selectedMatrixCell.price?.toFixed(2)}</strong> ({selectedMatrixCell.axis_name || `${selectedMatrixCell.degrees}°`} • Ring #{selectedMatrixCell.ring})
+                    </span>
+                  )}
+                </div>
+
+                <div className="sq9-matrix-table-container" style={{ padding: 0 }}>
+                  <div className="sq9-matrix-grid">
+                    {(sq9?.matrix_grid?.cells || []).map((c, i) => {
+                      const isSelected = selectedMatrixCell && selectedMatrixCell.row === c.row && selectedMatrixCell.col === c.col;
+                      const isCenter = c.row === 4 && c.col === 4;
+                      const isCurrentActive = sq9?.matrix_grid?.active_cell?.row === c.row && sq9?.matrix_grid?.active_cell?.col === c.col;
+
+                      let cellClass = 'matrix-cell';
+                      if (isCenter) cellClass += ' center-cell';
+                      else if (c.is_cardinal) cellClass += ' cardinal-cell';
+                      else if (c.is_fixed) cellClass += ' fixed-cell';
+                      if (isCurrentActive) cellClass += ' current-price-cell';
+                      if (isSelected) cellClass += ' selected-cell';
+
+                      return (
+                        <div
+                          key={i}
+                          className={cellClass}
+                          onClick={() => setSelectedMatrixCell(c)}
+                          title={`Cell #${c.num}: $${c.price} | ${c.axis_name || `${c.degrees}°`} | Ring #${c.ring}`}
+                        >
+                          <div className="cell-num">{c.num}</div>
+                          <div className="cell-price">${c.price?.toFixed(0)}</div>
+                          {c.axis_name && <div className="cell-axis">{c.axis_name}</div>}
+                          {isCurrentActive && <div className="current-indicator">SPOT</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

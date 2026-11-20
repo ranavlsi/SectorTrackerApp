@@ -23,6 +23,31 @@ SEASONALITY_UNIVERSE = [
     'ALAB', 'ASTS', 'RDDT', 'CAVA', 'SMCI', 'CELH', 'APP'
 ]
 
+SECTOR_MAP = {
+    'NVDA': 'Semis & AI', 'AMD': 'Semis & AI', 'AVGO': 'Semis & AI', 'TSM': 'Semis & AI',
+    'ARM': 'Semis & AI', 'QCOM': 'Semis & AI', 'ASML': 'Semis & AI', 'ALAB': 'Semis & AI', 'SMCI': 'Semis & AI',
+    'AAPL': 'Big Tech & Cloud', 'MSFT': 'Big Tech & Cloud', 'AMZN': 'Big Tech & Cloud', 'META': 'Big Tech & Cloud',
+    'GOOGL': 'Big Tech & Cloud', 'TSLA': 'Big Tech & Cloud', 'NFLX': 'Big Tech & Cloud', 'ORCL': 'Big Tech & Cloud',
+    'UBER': 'Big Tech & Cloud', 'DASH': 'Big Tech & Cloud', 'SHOP': 'Big Tech & Cloud', 'APP': 'Big Tech & Cloud',
+    'RDDT': 'Big Tech & Cloud', 'ASTS': 'Big Tech & Cloud',
+    'PLTR': 'Cyber & SaaS', 'CRM': 'Cyber & SaaS', 'CRWD': 'Cyber & SaaS', 'PANW': 'Cyber & SaaS',
+    'NET': 'Cyber & SaaS', 'DDOG': 'Cyber & SaaS', 'SNOW': 'Cyber & SaaS', 'MDB': 'Cyber & SaaS',
+    'NOW': 'Cyber & SaaS', 'INTU': 'Cyber & SaaS',
+    'LLY': 'Healthcare & MedTech', 'UNH': 'Healthcare & MedTech', 'JNJ': 'Healthcare & MedTech',
+    'ABBV': 'Healthcare & MedTech', 'MRK': 'Healthcare & MedTech', 'VRTX': 'Healthcare & MedTech',
+    'REGN': 'Healthcare & MedTech', 'ISRG': 'Healthcare & MedTech', 'SYK': 'Healthcare & MedTech',
+    'BSX': 'Healthcare & MedTech', 'MDT': 'Healthcare & MedTech',
+    'JPM': 'Financials & Crypto', 'GS': 'Financials & Crypto', 'MS': 'Financials & Crypto',
+    'V': 'Financials & Crypto', 'MA': 'Financials & Crypto', 'BAC': 'Financials & Crypto',
+    'COIN': 'Financials & Crypto', 'HOOD': 'Financials & Crypto',
+    'GE': 'Industrials & Power', 'CAT': 'Industrials & Power', 'ETN': 'Industrials & Power',
+    'PWR': 'Industrials & Power', 'EMR': 'Industrials & Power', 'UNP': 'Industrials & Power', 'DE': 'Industrials & Power',
+    'COST': 'Consumer & Retail', 'WMT': 'Consumer & Retail', 'HD': 'Consumer & Retail',
+    'TJX': 'Consumer & Retail', 'CMG': 'Consumer & Retail', 'NKE': 'Consumer & Retail',
+    'LULU': 'Consumer & Retail', 'SBUX': 'Consumer & Retail', 'CAVA': 'Consumer & Retail', 'CELH': 'Consumer & Retail',
+    'XOM': 'Energy', 'CVX': 'Energy', 'COP': 'Energy', 'SLB': 'Energy', 'EOG': 'Energy', 'MPC': 'Energy', 'VLO': 'Energy'
+}
+
 def clean_val(v, default=0.0):
     if v is None: return default
     try:
@@ -63,6 +88,27 @@ def get_options_flow(ticker_symbol, current_price):
             p_p = (atm_put['bid'] + atm_put['ask'])/2 if atm_put['bid'] > 0 else atm_put['lastPrice']
             implied_move_pct = round(((c_p + p_p) / current_price) * 100, 1) if current_price > 0 else 0.0
 
+        earnings_date_str = None
+        earnings_in_days = None
+        try:
+            cal = t.calendar
+            ed_val = None
+            if isinstance(cal, dict):
+                ed_raw = cal.get('Earnings Date')
+                if isinstance(ed_raw, list) and len(ed_raw) > 0:
+                    ed_val = ed_raw[0]
+                elif ed_raw is not None:
+                    ed_val = ed_raw
+            if ed_val is not None:
+                ed_dt = pd.Timestamp(ed_val).date()
+                today_dt = datetime.date.today()
+                diff_d = (ed_dt - today_dt).days
+                if 0 <= diff_d <= 90:
+                    earnings_date_str = ed_dt.strftime('%Y-%m-%d')
+                    earnings_in_days = int(diff_d)
+        except Exception:
+            pass
+
         return {
             'pcr_vol': pcr_vol,
             'pcr_oi': pcr_oi,
@@ -70,7 +116,9 @@ def get_options_flow(ticker_symbol, current_price):
             'put_vol': int(put_vol),
             'avg_iv': avg_iv,
             'implied_move_pct': implied_move_pct,
-            'bullish_flow': pcr_vol < 0.75 or pcr_oi < 0.75
+            'bullish_flow': pcr_vol < 0.75 or pcr_oi < 0.75,
+            'earnings_date': earnings_date_str,
+            'earnings_in_days': earnings_in_days
         }
     except Exception:
         return None
@@ -134,17 +182,22 @@ def run_seasonality_radar():
             monthly = close.resample('ME').last().pct_change().dropna()
             if len(monthly) < 24: continue
             
-            df_m = pd.DataFrame({'ret': monthly, 'month': monthly.index.month})
+            df_m = pd.DataFrame({'ret': monthly, 'month': monthly.index.month, 'year': monthly.index.year})
             
-            # Current Month Stats
-            cur_sub = df_m[df_m['month'] == cur_month]
+            # Current Month Stats (Mean + Median + Year-by-Year)
+            cur_sub = df_m[df_m['month'] == cur_month].sort_values('year')
             cur_win = round(float((cur_sub['ret'] > 0).mean() * 100), 1) if len(cur_sub) > 0 else 50.0
             cur_avg = round(float(cur_sub['ret'].mean() * 100), 2) if len(cur_sub) > 0 else 0.0
+            cur_med = round(float(cur_sub['ret'].median() * 100), 2) if len(cur_sub) > 0 else 0.0
+            cur_years = [{'year': int(r['year']), 'ret': round(float(r['ret'] * 100), 1)} for _, r in cur_sub.tail(10).iterrows()]
             
-            # Next Month Stats (Crucial for Anticipatory Positioning)
-            next_sub = df_m[df_m['month'] == next_month]
+            # Next Month Stats (Mean + Median + Year-by-Year)
+            next_sub = df_m[df_m['month'] == next_month].sort_values('year')
             next_win = round(float((next_sub['ret'] > 0).mean() * 100), 1) if len(next_sub) > 0 else 50.0
             next_avg = round(float(next_sub['ret'].mean() * 100), 2) if len(next_sub) > 0 else 0.0
+            next_med = round(float(next_sub['ret'].median() * 100), 2) if len(next_sub) > 0 else 0.0
+            next_years = [{'year': int(r['year']), 'ret': round(float(r['ret'] * 100), 1)} for _, r in next_sub.tail(10).iterrows()]
+            outlier_skew = abs(cur_avg - cur_med) >= 3.0
             
             # 12-Month Mini Heatmap Array for visual UI
             monthly_12 = []
@@ -225,6 +278,7 @@ def run_seasonality_radar():
 
             candidates.append({
                 'ticker': sym,
+                'sector': SECTOR_MAP.get(sym, 'Other'),
                 'current_price': curr_p,
                 'score': int(total_score),
                 'setup_label': setup_label,
@@ -243,9 +297,14 @@ def run_seasonality_radar():
                     'cur_month_name': month_names[cur_month-1],
                     'cur_month_win': cur_win,
                     'cur_month_avg': cur_avg,
+                    'cur_month_med': cur_med,
+                    'cur_years': cur_years,
                     'next_month_name': month_names[next_month-1],
                     'next_month_win': next_win,
                     'next_month_avg': next_avg,
+                    'next_month_med': next_med,
+                    'next_years': next_years,
+                    'outlier_skew': outlier_skew,
                     'next_quarter_name': f"Q{next_quarter}",
                     'next_quarter_win': q_next_win,
                     'next_quarter_avg': q_next_avg,

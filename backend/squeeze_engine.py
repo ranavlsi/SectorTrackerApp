@@ -40,6 +40,17 @@ PUBLIC_DIR = os.path.join(BASE_DIR, '..', 'public')
 LAKEHOUSE_PATH = os.path.join(BASE_DIR, 'data', 'daily_ohlcv.parquet')
 OUTPUT_FILE = os.path.join(PUBLIC_DIR, 'squeeze_results.json')
 
+MIN_PRICE = 10.0
+MIN_AVG_VOL_20 = 1_000_000
+MIN_DOLLAR_VOL_20 = 25_000_000
+MIN_CURR_VOL = 250_000
+MIN_MARKET_CAP_USD = 2_000_000_000
+
+try:
+    from market_cap_utils import enforce_min_market_cap
+except ImportError:
+    from backend.market_cap_utils import enforce_min_market_cap
+
 
 def _sanitize_json(obj):
     if isinstance(obj, dict):
@@ -66,6 +77,17 @@ def _load_json(filename):
         except Exception:
             pass
     return {}
+
+
+def _extract_mcap_b(row: dict) -> float:
+    mcap_b = row.get('market_cap_b')
+    if mcap_b is not None and float(mcap_b or 0) > 0:
+        return round(float(mcap_b), 2)
+    raw = row.get('market_cap')
+    if raw is not None and float(raw or 0) > 0:
+        val = float(raw)
+        return round(val / 1e9 if val >= 1e6 else val, 2)
+    return 0.0
 
 
 def load_cross_engine_context():
@@ -97,7 +119,7 @@ def load_cross_engine_context():
                         'name': r.get('name', sym),
                         'sector': r.get('sector', 'Technology'),
                         'industry': r.get('industry', 'Growth Leaders'),
-                        'market_cap_b': r.get('market_cap_b', 0)
+                        'market_cap_b': _extract_mcap_b(r)
                     }
 
     # 2. Options Flow
@@ -137,7 +159,7 @@ def load_cross_engine_context():
                     'name': r.get('name', sym),
                     'sector': r.get('sector', 'Technology'),
                     'industry': r.get('industry', 'Momentum Leader'),
-                    'market_cap_b': r.get('market_cap_b', 0)
+                    'market_cap_b': _extract_mcap_b(r)
                 }
 
     # 6. Minervini VCP / Screener Results
@@ -152,7 +174,7 @@ def load_cross_engine_context():
                         'name': r.get('name', sym),
                         'sector': r.get('sector', 'Technology'),
                         'industry': r.get('industry', 'Stage 2 Leader'),
-                        'market_cap_b': round(float(r.get('market_cap', 0) or 0) / 1e9, 1)
+                        'market_cap_b': _extract_mcap_b(r)
                     }
 
     # 7. Emerging Leaders, First MA Pullback, Clean Uptrend
@@ -196,14 +218,15 @@ def evaluate_apex_squeeze(ticker: str, df: pd.DataFrame, spy_df: pd.DataFrame, c
     v = df['Volume'].astype(float)
 
     curr_price = float(c.iloc[-1])
-    if curr_price < 10.0 or math.isnan(curr_price):
+    if curr_price < MIN_PRICE or math.isnan(curr_price):
         return None
 
     avg_vol_20 = float(v.rolling(20).mean().iloc[-1]) if len(v) >= 20 else float(v.mean())
+    curr_v = float(v.iloc[-1])
     dollar_vol = avg_vol_20 * curr_price
 
-    # Institutional Liquidity Gatekeeper: >= 1.5M shares OR >= $50M daily dollar volume
-    if avg_vol_20 < 1_500_000 and dollar_vol < 50_000_000:
+    # Institutional Liquidity Gatekeeper: >= 1.0M shares AND >= $25M daily dollar volume AND active tape
+    if avg_vol_20 < MIN_AVG_VOL_20 or dollar_vol < MIN_DOLLAR_VOL_20 or curr_v < MIN_CURR_VOL:
         return None
 
     # Trend Gatekeeper: Confirmed Stage 2 Uptrend
@@ -566,9 +589,7 @@ def evaluate_apex_squeeze(ticker: str, df: pd.DataFrame, spy_df: pd.DataFrame, c
         squeeze_category = "VCP_VDU_COIL"
         category_label = "💧 VCP + VDU Coil"
 
-    mcap_b = round(float(meta_info.get('market_cap_b', 0) or 0), 1)
-    if mcap_b <= 0:
-        mcap_b = round(max(2.1, (dollar_vol * 45.0) / 1e9), 1)
+    mcap_b = round(float(meta_info.get('market_cap_b', 0) or 0), 2)
 
     vdu_text = " | VDU Dry-Up" if is_vdu else (" | 3D VDU Coiling" if vdu_3d_seq else "")
     pp_text = f" | ⚡ {pocket_pivots_10d}x Pocket Pivot" if is_pocket_pivot else ""
@@ -580,6 +601,12 @@ def evaluate_apex_squeeze(ticker: str, df: pd.DataFrame, spy_df: pd.DataFrame, c
         "industry": meta_info.get('industry', 'Institutional Leaders'),
         "price": round(curr_price, 2),
         "day_change_pct": round(day_gain_pct, 2),
+        "avg_vol_20": int(round(avg_vol_20)),
+        "avg_vol_20_m": round(avg_vol_20 / 1e6, 2),
+        "curr_vol": int(round(curr_v)),
+        "curr_vol_m": round(curr_v / 1e6, 2),
+        "dollar_vol_m": round(dollar_vol / 1e6, 1),
+        "rvol_20": round(curr_v / max(1.0, avg_vol_20), 2),
         "composite_score": final_score,
         "setup_grade": setup_grade,
         "squeeze_category": squeeze_category,
@@ -681,6 +708,14 @@ def run_apex_squeeze_engine():
         if res:
             candidates.append(res)
 
+    print(f"Enforcing strict >= ${MIN_MARKET_CAP_USD / 1e9:.1f}B Equity Market Cap on {len(candidates)} liquid candidates...")
+    candidates = enforce_min_market_cap(candidates, min_mcap_usd=MIN_MARKET_CAP_USD)
+    for r in candidates:
+        r['metric'] = (
+            f"Score {r['composite_score']}/100 [{r['setup_grade']}] | {r['ttm_label']} ({r['compression_ratio']:.2f}x Ratio) | "
+            f"{r['rmv_status']} | Vol: {r['avg_vol_20_m']:.2f}M (${r['dollar_vol_m']:.0f}M/d) | Cap: ${r['market_cap_b']:.1f}B"
+        )
+
     # Sort master list strictly by Composite Score and Confluence Count
     candidates.sort(key=lambda x: (x['composite_score'], x['confluence_count']), reverse=True)
 
@@ -705,6 +740,13 @@ def run_apex_squeeze_engine():
     payload = _sanitize_json({
         "last_updated": pd.Timestamp.now().isoformat(),
         "total_scanned": int(len(tickers)),
+        "constraints": {
+            "min_price": MIN_PRICE,
+            "min_avg_vol_20": MIN_AVG_VOL_20,
+            "min_avg_vol_20_m": round(MIN_AVG_VOL_20 / 1e6, 2),
+            "min_dollar_vol_m": round(MIN_DOLLAR_VOL_20 / 1e6, 1),
+            "min_market_cap_b": round(MIN_MARKET_CAP_USD / 1e9, 1)
+        },
         "summary_kpis": summary_kpis,
         "spotlight": all_squeezes[0] if all_squeezes else None,
         "all_squeezes": all_squeezes,

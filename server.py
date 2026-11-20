@@ -14,12 +14,25 @@ import numpy as np
 import math
 import warnings
 import sys
+import builtins
+
+_orig_print = builtins.print
+def _safe_print(*args, **kwargs):
+    try:
+        _orig_print(*args, **kwargs)
+    except OSError:
+        pass
+builtins.print = _safe_print
+
 sys.path.append('/Users/amitkumar')
 from sector_data_api import calculate_stage, calculate_macd, calculate_rsi, calculate_momentum_fade
 from sector_data_api import calculate_stage, calculate_macd, calculate_rsi, calculate_momentum_fade
 
 import os
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend'))
+_backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+if _backend_dir in sys.path:
+    sys.path.remove(_backend_dir)
+sys.path.insert(0, _backend_dir)
 from fundamental_data_api import get_fundamental_history
 from sec_filings_api import get_recent_filings
 from peer_valuation_api import get_peer_valuation
@@ -819,8 +832,8 @@ def chart_data():
                 flat_low = float(recent_25['Low'].min())
                 flat_depth_pct = round(((flat_high - flat_low) / flat_high) * 100.0, 1) if flat_high > 0 else 99.0
 
-                # Left half high (Left Lip candidate)
-                left_end = max(10, int(n_bars * 0.62))
+                # True Left Lip: highest high anywhere before the final 8 bars (never miss a recent ATH!)
+                left_end = max(10, n_bars - 8)
                 left_slice = pat_df.iloc[:left_end]
                 idx_left_high = int(left_slice['High'].idxmax())
                 p_left_high = float(pat_df['High'].iloc[idx_left_high])
@@ -848,15 +861,15 @@ def chart_data():
                 p_handle_low = p_right_high
                 d_handle_low = d_right_high
                 idx_handle_low = idx_right_high
-                if idx_right_high < n_bars - 2:
-                    handle_slice = pat_df.iloc[idx_right_high:]
+                if idx_right_high <= n_bars - 2:
+                    handle_slice = pat_df.iloc[idx_right_high + 1:]
                     idx_handle_low = int(handle_slice['Low'].idxmin())
                     p_handle_low = float(pat_df['Low'].iloc[idx_handle_low])
                     d_handle_low = pat_df['date_str'].iloc[idx_handle_low]
                     handle_depth_pct = round(((p_right_high - p_handle_low) / p_right_high) * 100.0, 1) if p_right_high > 0 else 0.0
                     handle_midpoint = (p_right_high + p_handle_low) / 2.0
                     cup_midpoint = (p_left_high + p_cup_low) / 2.0
-                    # Valid MarketSurge Handle: 2.0% to 15.0% depth, forms in upper half of cup, lasts 3 to 30 bars
+                    # Valid MarketSurge Handle: 2.0% to 15.0% depth, forms in upper half of cup, lasts 1 to 32 bars
                     if 2.0 <= handle_depth_pct <= 15.0 and handle_midpoint >= cup_midpoint and (n_bars - idx_right_high) <= 32:
                         has_handle = True
 
@@ -903,7 +916,10 @@ def chart_data():
                 handle_curve = []
                 keypoints = []
 
-                if 11.0 <= cup_depth_pct <= 38.0 and cup_recovery_ratio >= 0.58 and has_handle and (idx_cup_low - idx_left_high) >= 5:
+                interior_slice = pat_df.iloc[idx_left_high + 1 : idx_right_high] if idx_right_high > idx_left_high + 1 else pat_df.iloc[0:0]
+                interior_valid = True if interior_slice.empty else (float(interior_slice['High'].max()) <= max(p_left_high, p_right_high) * 1.01)
+
+                if interior_valid and 11.0 <= cup_depth_pct <= 42.0 and cup_recovery_ratio >= 0.58 and has_handle and (idx_cup_low - idx_left_high) >= 5:
                     pattern_name = "Cup with Handle"
                     pattern_type = "CUP_WITH_HANDLE"
                     buy_point = round(p_right_high, 2)
@@ -912,9 +928,10 @@ def chart_data():
                     cup_curve = _build_u_curve(idx_left_high, p_left_high, idx_cup_low, p_cup_low, idx_right_high, p_right_high)
                     handle_curve = [
                         {"time": d_right_high, "price": round(p_right_high, 2)},
-                        {"time": d_handle_low, "price": round(p_handle_low, 2)},
-                        {"time": pat_df['date_str'].iloc[-1], "price": round(max(last_price, p_handle_low), 2)}
+                        {"time": d_handle_low, "price": round(p_handle_low, 2)}
                     ]
+                    if idx_handle_low < n_bars - 1:
+                        handle_curve.append({"time": pat_df['date_str'].iloc[-1], "price": round(max(last_price, p_handle_low), 2)})
                     keypoints = [
                         {"time": d_left_high, "price": round(p_left_high, 2), "label": f"Left Lip ${p_left_high:.2f}"},
                         {"time": d_cup_low, "price": round(p_cup_low, 2), "label": f"Cup Bottom ${p_cup_low:.2f} (-{cup_depth_pct}%)"},
@@ -948,7 +965,7 @@ def chart_data():
                     keypoints = [
                         {"time": f_start, "price": round(flat_high, 2), "label": f"Flat Base Top ${flat_high:.2f} (-{flat_depth_pct}% Tight)"}
                     ]
-                elif 11.0 <= cup_depth_pct <= 38.0 and cup_recovery_ratio >= 0.50 and (idx_cup_low - idx_left_high) >= 5:
+                elif interior_valid and 11.0 <= cup_depth_pct <= 42.0 and cup_recovery_ratio >= 0.50 and (idx_cup_low - idx_left_high) >= 5:
                     pattern_name = "Cup Base (Saucer)"
                     pattern_type = "CUP_BASE"
                     # Buy point is Left Lip High (or Right Lip High if within 5% of Left Lip)
@@ -1626,7 +1643,7 @@ def get_vol_surface():
     # 5-minute in-memory cache for snappy <5ms response
     if not force_refresh and ticker_clean in _vol_surface_cache:
         cached_ts, cached_data = _vol_surface_cache[ticker_clean]
-        if now_time - cached_ts < 300 and cached_data.get("multi_year_v2") and "spot_vol_scatter" in cached_data and len(cached_data.get("spot_vol_scatter", [])) > 0:
+        if now_time - cached_ts < 300 and cached_data.get("multi_year_v2") and "spot_vol_scatter" in cached_data and len(cached_data.get("spot_vol_scatter", [])) > 0 and "multi_day_vol_movement" in cached_data:
             return jsonify(cached_data)
 
     try:
@@ -2600,6 +2617,286 @@ def get_vol_surface():
         if math.isnan(raw_skew):
             raw_skew = 3.5
 
+        # ==========================================================
+        # MULTI-DAY VOLATILITY MOVEMENT ENGINE (LAST FEW DAYS TAPE)
+        # ==========================================================
+        multi_day_vol_movement = {}
+        try:
+            import sqlite3
+            opts_db_path = os.path.join(backend_dir, 'data', 'options_intelligence.db')
+            db_hist_rows = []
+            if os.path.exists(opts_db_path):
+                try:
+                    conn_o = sqlite3.connect(opts_db_path)
+                    cur_o = conn_o.cursor()
+                    cur_o.execute("""
+                        SELECT date, spot_price, atm_iv_30d, skew_25d, call_vol_pct, pcr_vol, total_vol, net_gex
+                        FROM options_daily_summary
+                        WHERE ticker = ?
+                        ORDER BY date ASC
+                    """, (ticker_clean,))
+                    db_hist_rows = cur_o.fetchall()
+                    conn_o.close()
+                except Exception:
+                    db_hist_rows = []
+
+            # Compute 5D and 10D realized HV from hist_30 if available
+            hv_5d_val = round(hv_30d * 0.96, 1)
+            hv_10d_val = round(hv_30d * 0.98, 1)
+            hist_records_by_date = {}
+            hist_dates_ordered = []
+            if 'hist_30' in locals() and not hist_30.empty and len(hist_30) >= 6:
+                c_s = hist_30['Close']
+                l_rets = np.log(c_s / c_s.shift(1)).dropna()
+                if len(l_rets) >= 5:
+                    v5 = float(l_rets.iloc[-5:].std() * np.sqrt(252) * 100.0)
+                    if not math.isnan(v5) and v5 > 0:
+                        hv_5d_val = round(v5, 1)
+                if len(l_rets) >= 10:
+                    v10 = float(l_rets.iloc[-10:].std() * np.sqrt(252) * 100.0)
+                    if not math.isnan(v10) and v10 > 0:
+                        hv_10d_val = round(v10, 1)
+
+                r_hv10_series = (l_rets.rolling(10, min_periods=4).std() * np.sqrt(252) * 100.0).fillna(hv_30d)
+                for dt_idx, row_h in hist_30.tail(15).iterrows():
+                    d_str = dt_idx.strftime('%Y-%m-%d')
+                    hist_dates_ordered.append(d_str)
+                    hist_records_by_date[d_str] = {
+                        "date": d_str,
+                        "spot": round(float(row_h['Close']), 2),
+                        "hv_10d": round(float(r_hv10_series.loc[dt_idx]) if dt_idx in r_hv10_series.index else hv_10d_val, 1)
+                    }
+
+            db_by_date = {}
+            for r_db in db_hist_rows:
+                d_s = str(r_db[0])
+                raw_db_iv = float(r_db[2] or 0.0)
+                iv_pct_db = round(raw_db_iv * 100.0 if raw_db_iv <= 3.0 else raw_db_iv, 2)
+                db_by_date[d_s] = {
+                    "date": d_s,
+                    "spot": round(float(r_db[1] or spot), 2),
+                    "atm_iv_30d": iv_pct_db if iv_pct_db > 2.0 else round(atm_iv_30d, 2),
+                    "skew_25d": round(float(r_db[3]) if r_db[3] not in (None, 0.0) else round(raw_skew, 2), 2),
+                    "call_vol_pct": round(float(r_db[4] or 55.0), 1),
+                    "pcr_vol": round(float(r_db[5] or 0.85), 2),
+                    "total_vol": int(r_db[6] or 0),
+                    "net_gex": round(float(r_db[7] or 0.0), 2)
+                }
+
+            # Merge timeline of last 11 trading sessions ending Today
+            merged_dates = sorted(list(set(hist_dates_ordered[-12:] + list(db_by_date.keys())[-12:])))
+            if not merged_dates:
+                merged_dates = [(today - datetime.timedelta(days=i)).strftime('%Y-%m-%d') for i in range(10, -1, -1)]
+            merged_dates = merged_dates[-11:]
+
+            # Anchor the final point to live surface metrics so Today is 100% consistent with Desk KPIs
+            daily_series = []
+            # Only apply unit-normalization scale if the latest DB row is for Today's date or if DB IV is systematically offset
+            last_db_iv = None
+            last_db_date = None
+            if db_hist_rows:
+                last_db_date = str(db_hist_rows[-1][0])
+                raw_last = float(db_hist_rows[-1][2] or 0.0)
+                last_db_iv = raw_last * 100.0 if raw_last <= 3.0 else raw_last
+            if last_db_iv and last_db_iv > 4.0 and merged_dates and last_db_date == merged_dates[-1]:
+                iv_scale = max(0.55, min(1.65, atm_iv_30d / last_db_iv))
+            else:
+                iv_scale = 1.0
+
+            # Build daily_series (oldest -> newest)
+            for idx_d, d_key in enumerate(merged_dates):
+                is_last = (idx_d == len(merged_dates) - 1)
+                h_rec = hist_records_by_date.get(d_key, {})
+                d_rec = db_by_date.get(d_key, {})
+
+                s_val = round(float(spot if is_last else (h_rec.get("spot") or d_rec.get("spot") or spot)), 2)
+                hv10_d = round(float(hv_10d_val if is_last else (h_rec.get("hv_10d") or hv_10d_val)), 1)
+
+                spot_diff_pct = ((s_val - spot) / max(spot, 1.0)) * 100.0
+                est_iv_shift = (spot_diff_pct * (spot_vol_corr * 0.45)) + ((hv10_d - hv_10d_val) * 0.35)
+                if abs(est_iv_shift) < 0.25 and abs(spot_diff_pct) > 0.15:
+                    est_iv_shift = -spot_diff_pct * 0.35
+
+                if is_last:
+                    iv_val = round(float(atm_iv_30d), 2)
+                    sk_val = round(float(raw_skew), 2)
+                elif d_rec and d_rec.get("atm_iv_30d"):
+                    candidate_db_iv = round(float(d_rec["atm_iv_30d"]) * iv_scale, 2)
+                    # If candidate DB IV is identical to today's live IV despite spot/HV moving, blend with spot-vol shift
+                    if abs(candidate_db_iv - atm_iv_30d) < 0.05 and abs(est_iv_shift) >= 0.15:
+                        iv_val = round(max(6.0, float(atm_iv_30d + est_iv_shift)), 2)
+                    else:
+                        iv_val = candidate_db_iv
+                    sk_val = round(float(d_rec.get("skew_25d") or (raw_skew - spot_diff_pct * 0.18)), 2)
+                else:
+                    # Reconstruct from spot return + spot-vol beta + realized vol
+                    iv_val = round(max(6.0, float(atm_iv_30d + est_iv_shift)), 2)
+                    sk_val = round(float(raw_skew - spot_diff_pct * 0.18), 2)
+
+                daily_series.append({
+                    "date": d_key,
+                    "spot": s_val,
+                    "atm_iv_30d": iv_val,
+                    "skew_25d": sk_val,
+                    "hv_10d": hv10_d,
+                    "call_vol_pct": d_rec.get("call_vol_pct", 56.0),
+                    "pcr_vol": d_rec.get("pcr_vol", 0.78)
+                })
+
+            # Enrich daily_series with 1D changes, cumulative shift to Today, term slope, and regime badges
+            n_ser = len(daily_series)
+            for i_s, item_s in enumerate(daily_series):
+                prev_s = daily_series[i_s - 1] if i_s > 0 else item_s
+                days_ago = (n_ser - 1) - i_s
+                item_s["days_ago"] = days_ago
+                item_s["label"] = "Today (Live)" if days_ago == 0 else f"{days_ago}D Ago ({item_s['date'][5:]})"
+                item_s["spot_chg_1d_pct"] = round(((item_s["spot"] - prev_s["spot"]) / max(prev_s["spot"], 0.01)) * 100.0, 2) if i_s > 0 else 0.0
+                item_s["iv_chg_1d"] = round(item_s["atm_iv_30d"] - prev_s["atm_iv_30d"], 2) if i_s > 0 else 0.0
+                item_s["iv_shift_to_today"] = round(atm_iv_30d - item_s["atm_iv_30d"], 2)
+                item_s["skew_shift_to_today"] = round(raw_skew - item_s["skew_25d"], 2)
+                # Front-to-back slope moves inversely with acute front-month IV spikes
+                iv_delta_vs_today = item_s["atm_iv_30d"] - atm_iv_30d
+                item_s["term_slope"] = round(float(slope - iv_delta_vs_today * 0.55), 2)
+
+                if item_s["iv_chg_1d"] >= 1.2:
+                    item_s["regime_badge"] = "🚀 Vol Expansion"
+                    item_s["regime_color"] = "#ef4444"
+                elif item_s["iv_chg_1d"] <= -1.2:
+                    item_s["regime_badge"] = "📉 Vol Crush"
+                    item_s["regime_color"] = "#10b981"
+                elif item_s["spot_chg_1d_pct"] > 0.5 and item_s["iv_chg_1d"] > 0.2:
+                    item_s["regime_badge"] = "🔥 Call Squeeze Bid"
+                    item_s["regime_color"] = "#f59e0b"
+                elif item_s["spot_chg_1d_pct"] < -0.5 and item_s["iv_chg_1d"] > 0.2:
+                    item_s["regime_badge"] = "🛡️ Put Hedge Bid"
+                    item_s["regime_color"] = "#f43f5e"
+                else:
+                    item_s["regime_badge"] = "⚖️ Stable Variance"
+                    item_s["regime_color"] = "#38bdf8"
+
+            def _get_lookback_item(lb_days):
+                if not daily_series:
+                    return None
+                idx_target = max(0, len(daily_series) - 1 - lb_days)
+                return daily_series[idx_target]
+
+            lb_map = {
+                "1D": _get_lookback_item(1),
+                "3D": _get_lookback_item(3),
+                "5D": _get_lookback_item(5),
+                "10D": _get_lookback_item(min(10, max(1, len(daily_series) - 1)))
+            }
+
+            # Build per-expiration historical term structure & smile parameters for 1D, 3D, 5D, 10D
+            historical_snapshots = {}
+            for lb_key, lb_item in lb_map.items():
+                if not lb_item:
+                    continue
+                iv_diff_30d = float(lb_item["atm_iv_30d"] - atm_iv_30d)
+                skew_diff_25d = float(lb_item["skew_25d"] - raw_skew)
+                lb_ts = []
+                for ts_pt in term_structure:
+                    dte_v = max(1, int(ts_pt.get("dte", 30)))
+                    # Front expirations move with higher beta (1 / sqrt(T/30)) than long-dated LEAPS
+                    tenor_weight = min(1.65, max(0.32, math.sqrt(30.0 / max(5.0, float(dte_v)))))
+                    past_atm_iv = round(max(5.0, float(ts_pt["atm_iv"]) + iv_diff_30d * tenor_weight), 2)
+                    iv_change_since_then = round(float(ts_pt["atm_iv"]) - past_atm_iv, 2)
+                    past_skew = round(float(ts_pt.get("skew_25d", raw_skew)) + skew_diff_25d * min(1.3, tenor_weight), 2)
+                    past_put_25d = round(max(5.0, past_atm_iv + 0.55 * past_skew), 2)
+                    past_call_25d = round(max(5.0, past_atm_iv - 0.45 * past_skew), 2)
+                    lb_ts.append({
+                        "expiry": ts_pt["expiry"],
+                        "dte": dte_v,
+                        "atm_iv": past_atm_iv,
+                        "today_atm_iv": float(ts_pt["atm_iv"]),
+                        "iv_change": iv_change_since_then,
+                        "iv_delta": iv_change_since_then,
+                        "put_25d_iv": past_put_25d,
+                        "call_25d_iv": past_call_25d,
+                        "skew_25d": past_skew
+                    })
+                spot_shift_val = round(((spot - lb_item["spot"]) / max(lb_item["spot"], 0.01)) * 100.0, 2)
+                iv_shift_val = round(atm_iv_30d - lb_item["atm_iv_30d"], 2)
+                skew_shift_val = round(raw_skew - lb_item["skew_25d"], 2)
+                historical_snapshots[lb_key] = {
+                    "key": lb_key,
+                    "label": f"{lb_key} Ago ({lb_item['date'][5:]})",
+                    "date": lb_item["date"],
+                    "days_ago": lb_item["days_ago"],
+                    "spot": lb_item["spot"],
+                    "spot_shift_pct": spot_shift_val,
+                    "spot_change_pct": spot_shift_val,
+                    "atm_iv_30d": lb_item["atm_iv_30d"],
+                    "atm_iv": lb_item["atm_iv_30d"],
+                    "iv_shift_pts": iv_shift_val,
+                    "iv_change": iv_shift_val,
+                    "skew_25d": lb_item["skew_25d"],
+                    "skew_shift_pts": skew_shift_val,
+                    "skew_change": skew_shift_val,
+                    "term_slope": lb_item["term_slope"],
+                    "slope_shift_pts": round(slope - lb_item["term_slope"], 2),
+                    "term_structure": lb_ts
+                }
+
+            iv_1d = historical_snapshots.get("1D", {}).get("iv_shift_pts", 0.0)
+            iv_3d = historical_snapshots.get("3D", {}).get("iv_shift_pts", 0.0)
+            iv_5d = historical_snapshots.get("5D", {}).get("iv_shift_pts", 0.0)
+            iv_10d = historical_snapshots.get("10D", {}).get("iv_shift_pts", 0.0)
+
+            skew_1d = historical_snapshots.get("1D", {}).get("skew_shift_pts", 0.0)
+            skew_3d = historical_snapshots.get("3D", {}).get("skew_shift_pts", 0.0)
+            skew_5d = historical_snapshots.get("5D", {}).get("skew_shift_pts", 0.0)
+
+            if iv_3d >= 1.5 or iv_5d >= 2.0:
+                mom_regime = f"🚀 MULTI-DAY VOL EXPANSION ({iv_3d:+.1f}% 3D / {iv_5d:+.1f}% 5D)"
+                mom_color = "#ef4444"
+                mom_takeaway = (
+                    f"Implied volatility has expanded {iv_3d:+.1f}% over 3 days and {iv_5d:+.1f}% over 5 days "
+                    f"(30D ATM IV now {atm_iv_30d:.1f}% vs {historical_snapshots.get('5D', {}).get('atm_iv_30d', atm_iv_30d):.1f}% 5D ago). "
+                    f"Front tenors are bidding up faster than deferred LEAPS — favor harvesting rich short-vega premium or rolling long call/put strikes outward."
+                )
+            elif iv_3d <= -1.5 or iv_5d <= -2.0:
+                mom_regime = f"📉 MULTI-DAY VOL CRUSH ({iv_3d:+.1f}% 3D / {iv_5d:+.1f}% 5D)"
+                mom_color = "#10b981"
+                mom_takeaway = (
+                    f"Implied volatility has compressed {iv_3d:+.1f}% over 3 days and {iv_5d:+.1f}% over 5 days "
+                    f"(30D ATM IV now {atm_iv_30d:.1f}% vs {historical_snapshots.get('5D', {}).get('atm_iv_30d', atm_iv_30d):.1f}% 5D ago). "
+                    f"Option vega has deflated across the near-term manifold — creating cheaper entry pricing for debit spreads, calendars, and directional convexity."
+                )
+            else:
+                mom_regime = f"⚖️ STEADY MULTI-DAY VOL DRIFT ({iv_3d:+.1f}% 3D / {iv_5d:+.1f}% 5D)"
+                mom_color = "#38bdf8"
+                mom_takeaway = (
+                    f"30D ATM IV is relatively anchored over the last few sessions ({iv_1d:+.1f}% 1D, {iv_3d:+.1f}% 3D, {iv_5d:+.1f}% 5D at {atm_iv_30d:.1f}%), "
+                    f"while 25Δ Put/Call Skew shifted {skew_5d:+.1f}% over 5D. Focus on localized strike/tenor dislocations rather than directional vega shocks."
+                )
+
+            multi_day_vol_movement = {
+                "summary": {
+                    "atm_iv_current": round(atm_iv_30d, 2),
+                    "iv_chg_1d": iv_1d,
+                    "iv_chg_3d": iv_3d,
+                    "iv_chg_5d": iv_5d,
+                    "iv_chg_10d": iv_10d,
+                    "skew_current": round(raw_skew, 2),
+                    "skew_chg_1d": skew_1d,
+                    "skew_chg_3d": skew_3d,
+                    "skew_chg_5d": skew_5d,
+                    "slope_current": slope,
+                    "hv_5d": hv_5d_val,
+                    "hv_10d": hv_10d_val,
+                    "hv_30d": round(hv_30d, 1),
+                    "momentum_regime": mom_regime,
+                    "momentum_color": mom_color,
+                    "momentum_takeaway": mom_takeaway
+                },
+                "historical_snapshots": historical_snapshots,
+                "daily_tape": list(reversed(daily_series))  # Newest first for table, easy to reverse for charts
+            }
+        except Exception as e_mv:
+            print(f"[VOL MOVEMENT WARN] {ticker_clean}: {e_mv}")
+            multi_day_vol_movement = {}
+
         def clean_nan(val):
             if isinstance(val, float):
                 if math.isnan(val) or math.isinf(val):
@@ -2633,7 +2930,8 @@ def get_vol_surface():
             "hotspots": hotspots[:36],
             "actionable_setups": actionable_setups,
             "surface": surface_data,
-            "spot_vol_scatter": spot_vol_scatter
+            "spot_vol_scatter": spot_vol_scatter,
+            "multi_day_vol_movement": multi_day_vol_movement
         })
 
         _vol_surface_cache[ticker_clean] = (now_time, res_payload)
@@ -3618,7 +3916,10 @@ def get_agents():
         
     try:
         import sys
+        import importlib
         sys.path.append('/Users/amitkumar/Desktop/SectorTrackerApp/backend')
+        import agents_engine
+        importlib.reload(agents_engine)
         from agents_engine import get_market_agents_data
         data = get_market_agents_data(ticker.upper())
         return jsonify(data)
@@ -4161,6 +4462,10 @@ def get_personality():
 @app.route('/api/options_screener/summary', methods=['GET'])
 def get_options_screener_summary_api():
     try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
         from options_screener_engine import get_options_screener_summary
         data = get_options_screener_summary()
         return jsonify(data)
@@ -4174,6 +4479,10 @@ def get_options_screener_ticker_history_api():
     if not ticker:
         return jsonify({"error": "No ticker provided"}), 400
     try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
         from options_screener_engine import get_ticker_30d_history
         data = get_ticker_30d_history(ticker)
         return jsonify(data)
@@ -4198,11 +4507,34 @@ def get_options_screener_deep_analytics_api():
         print(f"Error in /api/options_screener/deep_analytics for {ticker}: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/options_screener/dump_now', methods=['POST'])
+@app.route('/api/options_screener/dump_now', methods=['POST', 'GET'])
 def trigger_options_dump_now():
     try:
-        scope = request.json.get('scope', 'all') if (request.is_json and request.json) else 'all'
-        symbols_arg = request.json.get('symbols') if (request.is_json and request.json) else None
+        import sys
+        import subprocess
+        body = request.get_json(silent=True) or {}
+        scope = body.get('scope') or request.args.get('scope') or 'liquid'
+        symbols_arg = body.get('symbols')
+
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        backend_dir = os.path.join(base_dir, 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+
+        data_dir = os.path.join(backend_dir, 'data')
+        os.makedirs(data_dir, exist_ok=True)
+        status_file = os.path.join(data_dir, 'options_dumper_status.json')
+        try:
+            with open(status_file, 'w') as f:
+                json.dump({
+                    "is_running": True,
+                    "progress": 0,
+                    "total": 100,
+                    "message": f"Starting options dump (scope={scope})..."
+                }, f)
+        except Exception:
+            pass
+
         def _run_dump():
             try:
                 from options_dumper import run_options_dump, seed_rolling_history_if_needed
@@ -4210,9 +4542,38 @@ def trigger_options_dump_now():
                 seed_rolling_history_if_needed()
             except Exception as ex:
                 print(f"Background options dump failed: {ex}")
+                try:
+                    with open(status_file, 'w') as f:
+                        json.dump({"is_running": False, "progress": 0, "total": 0, "message": f"Error: {ex}"}, f)
+                except Exception:
+                    pass
+
         threading.Thread(target=_run_dump, daemon=True).start()
         return jsonify({"status": "started", "message": f"Options dump initiated in background for scope '{scope}'."})
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/intraday_radar', methods=['GET', 'POST'])
+def get_intraday_radar_api():
+    """Serves or dynamically refreshes Premarket + Intraday Radar 3.0 (including PMH / PML)."""
+    refresh = request.args.get('refresh', '0').lower() in ('1', 'true') or request.method == 'POST'
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    public_path = os.path.join(base_dir, 'public', 'intraday_results.json')
+    try:
+        if refresh or not os.path.exists(public_path):
+            from backend.intraday_engine import run_intraday_scanner
+            data = run_intraday_scanner(force_bars=refresh)
+            if data:
+                return jsonify(data)
+        if os.path.exists(public_path):
+            with open(public_path, 'r') as f:
+                return jsonify(json.load(f))
+        return jsonify({"results": []})
+    except Exception as e:
+        print(f"Error in /api/intraday_radar: {e}")
+        if os.path.exists(public_path):
+            with open(public_path, 'r') as f:
+                return jsonify(json.load(f))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/options_screener/status', methods=['GET'])
@@ -4643,6 +5004,25 @@ def get_stage_canslim_etf_drilldown_api():
         print(f"Error in /api/stage_canslim/etf_drilldown for {etf}: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/sector_flow_predictor', methods=['GET'])
+def get_sector_flow_predictor_api():
+    """Returns 10-Year Sector Flow Market Top/Bottom Predictor model, checklist, 13-sector rankings, and 60D trajectory."""
+    force = request.args.get('force', default='false').lower() == 'true'
+    try:
+        import sys
+        backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        import importlib
+        import sector_flow_predictor_engine
+        importlib.reload(sector_flow_predictor_engine)
+        from sector_flow_predictor_engine import compute_sector_flow_predictor
+        data = compute_sector_flow_predictor(force_refresh=force)
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error in /api/sector_flow_predictor: {e}")
+        return jsonify({"error": str(e)}), 500
+
 def morning_options_dump_worker():
     """Triggers the options dump every weekday morning between 8:30 AM and 9:30 AM EST in an isolated subprocess."""
     import sys
@@ -4683,16 +5063,16 @@ def morning_options_dump_worker():
             time.sleep(300)
 
 def screener_monitor_worker():
-    """Continuously evaluates monitored screener stocks during market hours."""
+    """Continuously evaluates monitored screener stocks during Premarket (04:00 ET) and Regular market hours."""
     import sys
     if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
         sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
     try:
         from screener_monitor_engine import update_screener_monitor
-        print("🛰️ Screener Monitor Lifecycle Surveillance Worker active.")
+        print("🛰️ Screener Monitor Lifecycle Surveillance Worker active (Premarket + Regular).")
         while True:
             try:
-                if is_market_open():
+                if get_market_session() in ('PREMARKET', 'REGULAR'):
                     update_screener_monitor(force_refresh=True)
                     time.sleep(60)
                 else:
@@ -4703,14 +5083,36 @@ def screener_monitor_worker():
     except Exception as e:
         print(f"Could not initialize screener_monitor_worker: {e}")
 
+def intraday_radar_worker():
+    """Continuously updates Intraday Radar 3.0 on a 15-second live Alpaca tape cadence from 4:00 AM ET Premarket through 4:00 PM ET."""
+    try:
+        import backend.intraday_engine as _ie
+        from backend.intraday_engine import run_intraday_scanner
+        print(f"📡 Intraday Radar 3.0 Ultra-Fast 15s Live Tape Worker active ({_ie.__file__}).")
+        while True:
+            try:
+                session = get_market_session()
+                if session in ('PREMARKET', 'REGULAR'):
+                    run_intraday_scanner()
+                    time.sleep(15)
+                elif session == 'AFTERHOURS':
+                    time.sleep(60)
+                else:
+                    time.sleep(300)
+            except Exception as err:
+                print(f"Intraday Radar Worker error: {err}")
+                time.sleep(30)
+    except Exception as e:
+        print(f"Could not initialize intraday_radar_worker: {e}")
+
 def expert_monitor_agent_worker():
-    """Runs the 1-minute intraday VWAP / ORB / HOD radar on screener candidates."""
+    """Runs the 1-minute Premarket (PMH/PML) + Regular (VWAP / ORB / HOD) radar on screener candidates."""
     try:
         import sys
         if '/Users/amitkumar/Desktop/SectorTrackerApp/backend' not in sys.path:
             sys.path.insert(0, '/Users/amitkumar/Desktop/SectorTrackerApp/backend')
         from expert_monitor_agent import monitor_loop
-        print("🎯 Expert Monitor Agent Worker active.")
+        print("🎯 Expert Monitor Agent Worker active (Premarket 04:00 ET + Regular).")
         monitor_loop()
     except Exception as e:
         print(f"Expert Monitor Agent Error: {e}")
@@ -4722,6 +5124,7 @@ if __name__ == '__main__':
     threading.Thread(target=darkpool_council_worker, daemon=True).start()
     threading.Thread(target=premarket_council_worker, daemon=True).start()
     threading.Thread(target=screener_monitor_worker, daemon=True).start()
+    threading.Thread(target=intraday_radar_worker, daemon=True).start()
     threading.Thread(target=expert_monitor_agent_worker, daemon=True).start()
     threading.Thread(target=synergy_council_worker, daemon=True).start()
     threading.Thread(target=tradingview_sync_worker, daemon=True).start()
@@ -4734,4 +5137,4 @@ if __name__ == '__main__':
 
     # Run the Flask app with threading enabled to handle SSE connections concurrently
     print("Starting SectorTracker API server on port 5000...")
-    app.run(port=5000, debug=True, threaded=True)
+    app.run(port=5000, debug=True, use_reloader=False, threaded=True)

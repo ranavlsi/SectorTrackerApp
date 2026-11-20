@@ -118,7 +118,8 @@ def run_daemon():
                 # Trigger the live market scanner to instantly analyze the snapshot
                 import subprocess
                 subprocess.Popen(['python3', '/Users/amitkumar/Desktop/SectorTrackerApp/backend/live_market_scanner.py'])
-                subprocess.Popen(['python3', '/Users/amitkumar/Desktop/SectorTrackerApp/backend/intraday_engine.py'])            
+                # Handled by server.py intraday_radar_worker on a dedicated 15s live Alpaca cycle
+                # subprocess.Popen(['python3', '/Users/amitkumar/Desktop/SectorTrackerApp/backend/intraday_engine.py'])            
             # --- 15-Minute Engine Triggers ---
             current_time = time.time()
             if current_time - last_15m_run >= 900:  # 900 seconds = 15 minutes

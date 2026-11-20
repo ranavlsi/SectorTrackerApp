@@ -1,5 +1,48 @@
 {
-  "updated_at": "2026-11-06T17:44:52.533838",
-  "count": 0,
-  "results": []
+  "updated_at": "2026-11-19T17:45:07.944089",
+  "count": 1,
+  "results": [
+    {
+      "ticker": "ROIV",
+      "close": 38.96,
+      "score": 53,
+      "days_absorbed": 1,
+      "tier": "1-Day Wick Absorption",
+      "tier_badge": "\u26a1 1D Fresh Absorption",
+      "tier_color": "#38bdf8",
+      "wick_zone": "$38.73 - $39.26",
+      "wick_top": 39.26,
+      "wick_base": 38.73,
+      "wick_pct": 1.36,
+      "wick_ref_date": "2026-11-18",
+      "vdu_pct": 132.4,
+      "avg_vol_20d_m": 7.89,
+      "curr_vol_m": 4.93,
+      "dist_ema20_pct": 1.6,
+      "dist_sma50_pct": 4.7,
+      "dist_sma200_pct": 19.3,
+      "dist_52w_high_pct": 8.3,
+      "badges": [
+        "\u26a1 1D Fresh Absorption",
+        "\ud83d\udca7 VDU 132.4% vs Wick Bar",
+        "\ud83d\udee1\ufe0f +1.6% Over 20EMA",
+        "\ud83c\udfaf 8.3% Off 52W High"
+      ],
+      "sparkline": [
+        38.88,
+        40.67,
+        41.19,
+        41.85,
+        39.99,
+        39.53,
+        38.61,
+        38.71,
+        38.73,
+        38.96
+      ],
+      "market_cap_b": 28.23,
+      "name": "Roivant Sciences Ltd.",
+      "quote_type": "EQUITY"
+    }
+  ]
 }

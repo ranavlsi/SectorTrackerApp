@@ -148,7 +148,7 @@ def get_stock_data(ticker, lookback_days=260, timeframe='1D'):
 
 def calculate_technical_series(df):
     """Computes technical indicators including Elliott Wave Oscillator (EWO 5/35), ATR, and EMAs."""
-    df = df.copy()
+    df = df.copy().reset_index(drop=True)
     df['Spread'] = df['High'] - df['Low']
     df['ATR14'] = df['Spread'].rolling(window=14, min_periods=5).mean()
     df['SMA5'] = df['Close'].rolling(window=5, min_periods=3).mean()
@@ -225,6 +225,174 @@ def extract_zigzag_swings(df, min_atr_mult=2.2, window=7):
 
     return cleaned
 
+def validate_wave_span_extrema(df, pivots, tol=0.0005, check_tail=True, highs=None, lows=None):
+    """
+    Strictly validates that every labeled pivot in a wave structure is the true extremum
+    across its bounding span [prev_pivot : next_pivot] (no skipped peaks or troughs),
+    with strictly increasing indices and strictly alternating 'H'/'L' polarities.
+    """
+    if not pivots or len(pivots) < 2:
+        return False
+    if highs is None:
+        highs = df['High'].values
+    if lows is None:
+        lows = df['Low'].values
+    n = len(highs)
+
+    norm_pivots = []
+    for p in pivots:
+        if isinstance(p, dict):
+            idx = int(p.get('index', -1))
+            dt = str(p.get('date', ''))[:10]
+            price = float(p.get('price', 0.0))
+            pol = p.get('type_pol') or p.get('pol')
+            if pol not in ('H', 'L'):
+                return False
+            norm_pivots.append((idx, dt, price, pol))
+        else:
+            norm_pivots.append((int(p[0]), str(p[1])[:10], float(p[2]), p[3]))
+
+    k = len(norm_pivots)
+    for j in range(k):
+        idx, _, price, pol = norm_pivots[j]
+        if idx < 0 or idx >= n or pol not in ('H', 'L'):
+            return False
+        if j > 0:
+            prev_idx, _, _, prev_pol = norm_pivots[j - 1]
+            if idx <= prev_idx or pol == prev_pol:
+                return False
+        left = norm_pivots[j - 1][0] if j > 0 else idx
+        right = norm_pivots[j + 1][0] if j < k - 1 else (n - 1 if check_tail else idx)
+        if pol == 'H':
+            if price > float(highs[idx]) * (1.0 + tol):
+                return False
+            if float(np.max(highs[left:right + 1])) > price * (1.0 + tol):
+                return False
+        else:
+            if price < float(lows[idx]) * (1.0 - tol):
+                return False
+            if float(np.min(lows[left:right + 1])) < price * (1.0 - tol):
+                return False
+    return True
+
+def _extract_anchor_peaks_troughs(df, anc_idx, win_list):
+    """
+    Extracts all candidate local peaks and troughs after anc_idx across multiple window scales,
+    inclusive of the right edge (n-1) so fresh swings are never blind-spotted.
+    """
+    n = len(df)
+    highs = df['High'].values
+    lows = df['Low'].values
+    dates = [d.strftime('%Y-%m-%d') if hasattr(d, 'strftime') else str(d)[:10] for d in df['Date']]
+
+    p_map = {}
+    t_map = {}
+    for win in win_list:
+        peaks_w = []
+        troughs_w = []
+        for idx in range(anc_idx + 2, n):
+            lo = max(anc_idx, idx - win)
+            hi = min(n, idx + win + 1)
+            h = float(highs[idx])
+            if h >= float(np.max(highs[lo:hi])) - 1e-9:
+                if peaks_w and idx - peaks_w[-1][0] <= win:
+                    if h > peaks_w[-1][2]:
+                        peaks_w[-1] = (idx, dates[idx], h, 'H')
+                else:
+                    peaks_w.append((idx, dates[idx], h, 'H'))
+            l = float(lows[idx])
+            if l <= float(np.min(lows[lo:hi])) + 1e-9:
+                if troughs_w and idx - troughs_w[-1][0] <= win:
+                    if l < troughs_w[-1][2]:
+                        troughs_w[-1] = (idx, dates[idx], l, 'L')
+                else:
+                    troughs_w.append((idx, dates[idx], l, 'L'))
+        for p in peaks_w:
+            p_map[p[0]] = p
+        for t in troughs_w:
+            t_map[t[0]] = t
+
+    tail_s = max(anc_idx + 2, n - min(win_list) - 2)
+    if tail_s < n:
+        th_i = tail_s + int(np.argmax(highs[tail_s:n]))
+        tl_i = tail_s + int(np.argmin(lows[tail_s:n]))
+        p_map[th_i] = (th_i, dates[th_i], float(highs[th_i]), 'H')
+        t_map[tl_i] = (tl_i, dates[tl_i], float(lows[tl_i]), 'L')
+
+    sorted_peaks = sorted(p_map.values(), key=lambda x: x[0])
+    sorted_troughs = sorted(t_map.values(), key=lambda x: x[0])
+    return sorted_peaks, sorted_troughs
+
+def _score_motive_candidate(pivots, n, ewo_series=None):
+    """
+    Scores a geometrically valid motive wave tuple by duration proportionality,
+    Fibonacci retracement health, amplitude prominence, EWO alignment, and recency.
+    Returns -1e9 to reject structurally disproportional candidates.
+    """
+    k = len(pivots)
+    if k < 3:
+        return -1e9
+    durs = [pivots[i + 1][0] - pivots[i][0] for i in range(k - 1)]
+    if any(d < 2 for d in durs):
+        return -1e9
+
+    cycle_span = max(1, n - pivots[0][0])
+    if k >= 4:
+        if durs[0] < max(3, int(cycle_span * 0.04)) or durs[1] < max(2, int(cycle_span * 0.02)):
+            return -1e9
+        imp_durs = [durs[0], durs[2], durs[4]] if k >= 6 else [durs[0], durs[2]]
+        if max(imp_durs) / max(1, min(imp_durs)) > 8.0:
+            return -1e9
+        if k >= 5 and durs[3] < max(2, int(cycle_span * 0.02)):
+            return -1e9
+
+    w0p = max(0.01, float(pivots[0][2]))
+    len1 = float(pivots[1][2] - pivots[0][2])
+    len2 = float(pivots[1][2] - pivots[2][2])
+    ret2 = len2 / max(1e-6, len1)
+    if ret2 < 0.14 or ret2 > 0.99:
+        return -1e9
+
+    total_dur = max(1, pivots[-1][0] - pivots[0][0])
+    norm_durs = [max(0.01, d / total_dur) for d in durs]
+    score = 40.0 * float(np.mean(np.log(norm_durs)))
+    score -= abs(ret2 - 0.50) * 35.0
+    score += min(30.0, (len1 / w0p) * 80.0)
+    score += min(25.0, (len2 / w0p) * 120.0)
+
+    if k >= 4:
+        len3 = float(pivots[3][2] - pivots[2][2])
+        score += min(35.0, (len3 / w0p) * 70.0)
+        if len3 >= len1:
+            score += 12.0
+
+    if k >= 5:
+        len3 = float(pivots[3][2] - pivots[2][2])
+        len4 = float(pivots[3][2] - pivots[4][2])
+        ret4 = len4 / max(1e-6, len3)
+        if ret4 < 0.12 or ret4 > 0.85:
+            return -1e9
+        score -= abs(ret4 - 0.382) * 30.0
+        score += min(25.0, (len4 / w0p) * 120.0)
+        if abs(ret2 - ret4) >= 0.15:
+            score += 8.0
+
+    if k >= 6:
+        len5 = float(pivots[5][2] - pivots[4][2])
+        score += min(20.0, (len5 / w0p) * 60.0)
+        if ewo_series is not None:
+            ewo_slice = ewo_series[pivots[0][0]:pivots[5][0] + 1]
+            valid_ewo = ewo_slice[~np.isnan(ewo_slice)] if len(ewo_slice) > 0 else np.array([])
+            if len(valid_ewo) > 0:
+                ewo_max = float(np.max(valid_ewo))
+                ewo_w3 = float(ewo_series[pivots[3][0]]) if not np.isnan(ewo_series[pivots[3][0]]) else 0.0
+                if ewo_w3 >= ewo_max * 0.70:
+                    score += 10.0
+
+    bars_ago = (n - 1) - pivots[-1][0]
+    score -= bars_ago * 0.35
+    return score
+
 def evaluate_cardinal_rules(w0, w1, w2, w3, w4, w5, is_diagonal=False):
     """
     Validates Ralph Nelson Elliott's 3 Cardinal Invariant Rules:
@@ -251,14 +419,16 @@ def evaluate_cardinal_rules(w0, w1, w2, w3, w4, w5, is_diagonal=False):
         'verdict': 'PASSED (Valid Retracement)' if r1_valid else 'FAILED (100%+ W1 Breach)'
     })
 
-    # Rule 2: Wave 3 is Never Shortest
-    r2_valid = (len3 >= min(len1, len5)) and (len3 > 0.1)
+    # Rule 2: Wave 3 is Never Shortest (and standard W5 must exceed W3)
+    len_ok = (len3 >= min(len1, len5)) and (len3 > 0.1)
+    w5_ok = True if is_diagonal else (w5[2] > w3[2])
+    r2_valid = len_ok and w5_ok
     rules.append({
         'rule_name': 'Rule 2: Wave 3 Non-Shortest Invariant',
         'passed': r2_valid,
         'value': f"W3: ${len3:.2f} vs W1: ${len1:.2f}, W5: ${len5:.2f}",
-        'criterion': 'Wave 3 is never the shortest motive wave among 1, 3, and 5',
-        'verdict': 'PASSED (Wave 3 is Substantial)' if r2_valid else 'FAILED (Wave 3 is Shortest)'
+        'criterion': 'Wave 3 is never the shortest motive wave among 1, 3, and 5; standard Wave 5 exceeds Wave 3 peak',
+        'verdict': 'PASSED (Wave 3 is Substantial)' if r2_valid else ('FAILED (Wave 5 Failed to Exceed Wave 3)' if not w5_ok else 'FAILED (Wave 3 is Shortest)')
     })
 
     # Rule 3: Wave 4 Non-Overlap
@@ -1446,17 +1616,25 @@ def decompose_motive_leg(sub_df, start_pt, end_pt, leg_code, is_upward=True):
 
             # i4 is extreme between i3 and m-1
             if is_upward:
+                if h3 >= pend: continue
+                if float(np.max(highs[0:i2 + 1])) > h1 * 1.002: continue
+                if float(np.max(highs[i2:i3 + 1])) > h3 * 1.002: continue
                 rel_i4 = int(np.argmin(lows[i3:m-1]))
                 i4 = i3 + rel_i4
                 l4 = lows[i4]
                 if l4 <= p0 or l4 >= h3: continue
+                if float(np.max(highs[i2:i4 + 1])) > h3 * 1.002: continue
                 len5 = pend - l4
                 is_overlap = (l4 <= h1)
             else:
+                if h3 <= pend: continue
+                if float(np.min(lows[0:i2 + 1])) < h1 * 0.998: continue
+                if float(np.min(lows[i2:i3 + 1])) < h3 * 0.998: continue
                 rel_i4 = int(np.argmax(highs[i3:m-1]))
                 i4 = i3 + rel_i4
                 l4 = highs[i4]
                 if l4 >= p0 or l4 <= h3: continue
+                if float(np.min(lows[i2:i4 + 1])) < h3 * 0.998: continue
                 len5 = l4 - pend
                 is_overlap = (l4 >= h1)
 
@@ -1560,6 +1738,8 @@ def decompose_corrective_leg(sub_df, start_pt, end_pt, leg_code, is_downward=Tru
             ia = int(np.argmin(lows[1:ib])) + 1
             la = lows[ia]
             if la >= p0 or hb <= la or hb > p0 * 1.05: continue
+            if float(np.min(lows[0:ib + 1])) < la * 0.998: continue
+            if float(np.max(highs[ia:m])) > hb * 1.002: continue
             lc = pend
             if hb <= lc: continue
             len_a = p0 - la
@@ -1569,6 +1749,8 @@ def decompose_corrective_leg(sub_df, start_pt, end_pt, leg_code, is_downward=Tru
             ia = int(np.argmax(highs[1:ib])) + 1
             la = highs[ia]
             if la <= p0 or hb >= la or hb < p0 * 0.95: continue
+            if float(np.max(highs[0:ib + 1])) > la * 1.002: continue
+            if float(np.min(lows[ia:m])) < hb * 0.998: continue
             lc = pend
             if hb >= lc: continue
             len_a = la - p0
@@ -1651,7 +1833,7 @@ def decompose_all_subwaves(df, wave_points):
             all_subwaves.append(pt)
 
     # If stock is in active developing Wave 3 (e.g. w0, w1, w2 completed and price rising off w2):
-    if len(wave_points) == 3:
+    if len(wave_points) == 3 and '(2)' in str(wave_points[2].get('label', '')):
         w2 = wave_points[2]
         w2_idx = w2.get('index', 0)
         curr_idx = len(df) - 1
@@ -1886,51 +2068,76 @@ def is_confirmed_major_high(p, df, cycle_peak=None):
 def detect_abc_zigzag_pattern(df, swings, cycle_peak, secular_low, current_close):
     """
     Rigorously detects textbook Elliott Wave A-B-C ZigZag corrections (5-3-5)
-    originating from the major cycle peak (e.g. GFS $92.42 / $90.65 down to $42.15).
+    originating from the major cycle peak (e.g. GFS $92.55 down to $35.84),
+    enforcing true span extrema (no skipped peaks/troughs) and ZigZag B-wave bounds.
     """
     if df is None or len(df) < 35 or not cycle_peak or not secular_low:
         return None
     n = len(df)
+    highs = df['High'].values
+    lows = df['Low'].values
     peak_idx = cycle_peak[0]
-    peak_val = cycle_peak[2]
-    post_swings = [s for s in swings if s[0] >= peak_idx - 5]
+    post_swings = [s for s in swings if s[0] >= peak_idx - 2]
     if len(post_swings) < 3:
         return None
 
     cand_abc = []
     for i in range(len(post_swings) - 2):
         p0 = post_swings[i]
-        if p0[3] != 'H': continue
+        if p0[3] != 'H':
+            continue
         for j in range(i + 1, len(post_swings) - 1):
             a = post_swings[j]
-            if a[3] != 'L' or a[2] >= p0[2] or (a[0] - p0[0]) < 3: continue
+            if a[3] != 'L' or a[2] >= p0[2] or (a[0] - p0[0]) < 3:
+                continue
+            if float(np.max(highs[p0[0]:a[0] + 1])) > p0[2] * 1.0005:
+                continue
             for k in range(j + 1, len(post_swings)):
                 b = post_swings[k]
-                if b[3] != 'H' or b[2] <= a[2] or b[2] >= p0[2] or (b[0] - a[0]) < 3: continue
-                
-                # C is the lowest point after B (at least 3 bars after B)
-                if (n - 1 - b[0]) < 3: continue
-                post_b = df.iloc[b[0]+2:n]
+                if b[3] != 'H' or b[2] <= a[2] or b[2] >= p0[2] or (b[0] - a[0]) < 3:
+                    continue
+                if float(np.min(lows[p0[0]:b[0] + 1])) < a[2] * 0.9995:
+                    continue
+
+                # C is the lowest point after B (at least 1 bar after B)
+                if (n - 1 - b[0]) < 3:
+                    continue
+                post_b = df.iloc[b[0] + 1:n]
+                if post_b.empty:
+                    continue
                 c_idx = int(post_b['Low'].idxmin())
                 c_val = float(df.loc[c_idx, 'Low'])
                 c_date = str(df.loc[c_idx, 'Date'])[:10]
-                
+
+                len_a = p0[2] - a[2]
+                len_b = b[2] - a[2]
+                len_c = b[2] - c_val
+                retrace_b_ratio = len_b / max(1e-6, len_a)
+
                 # Invariants:
-                # 1. C must be below A (or within 2% for flat/truncated C)
-                # 2. C must be recent (<= 25 bars ago)
-                # 3. duration between B and C >= 3 bars
-                if c_val <= a[2] * 1.02 and (n - 1 - c_idx) <= 25 and (c_idx - b[0]) >= 3:
-                    len_a = p0[2] - a[2]
-                    len_b = b[2] - a[2]
-                    len_c = b[2] - c_val
-                    cand_abc.append((p0, a, b, (c_idx, c_date, c_val, 'L'), len_a, len_b, len_c))
-                    
+                # 1. C must be below A (or within 2% for truncated C), recent (<= 25 bars ago), dur >= 3
+                # 2. 12% <= B retrace <= 88% (distinct from >=88% Regular Flats)
+                # 3. True Span Extremum check across P0-A-B-C
+                if c_val <= a[2] * 1.02 and (n - 1 - c_idx) <= 25 and (c_idx - b[0]) >= 3 and (0.12 <= retrace_b_ratio <= 0.88):
+                    c_pt = (c_idx, c_date, c_val, 'L')
+                    if not validate_wave_span_extrema(df, [p0, a, b, c_pt], tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                        continue
+                    total_dur = max(1, c_idx - p0[0])
+                    norm_durs = [max(0.01, d / total_dur) for d in (a[0] - p0[0], b[0] - a[0], c_idx - b[0])]
+                    sc = (
+                        ((len_a + len_b + len_c) / max(0.01, p0[2])) * 100.0
+                        + 15.0 * float(np.mean(np.log(norm_durs)))
+                        - abs(retrace_b_ratio - 0.50) * 20.0
+                        - (n - 1 - c_idx) * 0.4
+                    )
+                    cand_abc.append((p0, a, b, c_pt, len_a, len_b, len_c, sc))
+
     if not cand_abc:
         return None
 
-    # Prioritize candidate with most recent C, then largest span
-    cand_abc.sort(key=lambda x: (x[3][0], x[4]), reverse=True)
-    p0, a, b, c, len_a, len_b, len_c = cand_abc[0]
+    # Prioritize highest-scoring structurally valid A-B-C sequence
+    cand_abc.sort(key=lambda x: x[7], reverse=True)
+    p0, a, b, c, len_a, len_b, len_c, _ = cand_abc[0]
 
     retrace_b = (len_b / (len_a + 1e-6)) * 100.0
     c_ratio = (len_c / (len_a + 1e-6)) * 100.0
@@ -2006,6 +2213,8 @@ def detect_elliott_wave_pattern(ticker, df):
 
     df = calculate_technical_series(df)
     n = len(df)
+    highs = df['High'].values
+    lows = df['Low'].values
     current_close = float(df.iloc[-1]['Close'])
     ewo_series = df['EWO'].values
     ewo_latest = float(ewo_series[-1]) if not np.isnan(ewo_series[-1]) else 0.0
@@ -2041,11 +2250,19 @@ def detect_elliott_wave_pattern(ticker, df):
     # =========================================================================
     struct_anchors = analyze_structural_cycle_anchors(df)
     if struct_anchors and struct_anchors['regime'] == 'CORRECTIVE_CYCLE_ABC':
+        sw_map = {}
+        for sc_swings, _ in swing_scales:
+            for s in sc_swings:
+                sw_map[s[0]] = s
+        cp = struct_anchors['cycle_peak']
+        if cp:
+            sw_map[cp[0]] = cp
+        combined_abc_swings = sorted(sw_map.values(), key=lambda x: x[0])
         pat_abc = detect_abc_zigzag_pattern(
-            df, 
-            swing_scales[2][0], 
-            struct_anchors['cycle_peak'], 
-            struct_anchors['secular_low'], 
+            df,
+            combined_abc_swings,
+            struct_anchors['cycle_peak'],
+            struct_anchors['secular_low'],
             current_close
         )
         if pat_abc:
@@ -2059,427 +2276,481 @@ def detect_elliott_wave_pattern(ticker, df):
         w0 = secular_anchor
         anc_idx = w0[0]
         cycle_span = n - anc_idx
-        win_list = [10, 8, 6] if cycle_span > 180 else [7, 6, 5, 4]
+        win_list = [10, 8, 6] if cycle_span > 180 else [7, 5, 4]
+        peaks, troughs = _extract_anchor_peaks_troughs(df, anc_idx, win_list)
 
         # 1. Check Primary 5-Wave Motive Impulse from w0
-        for win in win_list:
-            peaks = []
-            for idx in range(anc_idx + 3, n - 2):
-                h = float(df.loc[idx, 'High'])
-                if df.iloc[max(anc_idx, idx - win):min(n, idx + win + 1)]['High'].max() == h:
-                    peaks.append((idx, str(df.loc[idx, 'Date'])[:10], h, 'H'))
-                    
-            troughs = []
-            for idx in range(anc_idx + 3, n - 2):
-                l = float(df.loc[idx, 'Low'])
-                if df.iloc[max(anc_idx, idx - win):min(n, idx + win + 1)]['Low'].min() == l:
-                    troughs.append((idx, str(df.loc[idx, 'Date'])[:10], l, 'L'))
+        cand_5 = []
+        for p1 in peaks:
+            if p1[2] <= w0[2] * 1.08:
+                continue
+            dur1 = p1[0] - w0[0]
+            if dur1 > 220 or dur1 < 2:
+                continue
+            if float(np.max(highs[w0[0]:p1[0] + 1])) > p1[2] * 1.0005:
+                continue
+            for t2 in troughs:
+                if t2[0] <= p1[0] or (t2[0] - p1[0]) < 2:
+                    continue
+                if float(np.max(highs[p1[0]:t2[0] + 1])) > p1[2] * 1.0005:
+                    break
+                if float(np.min(lows[w0[0]:t2[0] + 1])) < w0[2] * 0.9995:
+                    break
+                if t2[2] <= w0[2] or t2[2] >= p1[2]:
+                    continue
+                if float(np.min(lows[p1[0]:t2[0] + 1])) < t2[2] * 0.9995:
+                    continue
+                for p3 in peaks:
+                    if p3[0] <= t2[0] or (p3[0] - t2[0]) < 2:
+                        continue
+                    if float(np.min(lows[t2[0]:p3[0] + 1])) < t2[2] * 0.9995:
+                        break
+                    if p3[2] <= p1[2]:
+                        continue
+                    if float(np.max(highs[t2[0]:p3[0] + 1])) > p3[2] * 1.0005:
+                        continue
+                    dur3 = p3[0] - t2[0]
+                    for t4 in troughs:
+                        if t4[0] <= p3[0] or (t4[0] - p3[0]) < 2:
+                            continue
+                        if float(np.max(highs[p3[0]:t4[0] + 1])) > p3[2] * 1.0005:
+                            break
+                        if t4[2] <= p1[2] or t4[2] >= p3[2]:
+                            continue
+                        if float(np.min(lows[p3[0]:t4[0] + 1])) < t4[2] * 0.9995:
+                            continue
+                        for p5 in peaks:
+                            if p5[0] <= t4[0] or (p5[0] - t4[0]) < 2:
+                                continue
+                            if float(np.min(lows[t4[0]:p5[0] + 1])) < t4[2] * 0.9995:
+                                break
+                            if (n - 1 - p5[0]) > 20:
+                                continue
+                            if p5[2] <= p3[2]:
+                                continue
+                            dur5 = p5[0] - t4[0]
+                            min_dur = min(dur1, dur3, dur5)
+                            max_dur = max(dur1, dur3, dur5)
+                            if min_dur > 0 and (max_dur / min_dur) > 6.0:
+                                continue
 
-            cand_5 = []
-            for p1 in peaks:
-                if p1[2] <= w0[2] * 1.08: continue
-                dur1 = p1[0] - w0[0]
-                if dur1 > 220: continue
-                for t2 in troughs:
-                    if not (p1[0] < t2[0]): continue
-                    if t2[2] <= w0[2] or t2[2] >= p1[2]: continue
-                    for p3 in peaks:
-                        if not (t2[0] < p3[0]): continue
-                        if p3[2] <= p1[2]: continue
-                        dur3 = p3[0] - t2[0]
-                        for t4 in troughs:
-                            if not (p3[0] < t4[0]): continue
-                            if t4[2] <= p1[2] or t4[2] >= p3[2]: continue
-                            for p5 in peaks:
-                                if not (t4[0] < p5[0]): continue
-                                dur5 = p5[0] - t4[0]
-                                if (n - 1 - p5[0]) > 20: continue
-                                if p5[2] <= t4[2]: continue
-
-                                min_dur = min(dur1, dur3, dur5)
-                                max_dur = max(dur1, dur3, dur5)
-                                if min_dur > 0 and (max_dur / min_dur) > 6.0: continue
-
-                                if df.iloc[p1[0]:t2[0]+1]['High'].max() > p1[2] * 1.005: continue
-                                if df.iloc[p3[0]:t4[0]+1]['High'].max() > p3[2] * 1.005: continue
-                                if df.iloc[t4[0]:p5[0]+1]['High'].max() > p5[2] * 1.005: continue
-
-                                len1 = p1[2] - w0[2]
-                                len3 = p3[2] - t2[2]
-                                len5 = p5[2] - t4[2]
-                                if len3 < min(len1, len5): continue
-
-                                rules, passed, score = evaluate_cardinal_rules(w0, p1, t2, p3, t4, p5)
-                                if passed and score == 3:
-                                    cand_5.append((w0, p1, t2, p3, t4, p5, p5[0]))
-
-            if cand_5:
-                cand_5.sort(key=lambda x: x[6], reverse=True)
-                w0, w1, w2, w3, w4, w5, _ = cand_5[0]
-                len1 = w1[2] - w0[2]
-                len3 = w3[2] - w2[2]
-                len5 = w5[2] - w4[2]
-                fibs = calculate_fibonacci_harmonics(w0, w1, w2, w3, w4, current_close)
-                rules, passed, score = evaluate_cardinal_rules(w0, w1, w2, w3, w4, w5)
-                
-                ewo_slice = df.iloc[w0[0]:w5[0]+1]['EWO'].values
-                ewo_w3 = float(df.iloc[w3[0]]['EWO'])
-                ewo_max = float(np.max(ewo_slice)) if len(ewo_slice) > 0 else 0.0
-                ewo_aligned = ewo_w3 >= ewo_max * 0.70
-                
-                is_near_peak = abs(current_close - w5[2]) / w5[2] <= 0.05 or current_close >= w5[2] * 0.95
-                active_wave = "Wave (5) [Terminal Motive Thrust]" if is_near_peak else "Corrective Wave (A) Digestion"
-                
-                wave_points = [
-                    {'label': '(0)', 'index': w0[0], 'date': w0[1], 'price': w0[2], 'type': 'origin'},
-                    {'label': '(1)', 'index': w1[0], 'date': w1[1], 'price': w1[2], 'type': 'impulse_1'},
-                    {'label': '(2)', 'index': w2[0], 'date': w2[1], 'price': w2[2], 'type': 'retrace_2'},
-                    {'label': '(3)', 'index': w3[0], 'date': w3[1], 'price': w3[2], 'type': 'impulse_3'},
-                    {'label': '(4)', 'index': w4[0], 'date': w4[1], 'price': w4[2], 'type': 'retrace_4'},
-                    {'label': '(5)', 'index': w5[0], 'date': w5[1], 'price': w5[2], 'type': 'terminal_5'}
-                ]
-                
-                minor_subwaves = detect_minor_subwaves(df, w2[0], w3[0])
-                if not minor_subwaves:
-                    minor_subwaves = detect_minor_subwaves(df, w4[0], w5[0])
-                    
-                entry = round(current_close, 2)
-                stop_loss = round(w4[2] * 0.985, 2)
-                target1 = round(fibs['fib_levels']['w5_target_standard'], 2)
-                target2 = round(fibs['fib_levels']['w5_target_extended'], 2)
-                rr = round(abs(target1 - entry) / max(0.01, abs(stop_loss - entry)), 2)
-                
-                return {
-                    'pattern_key': 'impulse_5',
-                    'pattern_name': '5-Wave Motive Impulse',
-                    'sub_category': 'Primary Degree Super-Cycle',
-                    'active_wave': active_wave,
-                    'degree': f"Primary Degree (1)-(2)-(3)-(4)-(5) [Origin: {w0[1]}]",
-                    'subdivision': '5-3-5-3-5 Motive Subdivision',
-                    'direction': 'BULLISH_TREND',
-                    'confidence': 96 if ewo_aligned else 90,
-                    'cardinal_score': "3/3",
-                    'cardinal_rules': rules,
-                    'fibonacci': fibs,
-                    'wave_points': wave_points,
-                    'minor_subwaves': minor_subwaves,
-                    'entry': entry,
-                    'stop_loss': stop_loss,
-                    'target_1': target1,
-                    'target_2': target2,
-                    'risk_reward': rr,
-                    'description': f"Institutional 5-Wave Super-Cycle originating from major cyclical low at ${w0[2]:.2f} ({w0[1]}). Wave 4 support held strictly at ${w4[2]:.2f} above Wave 1 peak (${w1[2]:.2f}). Active in Wave (5) terminal thrust."
-                }
-
-        # 2. Check Active Developing Wave 4 Pullback from w0
-        for win in win_list:
-            peaks = []
-            for idx in range(anc_idx + 3, n - 2):
-                h = float(df.loc[idx, 'High'])
-                if df.iloc[max(anc_idx, idx - win):min(n, idx + win + 1)]['High'].max() == h:
-                    peaks.append((idx, str(df.loc[idx, 'Date'])[:10], h, 'H'))
-            troughs = []
-            for idx in range(anc_idx + 3, n - 2):
-                l = float(df.loc[idx, 'Low'])
-                if df.iloc[max(anc_idx, idx - win):min(n, idx + win + 1)]['Low'].min() == l:
-                    troughs.append((idx, str(df.loc[idx, 'Date'])[:10], l, 'L'))
-
-            cand_w4 = []
-            for p1 in peaks:
-                if p1[2] <= w0[2] * 1.08: continue
-                for t2 in troughs:
-                    if not (p1[0] < t2[0]): continue
-                    if t2[2] <= w0[2] or t2[2] >= p1[2]: continue
-                    for p3 in peaks:
-                        if not (t2[0] < p3[0]): continue
-                        if p3[2] <= p1[2]: continue
-                        for t4 in troughs:
-                            if not (p3[0] < t4[0]): continue
-                            if t4[2] <= p1[2] or t4[2] >= p3[2]: continue
-                            if (n - 1 - t4[0]) > 45: continue
-                            if df.iloc[t4[0]:n]['Low'].min() < t4[2] * 0.985: continue
                             len1 = p1[2] - w0[2]
                             len3 = p3[2] - t2[2]
-                            if len3 < len1 * 0.65: continue
-                            cand_w4.append((w0, p1, t2, p3, t4))
+                            len5 = p5[2] - t4[2]
+                            if len3 < min(len1, len5):
+                                continue
 
-            if cand_w4:
-                cand_w4.sort(key=lambda x: (x[4][0], x[3][2]), reverse=True)
-                w0, w1, w2, w3, w4 = cand_w4[0]
-                len1 = w1[2] - w0[2]
-                len3 = w3[2] - w2[2]
-                len4 = w3[2] - w4[2]
-                retrace4 = (len4 / (len3 + 1e-6)) * 100.0
+                            pts = [w0, p1, t2, p3, t4, p5]
+                            if not validate_wave_span_extrema(df, pts, tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                                continue
+                            rules, passed, score = evaluate_cardinal_rules(w0, p1, t2, p3, t4, p5)
+                            if not passed or score < 3:
+                                continue
+                            sc = _score_motive_candidate(pts, n, ewo_series)
+                            if sc > -1e8:
+                                cand_5.append((w0, p1, t2, p3, t4, p5, sc))
 
-                fibs = calculate_fibonacci_harmonics(w0, w1, w2, w3, w4, current_close)
-                is_near_peak = (current_close >= w3[2] * 0.95)
-                if is_near_peak:
-                    sub_cat = "Primary Degree Wave (5) Expansion"
-                    active_wave = "Wave (5) [Terminal Motive Thrust]"
-                    pat_desc = f"Primary Super-Cycle from ${w0[2]:.2f} ({w0[1]}). Wave 4 held strictly at ${w4[2]:.2f} above Wave 1 peak (${w1[2]:.2f}). Active in Wave (5) thrust targeting new macro highs."
-                else:
-                    sub_cat = "Primary Degree Wave (4) Consolidation"
-                    active_wave = "Wave (4) Complete -> Pre-Wave (5) Thrust"
-                    pat_desc = f"Primary Super-Cycle from ${w0[2]:.2f} ({w0[1]}). Wave 4 pullback bottomed at ${w4[2]:.2f} ({retrace4:.1f}% retrace of W3) holding cleanly above Wave 1 peak (${w1[2]:.2f})."
+        if cand_5:
+            cand_5.sort(key=lambda x: x[6], reverse=True)
+            w0, w1, w2, w3, w4, w5, _ = cand_5[0]
+            len1 = w1[2] - w0[2]
+            len3 = w3[2] - w2[2]
+            len5 = w5[2] - w4[2]
+            fibs = calculate_fibonacci_harmonics(w0, w1, w2, w3, w4, current_close)
+            rules, passed, score = evaluate_cardinal_rules(w0, w1, w2, w3, w4, w5)
 
-                wave_points = [
-                    {'label': '(0)', 'index': w0[0], 'date': w0[1], 'price': w0[2], 'type': 'origin'},
-                    {'label': '(1)', 'index': w1[0], 'date': w1[1], 'price': w1[2], 'type': 'impulse_1'},
-                    {'label': '(2)', 'index': w2[0], 'date': w2[1], 'price': w2[2], 'type': 'retrace_2'},
-                    {'label': '(3)', 'index': w3[0], 'date': w3[1], 'price': w3[2], 'type': 'impulse_3'},
-                    {'label': '(4)', 'index': w4[0], 'date': w4[1], 'price': w4[2], 'type': 'pullback_4'}
-                ]
-                entry = round(current_close, 2)
-                stop_loss = round(w4[2] * 0.985, 2)
-                target1 = round(fibs['fib_levels']['w5_target_standard'], 2)
-                target2 = round(fibs['fib_levels']['w5_target_extended'], 2)
-                rr = round(abs(target1 - entry) / max(0.01, abs(stop_loss - entry)), 2)
+            ewo_slice = df.iloc[w0[0]:w5[0] + 1]['EWO'].values
+            ewo_w3 = float(df.iloc[w3[0]]['EWO'])
+            ewo_max = float(np.max(ewo_slice)) if len(ewo_slice) > 0 else 0.0
+            ewo_aligned = ewo_w3 >= ewo_max * 0.70
 
-                return {
-                    'pattern_key': 'impulse_w4',
-                    'pattern_name': 'Elliott Wave 4 Pullback Setup' if not is_near_peak else '5-Wave Motive Impulse',
-                    'sub_category': sub_cat,
-                    'active_wave': active_wave,
-                    'degree': f"Primary Degree (1)-(2)-(3)-(4) [Origin: {w0[1]}]" if not is_near_peak else f"Primary Degree (1)-(2)-(3)-(4)-[(5) Active] [Origin: {w0[1]}]",
-                    'subdivision': '5-3-5-3-5 Motive Subdivision',
-                    'direction': 'BULLISH',
-                    'confidence': 93,
-                    'cardinal_score': "3/3",
-                    'cardinal_rules': [
-                        {'rule_name': 'Rule 1: Wave 2 Retracement', 'passed': True, 'value': f"W2 ${w2[2]:.2f} > W0 ${w0[2]:.2f}", 'criterion': 'Wave 2 did not breach origin', 'verdict': 'PASSED'},
-                        {'rule_name': 'Rule 2: Wave 3 Extension', 'passed': True, 'value': f"W3 ${len3:.2f} >= W1 ${len1:.2f}", 'criterion': 'Wave 3 was strong expansion wave', 'verdict': 'PASSED'},
-                        {'rule_name': 'Rule 3: Clean Wave 4 Non-Overlap', 'passed': True, 'value': f"W4 Low ${w4[2]:.2f} > W1 Peak ${w1[2]:.2f}", 'criterion': 'Wave 4 holds strictly above Wave 1 territory', 'verdict': 'PASSED (Textbook Support)'}
-                    ],
-                    'fibonacci': fibs,
-                    'wave_points': wave_points,
-                    'minor_subwaves': detect_minor_subwaves(df, w4[0], len(df) - 1),
-                    'entry': entry,
-                    'stop_loss': stop_loss,
-                    'target_1': target1,
-                    'target_2': target2,
-                    'risk_reward': rr,
-                    'description': pat_desc
-                }
+            is_near_peak = abs(current_close - w5[2]) / w5[2] <= 0.05 or current_close >= w5[2] * 0.95
+            active_wave = "Wave (5) [Terminal Motive Thrust]" if is_near_peak else "Corrective Wave (A) Digestion"
+
+            wave_points = [
+                {'label': '(0)', 'index': w0[0], 'date': w0[1], 'price': w0[2], 'type': 'origin'},
+                {'label': '(1)', 'index': w1[0], 'date': w1[1], 'price': w1[2], 'type': 'impulse_1'},
+                {'label': '(2)', 'index': w2[0], 'date': w2[1], 'price': w2[2], 'type': 'retrace_2'},
+                {'label': '(3)', 'index': w3[0], 'date': w3[1], 'price': w3[2], 'type': 'impulse_3'},
+                {'label': '(4)', 'index': w4[0], 'date': w4[1], 'price': w4[2], 'type': 'retrace_4'},
+                {'label': '(5)', 'index': w5[0], 'date': w5[1], 'price': w5[2], 'type': 'terminal_5'}
+            ]
+
+            minor_subwaves = detect_minor_subwaves(df, w2[0], w3[0])
+            if not minor_subwaves:
+                minor_subwaves = detect_minor_subwaves(df, w4[0], w5[0])
+
+            entry = round(current_close, 2)
+            stop_loss = round(w4[2] * 0.985, 2)
+            target1 = round(fibs['fib_levels']['w5_target_standard'], 2)
+            target2 = round(fibs['fib_levels']['w5_target_extended'], 2)
+            rr = round(abs(target1 - entry) / max(0.01, abs(stop_loss - entry)), 2)
+
+            return {
+                'pattern_key': 'impulse_5',
+                'pattern_name': '5-Wave Motive Impulse',
+                'sub_category': 'Primary Degree Super-Cycle',
+                'active_wave': active_wave,
+                'degree': f"Primary Degree (1)-(2)-(3)-(4)-(5) [Origin: {w0[1]}]",
+                'subdivision': '5-3-5-3-5 Motive Subdivision',
+                'direction': 'BULLISH_TREND',
+                'confidence': 96 if ewo_aligned else 90,
+                'cardinal_score': "3/3",
+                'cardinal_rules': rules,
+                'fibonacci': fibs,
+                'wave_points': wave_points,
+                'minor_subwaves': minor_subwaves,
+                'entry': entry,
+                'stop_loss': stop_loss,
+                'target_1': target1,
+                'target_2': target2,
+                'risk_reward': rr,
+                'description': f"Institutional 5-Wave Super-Cycle originating from major cyclical low at ${w0[2]:.2f} ({w0[1]}). Wave 4 support held strictly at ${w4[2]:.2f} above Wave 1 peak (${w1[2]:.2f}). Active in Wave (5) terminal thrust."
+            }
+
+        # 2. Check Active Developing Wave 4 Pullback from w0
+        cand_w4 = []
+        for p1 in peaks:
+            if p1[2] <= w0[2] * 1.08:
+                continue
+            if (p1[0] - w0[0]) < 2:
+                continue
+            if float(np.max(highs[w0[0]:p1[0] + 1])) > p1[2] * 1.0005:
+                continue
+            for t2 in troughs:
+                if t2[0] <= p1[0] or (t2[0] - p1[0]) < 2:
+                    continue
+                if float(np.max(highs[p1[0]:t2[0] + 1])) > p1[2] * 1.0005:
+                    break
+                if float(np.min(lows[w0[0]:t2[0] + 1])) < w0[2] * 0.9995:
+                    break
+                if t2[2] <= w0[2] or t2[2] >= p1[2]:
+                    continue
+                if float(np.min(lows[p1[0]:t2[0] + 1])) < t2[2] * 0.9995:
+                    continue
+                for p3 in peaks:
+                    if p3[0] <= t2[0] or (p3[0] - t2[0]) < 2:
+                        continue
+                    if float(np.min(lows[t2[0]:p3[0] + 1])) < t2[2] * 0.9995:
+                        break
+                    if p3[2] <= p1[2]:
+                        continue
+                    if float(np.max(highs[t2[0]:p3[0] + 1])) > p3[2] * 1.0005:
+                        continue
+                    len1 = p1[2] - w0[2]
+                    len3 = p3[2] - t2[2]
+                    if len3 < len1 * 0.65:
+                        continue
+                    for t4 in troughs:
+                        if t4[0] <= p3[0] or (t4[0] - p3[0]) < 2:
+                            continue
+                        if float(np.max(highs[p3[0]:t4[0] + 1])) > p3[2] * 1.0005:
+                            break
+                        if t4[2] <= p1[2] or t4[2] >= p3[2]:
+                            continue
+                        if (n - 1 - t4[0]) > 45:
+                            continue
+                        pts = [w0, p1, t2, p3, t4]
+                        if not validate_wave_span_extrema(df, pts, tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                            continue
+                        sc = _score_motive_candidate(pts, n, ewo_series)
+                        if sc > -1e8:
+                            cand_w4.append((w0, p1, t2, p3, t4, sc))
+
+        if cand_w4:
+            cand_w4.sort(key=lambda x: x[5], reverse=True)
+            w0, w1, w2, w3, w4, _ = cand_w4[0]
+            len1 = w1[2] - w0[2]
+            len3 = w3[2] - w2[2]
+            len4 = w3[2] - w4[2]
+            retrace4 = (len4 / (len3 + 1e-6)) * 100.0
+            w3_vs_w1_pct = (len3 / max(0.01, len1)) * 100.0
+
+            fibs = calculate_fibonacci_harmonics(w0, w1, w2, w3, w4, current_close)
+            is_near_peak = (current_close >= w3[2] * 0.95)
+            if is_near_peak:
+                sub_cat = "Primary Degree Wave (5) Expansion"
+                active_wave = "Wave (5) [Terminal Motive Thrust]"
+                pat_desc = f"Primary Super-Cycle from ${w0[2]:.2f} ({w0[1]}). Wave 4 held strictly at ${w4[2]:.2f} above Wave 1 peak (${w1[2]:.2f}). Active in Wave (5) thrust targeting new macro highs."
+            else:
+                sub_cat = "Primary Degree Wave (4) Consolidation"
+                active_wave = "Wave (4) Complete -> Pre-Wave (5) Thrust"
+                pat_desc = f"Primary Super-Cycle from ${w0[2]:.2f} ({w0[1]}). Wave 4 pullback bottomed at ${w4[2]:.2f} ({retrace4:.1f}% retrace of W3) holding cleanly above Wave 1 peak (${w1[2]:.2f})."
+
+            wave_points = [
+                {'label': '(0)', 'index': w0[0], 'date': w0[1], 'price': w0[2], 'type': 'origin'},
+                {'label': '(1)', 'index': w1[0], 'date': w1[1], 'price': w1[2], 'type': 'impulse_1'},
+                {'label': '(2)', 'index': w2[0], 'date': w2[1], 'price': w2[2], 'type': 'retrace_2'},
+                {'label': '(3)', 'index': w3[0], 'date': w3[1], 'price': w3[2], 'type': 'impulse_3'},
+                {'label': '(4)', 'index': w4[0], 'date': w4[1], 'price': w4[2], 'type': 'pullback_4'}
+            ]
+            entry = round(current_close, 2)
+            stop_loss = round(w4[2] * 0.985, 2)
+            target1 = round(fibs['fib_levels']['w5_target_standard'], 2)
+            target2 = round(fibs['fib_levels']['w5_target_extended'], 2)
+            rr = round(abs(target1 - entry) / max(0.01, abs(stop_loss - entry)), 2)
+
+            return {
+                'pattern_key': 'impulse_w4',
+                'pattern_name': 'Elliott Wave 4 Pullback Setup' if not is_near_peak else '5-Wave Motive Impulse',
+                'sub_category': sub_cat,
+                'active_wave': active_wave,
+                'degree': f"Primary Degree (1)-(2)-(3)-(4) [Origin: {w0[1]}]" if not is_near_peak else f"Primary Degree (1)-(2)-(3)-(4)-[(5) Active] [Origin: {w0[1]}]",
+                'subdivision': '5-3-5-3-5 Motive Subdivision',
+                'direction': 'BULLISH',
+                'confidence': 93,
+                'cardinal_score': "3/3",
+                'cardinal_rules': [
+                    {'rule_name': 'Rule 1: Wave 2 Retracement', 'passed': True, 'value': f"W2 ${w2[2]:.2f} > W0 ${w0[2]:.2f}", 'criterion': 'Wave 2 did not breach origin', 'verdict': 'PASSED'},
+                    {'rule_name': 'Rule 2: Wave 3 Extension', 'passed': True, 'value': f"W3 ${len3:.2f} ({w3_vs_w1_pct:.0f}% of W1 ${len1:.2f})", 'criterion': 'Wave 3 was strong expansion wave', 'verdict': 'PASSED'},
+                    {'rule_name': 'Rule 3: Clean Wave 4 Non-Overlap', 'passed': True, 'value': f"W4 Low ${w4[2]:.2f} > W1 Peak ${w1[2]:.2f}", 'criterion': 'Wave 4 holds strictly above Wave 1 territory', 'verdict': 'PASSED (Textbook Support)'}
+                ],
+                'fibonacci': fibs,
+                'wave_points': wave_points,
+                'minor_subwaves': detect_minor_subwaves(df, w4[0], len(df) - 1),
+                'entry': entry,
+                'stop_loss': stop_loss,
+                'target_1': target1,
+                'target_2': target2,
+                'risk_reward': rr,
+                'description': pat_desc
+            }
 
         # 3. Check Active Developing Wave 3 Extended / Reload from w0
-        for win in win_list:
-            peaks = []
-            for idx in range(anc_idx + 3, n - 2):
-                h = float(df.loc[idx, 'High'])
-                if df.iloc[max(anc_idx, idx - win):min(n, idx + win + 1)]['High'].max() == h:
-                    peaks.append((idx, str(df.loc[idx, 'Date'])[:10], h, 'H'))
-            troughs = []
-            for idx in range(anc_idx + 3, n - 2):
-                l = float(df.loc[idx, 'Low'])
-                if df.iloc[max(anc_idx, idx - win):min(n, idx + win + 1)]['Low'].min() == l:
-                    troughs.append((idx, str(df.loc[idx, 'Date'])[:10], l, 'L'))
+        cand_w3 = []
+        for p1 in peaks:
+            if p1[2] <= w0[2] * 1.06:
+                continue
+            if (p1[0] - w0[0]) < 2:
+                continue
+            if float(np.max(highs[w0[0]:p1[0] + 1])) > p1[2] * 1.0005:
+                continue
+            for t2 in troughs:
+                if t2[0] <= p1[0] or (t2[0] - p1[0]) < 2:
+                    continue
+                if float(np.max(highs[p1[0]:t2[0] + 1])) > p1[2] * 1.0005:
+                    break
+                if float(np.min(lows[w0[0]:t2[0] + 1])) < w0[2] * 0.9995:
+                    break
+                if t2[2] <= w0[2] or t2[2] >= p1[2]:
+                    continue
+                if float(np.min(lows[p1[0]:t2[0] + 1])) < t2[2] * 0.9995:
+                    continue
+                for p3 in peaks:
+                    if p3[0] <= t2[0] or (p3[0] - t2[0]) < 2:
+                        continue
+                    if float(np.min(lows[t2[0]:p3[0] + 1])) < t2[2] * 0.9995:
+                        break
+                    if p3[2] <= p1[2]:
+                        continue
+                    if (n - 1 - p3[0]) > 40:
+                        continue
+                    if current_close < p1[2] * 0.98:
+                        continue
+                    if float(np.min(lows[p3[0]:n])) < p1[2] * 0.995:
+                        continue
+                    len1 = p1[2] - w0[2]
+                    len3 = p3[2] - t2[2]
+                    if len3 < len1 * 0.85:
+                        continue
+                    pts = [w0, p1, t2, p3]
+                    if not validate_wave_span_extrema(df, pts, tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                        continue
+                    sc = _score_motive_candidate(pts, n, ewo_series)
+                    if sc > -1e8:
+                        cand_w3.append((w0, p1, t2, p3, sc))
 
-            cand_w3 = []
-            for p1 in peaks:
-                if p1[2] <= w0[2] * 1.06: continue
-                for t2 in troughs:
-                    if not (p1[0] < t2[0]): continue
-                    if t2[2] <= w0[2] or t2[2] >= p1[2]: continue
-                    for p3 in peaks:
-                        if not (t2[0] < p3[0]): continue
-                        if p3[2] <= p1[2]: continue
-                        if (n - 1 - p3[0]) > 40: continue
-                        if current_close < p1[2] * 0.98: continue
-                        len1 = p1[2] - w0[2]
-                        len3 = p3[2] - t2[2]
-                        if len3 >= len1 * 0.85:
-                            cand_w3.append((w0, p1, t2, p3))
+        if cand_w3:
+            cand_w3.sort(key=lambda x: x[4], reverse=True)
+            w0, w1, w2, w3, _ = cand_w3[0]
+            len1 = w1[2] - w0[2]
+            len3 = w3[2] - w2[2]
+            fibs = calculate_fibonacci_harmonics(w0, w1, w2, w3, None, current_close)
+            w3_ext_ratio = round((len3 / max(0.01, len1)) * 100.0, 1)
 
-            if cand_w3:
-                cand_w3.sort(key=lambda x: (x[3][0], x[3][2]), reverse=True)
-                w0, w1, w2, w3 = cand_w3[0]
-                len1 = w1[2] - w0[2]
-                len3 = w3[2] - w2[2]
-                fibs = calculate_fibonacci_harmonics(w0, w1, w2, w3, None, current_close)
-                w3_ext_ratio = round((len3 / max(0.01, len1)) * 100.0, 1)
+            target_w4 = fibs['fib_levels'].get('w4_retrace_382', round(max(w1[2] * 1.01, w3[2] - len3 * 0.382), 2))
+            target_w5 = fibs['fib_levels'].get('w5_target_standard', round(target_w4 + len1, 2))
 
-                target_w4 = fibs['fib_levels'].get('w4_retrace_382', round(max(w1[2] * 1.01, w3[2] - len3 * 0.382), 2))
-                target_w5 = fibs['fib_levels'].get('w5_target_standard', round(target_w4 + len1, 2))
+            entry = round(current_close, 2)
+            stop_loss = round(w1[2] * 0.99, 2)
+            target1 = round(target_w4, 2)
+            target2 = round(target_w5, 2)
+            rr = round(abs(target2 - entry) / max(0.01, abs(stop_loss - entry)), 2)
 
-                entry = round(current_close, 2)
-                stop_loss = round(w1[2] * 0.99, 2)
-                target1 = round(target_w4, 2)
-                target2 = round(target_w5, 2)
-                rr = round(abs(target2 - entry) / max(0.01, abs(stop_loss - entry)), 2)
+            wave_points = [
+                {'label': '(0)', 'index': w0[0], 'date': w0[1], 'price': w0[2], 'type': 'origin'},
+                {'label': '(1)', 'index': w1[0], 'date': w1[1], 'price': w1[2], 'type': 'impulse_1'},
+                {'label': '(2)', 'index': w2[0], 'date': w2[1], 'price': w2[2], 'type': 'retrace_2'},
+                {'label': '(3)', 'index': w3[0], 'date': w3[1], 'price': w3[2], 'type': 'impulse_3'}
+            ]
 
-                wave_points = [
-                    {'label': '(0)', 'index': w0[0], 'date': w0[1], 'price': w0[2], 'type': 'origin'},
-                    {'label': '(1)', 'index': w1[0], 'date': w1[1], 'price': w1[2], 'type': 'impulse_1'},
-                    {'label': '(2)', 'index': w2[0], 'date': w2[1], 'price': w2[2], 'type': 'retrace_2'},
-                    {'label': '(3)', 'index': w3[0], 'date': w3[1], 'price': w3[2], 'type': 'impulse_3'}
-                ]
+            minor_subwaves = detect_minor_subwaves(df, w2[0], w3[0])
+            is_cresting = current_close >= w3[2] * 0.97
+            sub_cat = "Wave (3) Extended Crest / Topping" if is_cresting else "Wave (3) Extended -> Wave (4) Consolidation"
+            active_w = f"Wave (3) Extended [{w3_ext_ratio}% of W1] -> Developing Wave (4)"
 
-                minor_subwaves = detect_minor_subwaves(df, w2[0], w3[0])
-                is_cresting = current_close >= w3[2] * 0.97
-                sub_cat = "Wave (3) Extended Crest / Topping" if is_cresting else "Wave (3) Extended -> Wave (4) Consolidation"
-                active_w = f"Wave (3) Extended [{w3_ext_ratio}% of W1] -> Developing Wave (4)"
-
-                return {
-                    'pattern_key': 'impulse_w3_cresting',
-                    'pattern_name': 'Wave 3 Extended / Wave 4 Reload',
-                    'sub_category': sub_cat,
-                    'active_wave': active_w,
-                    'degree': f"Primary Degree (1)-(2)-(3) [Origin: {w0[1]}]",
-                    'subdivision': 'Motive Expansion Leg (3)',
-                    'direction': 'BULLISH',
-                    'confidence': 92,
-                    'cardinal_score': "3/3",
-                    'cardinal_rules': [
-                        {'rule_name': 'Rule 1: Wave 2 Retracement', 'passed': True, 'value': f"W2 ${w2[2]:.2f} > W0 ${w0[2]:.2f}", 'criterion': 'Wave 2 did not breach origin', 'verdict': 'PASSED'},
-                        {'rule_name': 'Rule 2: Wave 3 Extension', 'passed': True, 'value': f"W3 ${len3:.2f} ({w3_ext_ratio}% of W1)", 'criterion': 'Wave 3 is powerful extension wave', 'verdict': f'PASSED ({w3_ext_ratio}% Extension)'},
-                        {'rule_name': 'Rule 3: Wave 4 Invalidation Level', 'passed': True, 'value': f"W1 Peak ${w1[2]:.2f}", 'criterion': 'Pullback must hold strictly above Wave 1', 'verdict': 'VALID (Holds Above W1)'}
-                    ],
-                    'fibonacci': fibs,
-                    'wave_points': wave_points,
-                    'minor_subwaves': minor_subwaves,
-                    'entry': entry,
-                    'stop_loss': stop_loss,
-                    'target_1': target1,
-                    'target_2': target2,
-                    'risk_reward': rr,
-                    'description': f"Wave (3) achieved an extended motive thrust to ${w3[2]:.2f} ({w3_ext_ratio}% of Wave 1) from origin at ${w0[2]:.2f} ({w0[1]}). Look for Wave (4) corrective consolidation holding above ${w1[2]:.2f} before explosive Wave (5) continuation."
-                }
+            return {
+                'pattern_key': 'impulse_w3_cresting',
+                'pattern_name': 'Wave 3 Extended / Wave 4 Reload',
+                'sub_category': sub_cat,
+                'active_wave': active_w,
+                'degree': f"Primary Degree (1)-(2)-(3) [Origin: {w0[1]}]",
+                'subdivision': 'Motive Expansion Leg (3)',
+                'direction': 'BULLISH',
+                'confidence': 92,
+                'cardinal_score': "3/3",
+                'cardinal_rules': [
+                    {'rule_name': 'Rule 1: Wave 2 Retracement', 'passed': True, 'value': f"W2 ${w2[2]:.2f} > W0 ${w0[2]:.2f}", 'criterion': 'Wave 2 did not breach origin', 'verdict': 'PASSED'},
+                    {'rule_name': 'Rule 2: Wave 3 Extension', 'passed': True, 'value': f"W3 ${len3:.2f} ({w3_ext_ratio}% of W1)", 'criterion': 'Wave 3 is powerful extension wave', 'verdict': f'PASSED ({w3_ext_ratio}% Extension)'},
+                    {'rule_name': 'Rule 3: Wave 4 Invalidation Level', 'passed': True, 'value': f"W1 Peak ${w1[2]:.2f}", 'criterion': 'Pullback must hold strictly above Wave 1', 'verdict': 'VALID (Holds Above W1)'}
+                ],
+                'fibonacci': fibs,
+                'wave_points': wave_points,
+                'minor_subwaves': minor_subwaves,
+                'entry': entry,
+                'stop_loss': stop_loss,
+                'target_1': target1,
+                'target_2': target2,
+                'risk_reward': rr,
+                'description': f"Wave (3) achieved an extended motive thrust to ${w3[2]:.2f} ({w3_ext_ratio}% of Wave 1) from origin at ${w0[2]:.2f} ({w0[1]}). Look for Wave (4) corrective consolidation holding above ${w1[2]:.2f} before explosive Wave (5) continuation."
+            }
 
         # 4. Check Wave 3 Ignition / Early Turn from w0
-        for win in win_list:
-            peaks = []
-            for idx in range(anc_idx + 3, n - 2):
-                h = float(df.loc[idx, 'High'])
-                if df.iloc[max(anc_idx, idx - win):min(n, idx + win + 1)]['High'].max() == h:
-                    peaks.append((idx, str(df.loc[idx, 'Date'])[:10], h, 'H'))
-            troughs = []
-            for idx in range(anc_idx + 3, n - 2):
-                l = float(df.loc[idx, 'Low'])
-                if df.iloc[max(anc_idx, idx - win):min(n, idx + win + 1)]['Low'].min() == l:
-                    troughs.append((idx, str(df.loc[idx, 'Date'])[:10], l, 'L'))
+        cand_w2 = []
+        for p1 in peaks:
+            if p1[2] <= w0[2] * 1.04:
+                continue
+            if (p1[0] - w0[0]) < 2:
+                continue
+            if float(np.max(highs[w0[0]:p1[0] + 1])) > p1[2] * 1.0005:
+                continue
+            for t2 in troughs:
+                if t2[0] <= p1[0] or (t2[0] - p1[0]) < 2:
+                    continue
+                if float(np.max(highs[p1[0]:t2[0] + 1])) > p1[2] * 1.0005:
+                    break
+                if float(np.min(lows[w0[0]:t2[0] + 1])) < w0[2] * 0.9995:
+                    break
+                if t2[2] <= w0[2] or t2[2] >= p1[2]:
+                    continue
+                if (n - 1 - t2[0]) > 40:
+                    continue
+                if current_close <= t2[2]:
+                    continue
+                pts = [w0, p1, t2]
+                if not validate_wave_span_extrema(df, pts, tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                    continue
+                post_w2_hi = float(np.max(highs[t2[0]:n]))
+                if post_w2_hi > p1[2] * 1.005 and current_close < p1[2] * 0.95:
+                    continue
+                if post_w2_hi > p1[2] * 1.15 and current_close < post_w2_hi * 0.90:
+                    continue
+                sc = _score_motive_candidate(pts, n, ewo_series)
+                if sc > -1e8:
+                    cand_w2.append((w0, p1, t2, sc))
 
-            cand_w2 = []
-            for p1 in peaks:
-                if p1[2] <= w0[2] * 1.04: continue
-                for t2 in troughs:
-                    if not (p1[0] < t2[0]): continue
-                    if t2[2] <= w0[2] or t2[2] >= p1[2]: continue
-                    if (n - 1 - t2[0]) > 40: continue
-                    if current_close <= t2[2]: continue
-                    cand_w2.append((w0, p1, t2))
+        if cand_w2:
+            cand_w2.sort(key=lambda x: x[3], reverse=True)
+            w0, w1, w2, _ = cand_w2[0]
+            len1 = w1[2] - w0[2]
+            len2 = w1[2] - w2[2]
+            retrace2 = (len2 / (len1 + 1e-6)) * 100.0
+            progress_to_w1 = ((current_close - w2[2]) / (w1[2] - w2[2] + 1e-6)) * 100.0
+            days_since_w2 = int((n - 1) - w2[0])
+            pct_above_w2 = round(((current_close - w2[2]) / (w2[2] + 1e-6)) * 100.0, 2)
 
-            if cand_w2:
-                cand_w2.sort(key=lambda x: (x[2][0], x[1][2]), reverse=True)
-                w0, w1, w2 = cand_w2[0]
-                len1 = w1[2] - w0[2]
-                len2 = w1[2] - w2[2]
-                retrace2 = (len2 / (len1 + 1e-6)) * 100.0
-                progress_to_w1 = ((current_close - w2[2]) / (w1[2] - w2[2] + 1e-6)) * 100.0
-                days_since_w2 = int((n - 1) - w2[0])
-                pct_above_w2 = round(((current_close - w2[2]) / (w2[2] + 1e-6)) * 100.0, 2)
+            if progress_to_w1 >= 80.0 or current_close >= w1[2] * 0.98:
+                w3_stage = "Stage 3: Breakout Surge"
+                stage_key = "stage_3_breakout"
+                stage_badge = "💥 W3 Breakout"
+                sub_cat = "Wave (3) Breakout Surge"
+                act_wave = "Wave (3) Breakout in Progress [Targeting 161.8%]"
+            elif progress_to_w1 >= 25.0:
+                w3_stage = "Stage 2: Powerhouse Acceleration"
+                stage_key = "stage_2_powerhouse"
+                stage_badge = "🚀 W3 Powerhouse"
+                sub_cat = "Wave (3) Powerhouse Acceleration"
+                act_wave = "Wave (3) Acceleration [Approaching W1 Peak]"
+            else:
+                w3_stage = "Stage 1: Early Turn (W2 Base)"
+                stage_key = "stage_1_early"
+                stage_badge = "⚡ Early Turn (W2 Base)"
+                sub_cat = "Wave (3) Early Ignition from W2 Low"
+                act_wave = "Wave (3) Early Ignition [Reversing off W2 Low]"
 
-                if progress_to_w1 >= 80.0 or current_close >= w1[2] * 0.98:
-                    w3_stage = "Stage 3: Breakout Surge"
-                    stage_key = "stage_3_breakout"
-                    stage_badge = "💥 W3 Breakout"
-                    sub_cat = "Wave (3) Breakout Surge"
-                    act_wave = "Wave (3) Breakout in Progress [Targeting 161.8%]"
-                elif progress_to_w1 >= 25.0:
-                    w3_stage = "Stage 2: Powerhouse Acceleration"
-                    stage_key = "stage_2_powerhouse"
-                    stage_badge = "🚀 W3 Powerhouse"
-                    sub_cat = "Wave (3) Powerhouse Acceleration"
-                    act_wave = "Wave (3) Acceleration [Approaching W1 Peak]"
-                else:
-                    w3_stage = "Stage 1: Early Turn (W2 Base)"
-                    stage_key = "stage_1_early"
-                    stage_badge = "⚡ Early Turn (W2 Base)"
-                    sub_cat = "Wave (3) Early Ignition from W2 Low"
-                    act_wave = "Wave (3) Early Ignition [Reversing off W2 Low]"
+            target1 = round(w2[2] + len1 * 1.618, 2)
+            target2 = round(w2[2] + len1 * 2.000, 2)
+            stop_loss = round(w2[2] * 0.988, 2)
+            entry = round(current_close, 2)
+            rr = round(abs(target1 - entry) / max(0.01, abs(stop_loss - entry)), 2)
 
-                target1 = round(w2[2] + len1 * 1.618, 2)
-                target2 = round(w2[2] + len1 * 2.000, 2)
-                stop_loss = round(w2[2] * 0.988, 2)
-                entry = round(current_close, 2)
-                rr = round(abs(target1 - entry) / max(0.01, abs(stop_loss - entry)), 2)
-
-                fibs = {
-                    'wave_2_retrace_pct': round(retrace2, 1),
-                    'wave_3_extension_pct': round(((current_close - w2[2]) / (len1 + 1e-6)) * 100.0, 1),
-                    'wave_4_retrace_pct': 0.0,
-                    'fib_levels': {
-                        'w2_retrace_target': round(w1[2] - len1 * 0.618, 2),
-                        'w3_target_1618': target1,
-                        'w3_target_2000': target2,
-                        'w4_retrace_382': round(target1 - (target1 - w2[2]) * 0.382, 2),
-                        'w4_retrace_500': round(target1 - (target1 - w2[2]) * 0.500, 2),
-                        'w5_target_conservative': round(target1 + len1 * 0.618, 2),
-                        'w5_target_standard': round(target1 + len1 * 1.0, 2),
-                        'w5_target_extended': round(target1 + len1 * 1.618, 2),
-                        'w5_target_macro': round(w2[2] + len1 * 2.618, 2)
-                    }
+            fibs = {
+                'wave_2_retrace_pct': round(retrace2, 1),
+                'wave_3_extension_pct': round(((current_close - w2[2]) / (len1 + 1e-6)) * 100.0, 1),
+                'wave_4_retrace_pct': 0.0,
+                'fib_levels': {
+                    'w2_retrace_target': round(w1[2] - len1 * 0.618, 2),
+                    'w3_target_1618': target1,
+                    'w3_target_2000': target2,
+                    'w4_retrace_382': round(target1 - (target1 - w2[2]) * 0.382, 2),
+                    'w4_retrace_500': round(target1 - (target1 - w2[2]) * 0.500, 2),
+                    'w5_target_conservative': round(target1 + len1 * 0.618, 2),
+                    'w5_target_standard': round(target1 + len1 * 1.0, 2),
+                    'w5_target_extended': round(target1 + len1 * 1.618, 2),
+                    'w5_target_macro': round(w2[2] + len1 * 2.618, 2)
                 }
+            }
 
-                wave_points = [
-                    {'label': '(0)', 'index': w0[0], 'date': w0[1], 'price': w0[2], 'type': 'origin'},
-                    {'label': '(1)', 'index': w1[0], 'date': w1[1], 'price': w1[2], 'type': 'impulse_1'},
-                    {'label': '(2)', 'index': w2[0], 'date': w2[1], 'price': w2[2], 'type': 'retrace_2'},
-                ]
+            wave_points = [
+                {'label': '(0)', 'index': w0[0], 'date': w0[1], 'price': w0[2], 'type': 'origin'},
+                {'label': '(1)', 'index': w1[0], 'date': w1[1], 'price': w1[2], 'type': 'impulse_1'},
+                {'label': '(2)', 'index': w2[0], 'date': w2[1], 'price': w2[2], 'type': 'retrace_2'},
+            ]
 
-                minor_subwaves = detect_minor_subwaves(df, w2[0], len(df) - 1)
-                stage_desc = (
-                    f"⚡ Early Turn: Wave 2 formed at ${w2[2]:.2f} from origin at ${w0[2]:.2f} ({w0[1]}). "
-                    f"Price has ignited +{pct_above_w2}% off the base ({progress_to_w1:.1f}% progress to W1). Asymmetric R/R ({rr}:1)."
-                    if stage_key == 'stage_1_early' else
-                    (
-                        f"🚀 Powerhouse Acceleration: Wave 3 underway from origin at ${w0[2]:.2f} ({w0[1]}), having covered {progress_to_w1:.1f}% toward W1 peak (${w1[2]:.2f}). "
-                        f"Targeting Fibonacci 161.8% extension at ${target1:.2f}."
-                        if stage_key == 'stage_2_powerhouse' else
-                        f"💥 Breakout Surge: Testing/clearing Wave 1 peak (${w1[2]:.2f}) from origin at ${w0[2]:.2f} ({w0[1]}). Unlocking 161.8% (${target1:.2f}) expansion corridor."
-                    )
+            minor_subwaves = detect_minor_subwaves(df, w2[0], len(df) - 1)
+            stage_desc = (
+                f"⚡ Early Turn: Wave 2 formed at ${w2[2]:.2f} from origin at ${w0[2]:.2f} ({w0[1]}). "
+                f"Price has ignited +{pct_above_w2}% off the base ({progress_to_w1:.1f}% progress to W1). Asymmetric R/R ({rr}:1)."
+                if stage_key == 'stage_1_early' else
+                (
+                    f"🚀 Powerhouse Acceleration: Wave 3 underway from origin at ${w0[2]:.2f} ({w0[1]}), having covered {progress_to_w1:.1f}% toward W1 peak (${w1[2]:.2f}). "
+                    f"Targeting Fibonacci 161.8% extension at ${target1:.2f}."
+                    if stage_key == 'stage_2_powerhouse' else
+                    f"💥 Breakout Surge: Testing/clearing Wave 1 peak (${w1[2]:.2f}) from origin at ${w0[2]:.2f} ({w0[1]}). Unlocking 161.8% (${target1:.2f}) expansion corridor."
                 )
+            )
 
-                return {
-                    'pattern_key': 'impulse_w3_ignition',
-                    'pattern_name': 'Wave 3 Ignition (New W3 Start)',
-                    'sub_category': sub_cat,
-                    'active_wave': act_wave,
-                    'w3_stage': w3_stage,
-                    'stage_key': stage_key,
-                    'stage_badge': stage_badge,
-                    'progress_to_w1_pct': round(progress_to_w1, 1),
-                    'pct_above_w2': pct_above_w2,
-                    'days_since_w2': days_since_w2,
-                    'degree': f"Primary Degree (1)-(2)-[(3) Launch] [Origin: {w0[1]}]",
-                    'subdivision': f'Motive Ignition out of Wave (2) Base ({stage_badge})',
-                    'direction': 'STRONG_BULLISH',
-                    'confidence': 95 if stage_key == 'stage_1_early' else 94,
-                    'cardinal_score': "3/3",
-                    'cardinal_rules': [
-                        {'rule_name': 'Rule 1: Wave 2 Retracement Limit', 'passed': True, 'value': f"W2 ${w2[2]:.2f} held strictly above W0 ${w0[2]:.2f} ({retrace2:.1f}% retrace)", 'criterion': 'Wave 2 must not retrace 100% of Wave 1', 'verdict': 'PASSED (Clean Base)'},
-                        {'rule_name': 'Rule 2: Wave 3 Target Expansion', 'passed': True, 'value': f"Target 161.8% (${target1:.2f}) represents +{((target1 - entry)/entry)*100.0:.1f}% upside", 'criterion': 'Wave 3 projected expansion is powerhouse motive leg', 'verdict': 'PASSED (Powerhouse Wave)'},
-                        {'rule_name': 'Rule 3: Invalidation Level Set', 'passed': True, 'value': f"Stop Loss at ${stop_loss:.2f}", 'criterion': 'Structure invalidates on breach of Wave 2 low', 'verdict': f'PASSED (Asymmetric R/R {rr}:1)'}
-                    ],
-                    'fibonacci': fibs,
-                    'wave_points': wave_points,
-                    'minor_subwaves': minor_subwaves,
-                    'entry': entry,
-                    'stop_loss': stop_loss,
-                    'target_1': target1,
-                    'target_2': target2,
-                    'risk_reward': rr,
-                    'description': stage_desc
-                }
-
-    # Multi-scale swing extraction:
-    # 1. Macro Swings (Primary Degree: 3.5 ATR, window 10)
-    # 2. Intermediate Swings (2.6 ATR, window 7)
-    # 3. Minor Swings (1.8 ATR, window 5)
-    swing_scales = [
-        (extract_zigzag_swings(df, min_atr_mult=3.5, window=10), 'Primary Degree'),
-        (extract_zigzag_swings(df, min_atr_mult=2.6, window=7), 'Intermediate Degree'),
-        (extract_zigzag_swings(df, min_atr_mult=1.8, window=5), 'Minor Degree')
-    ]
+            return {
+                'pattern_key': 'impulse_w3_ignition',
+                'pattern_name': 'Wave 3 Ignition (New W3 Start)',
+                'sub_category': sub_cat,
+                'active_wave': act_wave,
+                'w3_stage': w3_stage,
+                'stage_key': stage_key,
+                'stage_badge': stage_badge,
+                'progress_to_w1_pct': round(progress_to_w1, 1),
+                'pct_above_w2': pct_above_w2,
+                'days_since_w2': days_since_w2,
+                'degree': f"Primary Degree (1)-(2)-[(3) Launch] [Origin: {w0[1]}]",
+                'subdivision': f'Motive Ignition out of Wave (2) Base ({stage_badge})',
+                'direction': 'STRONG_BULLISH',
+                'confidence': 95 if stage_key == 'stage_1_early' else 94,
+                'cardinal_score': "3/3",
+                'cardinal_rules': [
+                    {'rule_name': 'Rule 1: Wave 2 Retracement Limit', 'passed': True, 'value': f"W2 ${w2[2]:.2f} held strictly above W0 ${w0[2]:.2f} ({retrace2:.1f}% retrace)", 'criterion': 'Wave 2 must not retrace 100% of Wave 1', 'verdict': 'PASSED (Clean Base)'},
+                    {'rule_name': 'Rule 2: Wave 3 Target Expansion', 'passed': True, 'value': f"Target 161.8% (${target1:.2f}) represents +{((target1 - entry)/entry)*100.0:.1f}% upside", 'criterion': 'Wave 3 projected expansion is powerhouse motive leg', 'verdict': 'PASSED (Powerhouse Wave)'},
+                    {'rule_name': 'Rule 3: Invalidation Level Set', 'passed': True, 'value': f"Stop Loss at ${stop_loss:.2f}", 'criterion': 'Structure invalidates on breach of Wave 2 low', 'verdict': f'PASSED (Asymmetric R/R {rr}:1)'}
+                ],
+                'fibonacci': fibs,
+                'wave_points': wave_points,
+                'minor_subwaves': minor_subwaves,
+                'entry': entry,
+                'stop_loss': stop_loss,
+                'target_1': target1,
+                'target_2': target2,
+                'risk_reward': rr,
+                'description': stage_desc
+            }
 
     # -------------------------------------------------------------------------
     # 1. TEST 5-WAVE MOTIVE IMPULSES (Strict Rules 1, 2, 3 non-negotiable)
@@ -2504,16 +2775,15 @@ def detect_elliott_wave_pattern(ticker, df):
                     r1 = (w2[2] > w0[2]) and (w2[2] < w1[2]) and (w2[2] >= w0[2] + len1 * 0.05)
                     r2 = (len3 >= min(len1, len5)) and (len3 > 0.05 * w1[2])
                     r3 = (w4[2] > w1[2]) and (w4[2] < w3[2]) # Strict non-overlap and proper retrace
-                    w5_rally = w5[2] > w4[2]
+                    w5_rally = w5[2] > w3[2]
                     w3_breakout = w3[2] > w1[2]
 
-                    # Segment Price Integrity: price must not exceed wave peaks during pullbacks
-                    if df.iloc[w1[0]:w2[0]+1]['High'].max() > w1[2] * 1.005:
-                        continue
-                    if df.iloc[w3[0]:w4[0]+1]['High'].max() > w3[2] * 1.005:
-                        continue
-
                     if r1 and r2 and r3 and w3_breakout and w5_rally:
+                        pts = [w0, w1, w2, w3, w4, w5]
+                        if not validate_wave_span_extrema(df, pts, tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                            continue
+                        if _score_motive_candidate(pts, n, ewo_series) <= -1e8:
+                            continue
                         rules, passed, score = evaluate_cardinal_rules(w0, w1, w2, w3, w4, w5, is_diagonal=False)
                         if not passed or score < 3:
                             continue # Strict gate: 100% 3/3 rules must pass
@@ -2600,12 +2870,10 @@ def detect_elliott_wave_pattern(ticker, df):
                     retrace4 = (len4 / (len3 + 1e-6)) * 100.0
 
                     if w2[2] > w0[2] and w2[2] < w1[2] and len3 >= len1 * 0.9 and w4[2] > w1[2] and w4[2] < w3[2] and w3[2] > w1[2]:
-                        # Segment Price Integrity: price must not exceed wave peaks during corrections and W4 base must hold
-                        if df.iloc[w1[0]:w2[0]+1]['High'].max() > w1[2] * 1.005:
+                        pts = [w0, w1, w2, w3, w4]
+                        if not validate_wave_span_extrema(df, pts, tol=0.0005, check_tail=True, highs=highs, lows=lows):
                             continue
-                        if df.iloc[w3[0]:w4[0]+1]['High'].max() > w3[2] * 1.005:
-                            continue
-                        if df.iloc[w4[0]:n]['Low'].min() < w4[2] * 0.99:
+                        if _score_motive_candidate(pts, n, ewo_series) <= -1e8:
                             continue
 
                         fibs = calculate_fibonacci_harmonics(w0, w1, w2, w3, w4, current_close)
@@ -2679,16 +2947,10 @@ def detect_elliott_wave_pattern(ticker, df):
                         w3[2] > w1[2] and len3 >= len1 * 0.9 and 
                         current_close > w1[2] * 0.98):
 
-                        # Price segment integrity:
-                        if df.iloc[w0[0]:w1[0]+1]['High'].max() > w1[2] * 1.005:
+                        pts = [w0, w1, w2, w3]
+                        if not validate_wave_span_extrema(df, pts, tol=0.0005, check_tail=True, highs=highs, lows=lows):
                             continue
-                        if df.iloc[w1[0]:w2[0]+1]['High'].max() > w1[2] * 1.005:
-                            continue
-                        if df.iloc[w1[0]:w2[0]+1]['Low'].min() < w2[2] * 0.995:
-                            continue
-                        if df.iloc[w2[0]:w3[0]+1]['Low'].min() < w2[2] * 0.995:
-                            continue
-                        if df.iloc[w3[0]:n]['Low'].min() < w1[2] * 0.985:
+                        if float(np.min(lows[w3[0]:n])) < w1[2] * 0.995:
                             continue
 
                         fibs = calculate_fibonacci_harmonics(w0, w1, w2, w3, None, current_close)
@@ -2824,6 +3086,15 @@ def detect_elliott_wave_pattern(ticker, df):
 
         for w0, w1, w2, deg in candidates:
             if w2[0] < min_terminal_idx:
+                continue
+
+            if not validate_wave_span_extrema(df, [w0, w1, w2], tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                continue
+
+            post_w2_hi = float(np.max(highs[w2[0]:n]))
+            if post_w2_hi > w1[2] * 1.005 and current_close < w1[2] * 0.95:
+                continue
+            if post_w2_hi > w1[2] * 1.15 and current_close < post_w2_hi * 0.90:
                 continue
 
             len1 = w1[2] - w0[2]
@@ -3002,8 +3273,11 @@ def detect_elliott_wave_pattern(ticker, df):
                     len1 = w1[2] - w0[2]
                     len3 = w3[2] - w2[2]
                     len5 = w5[2] - w4[2]
-                    # Diagonal criteria: W4 overlaps W1, but wedge contracts: len1 > len3 > len5
-                    if (w2[2] > w0[2]) and (w2[2] < w1[2]) and (w3[2] > w1[2]) and (w4[2] < w3[2]) and (w4[2] <= w1[2]) and (w5[2] > w4[2]) and (len1 > len3) and (len3 > len5):
+                    # Diagonal criteria: W4 overlaps W1, W5 > W3, and wedge contracts: len1 > len3 > len5
+                    if (w2[2] > w0[2]) and (w2[2] < w1[2]) and (w3[2] > w1[2]) and (w4[2] < w3[2]) and (w4[2] <= w1[2]) and (w5[2] > w3[2]) and (len1 > len3) and (len3 > len5):
+                        pts = [w0, w1, w2, w3, w4, w5]
+                        if not validate_wave_span_extrema(df, pts, tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                            continue
                         rules, passed, score = evaluate_cardinal_rules(w0, w1, w2, w3, w4, w5, is_diagonal=True)
                         if not passed or score < 3:
                             continue
@@ -3070,9 +3344,13 @@ def detect_elliott_wave_pattern(ticker, df):
                     len_c = abs(c[2] - d[2])
                     len_d = abs(e[2] - d[2])
 
-                    # Contraction test: successive waves in both directions must contract
+                    # Contraction & strict geometric envelope convergence + span extrema test
                     is_contracting = (len_a > len_c) and (len_b > len_d)
-                    if is_contracting:
+                    if types == ['H', 'L', 'H', 'L', 'H']:
+                        envelope_ok = (a[2] > c[2] > e[2]) and (b[2] < d[2]) and (e[2] > d[2]) and (c[2] > d[2])
+                    else:
+                        envelope_ok = (a[2] < c[2] < e[2]) and (b[2] > d[2]) and (e[2] < d[2]) and (c[2] < d[2])
+                    if is_contracting and envelope_ok and validate_wave_span_extrema(df, [a, b, c, d, e], tol=0.0005, check_tail=False, highs=highs, lows=lows):
                         apex_price = round((c[2] + d[2]) / 2.0, 2)
                         height_tri = len_a
                         is_bullish = current_close >= apex_price
@@ -3147,6 +3425,8 @@ def detect_elliott_wave_pattern(ticker, df):
                     retrace_b = (len_b / (len_a + 1e-6)) * 100.0
 
                     if retrace_b >= 88.0:
+                        if not validate_wave_span_extrema(df, [orig, a, b, c], tol=0.0005, check_tail=True, highs=highs, lows=lows):
+                            continue
                         flat_type = None
                         if 88.0 <= retrace_b <= 104.0 and abs(c[2] - a[2]) / len_a <= 0.12:
                             flat_type = "Regular Flat (3-3-5)"
@@ -3212,8 +3492,10 @@ def detect_elliott_wave_pattern(ticker, df):
     # -------------------------------------------------------------------------
     # 6. DEVELOPING CYCLE FALLBACK (Clean Macro Trend Mapping)
     # -------------------------------------------------------------------------
-    swings = swing_scales[0][0] if len(swing_scales[0][0]) >= 4 else swing_scales[1][0]
-    last_swing = swings[-1] if swings else (len(df)-1, df.iloc[-1]['Date'], current_close, 'H')
+    swings = swing_scales[0][0] if len(swing_scales[0][0]) >= 3 else swing_scales[1][0]
+    if len(swings) < 2:
+        swings = swing_scales[2][0]
+    last_swing = swings[-1] if swings else (len(df) - 1, str(df.iloc[-1]['Date'])[:10], current_close, 'H')
     prev_swing = swings[-2] if len(swings) >= 2 else last_swing
     is_up = last_swing[3] == 'H' or current_close >= prev_swing[2]
 
@@ -3221,35 +3503,63 @@ def detect_elliott_wave_pattern(ticker, df):
     anc = secular_anchor if (is_up and secular_anchor) else (cycle_peak if (not is_up and cycle_peak) else (secular_anchor or cycle_peak))
 
     if anc:
-        anc_type = 'origin' if anc[3] == 'L' else 'cycle_peak'
-        anc_lbl = '(0)' if anc[3] == 'L' else 'P0'
-        post_swings = [s for s in swings if s[0] > anc[0]]
-        selected = [anc] + (post_swings[-4:] if len(post_swings) > 4 else post_swings)
-        wave_points = []
-        for s_idx, s in enumerate(selected):
-            if s_idx == 0:
-                lbl = anc_lbl
-                pt_type = anc_type
-            else:
-                lbl = f"({s_idx})" if is_up else f"P{s_idx}"
-                pt_type = 'cycle_pivot'
+        chain = [anc]
+        for s in swings:
+            if s[0] > anc[0] and s[3] != chain[-1][3]:
+                chain.append(s)
+        if len(chain) < 2 and len(swings) >= 2:
+            chain = list(swings[-5:])
+        selected = chain[-5:] if len(chain) > 5 else chain
+    else:
+        selected = list(swings[-5:])
+
+    # Snap each selected pivot to exact span extremum (guarantees 0 skipped peaks/troughs)
+    if len(selected) >= 2:
+        for _ in range(2):
+            snapped = []
+            k_sel = len(selected)
+            for j, pt in enumerate(selected):
+                p_idx, _, _, pol = pt
+                lo_b = (snapped[j - 1][0] + 1) if j > 0 else p_idx
+                hi_b = (selected[j + 1][0] - 1) if j < k_sel - 1 else p_idx
+                if lo_b <= hi_b:
+                    if pol == 'H':
+                        new_idx = lo_b + int(np.argmax(highs[lo_b:hi_b + 1]))
+                        new_price = float(highs[new_idx])
+                    else:
+                        new_idx = lo_b + int(np.argmin(lows[lo_b:hi_b + 1]))
+                        new_price = float(lows[new_idx])
+                    new_date = str(df.loc[new_idx, 'Date'])[:10]
+                    snapped.append((new_idx, new_date, new_price, pol))
+                else:
+                    snapped.append(pt)
+            selected = snapped
+
+        while len(selected) > 2 and not validate_wave_span_extrema(df, selected, tol=0.001, check_tail=False, highs=highs, lows=lows):
+            selected = selected[1:]
+
+    wave_points = []
+    if len(selected) == 2 and selected[0][3] == 'L' and selected[1][3] == 'H':
+        lbls = ['(0)', '(1)']
+        types_map = ['origin', 'impulse_1']
+        for pt, lbl, pt_type in zip(selected, lbls, types_map):
             wave_points.append({
                 'label': lbl,
-                'index': s[0],
-                'date': s[1],
-                'price': s[2],
+                'index': pt[0],
+                'date': pt[1],
+                'price': pt[2],
                 'type': pt_type
             })
     else:
-        wave_points = []
-        for s_idx, s in enumerate(swings[-5:]):
-            lbl = f"({s_idx+1})" if is_up else f"P{s_idx+1}"
+        starts_high = len(selected) > 0 and selected[0][3] == 'H'
+        prefix = 'P' if starts_high else 'S'
+        for s_idx, s in enumerate(selected):
             wave_points.append({
-                'label': lbl,
+                'label': f"{prefix}{s_idx}",
                 'index': s[0],
                 'date': s[1],
                 'price': s[2],
-                'type': 'cycle_pivot'
+                'type': 'cycle_peak' if (s_idx == 0 and starts_high) else ('origin' if s_idx == 0 else 'cycle_pivot')
             })
 
     minor_subwaves = detect_minor_subwaves(df, max(0, len(df) - 30), len(df) - 1)
