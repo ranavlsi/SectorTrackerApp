@@ -38,6 +38,40 @@ LAKEHOUSE_PATH = os.path.join(CURRENT_DIR, 'data', 'daily_ohlcv.parquet')
 DATA_DIR = os.path.join(CURRENT_DIR, 'data')
 CACHE_FILE = os.path.join(DATA_DIR, 'wyckoff_screener.json')
 
+MIN_MARKET_CAP_USD = 2_000_000_000
+MIN_AVG_DAILY_VOL = 2_000_000
+CACHE_SCHEMA_VERSION = 2
+
+try:
+    from market_cap_utils import fetch_and_cache_market_caps
+except Exception:
+    try:
+        from backend.market_cap_utils import fetch_and_cache_market_caps
+    except Exception:
+        fetch_and_cache_market_caps = None
+
+
+def _sanitize_json(obj):
+    """Recursively convert numpy scalars and replace NaN/Inf with None for strict JSON serialization."""
+    if obj is None:
+        return None
+    if isinstance(obj, bool):
+        return obj
+    if isinstance(obj, (np.bool_,)):
+        return bool(obj)
+    if isinstance(obj, (int, np.integer)):
+        return int(obj)
+    if isinstance(obj, (float, np.floating)):
+        v = float(obj)
+        if math.isnan(v) or math.isinf(v):
+            return None
+        return v
+    if isinstance(obj, dict):
+        return {str(k): _sanitize_json(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_sanitize_json(v) for v in obj]
+    return obj
+
 # Liquid tickers for the universe scan
 CORE_UNIVERSE = [
     "NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "AMD", "AVGO", "SMCI",
@@ -1881,19 +1915,196 @@ def generate_annotated_chart_data(df, setup_result, limit_bars=260):
         'mid': mid
     }
 
-def run_wyckoff_screener(symbols=None, force_refresh=False):
-    """Scans symbol universe and caches results to JSON."""
-    if symbols is None:
-        symbols = CORE_UNIVERSE
+def get_qualified_us_universe(min_mcap_usd=MIN_MARKET_CAP_USD, min_avg_vol=MIN_AVG_DAILY_VOL):
+    """
+    Discovers all active US equities from the local Parquet lakehouse with:
+      - 20-Day average daily share volume > min_avg_vol (default > 2,000,000)
+      - Verified equity market cap >= min_mcap_usd (default >= $2B, excluding ETFs/trusts)
+      - At least 30 historical daily bars and active within 14 days of lakehouse latest date
+    Returns (sorted_tickers, mcap_meta_map, avg_vol_map).
+    """
+    if not os.path.exists(LAKEHOUSE_PATH):
+        return [], {}, {}
 
-    if not force_refresh and os.path.exists(CACHE_FILE):
+    conn = duckdb.connect()
+    try:
+        df_liq = conn.execute("""
+            WITH max_dt AS (
+                SELECT MAX(Date) AS dt FROM read_parquet(?)
+            ),
+            window_480 AS (
+                SELECT UPPER(Ticker) AS ticker, Date, Volume
+                FROM read_parquet(?)
+                WHERE Date >= (SELECT dt - INTERVAL 480 DAY FROM max_dt)
+                  AND Volume IS NOT NULL AND Close IS NOT NULL
+            ),
+            total_counts AS (
+                SELECT ticker, COUNT(*) AS total_bars, MAX(Date) AS last_dt
+                FROM window_480
+                GROUP BY ticker
+                HAVING COUNT(*) >= 30
+                   AND MAX(Date) >= (SELECT dt - INTERVAL 14 DAY FROM max_dt)
+            ),
+            ranked_20 AS (
+                SELECT w.ticker, w.Volume,
+                       ROW_NUMBER() OVER (PARTITION BY w.ticker ORDER BY w.Date DESC) AS rn
+                FROM window_480 w
+                JOIN total_counts tc ON w.ticker = tc.ticker
+                WHERE w.Date >= (SELECT dt - INTERVAL 45 DAY FROM max_dt)
+            )
+            SELECT ticker, AVG(Volume) AS avg_vol_20d, COUNT(*) AS bars_20d
+            FROM ranked_20
+            WHERE rn <= 20
+            GROUP BY ticker
+            HAVING AVG(Volume) > ? AND COUNT(*) >= 15
+        """, [LAKEHOUSE_PATH, LAKEHOUSE_PATH, float(min_avg_vol)]).df()
+    finally:
+        conn.close()
+
+    if df_liq is None or df_liq.empty:
+        return [], {}, {}
+
+    # Strict symbol sanity check & build avg_vol_map
+    candidate_tickers = []
+    avg_vol_map = {}
+    for _, row in df_liq.iterrows():
+        sym = str(row['ticker'] or '').upper().strip()
+        if not sym or len(sym) > 6 or not sym.replace('-', '').replace('.', '').isalnum():
+            continue
+        av = float(row['avg_vol_20d'] or 0.0)
+        if av > float(min_avg_vol):
+            candidate_tickers.append(sym)
+            avg_vol_map[sym] = av
+
+    if not candidate_tickers:
+        return [], {}, {}
+
+    # Resolve & cache market caps for all volume-qualified tickers (excludes ETFs/non-equities)
+    mcap_meta = {}
+    if fetch_and_cache_market_caps is not None:
         try:
-            mtime = os.path.getmtime(CACHE_FILE)
-            if time.time() - mtime < 1800:
+            mcap_meta = fetch_and_cache_market_caps(candidate_tickers, allow_yfinance_fallback=False)
+        except Exception as e:
+            print(f"[Wyckoff Engine] Market cap lookup warning: {e}")
+
+    qualified = []
+    verified_mcap = {}
+    for sym in candidate_tickers:
+        info = mcap_meta.get(sym)
+        if not info or info.get('is_etf', False):
+            continue
+        mc = float(info.get('market_cap') or 0.0)
+        if mc < float(min_mcap_usd):
+            continue
+        qualified.append(sym)
+        verified_mcap[sym] = info
+
+    return sorted(qualified), verified_mcap, avg_vol_map
+
+
+def load_batch_ohlcv_from_lakehouse(tickers, lookback_days=320):
+    """
+    Loads OHLCV histories for all target tickers in ONE DuckDB Parquet scan,
+    returning {ticker: DataFrame[Date, Open, High, Low, Close, Volume]}.
+    """
+    if not tickers or not os.path.exists(LAKEHOUSE_PATH):
+        return {}
+
+    clean_syms = sorted({str(t).upper().strip() for t in tickers if t})
+    if not clean_syms:
+        return {}
+
+    placeholders = ", ".join("?" for _ in clean_syms)
+    query = f"""
+        WITH max_dt AS (
+            SELECT MAX(Date) AS dt FROM read_parquet(?)
+        )
+        SELECT
+            Date,
+            UPPER(Ticker) AS Ticker,
+            Open,
+            High,
+            Low,
+            Close,
+            Volume
+        FROM read_parquet(?)
+        WHERE Date >= (SELECT dt - INTERVAL 480 DAY FROM max_dt)
+          AND UPPER(Ticker) IN ({placeholders})
+        ORDER BY Ticker ASC, Date ASC
+    """
+    conn = duckdb.connect()
+    try:
+        df_all = conn.execute(query, [LAKEHOUSE_PATH, LAKEHOUSE_PATH, *clean_syms]).df()
+    finally:
+        conn.close()
+
+    if df_all is None or df_all.empty:
+        return {}
+
+    df_all['Date'] = pd.to_datetime(df_all['Date'])
+    batch_map = {}
+    for sym, grp in df_all.groupby('Ticker', sort=False):
+        if len(grp) < 30:
+            continue
+        sub = grp[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].reset_index(drop=True)
+        if len(sub) > lookback_days:
+            sub = sub.iloc[-lookback_days:].reset_index(drop=True)
+        batch_map[str(sym)] = sub
+    return batch_map
+
+
+def run_wyckoff_screener(
+    symbols=None,
+    force_refresh=False,
+    min_mcap_usd=MIN_MARKET_CAP_USD,
+    min_avg_vol=MIN_AVG_DAILY_VOL,
+):
+    """Scans qualifying US equities (MCap >= $2B, 20D Avg Vol > 2M) and caches results to JSON."""
+    is_default_universe = symbols is None
+    target_mcap_b = round(float(min_mcap_usd) / 1e9, 2)
+    target_vol_m = round(float(min_avg_vol) / 1e6, 2)
+
+    if is_default_universe and not force_refresh and os.path.exists(CACHE_FILE):
+        try:
+            cache_mtime = os.path.getmtime(CACHE_FILE)
+            pq_mtime = os.path.getmtime(LAKEHOUSE_PATH) if os.path.exists(LAKEHOUSE_PATH) else 0.0
+            if (time.time() - cache_mtime) < 1800 and cache_mtime >= pq_mtime:
                 with open(CACHE_FILE, 'r') as f:
-                    return json.load(f)
+                    cached = json.load(f)
+                uf = cached.get('universe_filters') or {}
+                if (
+                    cached.get('schema_version') == CACHE_SCHEMA_VERSION
+                    and uf.get('min_market_cap_b') == target_mcap_b
+                    and uf.get('min_avg_vol_m') == target_vol_m
+                    and uf.get('exclude_etfs') is True
+                ):
+                    return cached
         except Exception:
             pass
+
+    t0 = time.time()
+    mcap_meta = {}
+    avg_vol_map = {}
+    batch_ohlcv = {}
+
+    if is_default_universe:
+        if os.path.exists(LAKEHOUSE_PATH):
+            symbols, mcap_meta, avg_vol_map = get_qualified_us_universe(
+                min_mcap_usd=min_mcap_usd,
+                min_avg_vol=min_avg_vol,
+            )
+            batch_ohlcv = load_batch_ohlcv_from_lakehouse(symbols, lookback_days=320)
+        if not symbols:
+            symbols = CORE_UNIVERSE
+    else:
+        clean_custom = [str(s).upper().strip() for s in symbols if s]
+        if fetch_and_cache_market_caps is not None:
+            try:
+                mcap_meta = fetch_and_cache_market_caps(clean_custom, allow_yfinance_fallback=False)
+            except Exception:
+                pass
+        if os.path.exists(LAKEHOUSE_PATH):
+            batch_ohlcv = load_batch_ohlcv_from_lakehouse(clean_custom, lookback_days=320)
 
     results = []
     spring_count = 0
@@ -1910,16 +2121,36 @@ def run_wyckoff_screener(symbols=None, force_refresh=False):
     total_acc = 0
     total_dist = 0
 
-    print(f"[Wyckoff Engine] Scanning {len(symbols)} liquid tickers for Wyckoff setups...")
+    print(f"[Wyckoff Engine] Scanning {len(symbols)} US equities (MCap >= ${target_mcap_b}B, AvgVol > {target_vol_m}M)...")
     for sym in symbols:
         try:
-            df = get_stock_data(sym, lookback_days=320)
+            df = batch_ohlcv.get(sym)
+            if df is None:
+                if not is_default_universe:
+                    df = get_stock_data(sym, lookback_days=320)
             if df is None or len(df) < 30:
                 continue
+
             res = detect_wyckoff_setups(sym, df)
             if not res:
                 continue
-                
+
+            # Enrich with Market Cap, 20D Avg Vol & Sector metadata
+            info = mcap_meta.get(sym, {})
+            mc_usd = float(info.get('market_cap') or 0.0)
+            avg_v = float(avg_vol_map.get(sym) or df['Volume'].tail(20).mean())
+            if is_default_universe and mc_usd > 0:
+                if avg_v <= float(min_avg_vol) or mc_usd < float(min_mcap_usd):
+                    continue
+
+            res['market_cap_usd'] = int(round(mc_usd)) if mc_usd > 0 else None
+            res['market_cap_b'] = round(mc_usd / 1e9, 1) if mc_usd > 0 else None
+            res['avg_vol_20d'] = int(round(avg_v))
+            res['avg_vol_20_m'] = round(avg_v / 1e6, 2)
+            res['name'] = info.get('name', '')
+            res['sector'] = info.get('sector', '')
+            res['industry'] = info.get('industry', '')
+
             setup_key = res['primary_setup']['setup_key']
             ph_letter = res.get('phase_letter', 'B')
             
@@ -1981,8 +2212,16 @@ def run_wyckoff_screener(symbols=None, force_refresh=False):
         posture_badge = "SELECTIVE_EQUILIBRIUM"
 
     payload = {
+        'schema_version': CACHE_SCHEMA_VERSION,
         'last_updated': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'scan_duration_sec': round(time.time() - t0, 2),
         'total_scanned': total_scanned,
+        'universe_filters': {
+            'scope': 'ALL_US_STOCKS',
+            'min_market_cap_b': target_mcap_b,
+            'min_avg_vol_m': target_vol_m,
+            'exclude_etfs': True,
+        },
         'market_posture': {
             'text': posture,
             'badge': posture_badge,
@@ -2002,26 +2241,49 @@ def run_wyckoff_screener(symbols=None, force_refresh=False):
         },
         'stocks': results
     }
+    payload = _sanitize_json(payload)
 
-    try:
-        os.makedirs(DATA_DIR, exist_ok=True)
-        with open(CACHE_FILE, 'w') as f:
-            json.dump(payload, f, indent=2)
-    except Exception as e:
-        print(f"[Wyckoff Engine] Cache save warning: {e}")
+    if is_default_universe:
+        try:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            tmp_path = f"{CACHE_FILE}.tmp.{os.getpid()}"
+            with open(tmp_path, 'w') as f:
+                json.dump(payload, f, indent=2, allow_nan=False)
+            os.replace(tmp_path, CACHE_FILE)
+        except Exception as e:
+            print(f"[Wyckoff Engine] Cache save warning: {e}")
 
+    print(f"[Wyckoff Engine] Completed full-US scan: {total_scanned} stocks in {payload['scan_duration_sec']}s.")
     return payload
+
 
 def get_detailed_stock_wyckoff(ticker, lookback_bars=260, force_refresh=False, **kwargs):
     """Returns deep analysis, multi-timeframe chart candles (up to 1-year), Creek/Ice lines, markers, and trade plan for a single stock."""
-    df = get_stock_data(ticker, lookback_days=320)
+    sym = ticker.upper().strip()
+    df = get_stock_data(sym, lookback_days=320)
     if df is None or len(df) < 25:
         return {'error': f"Insufficient historical price data found for {ticker}."}
 
     df = calculate_vsa_indicators(df)
-    setup_result = detect_wyckoff_setups(ticker, df)
+    setup_result = detect_wyckoff_setups(sym, df)
     if not setup_result:
         return {'error': f"Could not construct Wyckoff trading range for {ticker}."}
+
+    # Attach Market Cap, 20D Avg Vol & Sector metadata if available
+    try:
+        avg_v = float(df['Volume'].tail(20).mean())
+        setup_result['avg_vol_20d'] = int(round(avg_v))
+        setup_result['avg_vol_20_m'] = round(avg_v / 1e6, 2)
+        if fetch_and_cache_market_caps is not None:
+            info = fetch_and_cache_market_caps([sym], allow_yfinance_fallback=False).get(sym, {})
+            mc_usd = float(info.get('market_cap') or 0.0)
+            if mc_usd > 0:
+                setup_result['market_cap_usd'] = int(round(mc_usd))
+                setup_result['market_cap_b'] = round(mc_usd / 1e9, 1)
+            setup_result['name'] = info.get('name', '')
+            setup_result['sector'] = info.get('sector', '')
+    except Exception:
+        pass
 
     chart_data = generate_annotated_chart_data(df, setup_result, limit_bars=lookback_bars)
     tr = setup_result['trading_range']

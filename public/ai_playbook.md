@@ -1,198 +1,198 @@
 # 🤖 Institutional Quantitative AI Playbook 3.0 (11-Engine Clubbed Intelligence)
 
-**Generation Date:** Thursday, November 19, 2026
+**Generation Date:** Thursday, November 26, 2026
 
-**Market Posture:** `RISK_OFF` (Health Score: 12.8/100) · Defensive Sizing (0.50% - 0.75% per trade · Harvest T1 early)
-
----
-
-## 1. $GEN · Short Squeeze & Gamma Runner 🔥
-**Current Price:** $30.15 | **Conviction:** 96/100 A+ Institutional | **Confluence:** 7 Engines (5/5 Domains)
-
-> GEN clubs 5/5 institutional domains (7 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +30.2% (+38.3% Alpha vs SPY, RS Rating 88), 10D/30D Realized Vol is 0.68x (36.4% vs 53.2% HV, 30D IV 40.4%), backed by 🚀 Options Tailwind and Nov Seasonality (100% win rate). Defined -3.2% stop ($29.19) targets 1:4.2 R:R to T1 ($34.18).
-
-- **Last 30D Movement:** Price `+30.2%` (`+38.3%` Alpha vs SPY) · `18W/12L` · U/D Vol `1.55x`
-- **Volatility Intelligence:** `🧬 Vol Coiling (-32% 10D/30D HV)` · 30D IV `40.4%` vs 30D HV `53.2%` (10D HV `36.4%`)
-- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +2.2%)` → Next Month `Dec` (`50%` Win, `-4.1%` Avg)
-
-### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$29.91` ── `$30.39` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$29.19` (-3.2% Risk Floor)
-- **Target 1 (Pin Target):** `$34.18` (+13.4%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$40.55` (+34.5%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (40.4%) is cheap vs 30D Realized HV (53.2%, VRP -12.8%). Favor Long $30 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
-- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:10.8` (T2)
+**Market Posture:** `RISK_OFF` (Health Score: 8.3/100) · Defensive Sizing (0.50% - 0.75% per trade · Harvest T1 early)
 
 ---
 
-## 2. $AAPL · Moving Average Cushion & Pullback 🛡️
-**Current Price:** $349.21 | **Conviction:** 94/100 A+ Institutional | **Confluence:** 10 Engines (5/5 Domains)
+## 1. $GME · Alpha Breakout & Volatility Contraction 🚀
+**Current Price:** $26.97 | **Conviction:** 96/100 A+ Institutional | **Confluence:** 7 Engines (5/5 Domains)
 
-> AAPL clubs 5/5 institutional domains (10 engines: Emerging Leaders, Realsimple Framework, Best Acting Stocks): 30D Price moved +3.8% (+11.9% Alpha vs SPY, RS Rating 92), 10D/30D Realized Vol is 0.79x (18.6% vs 23.4% HV, 30D IV 26.0%), backed by 🐋 Whale Sweeps and Nov Seasonality (80% win rate). Defined -1.2% stop ($345.02) targets 1:4.2 R:R to T1 ($366.81).
+> GME clubs 5/5 institutional domains (7 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved -3.8% (-3.8% Alpha vs SPY, RS Rating 97), 10D/30D Realized Vol is 0.82x (30.4% vs 37.3% HV, 30D IV 65.1%), backed by 🚀 Call Accumulation and Nov Seasonality (100% win rate). Defined -3.3% stop ($26.07) targets 1:3.4 R:R to T1 ($30.07).
 
-- **Last 30D Movement:** Price `+3.8%` (`+11.9%` Alpha vs SPY) · `13W/17L` · U/D Vol `0.76x`
-- **Volatility Intelligence:** `🧬 Vol Coiling (-20% 10D/30D HV)` · 30D IV `26.0%` vs 30D HV `23.4%` (10D HV `18.6%`)
-- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 80% Win · +3.2%)` → Next Month `Dec` (`60%` Win, `+1.2%` Avg)
+- **Last 30D Movement:** Price `-3.8%` (`-3.8%` Alpha vs SPY) · `15W/15L` · U/D Vol `1.09x`
+- **Volatility Intelligence:** `🧬 Vol Coiling (-18% 10D/30D HV)` · 30D IV `65.1%` vs 30D HV `37.3%` (10D HV `30.4%`)
+- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +6.2%)` → Next Month `Dec` (`50%` Win, `-1.5%` Avg)
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$346.42` ── `$352.0` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$345.02` (-1.2% Risk Floor)
-- **Target 1 (Pin Target):** `$366.81` (+5.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$391.21` (+12.0%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (26.0%) is cheap vs 30D Realized HV (23.4%, VRP +2.6%). Favor Long $346 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
+- **Accumulation Corridor:** `$26.75` ── `$27.19` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$26.07` (-3.3% Risk Floor)
+- **Target 1 (Pin Target):** `$30.07` (+11.5%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$32.41` (+20.2%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Implied Vol (65.1%) commands a +27.8% risk premium over 30D HV (37.3%). Sell rich wing vol via $27/$30 Bull Call Spread or Bull Put Credit Spread.`
+- **Risk/Reward Expectancy:** `1:3.4` (T1) / `1:6.0` (T2)
+
+---
+
+## 2. $CROX · Moving Average Cushion & Pullback 🛡️
+**Current Price:** $159.93 | **Conviction:** 95/100 A+ Institutional | **Confluence:** 8 Engines (5/5 Domains)
+
+> CROX clubs 5/5 institutional domains (8 engines: Relative Strength, Vah Rejection Fixed, Fvg Sma Confluence): 30D Price moved +28.2% (+28.2% Alpha vs SPY, RS Rating 92), 10D/30D Realized Vol is 0.51x (38.7% vs 76.0% HV, 30D IV 41.1%), backed by 🚀 Call Accumulation and Nov Seasonality (100% win rate). Defined -3.5% stop ($154.33) targets 1:2.3 R:R to T1 ($172.96).
+
+- **Last 30D Movement:** Price `+28.2%` (`+28.2%` Alpha vs SPY) · `17W/13L` · U/D Vol `1.73x`
+- **Volatility Intelligence:** `🧬 Vol Coiling (-49% 10D/30D HV)` · 30D IV `41.1%` vs 30D HV `76.0%` (10D HV `38.7%`)
+- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +5.1%)` → Next Month `Dec` (`100%` Win, `+2.2%` Avg)
+
+### 🎯 Precision Execution Deck
+- **Accumulation Corridor:** `$158.65` ── `$161.21` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$154.33` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$172.96` (+8.1%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$185.41` (+15.9%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Implied Vol (41.1%) is cheap vs 30D Realized HV (76.0%, VRP -34.9%). Favor Long $159 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
+- **Risk/Reward Expectancy:** `1:2.3` (T1) / `1:4.6` (T2)
+
+---
+
+## 3. $BHC · Alpha Breakout & Volatility Contraction 🚀
+**Current Price:** $8.52 | **Conviction:** 94/100 A+ Institutional | **Confluence:** 6 Engines (5/5 Domains)
+
+> BHC clubs 5/5 institutional domains (6 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +35.0% (+35.0% Alpha vs SPY, RS Rating 96), 10D/30D Realized Vol is 0.41x (36.2% vs 88.4% HV, 30D IV 49.0%), backed by 🚀 Call Accumulation and Nov Seasonality (50% win rate). Defined -3.5% stop ($8.22) targets 1:4.2 R:R to T1 ($9.77).
+
+- **Last 30D Movement:** Price `+35.0%` (`+35.0%` Alpha vs SPY) · `18W/12L` · U/D Vol `2.17x`
+- **Volatility Intelligence:** `🧬 Vol Coiling (-59% 10D/30D HV)` · 30D IV `49.0%` vs 30D HV `88.4%` (10D HV `36.2%`)
+- **Seasonality Intelligence:** `⚖️ Neutral Seasonality (Nov 50% Win)` → Next Month `Dec` (`50%` Win, `+2.9%` Avg)
+
+### 🎯 Precision Execution Deck
+- **Accumulation Corridor:** `$8.45` ── `$8.59` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$8.22` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$9.77` (+14.7%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$10.5` (+23.2%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Implied Vol (49.0%) is cheap vs 30D Realized HV (88.4%, VRP -39.4%). Favor Long $8.5 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
+- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:6.6` (T2)
+
+---
+
+## 4. $V · Alpha Breakout & Volatility Contraction 🚀
+**Current Price:** $424.39 | **Conviction:** 93/100 A+ Institutional | **Confluence:** 7 Engines (5/5 Domains)
+
+> V clubs 5/5 institutional domains (7 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +6.4% (+6.4% Alpha vs SPY, RS Rating 93), 10D/30D Realized Vol is 1.08x (28.3% vs 26.3% HV, 30D IV 24.6%), backed by 🚀 Call Accumulation and Nov Seasonality (70% win rate). Defined -3.5% stop ($409.54) targets 1:2.5 R:R to T1 ($461.75).
+
+- **Last 30D Movement:** Price `+6.4%` (`+6.4%` Alpha vs SPY) · `18W/12L` · U/D Vol `1.42x`
+- **Volatility Intelligence:** `⚖️ Orderly Vol (IV/HV 0.94x)` · 30D IV `24.6%` vs 30D HV `26.3%` (10D HV `28.3%`)
+- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 70% Win · +3.5%)` → Next Month `Dec` (`80%` Win, `+1.5%` Avg)
+
+### 🎯 Precision Execution Deck
+- **Accumulation Corridor:** `$420.99` ── `$427.79` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$409.54` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$461.75` (+8.8%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$488.48` (+15.1%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Implied Vol (24.6%) is cheap vs 30D Realized HV (26.3%, VRP -1.7%). Favor Long $421 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
+- **Risk/Reward Expectancy:** `1:2.5` (T1) / `1:4.3` (T2)
+
+---
+
+## 5. $EW · Alpha Breakout & Volatility Contraction 🚀
+**Current Price:** $106.36 | **Conviction:** 93/100 A+ Institutional | **Confluence:** 5 Engines (5/5 Domains)
+
+> EW clubs 5/5 institutional domains (5 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +20.7% (+20.7% Alpha vs SPY, RS Rating 92), 10D/30D Realized Vol is 0.93x (23.9% vs 25.7% HV, 30D IV 27.4%), backed by 🚀 Call Accumulation and Nov Seasonality (100% win rate). Defined -2.3% stop ($103.88) targets 1:4.2 R:R to T1 ($116.78).
+
+- **Last 30D Movement:** Price `+20.7%` (`+20.7%` Alpha vs SPY) · `20W/10L` · U/D Vol `2.29x`
+- **Volatility Intelligence:** `⚖️ Orderly Vol (IV/HV 1.07x)` · 30D IV `27.4%` vs 30D HV `25.7%` (10D HV `23.9%`)
+- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +10.4%)` → Next Month `Dec` (`50%` Win, `+1.1%` Avg)
+
+### 🎯 Precision Execution Deck
+- **Accumulation Corridor:** `$105.51` ── `$108.22` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$103.88` (-2.3% Risk Floor)
+- **Target 1 (Pin Target):** `$116.78` (+9.8%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$128.1` (+20.4%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Implied Vol (27.4%) is cheap vs 30D Realized HV (25.7%, VRP +1.7%). Favor Long $106 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
+- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:8.8` (T2)
+
+---
+
+## 6. $IBN · Short Squeeze & Gamma Runner 🔥
+**Current Price:** $36.5 | **Conviction:** 93/100 A+ Institutional | **Confluence:** 5 Engines (5/5 Domains)
+
+> IBN clubs 5/5 institutional domains (5 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +24.0% (+24.0% Alpha vs SPY, RS Rating 92), 10D/30D Realized Vol is 0.53x (13.9% vs 26.1% HV, 30D IV 25.7%), backed by 🚀 Call Accumulation and Nov Seasonality (100% win rate). Defined -3.5% stop ($35.22) targets 1:4.2 R:R to T1 ($41.88).
+
+- **Last 30D Movement:** Price `+24.0%` (`+24.0%` Alpha vs SPY) · `20W/10L` · U/D Vol `3.03x`
+- **Volatility Intelligence:** `🧬 Vol Coiling (-47% 10D/30D HV)` · 30D IV `25.7%` vs 30D HV `26.1%` (10D HV `13.9%`)
+- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +13.5%)` → Next Month `Dec` (`0%` Win, `-3.4%` Avg)
+
+### 🎯 Precision Execution Deck
+- **Accumulation Corridor:** `$36.21` ── `$36.79` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$35.22` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$41.88` (+14.7%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$47.09` (+29.0%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Implied Vol (25.7%) is cheap vs 30D Realized HV (26.1%, VRP -0.4%). Favor Long $36 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
+- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:8.3` (T2)
+
+---
+
+## 7. $OKTA · Moving Average Cushion & Pullback 🛡️
+**Current Price:** $201.77 | **Conviction:** 91/100 A+ Institutional | **Confluence:** 8 Engines (5/5 Domains)
+
+> OKTA clubs 5/5 institutional domains (8 engines: Fvg Sma Confluence, Smc Divergence Reversal, Earnings Surge): 30D Price moved -3.2% (-3.2% Alpha vs SPY, RS Rating 99), 10D/30D Realized Vol is 1.04x (91.2% vs 88.0% HV, 30D IV 101.1%), backed by 🚀 Call Accumulation and Nov Seasonality (0% win rate). Defined -3.5% stop ($194.71) targets 1:4.2 R:R to T1 ($231.42).
+
+- **Last 30D Movement:** Price `-3.2%` (`-3.2%` Alpha vs SPY) · `17W/13L` · U/D Vol `1.64x`
+- **Volatility Intelligence:** `⚖️ Orderly Vol (IV/HV 1.15x)` · 30D IV `101.1%` vs 30D HV `88.0%` (10D HV `91.2%`)
+- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 0% Win · -7.7%)` → Next Month `Dec` (`100%` Win, `+4.6%` Avg)
+
+### 🎯 Precision Execution Deck
+- **Accumulation Corridor:** `$200.16` ── `$203.38` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$194.71` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$231.42` (+14.7%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$272.33` (+35.0%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Balanced vol pricing (30D IV 101.1% vs 30D HV 88.0%). Execute $200/$231 Bull Call Vertical (30-45 DTE) for defined 1:3+ payoff.`
 - **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:10.0` (T2)
 
 ---
 
-## 3. $MDT · Alpha Breakout & Volatility Contraction 🚀
-**Current Price:** $100.61 | **Conviction:** 94/100 A+ Institutional | **Confluence:** 7 Engines (5/5 Domains)
+## 8. $KO · Alpha Breakout & Volatility Contraction 🚀
+**Current Price:** $97.59 | **Conviction:** 91/100 A+ Institutional | **Confluence:** 6 Engines (5/5 Domains)
 
-> MDT clubs 5/5 institutional domains (7 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +13.7% (+21.8% Alpha vs SPY, RS Rating 87), 10D/30D Realized Vol is 0.68x (21.0% vs 31.0% HV, 30D IV 29.2%), backed by ⚖️ Neutral Rebalancing and Nov Seasonality (70% win rate). Defined -1.3% stop ($99.35) targets 1:4.2 R:R to T1 ($105.90).
+> KO clubs 5/5 institutional domains (6 engines: Emerging Leaders, Best Acting Stocks, Wick Supply Absorption): 30D Price moved +6.1% (+6.1% Alpha vs SPY, RS Rating 85), 10D/30D Realized Vol is 0.98x (19.9% vs 20.3% HV, 30D IV 20.1%), backed by 🚀 Call Accumulation and Nov Seasonality (100% win rate). Defined -2.2% stop ($95.48) targets 1:3.4 R:R to T1 ($104.82).
 
-- **Last 30D Movement:** Price `+13.7%` (`+21.8%` Alpha vs SPY) · `15W/15L` · U/D Vol `1.93x`
-- **Volatility Intelligence:** `🧬 Vol Coiling (-32% 10D/30D HV)` · 30D IV `29.2%` vs 30D HV `31.0%` (10D HV `21.0%`)
-- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 70% Win · +3.7%)` → Next Month `Dec` (`30%` Win, `-1.7%` Avg)
+- **Last 30D Movement:** Price `+6.1%` (`+6.1%` Alpha vs SPY) · `16W/14L` · U/D Vol `1.09x`
+- **Volatility Intelligence:** `⚖️ Orderly Vol (IV/HV 0.99x)` · 30D IV `20.1%` vs 30D HV `20.3%` (10D HV `19.9%`)
+- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +4.9%)` → Next Month `Dec` (`0%` Win, `-3.3%` Avg)
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$99.81` ── `$101.41` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$99.35` (-1.3% Risk Floor)
-- **Target 1 (Pin Target):** `$105.9` (+5.3%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$119.36` (+18.6%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (29.2%) commands a +-1.8% risk premium over 30D HV (31.0%). Sell rich wing vol via $100/$106 Bull Call Spread or Bull Put Credit Spread.`
-- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:14.9` (T2)
+- **Accumulation Corridor:** `$96.81` ── `$98.37` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$95.48` (-2.2% Risk Floor)
+- **Target 1 (Pin Target):** `$104.82` (+7.4%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$108.62` (+11.3%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Balanced vol pricing (30D IV 20.1% vs 30D HV 20.3%). Execute $97/$105 Bull Call Vertical (30-45 DTE) for defined 1:3+ payoff.`
+- **Risk/Reward Expectancy:** `1:3.4` (T1) / `1:5.2` (T2)
 
 ---
 
-## 4. $GMAB · Short Squeeze & Gamma Runner 🔥
-**Current Price:** $51.35 | **Conviction:** 94/100 A+ Institutional | **Confluence:** 6 Engines (5/5 Domains)
+## 9. $KIM · Short Squeeze & Gamma Runner 🔥
+**Current Price:** $26.05 | **Conviction:** 91/100 A+ Institutional | **Confluence:** 6 Engines (5/5 Domains)
 
-> GMAB clubs 5/5 institutional domains (6 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +38.5% (+46.6% Alpha vs SPY, RS Rating 92), 10D/30D Realized Vol is 0.45x (37.3% vs 83.3% HV, 30D IV 38.4%), backed by 🐋 Whale Sweeps and Nov Seasonality (50% win rate). Defined -1.3% stop ($50.67) targets 1:4.2 R:R to T1 ($54.21).
+> KIM clubs 5/5 institutional domains (6 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +14.9% (+14.9% Alpha vs SPY, RS Rating 92), 10D/30D Realized Vol is 0.54x (12.3% vs 22.6% HV, 30D IV 23.7%), backed by 🚀 Options Tailwind and Nov Seasonality (50% win rate). Defined -3.4% stop ($25.17) targets 1:2.4 R:R to T1 ($28.12).
 
-- **Last 30D Movement:** Price `+38.5%` (`+46.6%` Alpha vs SPY) · `18W/12L` · U/D Vol `2.26x`
-- **Volatility Intelligence:** `🧬 Vol Coiling (-55% 10D/30D HV)` · 30D IV `38.4%` vs 30D HV `83.3%` (10D HV `37.3%`)
-- **Seasonality Intelligence:** `⚖️ Neutral Seasonality (Nov 50% Win)` → Next Month `Dec` (`0%` Win, `-3.9%` Avg)
+- **Last 30D Movement:** Price `+14.9%` (`+14.9%` Alpha vs SPY) · `19W/11L` · U/D Vol `1.68x`
+- **Volatility Intelligence:** `🧬 Vol Coiling (-46% 10D/30D HV)` · 30D IV `23.7%` vs 30D HV `22.6%` (10D HV `12.3%`)
+- **Seasonality Intelligence:** `⚖️ Neutral Seasonality (Nov 50% Win)` → Next Month `Dec` (`0%` Win, `-4.0%` Avg)
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$50.94` ── `$51.76` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$50.67` (-1.3% Risk Floor)
-- **Target 1 (Pin Target):** `$54.21` (+5.6%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$86.41` (+68.3%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (38.4%) is cheap vs 30D Realized HV (83.3%, VRP -44.9%). Favor Long $51 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
-- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:51.6` (T2)
+- **Accumulation Corridor:** `$25.84` ── `$26.26` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$25.17` (-3.4% Risk Floor)
+- **Target 1 (Pin Target):** `$28.12` (+7.9%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$29.87` (+14.7%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Implied Vol (23.7%) is cheap vs 30D Realized HV (22.6%, VRP +1.1%). Favor Long $26 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
+- **Risk/Reward Expectancy:** `1:2.4` (T1) / `1:4.3` (T2)
 
 ---
 
-## 5. $COLD · Alpha Breakout & Volatility Contraction 🚀
-**Current Price:** $16.34 | **Conviction:** 94/100 A+ Institutional | **Confluence:** 6 Engines (5/5 Domains)
+## 10. $BAX · Alpha Breakout & Volatility Contraction 🚀
+**Current Price:** $27.26 | **Conviction:** 91/100 A+ Institutional | **Confluence:** 5 Engines (5/5 Domains)
 
-> COLD clubs 5/5 institutional domains (6 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +16.8% (+24.9% Alpha vs SPY, RS Rating 92), 10D/30D Realized Vol is 1.1x (33.3% vs 30.4% HV, 30D IV 33.0%), backed by 🚀 Call Accumulation and Nov Seasonality (50% win rate). Defined -1.7% stop ($16.06) targets 1:4.2 R:R to T1 ($17.52).
+> BAX clubs 5/5 institutional domains (5 engines: Emerging Leaders, Wick Supply Absorption,  Confluence Leaders): 30D Price moved +5.8% (+5.8% Alpha vs SPY, RS Rating 95), 10D/30D Realized Vol is 0.75x (34.2% vs 45.7% HV, 30D IV 42.6%), backed by 🚀 Call Accumulation and Nov Seasonality (100% win rate). Defined -3.5% stop ($26.31) targets 1:3.0 R:R to T1 ($30.14).
 
-- **Last 30D Movement:** Price `+16.8%` (`+24.9%` Alpha vs SPY) · `17W/13L` · U/D Vol `1.87x`
-- **Volatility Intelligence:** `⚖️ Orderly Vol (IV/HV 1.09x)` · 30D IV `33.0%` vs 30D HV `30.4%` (10D HV `33.3%`)
-- **Seasonality Intelligence:** `☀️ Favorable Seasonality (Nov 50% Win · -1.1%)` → Next Month `Dec` (`50%` Win, `+5.7%` Avg)
-
-### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$16.21` ── `$16.47` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$16.06` (-1.7% Risk Floor)
-- **Target 1 (Pin Target):** `$17.52` (+7.2%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$19.78` (+21.1%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Balanced vol pricing (30D IV 33.0% vs 30D HV 30.4%). Execute $16/$17.5 Bull Call Vertical (30-45 DTE) for defined 1:3+ payoff.`
-- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:12.3` (T2)
-
----
-
-## 6. $CART · Short Squeeze & Gamma Runner 🔥
-**Current Price:** $57.84 | **Conviction:** 94/100 A+ Institutional | **Confluence:** 9 Engines (4/5 Domains)
-
-> CART clubs 4/5 institutional domains (9 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +21.1% (+29.2% Alpha vs SPY, RS Rating 97), 10D/30D Realized Vol is 0.31x (13.1% vs 42.5% HV, 30D IV 8.8%), backed by 📉 Vol Crush / Decay and Nov Seasonality (100% win rate). Defined -1.2% stop ($57.15) targets 1:4.2 R:R to T1 ($60.74).
-
-- **Last 30D Movement:** Price `+21.1%` (`+29.2%` Alpha vs SPY) · `19W/11L` · U/D Vol `1.48x`
-- **Volatility Intelligence:** `🧬 Vol Coiling (-69% 10D/30D HV)` · 30D IV `8.8%` vs 30D HV `42.5%` (10D HV `13.1%`)
-- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +8.2%)` → Next Month `Dec` (`50%` Win, `+1.0%` Avg)
+- **Last 30D Movement:** Price `+5.8%` (`+5.8%` Alpha vs SPY) · `16W/14L` · U/D Vol `1.13x`
+- **Volatility Intelligence:** `🧬 Vol Coiling (-25% 10D/30D HV)` · 30D IV `42.6%` vs 30D HV `45.7%` (10D HV `34.2%`)
+- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +10.0%)` → Next Month `Dec` (`50%` Win, `-5.8%` Avg)
 
 ### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$57.38` ── `$58.3` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$57.15` (-1.2% Risk Floor)
-- **Target 1 (Pin Target):** `$60.74` (+5.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$76.96` (+33.1%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (8.8%) is cheap vs 30D Realized HV (42.5%, VRP -33.7%). Favor Long $57 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
-- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:27.7` (T2)
-
----
-
-## 7. $KVYO · Short Squeeze & Gamma Runner 🔥
-**Current Price:** $21.3 | **Conviction:** 93/100 A+ Institutional | **Confluence:** 6 Engines (5/5 Domains)
-
-> KVYO clubs 5/5 institutional domains (6 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +23.0% (+31.0% Alpha vs SPY, RS Rating 21), 10D/30D Realized Vol is 0.77x (44.0% vs 57.1% HV, 30D IV 61.4%), backed by 📉 Vol Crush / Decay and Nov Seasonality (100% win rate). Defined -1.2% stop ($21.04) targets 1:4.2 R:R to T1 ($22.39).
-
-- **Last 30D Movement:** Price `+23.0%` (`+31.0%` Alpha vs SPY) · `15W/15L` · U/D Vol `1.43x`
-- **Volatility Intelligence:** `🧬 Vol Coiling (-23% 10D/30D HV)` · 30D IV `61.4%` vs 30D HV `57.1%` (10D HV `44.0%`)
-- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +7.8%)` → Next Month `Dec` (`100%` Win, `+12.4%` Avg)
-
-### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$21.13` ── `$21.47` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$21.04` (-1.2% Risk Floor)
-- **Target 1 (Pin Target):** `$22.39` (+5.1%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$30.2` (+41.8%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (61.4%) is cheap vs 30D Realized HV (57.1%, VRP +4.3%). Favor Long $21 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
-- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:34.2` (T2)
-
----
-
-## 8. $GME · Alpha Breakout & Volatility Contraction 🚀
-**Current Price:** $26.93 | **Conviction:** 93/100 A+ Institutional | **Confluence:** 5 Engines (5/5 Domains)
-
-> GME clubs 5/5 institutional domains (5 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +1.4% (+9.4% Alpha vs SPY, RS Rating 99), 10D/30D Realized Vol is 0.76x (30.2% vs 39.5% HV, 30D IV 57.5%), backed by ⚖️ Neutral Rebalancing and Nov Seasonality (100% win rate). Defined -3.5% stop ($25.99) targets 1:2.9 R:R to T1 ($29.67).
-
-- **Last 30D Movement:** Price `+1.4%` (`+9.4%` Alpha vs SPY) · `15W/15L` · U/D Vol `1.06x`
-- **Volatility Intelligence:** `🧬 Vol Coiling (-24% 10D/30D HV)` · 30D IV `57.5%` vs 30D HV `39.5%` (10D HV `30.2%`)
-- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +6.1%)` → Next Month `Dec` (`50%` Win, `-1.5%` Avg)
-
-### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$26.71` ── `$27.15` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$25.99` (-3.5% Risk Floor)
-- **Target 1 (Pin Target):** `$29.67` (+10.2%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$31.87` (+18.3%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (57.5%) commands a +18.0% risk premium over 30D HV (39.5%). Sell rich wing vol via $26.5/$29.5 Bull Call Spread or Bull Put Credit Spread.`
-- **Risk/Reward Expectancy:** `1:2.9` (T1) / `1:5.3` (T2)
-
----
-
-## 9. $DAL · Fundamental Momentum & Earnings Acceleration 📈
-**Current Price:** $83.17 | **Conviction:** 92/100 A+ Institutional | **Confluence:** 7 Engines (5/5 Domains)
-
-> DAL clubs 5/5 institutional domains (7 engines: Relative Strength, Bearish Candlestick, Zacks Rank 1): 30D Price moved +1.5% (+9.6% Alpha vs SPY, RS Rating 85), 10D/30D Realized Vol is 0.98x (45.0% vs 46.0% HV, 30D IV 40.0%), backed by 🐋 Whale Sweeps and Nov Seasonality (100% win rate). Defined -1.2% stop ($82.17) targets 1:4.2 R:R to T1 ($87.37).
-
-- **Last 30D Movement:** Price `+1.5%` (`+9.6%` Alpha vs SPY) · `15W/15L` · U/D Vol `1.21x`
-- **Volatility Intelligence:** `💎 Cheap Vega (IV/HV 0.87x)` · 30D IV `40.0%` vs 30D HV `46.0%` (10D HV `45.0%`)
-- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +7.7%)` → Next Month `Dec` (`50%` Win, `+1.5%` Avg)
-
-### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$82.5` ── `$83.84` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$82.17` (-1.2% Risk Floor)
-- **Target 1 (Pin Target):** `$87.37` (+5.0%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$101.79` (+22.4%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (40.0%) is cheap vs 30D Realized HV (46.0%, VRP -6.0%). Favor Long $82 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
-- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:18.6` (T2)
-
----
-
-## 10. $EW · Alpha Breakout & Volatility Contraction 🚀
-**Current Price:** $103.88 | **Conviction:** 92/100 A+ Institutional | **Confluence:** 6 Engines (5/5 Domains)
-
-> EW clubs 5/5 institutional domains (6 engines: Emerging Leaders, Best Acting Stocks,  Confluence Leaders): 30D Price moved +21.9% (+30.0% Alpha vs SPY, RS Rating 92), 10D/30D Realized Vol is 0.88x (21.3% vs 24.3% HV, 30D IV 27.9%), backed by ⚖️ Neutral Rebalancing and Nov Seasonality (100% win rate). Defined -1.2% stop ($102.63) targets 1:4.2 R:R to T1 ($109.13).
-
-- **Last 30D Movement:** Price `+21.9%` (`+30.0%` Alpha vs SPY) · `20W/10L` · U/D Vol `2.32x`
-- **Volatility Intelligence:** `⚖️ Orderly Vol (IV/HV 1.15x)` · 30D IV `27.9%` vs 30D HV `24.3%` (10D HV `21.3%`)
-- **Seasonality Intelligence:** `🌊 Seasonal Tailwind (Nov 100% Win · +9.0%)` → Next Month `Dec` (`50%` Win, `+1.1%` Avg)
-
-### 🎯 Precision Execution Deck
-- **Accumulation Corridor:** `$103.05` ── `$104.71` (🎯 IN BUY ZONE)
-- **Invalidation Sentinel (Stop Loss):** `$102.63` (-1.2% Risk Floor)
-- **Target 1 (Pin Target):** `$109.13` (+5.1%) → *Trim 50% & Ratchet Stop to Breakeven*
-- **Target 2 (Runner Target):** `$128.1` (+23.3%) → *15m / 10-EMA Trailing Stop*
-- **Options Strategy:** `Implied Vol (27.9%) is cheap vs 30D Realized HV (24.3%, VRP +3.6%). Favor Long $103 Call Outright (45-60 DTE, ~0.60Δ) or Long Call Diagonal.`
-- **Risk/Reward Expectancy:** `1:4.2` (T1) / `1:19.4` (T2)
+- **Accumulation Corridor:** `$27.04` ── `$27.65` (🎯 IN BUY ZONE)
+- **Invalidation Sentinel (Stop Loss):** `$26.31` (-3.5% Risk Floor)
+- **Target 1 (Pin Target):** `$30.14` (+10.6%) → *Trim 50% & Ratchet Stop to Breakeven*
+- **Target 2 (Runner Target):** `$32.68` (+19.9%) → *15m / 10-EMA Trailing Stop*
+- **Options Strategy:** `Balanced vol pricing (30D IV 42.6% vs 30D HV 45.7%). Execute $27/$30 Bull Call Vertical (30-45 DTE) for defined 1:3+ payoff.`
+- **Risk/Reward Expectancy:** `1:3.0` (T1) / `1:5.7` (T2)
 
 ---
 

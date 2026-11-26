@@ -1,5 +1,7 @@
 {
-    "last_updated": "2026-11-19 17:47:11",
+    "version": "3.0",
+    "trade_date": "2026-11-25",
+    "last_updated": "2026-11-26 17:47:38",
     "macro_quotes": {
         "^TNX": {
             "symbol": "^TNX",
@@ -7,11 +9,33 @@
             "short_name": "10-Yr Yield",
             "category": "Interest Rates & Cost of Capital",
             "unit": "%",
-            "current_price": 5.05,
-            "change_1d": -0.28,
-            "change_5d": -1.0,
-            "change_20d": 2.0,
-            "trend": "Neutral",
+            "current_price": 4.85,
+            "change_1d": -1.14,
+            "change_5d": -4.3,
+            "change_20d": -3.9,
+            "trend": "Falling",
+            "sparkline_20d": [
+                4.99,
+                4.93,
+                4.89,
+                4.95,
+                4.89,
+                4.84,
+                4.86,
+                4.86,
+                4.98,
+                5.0,
+                5.1,
+                5.15,
+                5.12,
+                5.1,
+                5.07,
+                5.05,
+                4.91,
+                4.92,
+                4.9,
+                4.85
+            ],
             "description": "Benchmark risk-free rate dictating discount rates and consumer borrowing costs.",
             "transmission": "Rising yields increase the discount rate on future earnings (compressing high-P/E growth stocks) while boosting bank Net Interest Margins. Falling yields unleash equity valuation multiple expansion.",
             "bull_sectors": [
@@ -41,11 +65,33 @@
             "short_name": "US Dollar (DXY)",
             "category": "Currencies & Global Liquidity",
             "unit": "pts",
-            "current_price": 103.92,
-            "change_1d": 0.06,
-            "change_5d": 0.73,
-            "change_20d": 2.28,
+            "current_price": 103.67,
+            "change_1d": -0.13,
+            "change_5d": -0.18,
+            "change_20d": 1.45,
             "trend": "Neutral",
+            "sparkline_20d": [
+                102.04,
+                101.88,
+                101.75,
+                101.87,
+                101.51,
+                101.55,
+                102.3,
+                101.65,
+                102.23,
+                102.91,
+                103.17,
+                103.41,
+                103.55,
+                103.49,
+                103.86,
+                103.9,
+                103.81,
+                104.32,
+                103.81,
+                103.67
+            ],
             "description": "Measures USD purchasing power against major global currencies (EUR, JPY, GBP, CAD).",
             "transmission": "A strengthening Dollar tightens global financial conditions, denting multinational foreign revenues and commodity prices. A softer Dollar fuels rallies in Gold, Emerging Markets, and Big Tech.",
             "bull_sectors": [
@@ -75,11 +121,33 @@
             "short_name": "Crude Oil",
             "category": "Energy & Headline Inflation",
             "unit": "$/bbl",
-            "current_price": 82.92,
-            "change_1d": -0.41,
-            "change_5d": -6.56,
-            "change_20d": -16.64,
-            "trend": "Falling",
+            "current_price": 83.68,
+            "change_1d": 1.99,
+            "change_5d": 0.5,
+            "change_20d": -18.58,
+            "trend": "Neutral",
+            "sparkline_20d": [
+                102.0,
+                104.12,
+                96.46,
+                96.09,
+                88.12,
+                90.52,
+                90.83,
+                86.85,
+                86.04,
+                86.53,
+                88.74,
+                88.56,
+                85.72,
+                86.01,
+                83.26,
+                83.21,
+                83.98,
+                80.17,
+                82.05,
+                83.68
+            ],
             "description": "Prime industrial commodity and prime driver of headline Consumer Price Index (CPI) volatility.",
             "transmission": "Surging oil acts as a direct consumer tax, increasing airline, logistics, and manufacturing costs. Plunging oil frees consumer disposable cash and dramatically expands logistics margins.",
             "bull_sectors": [
@@ -109,11 +177,33 @@
             "short_name": "Gold",
             "category": "Safe Haven & Debasement Hedge",
             "unit": "$/oz",
-            "current_price": 3608.0,
-            "change_1d": -3.58,
-            "change_5d": -7.14,
-            "change_20d": -11.14,
+            "current_price": 3535.8,
+            "change_1d": -0.73,
+            "change_5d": -5.51,
+            "change_20d": -12.73,
             "trend": "Falling",
+            "sparkline_20d": [
+                4031.4,
+                3898.9,
+                3969.6,
+                3940.4,
+                4073.0,
+                4113.5,
+                4074.9,
+                4114.5,
+                4030.2,
+                4000.5,
+                3885.3,
+                3886.3,
+                3853.0,
+                3864.2,
+                3741.9,
+                3685.5,
+                3515.4,
+                3651.4,
+                3561.9,
+                3535.8
+            ],
             "description": "Historical monetary anchor and supreme hedge against negative real rates and sovereign debasement.",
             "transmission": "Gold surges when real yields fall or geopolitical and fiscal risks escalate. Soft gold reflects confidence in fiat stability and risk-seeking capital deployment.",
             "bull_sectors": [
@@ -139,11 +229,33 @@
             "short_name": "Bitcoin",
             "category": "Digital Asset & Liquidity Beta",
             "unit": "$",
-            "current_price": 61904.14,
-            "change_1d": -1.72,
-            "change_5d": -13.23,
-            "change_20d": -23.87,
+            "current_price": 60378.2,
+            "change_1d": 1.06,
+            "change_5d": -4.14,
+            "change_20d": -25.7,
             "trend": "Falling",
+            "sparkline_20d": [
+                77775.11,
+                77198.21,
+                76677.3,
+                77345.05,
+                80405.29,
+                75942.12,
+                75746.93,
+                75223.15,
+                73720.12,
+                73964.47,
+                71342.97,
+                68249.27,
+                64855.84,
+                64893.95,
+                62987.27,
+                61901.82,
+                58798.98,
+                61210.98,
+                59747.77,
+                60378.2
+            ],
             "description": "Pristine market barometer of global fiat money supply (M2) expansion and speculative risk tolerance.",
             "transmission": "Bitcoin front-runs broader speculative equity cycles by 2-4 weeks. When BTC accelerates with rising net ETF inflows, speculative tech, fintech, and semiconductor momentum invariably follows.",
             "bull_sectors": [
@@ -169,11 +281,33 @@
             "short_name": "VIX",
             "category": "Market Sentiment & Dealer Gamma",
             "unit": "pts",
-            "current_price": 28.44,
-            "change_1d": 15.8,
-            "change_5d": 52.09,
-            "change_20d": 49.45,
+            "current_price": 28.29,
+            "change_1d": 7.32,
+            "change_5d": 15.19,
+            "change_20d": 67.3,
             "trend": "Rising",
+            "sparkline_20d": [
+                17.2,
+                19.42,
+                21.15,
+                20.83,
+                16.61,
+                28.18,
+                25.64,
+                19.92,
+                19.46,
+                17.49,
+                18.7,
+                19.3,
+                22.91,
+                25.46,
+                24.56,
+                28.44,
+                35.89,
+                26.62,
+                26.36,
+                28.29
+            ],
             "description": "30-day implied volatility of the S&P 500, measuring market fear and options hedging demand.",
             "transmission": "Sub-16 VIX signals positive dealer gamma (market makers dampen volatility by buying dips). VIX > 20 signals negative gamma, where institutional hedging accelerates market drawdowns.",
             "bull_sectors": [
@@ -195,31 +329,120 @@
         }
     },
     "active_regime": {
-        "id": "STAGFLATION",
-        "name": "Stagflationary Pressure",
-        "description": "Growth is contracting while inflation and yields remain stubborn or rising with elevated volatility. Cost-push inflation from energy and borrowing costs collides with softening corporate earnings. Defensive capital preservation dominates.",
+        "id": "DEFLATION",
+        "name": "Deflationary / Risk-Off De-Leveraging",
+        "description": "Both Growth and Inflation/Yields are decelerating amid elevated volatility (VIX > 21). Institutional de-risking pulls equity multiples, bond yields, and cyclical commodities lower simultaneously, sparking a flight to safety in sovereign bonds, gold, and defensive cash-flow sectors.",
         "favored_sectors": [
-            "GC=F (Gold)",
-            "XLE (Upstream Energy)",
-            "Cash / Ultra-Short T-Bills"
+            "TLT (Long Treasuries)",
+            "XLU (Utilities)",
+            "XLV (Healthcare)",
+            "GC=F (Gold)"
         ],
         "unfavored_sectors": [
-            "XLY (Consumer Discretionary)",
-            "XLI (Industrials)",
-            "High-P/E Tech"
+            "SMH (Semiconductors)",
+            "XLK (High-Beta Tech)",
+            "XLE (Cyclical Energy)"
         ],
-        "confidence": 72,
-        "driver_summary": "Oil/Yields pressuring corporate margins; VIX elevated (28.44); S&P 500 under pressure (SPY 20D: -6.29%, 1D: -1.96%)."
+        "confidence": 82,
+        "driver_summary": "Volatility Shock (VIX: 28.29) & Equity Drawdown (SPY 1D: -0.29%, 20D: -7.2%) paired with falling 10Y Yields (-3.9% 20D) and Crude Oil (-18.58% 20D)."
     },
+    "regime_trail": [
+        {
+            "date": "2026-09-09",
+            "label": "09/09",
+            "growth_score": 0.99,
+            "inflation_score": 1.62,
+            "quadrant": "REFLATION"
+        },
+        {
+            "date": "2026-09-16",
+            "label": "09/16",
+            "growth_score": 0.61,
+            "inflation_score": 2.26,
+            "quadrant": "REFLATION"
+        },
+        {
+            "date": "2026-09-23",
+            "label": "09/23",
+            "growth_score": 1.53,
+            "inflation_score": 2.64,
+            "quadrant": "REFLATION"
+        },
+        {
+            "date": "2026-09-30",
+            "label": "09/30",
+            "growth_score": 1.3,
+            "inflation_score": 2.68,
+            "quadrant": "REFLATION"
+        },
+        {
+            "date": "2026-10-07",
+            "label": "10/07",
+            "growth_score": 1.97,
+            "inflation_score": 2.31,
+            "quadrant": "REFLATION"
+        },
+        {
+            "date": "2026-10-14",
+            "label": "10/14",
+            "growth_score": 1.7,
+            "inflation_score": 1.21,
+            "quadrant": "REFLATION"
+        },
+        {
+            "date": "2026-10-21",
+            "label": "10/21",
+            "growth_score": 1.39,
+            "inflation_score": 0.36,
+            "quadrant": "REFLATION"
+        },
+        {
+            "date": "2026-10-28",
+            "label": "10/28",
+            "growth_score": 1.5,
+            "inflation_score": 1.62,
+            "quadrant": "REFLATION"
+        },
+        {
+            "date": "2026-11-04",
+            "label": "11/04",
+            "growth_score": 0.9,
+            "inflation_score": -2.36,
+            "quadrant": "GOLDILOCKS"
+        },
+        {
+            "date": "2026-11-11",
+            "label": "11/11",
+            "growth_score": 0.77,
+            "inflation_score": -1.44,
+            "quadrant": "GOLDILOCKS"
+        },
+        {
+            "date": "2026-11-18",
+            "label": "11/18",
+            "growth_score": -1.33,
+            "inflation_score": -2.1,
+            "quadrant": "DEFLATION"
+        },
+        {
+            "date": "2026-11-25",
+            "label": "11/25",
+            "growth_score": -2.21,
+            "inflation_score": -2.64,
+            "quadrant": "DEFLATION"
+        }
+    ],
     "scenarios": [
         {
             "driver": "10-Yr Yield",
             "full_name": "10-Yr US Treasury Yield",
             "symbol": "^TNX",
             "category": "Interest Rates & Cost of Capital",
-            "current_value": "5.05 %",
-            "change_1d": -0.28,
-            "trend": "Neutral",
+            "current_price": 4.85,
+            "unit": "%",
+            "current_value": "4.85 %",
+            "change_1d": -1.14,
+            "trend": "Falling",
             "transmission": "Rising yields increase the discount rate on future earnings (compressing high-P/E growth stocks) while boosting bank Net Interest Margins. Falling yields unleash equity valuation multiple expansion.",
             "if_up": {
                 "label": "If 10-Yr Yield Rallies \u2197\ufe0f",
@@ -237,73 +460,73 @@
                 "winning_stocks": [
                     {
                         "ticker": "XOM",
-                        "corr": 0.38,
+                        "corr": 0.36,
                         "action": "buy",
-                        "price": 158.93,
-                        "change_pct": -1.03
-                    },
-                    {
-                        "ticker": "CVX",
-                        "corr": 0.38,
-                        "action": "buy",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "COP",
-                        "corr": 0.37,
+                        "corr": 0.35,
                         "action": "buy",
-                        "price": 134.99,
-                        "change_pct": 0.44
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "EOG",
                         "corr": 0.35,
                         "action": "buy",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
+                    },
+                    {
+                        "ticker": "CVX",
+                        "corr": 0.34,
+                        "action": "buy",
+                        "price": 210.95,
+                        "change_pct": 1.06
                     },
                     {
                         "ticker": "PWR",
-                        "corr": 0.22,
+                        "corr": 0.25,
                         "action": "buy",
-                        "price": 587.43,
-                        "change_pct": -2.52
-                    },
-                    {
-                        "ticker": "MPC",
-                        "corr": 0.21,
-                        "action": "buy",
-                        "price": 367.93,
-                        "change_pct": -1.59
-                    },
-                    {
-                        "ticker": "ETN",
-                        "corr": 0.16,
-                        "action": "buy",
-                        "price": 330.57,
-                        "change_pct": -2.3
-                    },
-                    {
-                        "ticker": "AMD",
-                        "corr": 0.15,
-                        "action": "buy",
-                        "price": 489.19,
-                        "change_pct": -7.72
+                        "price": 565.47,
+                        "change_pct": -4.1
                     },
                     {
                         "ticker": "AVGO",
-                        "corr": 0.14,
+                        "corr": 0.24,
                         "action": "buy",
-                        "price": 346.65,
-                        "change_pct": -2.09
+                        "price": 300.86,
+                        "change_pct": -0.07
+                    },
+                    {
+                        "ticker": "AMD",
+                        "corr": 0.22,
+                        "action": "buy",
+                        "price": 406.03,
+                        "change_pct": -1.75
+                    },
+                    {
+                        "ticker": "MPC",
+                        "corr": 0.22,
+                        "action": "buy",
+                        "price": 346.27,
+                        "change_pct": -2.5
+                    },
+                    {
+                        "ticker": "ETN",
+                        "corr": 0.21,
+                        "action": "buy",
+                        "price": 317.81,
+                        "change_pct": -0.46
                     },
                     {
                         "ticker": "SLB",
-                        "corr": 0.13,
+                        "corr": 0.17,
                         "action": "buy",
-                        "price": 47.9,
-                        "change_pct": -1.05
+                        "price": 48.52,
+                        "change_pct": 3.26
                     }
                 ],
                 "at_risk_stocks": [
@@ -311,71 +534,71 @@
                         "ticker": "HD",
                         "corr": -0.6,
                         "action": "avoid",
-                        "price": 336.68,
-                        "change_pct": -0.28
+                        "price": 361.26,
+                        "change_pct": 2.14
                     },
                     {
                         "ticker": "LOW",
-                        "corr": -0.56,
+                        "corr": -0.57,
                         "action": "avoid",
-                        "price": 219.14,
-                        "change_pct": -1.63
+                        "price": 235.65,
+                        "change_pct": 2.0
                     },
                     {
                         "ticker": "NEE",
                         "corr": -0.52,
                         "action": "avoid",
-                        "price": 83.79,
-                        "change_pct": -1.17
+                        "price": 85.41,
+                        "change_pct": 0.98
                     },
                     {
                         "ticker": "SHW",
                         "corr": -0.51,
                         "action": "avoid",
-                        "price": 339.83,
-                        "change_pct": -1.95
+                        "price": 361.02,
+                        "change_pct": 2.4
                     },
                     {
                         "ticker": "D",
                         "corr": -0.46,
                         "action": "avoid",
-                        "price": 66.65,
-                        "change_pct": -1.1
-                    },
-                    {
-                        "ticker": "ECL",
-                        "corr": -0.37,
-                        "action": "avoid",
-                        "price": 297.32,
-                        "change_pct": -1.12
+                        "price": 67.99,
+                        "change_pct": 1.04
                     },
                     {
                         "ticker": "SO",
-                        "corr": -0.35,
+                        "corr": -0.38,
                         "action": "avoid",
-                        "price": 93.29,
-                        "change_pct": -1.19
-                    },
-                    {
-                        "ticker": "NKE",
-                        "corr": -0.34,
-                        "action": "avoid",
-                        "price": 34.33,
-                        "change_pct": -5.45
+                        "price": 95.0,
+                        "change_pct": 0.95
                     },
                     {
                         "ticker": "DUK",
-                        "corr": -0.32,
+                        "corr": -0.38,
                         "action": "avoid",
-                        "price": 128.86,
-                        "change_pct": -0.92
+                        "price": 131.9,
+                        "change_pct": 0.72
+                    },
+                    {
+                        "ticker": "ECL",
+                        "corr": -0.35,
+                        "action": "avoid",
+                        "price": 308.89,
+                        "change_pct": 0.57
+                    },
+                    {
+                        "ticker": "PG",
+                        "corr": -0.34,
+                        "action": "avoid",
+                        "price": 173.23,
+                        "change_pct": 0.44
                     },
                     {
                         "ticker": "MCD",
-                        "corr": -0.31,
+                        "corr": -0.34,
                         "action": "avoid",
-                        "price": 272.35,
-                        "change_pct": -0.61
+                        "price": 283.5,
+                        "change_pct": 1.0
                     }
                 ]
             },
@@ -397,143 +620,143 @@
                         "ticker": "HD",
                         "corr": -0.6,
                         "action": "buy",
-                        "price": 336.68,
-                        "change_pct": -0.28
+                        "price": 361.26,
+                        "change_pct": 2.14
                     },
                     {
                         "ticker": "LOW",
-                        "corr": -0.56,
+                        "corr": -0.57,
                         "action": "buy",
-                        "price": 219.14,
-                        "change_pct": -1.63
+                        "price": 235.65,
+                        "change_pct": 2.0
                     },
                     {
                         "ticker": "NEE",
                         "corr": -0.52,
                         "action": "buy",
-                        "price": 83.79,
-                        "change_pct": -1.17
+                        "price": 85.41,
+                        "change_pct": 0.98
                     },
                     {
                         "ticker": "SHW",
                         "corr": -0.51,
                         "action": "buy",
-                        "price": 339.83,
-                        "change_pct": -1.95
+                        "price": 361.02,
+                        "change_pct": 2.4
                     },
                     {
                         "ticker": "D",
                         "corr": -0.46,
                         "action": "buy",
-                        "price": 66.65,
-                        "change_pct": -1.1
-                    },
-                    {
-                        "ticker": "ECL",
-                        "corr": -0.37,
-                        "action": "buy",
-                        "price": 297.32,
-                        "change_pct": -1.12
+                        "price": 67.99,
+                        "change_pct": 1.04
                     },
                     {
                         "ticker": "SO",
-                        "corr": -0.35,
+                        "corr": -0.38,
                         "action": "buy",
-                        "price": 93.29,
-                        "change_pct": -1.19
-                    },
-                    {
-                        "ticker": "NKE",
-                        "corr": -0.34,
-                        "action": "buy",
-                        "price": 34.33,
-                        "change_pct": -5.45
+                        "price": 95.0,
+                        "change_pct": 0.95
                     },
                     {
                         "ticker": "DUK",
-                        "corr": -0.32,
+                        "corr": -0.38,
                         "action": "buy",
-                        "price": 128.86,
-                        "change_pct": -0.92
+                        "price": 131.9,
+                        "change_pct": 0.72
+                    },
+                    {
+                        "ticker": "ECL",
+                        "corr": -0.35,
+                        "action": "buy",
+                        "price": 308.89,
+                        "change_pct": 0.57
+                    },
+                    {
+                        "ticker": "PG",
+                        "corr": -0.34,
+                        "action": "buy",
+                        "price": 173.23,
+                        "change_pct": 0.44
                     },
                     {
                         "ticker": "MCD",
-                        "corr": -0.31,
+                        "corr": -0.34,
                         "action": "buy",
-                        "price": 272.35,
-                        "change_pct": -0.61
+                        "price": 283.5,
+                        "change_pct": 1.0
                     }
                 ],
                 "at_risk_stocks": [
                     {
                         "ticker": "XOM",
-                        "corr": 0.38,
+                        "corr": 0.36,
                         "action": "avoid",
-                        "price": 158.93,
-                        "change_pct": -1.03
-                    },
-                    {
-                        "ticker": "CVX",
-                        "corr": 0.38,
-                        "action": "avoid",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "COP",
-                        "corr": 0.37,
+                        "corr": 0.35,
                         "action": "avoid",
-                        "price": 134.99,
-                        "change_pct": 0.44
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "EOG",
                         "corr": 0.35,
                         "action": "avoid",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
+                    },
+                    {
+                        "ticker": "CVX",
+                        "corr": 0.34,
+                        "action": "avoid",
+                        "price": 210.95,
+                        "change_pct": 1.06
                     },
                     {
                         "ticker": "PWR",
-                        "corr": 0.22,
+                        "corr": 0.25,
                         "action": "avoid",
-                        "price": 587.43,
-                        "change_pct": -2.52
-                    },
-                    {
-                        "ticker": "MPC",
-                        "corr": 0.21,
-                        "action": "avoid",
-                        "price": 367.93,
-                        "change_pct": -1.59
-                    },
-                    {
-                        "ticker": "ETN",
-                        "corr": 0.16,
-                        "action": "avoid",
-                        "price": 330.57,
-                        "change_pct": -2.3
-                    },
-                    {
-                        "ticker": "AMD",
-                        "corr": 0.15,
-                        "action": "avoid",
-                        "price": 489.19,
-                        "change_pct": -7.72
+                        "price": 565.47,
+                        "change_pct": -4.1
                     },
                     {
                         "ticker": "AVGO",
-                        "corr": 0.14,
+                        "corr": 0.24,
                         "action": "avoid",
-                        "price": 346.65,
-                        "change_pct": -2.09
+                        "price": 300.86,
+                        "change_pct": -0.07
+                    },
+                    {
+                        "ticker": "AMD",
+                        "corr": 0.22,
+                        "action": "avoid",
+                        "price": 406.03,
+                        "change_pct": -1.75
+                    },
+                    {
+                        "ticker": "MPC",
+                        "corr": 0.22,
+                        "action": "avoid",
+                        "price": 346.27,
+                        "change_pct": -2.5
+                    },
+                    {
+                        "ticker": "ETN",
+                        "corr": 0.21,
+                        "action": "avoid",
+                        "price": 317.81,
+                        "change_pct": -0.46
                     },
                     {
                         "ticker": "SLB",
-                        "corr": 0.13,
+                        "corr": 0.17,
                         "action": "avoid",
-                        "price": 47.9,
-                        "change_pct": -1.05
+                        "price": 48.52,
+                        "change_pct": 3.26
                     }
                 ]
             }
@@ -543,8 +766,10 @@
             "full_name": "US Dollar Index (DXY)",
             "symbol": "DX-Y.NYB",
             "category": "Currencies & Global Liquidity",
-            "current_value": "103.92 pts",
-            "change_1d": 0.06,
+            "current_price": 103.67,
+            "unit": "pts",
+            "current_value": "103.67 pts",
+            "change_1d": -0.13,
             "trend": "Neutral",
             "transmission": "A strengthening Dollar tightens global financial conditions, denting multinational foreign revenues and commodity prices. A softer Dollar fuels rallies in Gold, Emerging Markets, and Big Tech.",
             "if_up": {
@@ -562,132 +787,132 @@
                 ],
                 "winning_stocks": [
                     {
-                        "ticker": "XOM",
+                        "ticker": "NVDA",
                         "corr": 0.1,
                         "action": "buy",
-                        "price": 158.93,
-                        "change_pct": -1.03
-                    },
-                    {
-                        "ticker": "EOG",
-                        "corr": 0.08,
-                        "action": "buy",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 149.3,
+                        "change_pct": -3.91
                     },
                     {
                         "ticker": "NET",
-                        "corr": 0.06,
+                        "corr": 0.08,
                         "action": "buy",
-                        "price": 303.68,
-                        "change_pct": 0.92
+                        "price": 283.3,
+                        "change_pct": -1.39
                     },
                     {
                         "ticker": "META",
+                        "corr": 0.08,
+                        "action": "buy",
+                        "price": 609.89,
+                        "change_pct": 3.4
+                    },
+                    {
+                        "ticker": "XOM",
+                        "corr": 0.07,
+                        "action": "buy",
+                        "price": 158.08,
+                        "change_pct": -0.09
+                    },
+                    {
+                        "ticker": "EOG",
+                        "corr": 0.07,
+                        "action": "buy",
+                        "price": 148.31,
+                        "change_pct": 1.17
+                    },
+                    {
+                        "ticker": "AMD",
                         "corr": 0.06,
                         "action": "buy",
-                        "price": 596.22,
-                        "change_pct": -3.27
+                        "price": 406.03,
+                        "change_pct": -1.75
+                    },
+                    {
+                        "ticker": "COST",
+                        "corr": 0.06,
+                        "action": "buy",
+                        "price": 1086.81,
+                        "change_pct": -0.45
                     },
                     {
                         "ticker": "MPC",
-                        "corr": 0.05,
+                        "corr": 0.06,
                         "action": "buy",
-                        "price": 367.93,
-                        "change_pct": -1.59
-                    },
-                    {
-                        "ticker": "JNJ",
-                        "corr": 0.04,
-                        "action": "buy",
-                        "price": 267.14,
-                        "change_pct": -2.04
-                    },
-                    {
-                        "ticker": "COP",
-                        "corr": 0.03,
-                        "action": "buy",
-                        "price": 134.99,
-                        "change_pct": 0.44
-                    },
-                    {
-                        "ticker": "CVX",
-                        "corr": 0.02,
-                        "action": "buy",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 346.27,
+                        "change_pct": -2.5
                     }
                 ],
                 "at_risk_stocks": [
                     {
                         "ticker": "NEM",
-                        "corr": -0.52,
+                        "corr": -0.43,
                         "action": "avoid",
-                        "price": 100.05,
-                        "change_pct": -4.29
+                        "price": 101.44,
+                        "change_pct": 1.76
                     },
                     {
                         "ticker": "HD",
-                        "corr": -0.38,
+                        "corr": -0.37,
                         "action": "avoid",
-                        "price": 336.68,
-                        "change_pct": -0.28
+                        "price": 361.26,
+                        "change_pct": 2.14
                     },
                     {
                         "ticker": "LOW",
-                        "corr": -0.36,
+                        "corr": -0.34,
                         "action": "avoid",
-                        "price": 219.14,
-                        "change_pct": -1.63
+                        "price": 235.65,
+                        "change_pct": 2.0
                     },
                     {
                         "ticker": "SHW",
-                        "corr": -0.35,
-                        "action": "avoid",
-                        "price": 339.83,
-                        "change_pct": -1.95
-                    },
-                    {
-                        "ticker": "GS",
                         "corr": -0.32,
                         "action": "avoid",
-                        "price": 847.53,
-                        "change_pct": -2.94
+                        "price": 361.02,
+                        "change_pct": 2.4
                     },
                     {
                         "ticker": "NEE",
-                        "corr": -0.31,
+                        "corr": -0.29,
                         "action": "avoid",
-                        "price": 83.79,
-                        "change_pct": -1.17
+                        "price": 85.41,
+                        "change_pct": 0.98
                     },
                     {
                         "ticker": "MSFT",
-                        "corr": -0.3,
+                        "corr": -0.27,
                         "action": "avoid",
-                        "price": 498.3,
-                        "change_pct": -1.97
+                        "price": 489.93,
+                        "change_pct": -1.25
                     },
                     {
-                        "ticker": "FCX",
-                        "corr": -0.28,
+                        "ticker": "PFE",
+                        "corr": -0.25,
                         "action": "avoid",
-                        "price": 49.12,
-                        "change_pct": -4.53
+                        "price": 28.46,
+                        "change_pct": 0.0
+                    },
+                    {
+                        "ticker": "GS",
+                        "corr": -0.24,
+                        "action": "avoid",
+                        "price": 801.03,
+                        "change_pct": -0.62
                     },
                     {
                         "ticker": "D",
-                        "corr": -0.28,
+                        "corr": -0.24,
                         "action": "avoid",
-                        "price": 66.65,
-                        "change_pct": -1.1
+                        "price": 67.99,
+                        "change_pct": 1.04
                     },
                     {
-                        "ticker": "BAC",
-                        "corr": -0.26,
+                        "ticker": "NKE",
+                        "corr": -0.22,
                         "action": "avoid",
-                        "price": 48.57,
-                        "change_pct": -0.7
+                        "price": 36.66,
+                        "change_pct": 2.55
                     }
                 ]
             },
@@ -707,131 +932,131 @@
                 "winning_stocks": [
                     {
                         "ticker": "NEM",
-                        "corr": -0.52,
+                        "corr": -0.43,
                         "action": "buy",
-                        "price": 100.05,
-                        "change_pct": -4.29
+                        "price": 101.44,
+                        "change_pct": 1.76
                     },
                     {
                         "ticker": "HD",
-                        "corr": -0.38,
+                        "corr": -0.37,
                         "action": "buy",
-                        "price": 336.68,
-                        "change_pct": -0.28
+                        "price": 361.26,
+                        "change_pct": 2.14
                     },
                     {
                         "ticker": "LOW",
-                        "corr": -0.36,
+                        "corr": -0.34,
                         "action": "buy",
-                        "price": 219.14,
-                        "change_pct": -1.63
+                        "price": 235.65,
+                        "change_pct": 2.0
                     },
                     {
                         "ticker": "SHW",
-                        "corr": -0.35,
-                        "action": "buy",
-                        "price": 339.83,
-                        "change_pct": -1.95
-                    },
-                    {
-                        "ticker": "GS",
                         "corr": -0.32,
                         "action": "buy",
-                        "price": 847.53,
-                        "change_pct": -2.94
+                        "price": 361.02,
+                        "change_pct": 2.4
                     },
                     {
                         "ticker": "NEE",
-                        "corr": -0.31,
+                        "corr": -0.29,
                         "action": "buy",
-                        "price": 83.79,
-                        "change_pct": -1.17
+                        "price": 85.41,
+                        "change_pct": 0.98
                     },
                     {
                         "ticker": "MSFT",
-                        "corr": -0.3,
+                        "corr": -0.27,
                         "action": "buy",
-                        "price": 498.3,
-                        "change_pct": -1.97
+                        "price": 489.93,
+                        "change_pct": -1.25
                     },
                     {
-                        "ticker": "FCX",
-                        "corr": -0.28,
+                        "ticker": "PFE",
+                        "corr": -0.25,
                         "action": "buy",
-                        "price": 49.12,
-                        "change_pct": -4.53
+                        "price": 28.46,
+                        "change_pct": 0.0
+                    },
+                    {
+                        "ticker": "GS",
+                        "corr": -0.24,
+                        "action": "buy",
+                        "price": 801.03,
+                        "change_pct": -0.62
                     },
                     {
                         "ticker": "D",
-                        "corr": -0.28,
+                        "corr": -0.24,
                         "action": "buy",
-                        "price": 66.65,
-                        "change_pct": -1.1
+                        "price": 67.99,
+                        "change_pct": 1.04
                     },
                     {
-                        "ticker": "BAC",
-                        "corr": -0.26,
+                        "ticker": "NKE",
+                        "corr": -0.22,
                         "action": "buy",
-                        "price": 48.57,
-                        "change_pct": -0.7
+                        "price": 36.66,
+                        "change_pct": 2.55
                     }
                 ],
                 "at_risk_stocks": [
                     {
-                        "ticker": "XOM",
+                        "ticker": "NVDA",
                         "corr": 0.1,
                         "action": "avoid",
-                        "price": 158.93,
-                        "change_pct": -1.03
-                    },
-                    {
-                        "ticker": "EOG",
-                        "corr": 0.08,
-                        "action": "avoid",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 149.3,
+                        "change_pct": -3.91
                     },
                     {
                         "ticker": "NET",
-                        "corr": 0.06,
+                        "corr": 0.08,
                         "action": "avoid",
-                        "price": 303.68,
-                        "change_pct": 0.92
+                        "price": 283.3,
+                        "change_pct": -1.39
                     },
                     {
                         "ticker": "META",
+                        "corr": 0.08,
+                        "action": "avoid",
+                        "price": 609.89,
+                        "change_pct": 3.4
+                    },
+                    {
+                        "ticker": "XOM",
+                        "corr": 0.07,
+                        "action": "avoid",
+                        "price": 158.08,
+                        "change_pct": -0.09
+                    },
+                    {
+                        "ticker": "EOG",
+                        "corr": 0.07,
+                        "action": "avoid",
+                        "price": 148.31,
+                        "change_pct": 1.17
+                    },
+                    {
+                        "ticker": "AMD",
                         "corr": 0.06,
                         "action": "avoid",
-                        "price": 596.22,
-                        "change_pct": -3.27
+                        "price": 406.03,
+                        "change_pct": -1.75
+                    },
+                    {
+                        "ticker": "COST",
+                        "corr": 0.06,
+                        "action": "avoid",
+                        "price": 1086.81,
+                        "change_pct": -0.45
                     },
                     {
                         "ticker": "MPC",
-                        "corr": 0.05,
+                        "corr": 0.06,
                         "action": "avoid",
-                        "price": 367.93,
-                        "change_pct": -1.59
-                    },
-                    {
-                        "ticker": "JNJ",
-                        "corr": 0.04,
-                        "action": "avoid",
-                        "price": 267.14,
-                        "change_pct": -2.04
-                    },
-                    {
-                        "ticker": "COP",
-                        "corr": 0.03,
-                        "action": "avoid",
-                        "price": 134.99,
-                        "change_pct": 0.44
-                    },
-                    {
-                        "ticker": "CVX",
-                        "corr": 0.02,
-                        "action": "avoid",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 346.27,
+                        "change_pct": -2.5
                     }
                 ]
             }
@@ -841,9 +1066,11 @@
             "full_name": "WTI Crude Oil",
             "symbol": "CL=F",
             "category": "Energy & Headline Inflation",
-            "current_value": "82.92 $/bbl",
-            "change_1d": -0.41,
-            "trend": "Falling",
+            "current_price": 83.68,
+            "unit": "$/bbl",
+            "current_value": "83.68 $/bbl",
+            "change_1d": 1.99,
+            "trend": "Neutral",
             "transmission": "Surging oil acts as a direct consumer tax, increasing airline, logistics, and manufacturing costs. Plunging oil frees consumer disposable cash and dramatically expands logistics margins.",
             "if_up": {
                 "label": "If Crude Oil Rallies \u2197\ufe0f",
@@ -861,110 +1088,110 @@
                 "winning_stocks": [
                     {
                         "ticker": "COP",
-                        "corr": 0.71,
+                        "corr": 0.73,
                         "action": "buy",
-                        "price": 134.99,
-                        "change_pct": 0.44
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "XOM",
-                        "corr": 0.68,
+                        "corr": 0.7,
                         "action": "buy",
-                        "price": 158.93,
-                        "change_pct": -1.03
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "CVX",
-                        "corr": 0.67,
+                        "corr": 0.69,
                         "action": "buy",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 210.95,
+                        "change_pct": 1.06
                     },
                     {
                         "ticker": "EOG",
-                        "corr": 0.67,
+                        "corr": 0.68,
                         "action": "buy",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
                     },
                     {
                         "ticker": "MPC",
-                        "corr": 0.39,
+                        "corr": 0.37,
                         "action": "buy",
-                        "price": 367.93,
-                        "change_pct": -1.59
+                        "price": 346.27,
+                        "change_pct": -2.5
                     }
                 ],
                 "at_risk_stocks": [
                     {
                         "ticker": "SHW",
-                        "corr": -0.6,
+                        "corr": -0.59,
                         "action": "avoid",
-                        "price": 339.83,
-                        "change_pct": -1.95
+                        "price": 361.02,
+                        "change_pct": 2.4
                     },
                     {
                         "ticker": "ECL",
-                        "corr": -0.46,
+                        "corr": -0.47,
                         "action": "avoid",
-                        "price": 297.32,
-                        "change_pct": -1.12
-                    },
-                    {
-                        "ticker": "HD",
-                        "corr": -0.45,
-                        "action": "avoid",
-                        "price": 336.68,
-                        "change_pct": -0.28
+                        "price": 308.89,
+                        "change_pct": 0.57
                     },
                     {
                         "ticker": "GE",
                         "corr": -0.44,
                         "action": "avoid",
-                        "price": 318.88,
-                        "change_pct": -2.81
+                        "price": 316.98,
+                        "change_pct": -0.33
                     },
                     {
                         "ticker": "LOW",
-                        "corr": -0.44,
+                        "corr": -0.43,
                         "action": "avoid",
-                        "price": 219.14,
-                        "change_pct": -1.63
+                        "price": 235.65,
+                        "change_pct": 2.0
+                    },
+                    {
+                        "ticker": "HD",
+                        "corr": -0.43,
+                        "action": "avoid",
+                        "price": 361.26,
+                        "change_pct": 2.14
                     },
                     {
                         "ticker": "MS",
-                        "corr": -0.38,
+                        "corr": -0.4,
                         "action": "avoid",
-                        "price": 174.98,
-                        "change_pct": -3.42
+                        "price": 167.55,
+                        "change_pct": -0.73
                     },
                     {
                         "ticker": "GS",
-                        "corr": -0.32,
+                        "corr": -0.34,
                         "action": "avoid",
-                        "price": 847.53,
-                        "change_pct": -2.94
-                    },
-                    {
-                        "ticker": "MA",
-                        "corr": -0.31,
-                        "action": "avoid",
-                        "price": 626.5,
-                        "change_pct": -2.62
+                        "price": 801.03,
+                        "change_pct": -0.62
                     },
                     {
                         "ticker": "TSLA",
-                        "corr": -0.3,
+                        "corr": -0.33,
                         "action": "avoid",
-                        "price": 374.41,
-                        "change_pct": -2.43
+                        "price": 380.14,
+                        "change_pct": -1.18
                     },
                     {
                         "ticker": "BA",
+                        "corr": -0.31,
+                        "action": "avoid",
+                        "price": 164.53,
+                        "change_pct": 0.57
+                    },
+                    {
+                        "ticker": "JPM",
                         "corr": -0.3,
                         "action": "avoid",
-                        "price": 160.51,
-                        "change_pct": -1.47
+                        "price": 316.74,
+                        "change_pct": -0.11
                     }
                 ]
             },
@@ -984,110 +1211,110 @@
                 "winning_stocks": [
                     {
                         "ticker": "SHW",
-                        "corr": -0.6,
+                        "corr": -0.59,
                         "action": "buy",
-                        "price": 339.83,
-                        "change_pct": -1.95
+                        "price": 361.02,
+                        "change_pct": 2.4
                     },
                     {
                         "ticker": "ECL",
-                        "corr": -0.46,
+                        "corr": -0.47,
                         "action": "buy",
-                        "price": 297.32,
-                        "change_pct": -1.12
-                    },
-                    {
-                        "ticker": "HD",
-                        "corr": -0.45,
-                        "action": "buy",
-                        "price": 336.68,
-                        "change_pct": -0.28
+                        "price": 308.89,
+                        "change_pct": 0.57
                     },
                     {
                         "ticker": "GE",
                         "corr": -0.44,
                         "action": "buy",
-                        "price": 318.88,
-                        "change_pct": -2.81
+                        "price": 316.98,
+                        "change_pct": -0.33
                     },
                     {
                         "ticker": "LOW",
-                        "corr": -0.44,
+                        "corr": -0.43,
                         "action": "buy",
-                        "price": 219.14,
-                        "change_pct": -1.63
+                        "price": 235.65,
+                        "change_pct": 2.0
+                    },
+                    {
+                        "ticker": "HD",
+                        "corr": -0.43,
+                        "action": "buy",
+                        "price": 361.26,
+                        "change_pct": 2.14
                     },
                     {
                         "ticker": "MS",
-                        "corr": -0.38,
+                        "corr": -0.4,
                         "action": "buy",
-                        "price": 174.98,
-                        "change_pct": -3.42
+                        "price": 167.55,
+                        "change_pct": -0.73
                     },
                     {
                         "ticker": "GS",
-                        "corr": -0.32,
+                        "corr": -0.34,
                         "action": "buy",
-                        "price": 847.53,
-                        "change_pct": -2.94
-                    },
-                    {
-                        "ticker": "MA",
-                        "corr": -0.31,
-                        "action": "buy",
-                        "price": 626.5,
-                        "change_pct": -2.62
+                        "price": 801.03,
+                        "change_pct": -0.62
                     },
                     {
                         "ticker": "TSLA",
-                        "corr": -0.3,
+                        "corr": -0.33,
                         "action": "buy",
-                        "price": 374.41,
-                        "change_pct": -2.43
+                        "price": 380.14,
+                        "change_pct": -1.18
                     },
                     {
                         "ticker": "BA",
+                        "corr": -0.31,
+                        "action": "buy",
+                        "price": 164.53,
+                        "change_pct": 0.57
+                    },
+                    {
+                        "ticker": "JPM",
                         "corr": -0.3,
                         "action": "buy",
-                        "price": 160.51,
-                        "change_pct": -1.47
+                        "price": 316.74,
+                        "change_pct": -0.11
                     }
                 ],
                 "at_risk_stocks": [
                     {
                         "ticker": "COP",
-                        "corr": 0.71,
+                        "corr": 0.73,
                         "action": "avoid",
-                        "price": 134.99,
-                        "change_pct": 0.44
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "XOM",
-                        "corr": 0.68,
+                        "corr": 0.7,
                         "action": "avoid",
-                        "price": 158.93,
-                        "change_pct": -1.03
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "CVX",
-                        "corr": 0.67,
+                        "corr": 0.69,
                         "action": "avoid",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 210.95,
+                        "change_pct": 1.06
                     },
                     {
                         "ticker": "EOG",
-                        "corr": 0.67,
+                        "corr": 0.68,
                         "action": "avoid",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
                     },
                     {
                         "ticker": "MPC",
-                        "corr": 0.39,
+                        "corr": 0.37,
                         "action": "avoid",
-                        "price": 367.93,
-                        "change_pct": -1.59
+                        "price": 346.27,
+                        "change_pct": -2.5
                     }
                 ]
             }
@@ -1097,8 +1324,10 @@
             "full_name": "Gold (COMEX)",
             "symbol": "GC=F",
             "category": "Safe Haven & Debasement Hedge",
-            "current_value": "3608.0 $/oz",
-            "change_1d": -3.58,
+            "current_price": 3535.8,
+            "unit": "$/oz",
+            "current_value": "3535.8 $/oz",
+            "change_1d": -0.73,
             "trend": "Falling",
             "transmission": "Gold surges when real yields fall or geopolitical and fiscal risks escalate. Soft gold reflects confidence in fiat stability and risk-seeking capital deployment.",
             "if_up": {
@@ -1119,108 +1348,108 @@
                         "ticker": "NEM",
                         "corr": 0.85,
                         "action": "buy",
-                        "price": 100.05,
-                        "change_pct": -4.29
+                        "price": 101.44,
+                        "change_pct": 1.76
                     },
                     {
                         "ticker": "FCX",
-                        "corr": 0.59,
+                        "corr": 0.64,
                         "action": "buy",
-                        "price": 49.12,
-                        "change_pct": -4.53
+                        "price": 48.55,
+                        "change_pct": 1.72
                     },
                     {
                         "ticker": "MS",
-                        "corr": 0.48,
+                        "corr": 0.54,
                         "action": "buy",
-                        "price": 174.98,
-                        "change_pct": -3.42
+                        "price": 167.55,
+                        "change_pct": -0.73
                     },
                     {
                         "ticker": "GS",
+                        "corr": 0.53,
+                        "action": "buy",
+                        "price": 801.03,
+                        "change_pct": -0.62
+                    },
+                    {
+                        "ticker": "NVDA",
                         "corr": 0.47,
                         "action": "buy",
-                        "price": 847.53,
-                        "change_pct": -2.94
+                        "price": 149.3,
+                        "change_pct": -3.91
                     },
                     {
                         "ticker": "COIN",
-                        "corr": 0.41,
+                        "corr": 0.46,
                         "action": "buy",
-                        "price": 108.87,
-                        "change_pct": -1.48
+                        "price": 103.72,
+                        "change_pct": 1.34
                     },
                     {
                         "ticker": "JPM",
+                        "corr": 0.42,
+                        "action": "buy",
+                        "price": 316.74,
+                        "change_pct": -0.11
+                    },
+                    {
+                        "ticker": "TSLA",
                         "corr": 0.38,
                         "action": "buy",
-                        "price": 320.22,
-                        "change_pct": -1.2
+                        "price": 380.14,
+                        "change_pct": -1.18
+                    },
+                    {
+                        "ticker": "QCOM",
+                        "corr": 0.36,
+                        "action": "buy",
+                        "price": 168.66,
+                        "change_pct": 2.24
                     },
                     {
                         "ticker": "BAC",
-                        "corr": 0.32,
+                        "corr": 0.36,
                         "action": "buy",
-                        "price": 48.57,
-                        "change_pct": -0.7
-                    },
-                    {
-                        "ticker": "GE",
-                        "corr": 0.29,
-                        "action": "buy",
-                        "price": 318.88,
-                        "change_pct": -2.81
-                    },
-                    {
-                        "ticker": "LOW",
-                        "corr": 0.28,
-                        "action": "buy",
-                        "price": 219.14,
-                        "change_pct": -1.63
-                    },
-                    {
-                        "ticker": "HD",
-                        "corr": 0.28,
-                        "action": "buy",
-                        "price": 336.68,
-                        "change_pct": -0.28
+                        "price": 48.54,
+                        "change_pct": -0.04
                     }
                 ],
                 "at_risk_stocks": [
                     {
                         "ticker": "EOG",
-                        "corr": -0.32,
+                        "corr": -0.33,
                         "action": "avoid",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
                     },
                     {
                         "ticker": "XOM",
-                        "corr": -0.27,
+                        "corr": -0.32,
                         "action": "avoid",
-                        "price": 158.93,
-                        "change_pct": -1.03
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "CVX",
-                        "corr": -0.25,
+                        "corr": -0.29,
                         "action": "avoid",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 210.95,
+                        "change_pct": 1.06
                     },
                     {
                         "ticker": "COP",
-                        "corr": -0.25,
+                        "corr": -0.29,
                         "action": "avoid",
-                        "price": 134.99,
-                        "change_pct": 0.44
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "MPC",
                         "corr": -0.14,
                         "action": "avoid",
-                        "price": 367.93,
-                        "change_pct": -1.59
+                        "price": 346.27,
+                        "change_pct": -2.5
                     }
                 ]
             },
@@ -1236,38 +1465,38 @@
                 "winning_stocks": [
                     {
                         "ticker": "EOG",
-                        "corr": -0.32,
+                        "corr": -0.33,
                         "action": "buy",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
                     },
                     {
                         "ticker": "XOM",
-                        "corr": -0.27,
+                        "corr": -0.32,
                         "action": "buy",
-                        "price": 158.93,
-                        "change_pct": -1.03
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "CVX",
-                        "corr": -0.25,
+                        "corr": -0.29,
                         "action": "buy",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 210.95,
+                        "change_pct": 1.06
                     },
                     {
                         "ticker": "COP",
-                        "corr": -0.25,
+                        "corr": -0.29,
                         "action": "buy",
-                        "price": 134.99,
-                        "change_pct": 0.44
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "MPC",
                         "corr": -0.14,
                         "action": "buy",
-                        "price": 367.93,
-                        "change_pct": -1.59
+                        "price": 346.27,
+                        "change_pct": -2.5
                     }
                 ],
                 "at_risk_stocks": [
@@ -1275,71 +1504,71 @@
                         "ticker": "NEM",
                         "corr": 0.85,
                         "action": "avoid",
-                        "price": 100.05,
-                        "change_pct": -4.29
+                        "price": 101.44,
+                        "change_pct": 1.76
                     },
                     {
                         "ticker": "FCX",
-                        "corr": 0.59,
+                        "corr": 0.64,
                         "action": "avoid",
-                        "price": 49.12,
-                        "change_pct": -4.53
+                        "price": 48.55,
+                        "change_pct": 1.72
                     },
                     {
                         "ticker": "MS",
-                        "corr": 0.48,
+                        "corr": 0.54,
                         "action": "avoid",
-                        "price": 174.98,
-                        "change_pct": -3.42
+                        "price": 167.55,
+                        "change_pct": -0.73
                     },
                     {
                         "ticker": "GS",
+                        "corr": 0.53,
+                        "action": "avoid",
+                        "price": 801.03,
+                        "change_pct": -0.62
+                    },
+                    {
+                        "ticker": "NVDA",
                         "corr": 0.47,
                         "action": "avoid",
-                        "price": 847.53,
-                        "change_pct": -2.94
+                        "price": 149.3,
+                        "change_pct": -3.91
                     },
                     {
                         "ticker": "COIN",
-                        "corr": 0.41,
+                        "corr": 0.46,
                         "action": "avoid",
-                        "price": 108.87,
-                        "change_pct": -1.48
+                        "price": 103.72,
+                        "change_pct": 1.34
                     },
                     {
                         "ticker": "JPM",
+                        "corr": 0.42,
+                        "action": "avoid",
+                        "price": 316.74,
+                        "change_pct": -0.11
+                    },
+                    {
+                        "ticker": "TSLA",
                         "corr": 0.38,
                         "action": "avoid",
-                        "price": 320.22,
-                        "change_pct": -1.2
+                        "price": 380.14,
+                        "change_pct": -1.18
+                    },
+                    {
+                        "ticker": "QCOM",
+                        "corr": 0.36,
+                        "action": "avoid",
+                        "price": 168.66,
+                        "change_pct": 2.24
                     },
                     {
                         "ticker": "BAC",
-                        "corr": 0.32,
+                        "corr": 0.36,
                         "action": "avoid",
-                        "price": 48.57,
-                        "change_pct": -0.7
-                    },
-                    {
-                        "ticker": "GE",
-                        "corr": 0.29,
-                        "action": "avoid",
-                        "price": 318.88,
-                        "change_pct": -2.81
-                    },
-                    {
-                        "ticker": "LOW",
-                        "corr": 0.28,
-                        "action": "avoid",
-                        "price": 219.14,
-                        "change_pct": -1.63
-                    },
-                    {
-                        "ticker": "HD",
-                        "corr": 0.28,
-                        "action": "avoid",
-                        "price": 336.68,
-                        "change_pct": -0.28
+                        "price": 48.54,
+                        "change_pct": -0.04
                     }
                 ]
             }
@@ -1349,8 +1578,10 @@
             "full_name": "Bitcoin",
             "symbol": "BTC-USD",
             "category": "Digital Asset & Liquidity Beta",
-            "current_value": "61904.14 $",
-            "change_1d": -1.72,
+            "current_price": 60378.2,
+            "unit": "$",
+            "current_value": "60378.2 $",
+            "change_1d": 1.06,
             "trend": "Falling",
             "transmission": "Bitcoin front-runs broader speculative equity cycles by 2-4 weeks. When BTC accelerates with rising net ETF inflows, speculative tech, fintech, and semiconductor momentum invariably follows.",
             "if_up": {
@@ -1369,138 +1600,145 @@
                 "winning_stocks": [
                     {
                         "ticker": "COIN",
-                        "corr": 0.75,
+                        "corr": 0.78,
                         "action": "buy",
-                        "price": 108.87,
-                        "change_pct": -1.48
+                        "price": 103.72,
+                        "change_pct": 1.34
                     },
                     {
                         "ticker": "FCX",
-                        "corr": 0.53,
+                        "corr": 0.59,
                         "action": "buy",
-                        "price": 49.12,
-                        "change_pct": -4.53
+                        "price": 48.55,
+                        "change_pct": 1.72
                     },
                     {
                         "ticker": "NEM",
-                        "corr": 0.44,
+                        "corr": 0.49,
                         "action": "buy",
-                        "price": 100.05,
-                        "change_pct": -4.29
+                        "price": 101.44,
+                        "change_pct": 1.76
                     },
                     {
                         "ticker": "TSLA",
-                        "corr": 0.4,
+                        "corr": 0.46,
                         "action": "buy",
-                        "price": 374.41,
-                        "change_pct": -2.43
-                    },
-                    {
-                        "ticker": "NVDA",
-                        "corr": 0.4,
-                        "action": "buy",
-                        "price": 145.98,
-                        "change_pct": -3.3
+                        "price": 380.14,
+                        "change_pct": -1.18
                     },
                     {
                         "ticker": "GS",
-                        "corr": 0.36,
+                        "corr": 0.44,
                         "action": "buy",
-                        "price": 847.53,
-                        "change_pct": -2.94
+                        "price": 801.03,
+                        "change_pct": -0.62
+                    },
+                    {
+                        "ticker": "NVDA",
+                        "corr": 0.42,
+                        "action": "buy",
+                        "price": 149.3,
+                        "change_pct": -3.91
                     },
                     {
                         "ticker": "MS",
-                        "corr": 0.34,
+                        "corr": 0.42,
                         "action": "buy",
-                        "price": 174.98,
-                        "change_pct": -3.42
-                    },
-                    {
-                        "ticker": "PLTR",
-                        "corr": 0.3,
-                        "action": "buy",
-                        "price": 153.68,
-                        "change_pct": -1.91
+                        "price": 167.55,
+                        "change_pct": -0.73
                     },
                     {
                         "ticker": "CAT",
-                        "corr": 0.3,
+                        "corr": 0.38,
                         "action": "buy",
-                        "price": 537.37,
-                        "change_pct": -3.83
+                        "price": 543.69,
+                        "change_pct": 0.57
                     },
                     {
-                        "ticker": "GOOGL",
-                        "corr": 0.29,
+                        "ticker": "PLTR",
+                        "corr": 0.36,
                         "action": "buy",
-                        "price": 272.66,
-                        "change_pct": -3.46
+                        "price": 163.59,
+                        "change_pct": 1.5
+                    },
+                    {
+                        "ticker": "AMD",
+                        "corr": 0.36,
+                        "action": "buy",
+                        "price": 406.03,
+                        "change_pct": -1.75
                     }
                 ],
                 "at_risk_stocks": [
                     {
                         "ticker": "SO",
-                        "corr": -0.27,
+                        "corr": -0.25,
                         "action": "avoid",
-                        "price": 93.29,
-                        "change_pct": -1.19
+                        "price": 95.0,
+                        "change_pct": 0.95
                     },
                     {
                         "ticker": "CVX",
-                        "corr": -0.21,
+                        "corr": -0.24,
                         "action": "avoid",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 210.95,
+                        "change_pct": 1.06
+                    },
+                    {
+                        "ticker": "COP",
+                        "corr": -0.23,
+                        "action": "avoid",
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "DUK",
+                        "corr": -0.22,
+                        "action": "avoid",
+                        "price": 131.9,
+                        "change_pct": 0.72
+                    },
+                    {
+                        "ticker": "XOM",
                         "corr": -0.21,
                         "action": "avoid",
-                        "price": 128.86,
-                        "change_pct": -0.92
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "WMT",
                         "corr": -0.2,
                         "action": "avoid",
-                        "price": 126.04,
-                        "change_pct": -1.04
-                    },
-                    {
-                        "ticker": "COP",
-                        "corr": -0.18,
-                        "action": "avoid",
-                        "price": 134.99,
-                        "change_pct": 0.44
-                    },
-                    {
-                        "ticker": "XOM",
-                        "corr": -0.17,
-                        "action": "avoid",
-                        "price": 158.93,
-                        "change_pct": -1.03
-                    },
-                    {
-                        "ticker": "COST",
-                        "corr": -0.17,
-                        "action": "avoid",
-                        "price": 1093.83,
-                        "change_pct": -0.25
+                        "price": 131.94,
+                        "change_pct": -0.28
                     },
                     {
                         "ticker": "EOG",
-                        "corr": -0.16,
+                        "corr": -0.18,
                         "action": "avoid",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
                     },
                     {
                         "ticker": "PG",
+                        "corr": -0.17,
+                        "action": "avoid",
+                        "price": 173.23,
+                        "change_pct": 0.44
+                    },
+                    {
+                        "ticker": "COST",
                         "corr": -0.16,
                         "action": "avoid",
-                        "price": 167.85,
-                        "change_pct": -1.43
+                        "price": 1086.81,
+                        "change_pct": -0.45
+                    },
+                    {
+                        "ticker": "MPC",
+                        "corr": -0.13,
+                        "action": "avoid",
+                        "price": 346.27,
+                        "change_pct": -2.5
                     }
                 ]
             },
@@ -1516,138 +1754,145 @@
                 "winning_stocks": [
                     {
                         "ticker": "SO",
-                        "corr": -0.27,
+                        "corr": -0.25,
                         "action": "buy",
-                        "price": 93.29,
-                        "change_pct": -1.19
+                        "price": 95.0,
+                        "change_pct": 0.95
                     },
                     {
                         "ticker": "CVX",
-                        "corr": -0.21,
+                        "corr": -0.24,
                         "action": "buy",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 210.95,
+                        "change_pct": 1.06
+                    },
+                    {
+                        "ticker": "COP",
+                        "corr": -0.23,
+                        "action": "buy",
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "DUK",
+                        "corr": -0.22,
+                        "action": "buy",
+                        "price": 131.9,
+                        "change_pct": 0.72
+                    },
+                    {
+                        "ticker": "XOM",
                         "corr": -0.21,
                         "action": "buy",
-                        "price": 128.86,
-                        "change_pct": -0.92
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "WMT",
                         "corr": -0.2,
                         "action": "buy",
-                        "price": 126.04,
-                        "change_pct": -1.04
-                    },
-                    {
-                        "ticker": "COP",
-                        "corr": -0.18,
-                        "action": "buy",
-                        "price": 134.99,
-                        "change_pct": 0.44
-                    },
-                    {
-                        "ticker": "XOM",
-                        "corr": -0.17,
-                        "action": "buy",
-                        "price": 158.93,
-                        "change_pct": -1.03
-                    },
-                    {
-                        "ticker": "COST",
-                        "corr": -0.17,
-                        "action": "buy",
-                        "price": 1093.83,
-                        "change_pct": -0.25
+                        "price": 131.94,
+                        "change_pct": -0.28
                     },
                     {
                         "ticker": "EOG",
-                        "corr": -0.16,
+                        "corr": -0.18,
                         "action": "buy",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
                     },
                     {
                         "ticker": "PG",
+                        "corr": -0.17,
+                        "action": "buy",
+                        "price": 173.23,
+                        "change_pct": 0.44
+                    },
+                    {
+                        "ticker": "COST",
                         "corr": -0.16,
                         "action": "buy",
-                        "price": 167.85,
-                        "change_pct": -1.43
+                        "price": 1086.81,
+                        "change_pct": -0.45
+                    },
+                    {
+                        "ticker": "MPC",
+                        "corr": -0.13,
+                        "action": "buy",
+                        "price": 346.27,
+                        "change_pct": -2.5
                     }
                 ],
                 "at_risk_stocks": [
                     {
                         "ticker": "COIN",
-                        "corr": 0.75,
+                        "corr": 0.78,
                         "action": "avoid",
-                        "price": 108.87,
-                        "change_pct": -1.48
+                        "price": 103.72,
+                        "change_pct": 1.34
                     },
                     {
                         "ticker": "FCX",
-                        "corr": 0.53,
+                        "corr": 0.59,
                         "action": "avoid",
-                        "price": 49.12,
-                        "change_pct": -4.53
+                        "price": 48.55,
+                        "change_pct": 1.72
                     },
                     {
                         "ticker": "NEM",
-                        "corr": 0.44,
+                        "corr": 0.49,
                         "action": "avoid",
-                        "price": 100.05,
-                        "change_pct": -4.29
+                        "price": 101.44,
+                        "change_pct": 1.76
                     },
                     {
                         "ticker": "TSLA",
-                        "corr": 0.4,
+                        "corr": 0.46,
                         "action": "avoid",
-                        "price": 374.41,
-                        "change_pct": -2.43
-                    },
-                    {
-                        "ticker": "NVDA",
-                        "corr": 0.4,
-                        "action": "avoid",
-                        "price": 145.98,
-                        "change_pct": -3.3
+                        "price": 380.14,
+                        "change_pct": -1.18
                     },
                     {
                         "ticker": "GS",
-                        "corr": 0.36,
+                        "corr": 0.44,
                         "action": "avoid",
-                        "price": 847.53,
-                        "change_pct": -2.94
+                        "price": 801.03,
+                        "change_pct": -0.62
+                    },
+                    {
+                        "ticker": "NVDA",
+                        "corr": 0.42,
+                        "action": "avoid",
+                        "price": 149.3,
+                        "change_pct": -3.91
                     },
                     {
                         "ticker": "MS",
-                        "corr": 0.34,
+                        "corr": 0.42,
                         "action": "avoid",
-                        "price": 174.98,
-                        "change_pct": -3.42
-                    },
-                    {
-                        "ticker": "PLTR",
-                        "corr": 0.3,
-                        "action": "avoid",
-                        "price": 153.68,
-                        "change_pct": -1.91
+                        "price": 167.55,
+                        "change_pct": -0.73
                     },
                     {
                         "ticker": "CAT",
-                        "corr": 0.3,
+                        "corr": 0.38,
                         "action": "avoid",
-                        "price": 537.37,
-                        "change_pct": -3.83
+                        "price": 543.69,
+                        "change_pct": 0.57
                     },
                     {
-                        "ticker": "GOOGL",
-                        "corr": 0.29,
+                        "ticker": "PLTR",
+                        "corr": 0.36,
                         "action": "avoid",
-                        "price": 272.66,
-                        "change_pct": -3.46
+                        "price": 163.59,
+                        "change_pct": 1.5
+                    },
+                    {
+                        "ticker": "AMD",
+                        "corr": 0.36,
+                        "action": "avoid",
+                        "price": 406.03,
+                        "change_pct": -1.75
                     }
                 ]
             }
@@ -1657,8 +1902,10 @@
             "full_name": "CBOE Volatility Index (VIX)",
             "symbol": "^VIX",
             "category": "Market Sentiment & Dealer Gamma",
-            "current_value": "28.44 pts",
-            "change_1d": 15.8,
+            "current_price": 28.29,
+            "unit": "pts",
+            "current_value": "28.29 pts",
+            "change_1d": 7.32,
             "trend": "Rising",
             "transmission": "Sub-16 VIX signals positive dealer gamma (market makers dampen volatility by buying dips). VIX > 20 signals negative gamma, where institutional hedging accelerates market drawdowns.",
             "if_up": {
@@ -1677,52 +1924,52 @@
                 "winning_stocks": [
                     {
                         "ticker": "COP",
-                        "corr": 0.22,
+                        "corr": 0.24,
                         "action": "buy",
-                        "price": 134.99,
-                        "change_pct": 0.44
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "EOG",
                         "corr": 0.2,
                         "action": "buy",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
                     },
                     {
                         "ticker": "COST",
                         "corr": 0.19,
                         "action": "buy",
-                        "price": 1093.83,
-                        "change_pct": -0.25
+                        "price": 1086.81,
+                        "change_pct": -0.45
                     },
                     {
                         "ticker": "XOM",
-                        "corr": 0.17,
+                        "corr": 0.18,
                         "action": "buy",
-                        "price": 158.93,
-                        "change_pct": -1.03
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "CVX",
-                        "corr": 0.17,
+                        "corr": 0.18,
                         "action": "buy",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 210.95,
+                        "change_pct": 1.06
                     },
                     {
                         "ticker": "DUK",
-                        "corr": 0.16,
+                        "corr": 0.15,
                         "action": "buy",
-                        "price": 128.86,
-                        "change_pct": -0.92
+                        "price": 131.9,
+                        "change_pct": 0.72
                     },
                     {
                         "ticker": "SO",
-                        "corr": 0.16,
+                        "corr": 0.13,
                         "action": "buy",
-                        "price": 93.29,
-                        "change_pct": -1.19
+                        "price": 95.0,
+                        "change_pct": 0.95
                     }
                 ],
                 "at_risk_stocks": [
@@ -1730,71 +1977,71 @@
                         "ticker": "AMD",
                         "corr": -0.65,
                         "action": "avoid",
-                        "price": 489.19,
-                        "change_pct": -7.72
+                        "price": 406.03,
+                        "change_pct": -1.75
                     },
                     {
                         "ticker": "GS",
-                        "corr": -0.62,
+                        "corr": -0.64,
                         "action": "avoid",
-                        "price": 847.53,
-                        "change_pct": -2.94
+                        "price": 801.03,
+                        "change_pct": -0.62
                     },
                     {
                         "ticker": "TSLA",
-                        "corr": -0.58,
+                        "corr": -0.61,
                         "action": "avoid",
-                        "price": 374.41,
-                        "change_pct": -2.43
+                        "price": 380.14,
+                        "change_pct": -1.18
                     },
                     {
                         "ticker": "MS",
-                        "corr": -0.58,
+                        "corr": -0.61,
                         "action": "avoid",
-                        "price": 174.98,
-                        "change_pct": -3.42
+                        "price": 167.55,
+                        "change_pct": -0.73
                     },
                     {
                         "ticker": "AVGO",
+                        "corr": -0.58,
+                        "action": "avoid",
+                        "price": 300.86,
+                        "change_pct": -0.07
+                    },
+                    {
+                        "ticker": "FCX",
                         "corr": -0.57,
                         "action": "avoid",
-                        "price": 346.65,
-                        "change_pct": -2.09
+                        "price": 48.55,
+                        "change_pct": 1.72
                     },
                     {
                         "ticker": "NVDA",
                         "corr": -0.55,
                         "action": "avoid",
-                        "price": 145.98,
-                        "change_pct": -3.3
-                    },
-                    {
-                        "ticker": "FCX",
-                        "corr": -0.55,
-                        "action": "avoid",
-                        "price": 49.12,
-                        "change_pct": -4.53
+                        "price": 149.3,
+                        "change_pct": -3.91
                     },
                     {
                         "ticker": "QCOM",
-                        "corr": -0.5,
+                        "corr": -0.53,
                         "action": "avoid",
-                        "price": 162.01,
-                        "change_pct": 1.38
+                        "price": 168.66,
+                        "change_pct": 2.24
                     },
                     {
                         "ticker": "ETN",
-                        "corr": -0.49,
+                        "corr": -0.51,
                         "action": "avoid",
-                        "price": 330.57,
-                        "change_pct": -2.3
+                        "price": 317.81,
+                        "change_pct": -0.46
                     },
                     {
-                        "ticker": "PWR",
-                        "corr": -0.46,
+                        "ticker": "BAC",
+                        "corr": -0.5,
                         "action": "avoid",
-                        "price": 587.43,
-                        "change_pct": -2.52
+                        "price": 48.54,
+                        "change_pct": -0.04
                     }
                 ]
             },
@@ -1812,122 +2059,122 @@
                         "ticker": "AMD",
                         "corr": -0.65,
                         "action": "buy",
-                        "price": 489.19,
-                        "change_pct": -7.72
+                        "price": 406.03,
+                        "change_pct": -1.75
                     },
                     {
                         "ticker": "GS",
-                        "corr": -0.62,
+                        "corr": -0.64,
                         "action": "buy",
-                        "price": 847.53,
-                        "change_pct": -2.94
+                        "price": 801.03,
+                        "change_pct": -0.62
                     },
                     {
                         "ticker": "TSLA",
-                        "corr": -0.58,
+                        "corr": -0.61,
                         "action": "buy",
-                        "price": 374.41,
-                        "change_pct": -2.43
+                        "price": 380.14,
+                        "change_pct": -1.18
                     },
                     {
                         "ticker": "MS",
-                        "corr": -0.58,
+                        "corr": -0.61,
                         "action": "buy",
-                        "price": 174.98,
-                        "change_pct": -3.42
+                        "price": 167.55,
+                        "change_pct": -0.73
                     },
                     {
                         "ticker": "AVGO",
+                        "corr": -0.58,
+                        "action": "buy",
+                        "price": 300.86,
+                        "change_pct": -0.07
+                    },
+                    {
+                        "ticker": "FCX",
                         "corr": -0.57,
                         "action": "buy",
-                        "price": 346.65,
-                        "change_pct": -2.09
+                        "price": 48.55,
+                        "change_pct": 1.72
                     },
                     {
                         "ticker": "NVDA",
                         "corr": -0.55,
                         "action": "buy",
-                        "price": 145.98,
-                        "change_pct": -3.3
-                    },
-                    {
-                        "ticker": "FCX",
-                        "corr": -0.55,
-                        "action": "buy",
-                        "price": 49.12,
-                        "change_pct": -4.53
+                        "price": 149.3,
+                        "change_pct": -3.91
                     },
                     {
                         "ticker": "QCOM",
-                        "corr": -0.5,
+                        "corr": -0.53,
                         "action": "buy",
-                        "price": 162.01,
-                        "change_pct": 1.38
+                        "price": 168.66,
+                        "change_pct": 2.24
                     },
                     {
                         "ticker": "ETN",
-                        "corr": -0.49,
+                        "corr": -0.51,
                         "action": "buy",
-                        "price": 330.57,
-                        "change_pct": -2.3
+                        "price": 317.81,
+                        "change_pct": -0.46
                     },
                     {
-                        "ticker": "PWR",
-                        "corr": -0.46,
+                        "ticker": "BAC",
+                        "corr": -0.5,
                         "action": "buy",
-                        "price": 587.43,
-                        "change_pct": -2.52
+                        "price": 48.54,
+                        "change_pct": -0.04
                     }
                 ],
                 "at_risk_stocks": [
                     {
                         "ticker": "COP",
-                        "corr": 0.22,
+                        "corr": 0.24,
                         "action": "avoid",
-                        "price": 134.99,
-                        "change_pct": 0.44
+                        "price": 135.02,
+                        "change_pct": 0.28
                     },
                     {
                         "ticker": "EOG",
                         "corr": 0.2,
                         "action": "avoid",
-                        "price": 149.49,
-                        "change_pct": -0.13
+                        "price": 148.31,
+                        "change_pct": 1.17
                     },
                     {
                         "ticker": "COST",
                         "corr": 0.19,
                         "action": "avoid",
-                        "price": 1093.83,
-                        "change_pct": -0.25
+                        "price": 1086.81,
+                        "change_pct": -0.45
                     },
                     {
                         "ticker": "XOM",
-                        "corr": 0.17,
+                        "corr": 0.18,
                         "action": "avoid",
-                        "price": 158.93,
-                        "change_pct": -1.03
+                        "price": 158.08,
+                        "change_pct": -0.09
                     },
                     {
                         "ticker": "CVX",
-                        "corr": 0.17,
+                        "corr": 0.18,
                         "action": "avoid",
-                        "price": 206.5,
-                        "change_pct": 0.3
+                        "price": 210.95,
+                        "change_pct": 1.06
                     },
                     {
                         "ticker": "DUK",
-                        "corr": 0.16,
+                        "corr": 0.15,
                         "action": "avoid",
-                        "price": 128.86,
-                        "change_pct": -0.92
+                        "price": 131.9,
+                        "change_pct": 0.72
                     },
                     {
                         "ticker": "SO",
-                        "corr": 0.16,
+                        "corr": 0.13,
                         "action": "avoid",
-                        "price": 93.29,
-                        "change_pct": -1.19
+                        "price": 95.0,
+                        "change_pct": 0.95
                     }
                 ]
             }
@@ -2011,362 +2258,362 @@
         "values": {
             "SPY": {
                 "SPY": 1.0,
-                "QQQ": 0.92,
-                "^TNX": -0.09,
-                "DX-Y.NYB": -0.21,
+                "QQQ": 0.94,
+                "^TNX": 0.04,
+                "DX-Y.NYB": -0.08,
                 "CL=F": -0.44,
-                "GC=F": 0.39,
-                "BTC-USD": 0.46,
+                "GC=F": 0.49,
+                "BTC-USD": 0.52,
                 "^VIX": -0.86,
-                "XLK": 0.85,
-                "XLF": 0.47,
-                "XLE": -0.13,
-                "XLI": 0.7,
-                "XLU": 0.06,
-                "XLV": 0.16,
-                "XLY": 0.72,
-                "XLP": -0.1,
-                "XLB": 0.48,
-                "SMH": 0.76
+                "XLK": 0.88,
+                "XLF": 0.53,
+                "XLE": -0.16,
+                "XLI": 0.75,
+                "XLU": 0.16,
+                "XLV": 0.17,
+                "XLY": 0.75,
+                "XLP": -0.08,
+                "XLB": 0.53,
+                "SMH": 0.81
             },
             "QQQ": {
-                "SPY": 0.92,
+                "SPY": 0.94,
                 "QQQ": 1.0,
-                "^TNX": 0.01,
-                "DX-Y.NYB": -0.1,
-                "CL=F": -0.38,
-                "GC=F": 0.32,
-                "BTC-USD": 0.46,
-                "^VIX": -0.79,
+                "^TNX": 0.12,
+                "DX-Y.NYB": 0.01,
+                "CL=F": -0.4,
+                "GC=F": 0.47,
+                "BTC-USD": 0.53,
+                "^VIX": -0.8,
                 "XLK": 0.97,
-                "XLF": 0.16,
-                "XLE": -0.14,
-                "XLI": 0.64,
-                "XLU": -0.1,
-                "XLV": -0.1,
-                "XLY": 0.55,
-                "XLP": -0.36,
-                "XLB": 0.29,
-                "SMH": 0.93
+                "XLF": 0.28,
+                "XLE": -0.17,
+                "XLI": 0.71,
+                "XLU": 0.03,
+                "XLV": -0.05,
+                "XLY": 0.6,
+                "XLP": -0.33,
+                "XLB": 0.36,
+                "SMH": 0.94
             },
             "^TNX": {
-                "SPY": -0.09,
-                "QQQ": 0.01,
+                "SPY": 0.04,
+                "QQQ": 0.12,
                 "^TNX": 1.0,
-                "DX-Y.NYB": 0.33,
-                "CL=F": 0.28,
-                "GC=F": -0.22,
-                "BTC-USD": -0.07,
-                "^VIX": -0.04,
-                "XLK": 0.05,
-                "XLF": -0.24,
+                "DX-Y.NYB": 0.34,
+                "CL=F": 0.23,
+                "GC=F": -0.1,
+                "BTC-USD": -0.01,
+                "^VIX": -0.12,
+                "XLK": 0.16,
+                "XLF": -0.18,
                 "XLE": 0.38,
-                "XLI": -0.11,
-                "XLU": -0.33,
-                "XLV": -0.23,
-                "XLY": -0.3,
-                "XLP": -0.34,
-                "XLB": -0.35,
-                "SMH": 0.1
+                "XLI": -0.03,
+                "XLU": -0.32,
+                "XLV": -0.22,
+                "XLY": -0.21,
+                "XLP": -0.38,
+                "XLB": -0.28,
+                "SMH": 0.19
             },
             "DX-Y.NYB": {
-                "SPY": -0.21,
-                "QQQ": -0.1,
-                "^TNX": 0.33,
+                "SPY": -0.08,
+                "QQQ": 0.01,
+                "^TNX": 0.34,
                 "DX-Y.NYB": 1.0,
-                "CL=F": 0.05,
-                "GC=F": -0.47,
-                "BTC-USD": -0.28,
-                "^VIX": 0.18,
-                "XLK": -0.07,
-                "XLF": -0.26,
-                "XLE": 0.05,
-                "XLI": -0.12,
-                "XLU": -0.18,
+                "CL=F": 0.01,
+                "GC=F": -0.34,
+                "BTC-USD": -0.2,
+                "^VIX": 0.11,
+                "XLK": 0.03,
+                "XLF": -0.2,
+                "XLE": 0.03,
+                "XLI": -0.03,
+                "XLU": -0.13,
                 "XLV": -0.14,
-                "XLY": -0.33,
+                "XLY": -0.27,
                 "XLP": -0.13,
-                "XLB": -0.32,
-                "SMH": -0.03
+                "XLB": -0.24,
+                "SMH": 0.08
             },
             "CL=F": {
                 "SPY": -0.44,
-                "QQQ": -0.38,
-                "^TNX": 0.28,
-                "DX-Y.NYB": 0.05,
+                "QQQ": -0.4,
+                "^TNX": 0.23,
+                "DX-Y.NYB": 0.01,
                 "CL=F": 1.0,
-                "GC=F": -0.24,
-                "BTC-USD": -0.17,
-                "^VIX": 0.35,
-                "XLK": -0.28,
-                "XLF": -0.41,
+                "GC=F": -0.27,
+                "BTC-USD": -0.24,
+                "^VIX": 0.37,
+                "XLK": -0.32,
+                "XLF": -0.4,
                 "XLE": 0.64,
                 "XLI": -0.39,
-                "XLU": -0.09,
-                "XLV": -0.14,
+                "XLU": -0.12,
+                "XLV": -0.15,
                 "XLY": -0.54,
-                "XLP": -0.22,
-                "XLB": -0.38,
-                "SMH": -0.23
+                "XLP": -0.21,
+                "XLB": -0.37,
+                "SMH": -0.28
             },
             "GC=F": {
-                "SPY": 0.39,
-                "QQQ": 0.32,
-                "^TNX": -0.22,
-                "DX-Y.NYB": -0.47,
-                "CL=F": -0.24,
+                "SPY": 0.49,
+                "QQQ": 0.47,
+                "^TNX": -0.1,
+                "DX-Y.NYB": -0.34,
+                "CL=F": -0.27,
                 "GC=F": 1.0,
-                "BTC-USD": 0.48,
-                "^VIX": -0.3,
-                "XLK": 0.28,
-                "XLF": 0.35,
+                "BTC-USD": 0.54,
+                "^VIX": -0.37,
+                "XLK": 0.45,
+                "XLF": 0.36,
                 "XLE": -0.25,
-                "XLI": 0.29,
-                "XLU": 0.08,
-                "XLV": 0.17,
-                "XLY": 0.4,
-                "XLP": 0.0,
-                "XLB": 0.43,
-                "SMH": 0.25
+                "XLI": 0.38,
+                "XLU": 0.1,
+                "XLV": 0.11,
+                "XLY": 0.45,
+                "XLP": -0.07,
+                "XLB": 0.45,
+                "SMH": 0.44
             },
             "BTC-USD": {
-                "SPY": 0.46,
-                "QQQ": 0.46,
-                "^TNX": -0.07,
-                "DX-Y.NYB": -0.28,
-                "CL=F": -0.17,
-                "GC=F": 0.48,
+                "SPY": 0.52,
+                "QQQ": 0.53,
+                "^TNX": -0.01,
+                "DX-Y.NYB": -0.2,
+                "CL=F": -0.24,
+                "GC=F": 0.54,
                 "BTC-USD": 1.0,
-                "^VIX": -0.39,
-                "XLK": 0.42,
-                "XLF": 0.2,
+                "^VIX": -0.45,
+                "XLK": 0.5,
+                "XLF": 0.27,
                 "XLE": -0.15,
-                "XLI": 0.21,
-                "XLU": -0.16,
+                "XLI": 0.32,
+                "XLU": -0.1,
                 "XLV": 0.2,
-                "XLY": 0.31,
-                "XLP": -0.12,
-                "XLB": 0.26,
-                "SMH": 0.38
+                "XLY": 0.38,
+                "XLP": -0.13,
+                "XLB": 0.35,
+                "SMH": 0.46
             },
             "^VIX": {
                 "SPY": -0.86,
-                "QQQ": -0.79,
-                "^TNX": -0.04,
-                "DX-Y.NYB": 0.18,
-                "CL=F": 0.35,
-                "GC=F": -0.3,
-                "BTC-USD": -0.39,
+                "QQQ": -0.8,
+                "^TNX": -0.12,
+                "DX-Y.NYB": 0.11,
+                "CL=F": 0.37,
+                "GC=F": -0.37,
+                "BTC-USD": -0.45,
                 "^VIX": 1.0,
-                "XLK": -0.72,
-                "XLF": -0.44,
+                "XLK": -0.74,
+                "XLF": -0.49,
                 "XLE": 0.06,
-                "XLI": -0.58,
-                "XLU": -0.08,
-                "XLV": -0.23,
-                "XLY": -0.66,
-                "XLP": 0.02,
-                "XLB": -0.44,
-                "SMH": -0.67
+                "XLI": -0.63,
+                "XLU": -0.14,
+                "XLV": -0.24,
+                "XLY": -0.69,
+                "XLP": 0.01,
+                "XLB": -0.48,
+                "SMH": -0.68
             },
             "XLK": {
-                "SPY": 0.85,
+                "SPY": 0.88,
                 "QQQ": 0.97,
-                "^TNX": 0.05,
-                "DX-Y.NYB": -0.07,
-                "CL=F": -0.28,
-                "GC=F": 0.28,
-                "BTC-USD": 0.42,
-                "^VIX": -0.72,
+                "^TNX": 0.16,
+                "DX-Y.NYB": 0.03,
+                "CL=F": -0.32,
+                "GC=F": 0.45,
+                "BTC-USD": 0.5,
+                "^VIX": -0.74,
                 "XLK": 1.0,
-                "XLF": 0.06,
-                "XLE": -0.07,
-                "XLI": 0.6,
-                "XLU": -0.12,
-                "XLV": -0.21,
-                "XLY": 0.39,
-                "XLP": -0.48,
-                "XLB": 0.21,
-                "SMH": 0.96
+                "XLF": 0.18,
+                "XLE": -0.12,
+                "XLI": 0.68,
+                "XLU": 0.01,
+                "XLV": -0.15,
+                "XLY": 0.45,
+                "XLP": -0.43,
+                "XLB": 0.29,
+                "SMH": 0.97
             },
             "XLF": {
-                "SPY": 0.47,
-                "QQQ": 0.16,
-                "^TNX": -0.24,
-                "DX-Y.NYB": -0.26,
-                "CL=F": -0.41,
-                "GC=F": 0.35,
-                "BTC-USD": 0.2,
-                "^VIX": -0.44,
-                "XLK": 0.06,
+                "SPY": 0.53,
+                "QQQ": 0.28,
+                "^TNX": -0.18,
+                "DX-Y.NYB": -0.2,
+                "CL=F": -0.4,
+                "GC=F": 0.36,
+                "BTC-USD": 0.27,
+                "^VIX": -0.49,
+                "XLK": 0.18,
                 "XLF": 1.0,
-                "XLE": -0.12,
-                "XLI": 0.43,
-                "XLU": 0.33,
-                "XLV": 0.52,
-                "XLY": 0.54,
+                "XLE": -0.11,
+                "XLI": 0.48,
+                "XLU": 0.34,
+                "XLV": 0.5,
+                "XLY": 0.6,
                 "XLP": 0.47,
-                "XLB": 0.57,
-                "SMH": -0.04
+                "XLB": 0.63,
+                "SMH": 0.1
             },
             "XLE": {
-                "SPY": -0.13,
-                "QQQ": -0.14,
+                "SPY": -0.16,
+                "QQQ": -0.17,
                 "^TNX": 0.38,
-                "DX-Y.NYB": 0.05,
+                "DX-Y.NYB": 0.03,
                 "CL=F": 0.64,
                 "GC=F": -0.25,
                 "BTC-USD": -0.15,
                 "^VIX": 0.06,
-                "XLK": -0.07,
-                "XLF": -0.12,
+                "XLK": -0.12,
+                "XLF": -0.11,
                 "XLE": 1.0,
-                "XLI": -0.13,
+                "XLI": -0.15,
                 "XLU": 0.04,
                 "XLV": -0.02,
-                "XLY": -0.35,
+                "XLY": -0.36,
                 "XLP": -0.01,
-                "XLB": -0.12,
-                "SMH": -0.05
+                "XLB": -0.14,
+                "SMH": -0.1
             },
             "XLI": {
-                "SPY": 0.7,
-                "QQQ": 0.64,
-                "^TNX": -0.11,
-                "DX-Y.NYB": -0.12,
+                "SPY": 0.75,
+                "QQQ": 0.71,
+                "^TNX": -0.03,
+                "DX-Y.NYB": -0.03,
                 "CL=F": -0.39,
-                "GC=F": 0.29,
-                "BTC-USD": 0.21,
-                "^VIX": -0.58,
-                "XLK": 0.6,
-                "XLF": 0.43,
-                "XLE": -0.13,
+                "GC=F": 0.38,
+                "BTC-USD": 0.32,
+                "^VIX": -0.63,
+                "XLK": 0.68,
+                "XLF": 0.48,
+                "XLE": -0.15,
                 "XLI": 1.0,
-                "XLU": 0.26,
-                "XLV": 0.13,
-                "XLY": 0.45,
+                "XLU": 0.31,
+                "XLV": 0.11,
+                "XLY": 0.51,
                 "XLP": -0.1,
-                "XLB": 0.54,
-                "SMH": 0.63
+                "XLB": 0.59,
+                "SMH": 0.7
             },
             "XLU": {
-                "SPY": 0.06,
-                "QQQ": -0.1,
-                "^TNX": -0.33,
-                "DX-Y.NYB": -0.18,
-                "CL=F": -0.09,
-                "GC=F": 0.08,
-                "BTC-USD": -0.16,
-                "^VIX": -0.08,
-                "XLK": -0.12,
-                "XLF": 0.33,
+                "SPY": 0.16,
+                "QQQ": 0.03,
+                "^TNX": -0.32,
+                "DX-Y.NYB": -0.13,
+                "CL=F": -0.12,
+                "GC=F": 0.1,
+                "BTC-USD": -0.1,
+                "^VIX": -0.14,
+                "XLK": 0.01,
+                "XLF": 0.34,
                 "XLE": 0.04,
-                "XLI": 0.26,
+                "XLI": 0.31,
                 "XLU": 1.0,
-                "XLV": 0.29,
-                "XLY": 0.1,
-                "XLP": 0.44,
-                "XLB": 0.33,
-                "SMH": -0.12
+                "XLV": 0.27,
+                "XLY": 0.17,
+                "XLP": 0.41,
+                "XLB": 0.36,
+                "SMH": 0.03
             },
             "XLV": {
-                "SPY": 0.16,
-                "QQQ": -0.1,
-                "^TNX": -0.23,
+                "SPY": 0.17,
+                "QQQ": -0.05,
+                "^TNX": -0.22,
                 "DX-Y.NYB": -0.14,
-                "CL=F": -0.14,
-                "GC=F": 0.17,
+                "CL=F": -0.15,
+                "GC=F": 0.11,
                 "BTC-USD": 0.2,
-                "^VIX": -0.23,
-                "XLK": -0.21,
-                "XLF": 0.52,
+                "^VIX": -0.24,
+                "XLK": -0.15,
+                "XLF": 0.5,
                 "XLE": -0.02,
-                "XLI": 0.13,
-                "XLU": 0.29,
+                "XLI": 0.11,
+                "XLU": 0.27,
                 "XLV": 1.0,
-                "XLY": 0.3,
-                "XLP": 0.59,
+                "XLY": 0.33,
+                "XLP": 0.61,
                 "XLB": 0.45,
-                "SMH": -0.25
+                "SMH": -0.2
             },
             "XLY": {
-                "SPY": 0.72,
-                "QQQ": 0.55,
-                "^TNX": -0.3,
-                "DX-Y.NYB": -0.33,
+                "SPY": 0.75,
+                "QQQ": 0.6,
+                "^TNX": -0.21,
+                "DX-Y.NYB": -0.27,
                 "CL=F": -0.54,
-                "GC=F": 0.4,
-                "BTC-USD": 0.31,
-                "^VIX": -0.66,
-                "XLK": 0.39,
-                "XLF": 0.54,
-                "XLE": -0.35,
-                "XLI": 0.45,
-                "XLU": 0.1,
-                "XLV": 0.3,
+                "GC=F": 0.45,
+                "BTC-USD": 0.38,
+                "^VIX": -0.69,
+                "XLK": 0.45,
+                "XLF": 0.6,
+                "XLE": -0.36,
+                "XLI": 0.51,
+                "XLU": 0.17,
+                "XLV": 0.33,
                 "XLY": 1.0,
-                "XLP": 0.27,
-                "XLB": 0.51,
-                "SMH": 0.3
+                "XLP": 0.28,
+                "XLB": 0.56,
+                "SMH": 0.38
             },
             "XLP": {
-                "SPY": -0.1,
-                "QQQ": -0.36,
-                "^TNX": -0.34,
+                "SPY": -0.08,
+                "QQQ": -0.33,
+                "^TNX": -0.38,
                 "DX-Y.NYB": -0.13,
-                "CL=F": -0.22,
-                "GC=F": 0.0,
-                "BTC-USD": -0.12,
-                "^VIX": 0.02,
-                "XLK": -0.48,
+                "CL=F": -0.21,
+                "GC=F": -0.07,
+                "BTC-USD": -0.13,
+                "^VIX": 0.01,
+                "XLK": -0.43,
                 "XLF": 0.47,
                 "XLE": -0.01,
                 "XLI": -0.1,
-                "XLU": 0.44,
-                "XLV": 0.59,
-                "XLY": 0.27,
+                "XLU": 0.41,
+                "XLV": 0.61,
+                "XLY": 0.28,
                 "XLP": 1.0,
-                "XLB": 0.41,
-                "SMH": -0.54
+                "XLB": 0.4,
+                "SMH": -0.49
             },
             "XLB": {
-                "SPY": 0.48,
-                "QQQ": 0.29,
-                "^TNX": -0.35,
-                "DX-Y.NYB": -0.32,
-                "CL=F": -0.38,
-                "GC=F": 0.43,
-                "BTC-USD": 0.26,
-                "^VIX": -0.44,
-                "XLK": 0.21,
-                "XLF": 0.57,
-                "XLE": -0.12,
-                "XLI": 0.54,
-                "XLU": 0.33,
+                "SPY": 0.53,
+                "QQQ": 0.36,
+                "^TNX": -0.28,
+                "DX-Y.NYB": -0.24,
+                "CL=F": -0.37,
+                "GC=F": 0.45,
+                "BTC-USD": 0.35,
+                "^VIX": -0.48,
+                "XLK": 0.29,
+                "XLF": 0.63,
+                "XLE": -0.14,
+                "XLI": 0.59,
+                "XLU": 0.36,
                 "XLV": 0.45,
-                "XLY": 0.51,
-                "XLP": 0.41,
+                "XLY": 0.56,
+                "XLP": 0.4,
                 "XLB": 1.0,
-                "SMH": 0.18
+                "SMH": 0.27
             },
             "SMH": {
-                "SPY": 0.76,
-                "QQQ": 0.93,
-                "^TNX": 0.1,
-                "DX-Y.NYB": -0.03,
-                "CL=F": -0.23,
-                "GC=F": 0.25,
-                "BTC-USD": 0.38,
-                "^VIX": -0.67,
-                "XLK": 0.96,
-                "XLF": -0.04,
-                "XLE": -0.05,
-                "XLI": 0.63,
-                "XLU": -0.12,
-                "XLV": -0.25,
-                "XLY": 0.3,
-                "XLP": -0.54,
-                "XLB": 0.18,
+                "SPY": 0.81,
+                "QQQ": 0.94,
+                "^TNX": 0.19,
+                "DX-Y.NYB": 0.08,
+                "CL=F": -0.28,
+                "GC=F": 0.44,
+                "BTC-USD": 0.46,
+                "^VIX": -0.68,
+                "XLK": 0.97,
+                "XLF": 0.1,
+                "XLE": -0.1,
+                "XLI": 0.7,
+                "XLU": 0.03,
+                "XLV": -0.2,
+                "XLY": 0.38,
+                "XLP": -0.49,
+                "XLB": 0.27,
                 "SMH": 1.0
             }
         }
@@ -2376,91 +2623,91 @@
             "symbol": "XLE",
             "name": "Energy",
             "corr_tnx": 0.38,
-            "corr_dxy": 0.05,
+            "corr_dxy": 0.03,
             "corr_oil": 0.64,
             "corr_gold": -0.25,
-            "corr_spy": -0.13
+            "corr_spy": -0.16
         },
         {
             "symbol": "SMH",
             "name": "Semiconductors",
-            "corr_tnx": 0.1,
-            "corr_dxy": -0.03,
-            "corr_oil": -0.23,
-            "corr_gold": 0.25,
-            "corr_spy": 0.76
+            "corr_tnx": 0.19,
+            "corr_dxy": 0.08,
+            "corr_oil": -0.28,
+            "corr_gold": 0.44,
+            "corr_spy": 0.81
         },
         {
             "symbol": "XLK",
             "name": "Technology",
-            "corr_tnx": 0.05,
-            "corr_dxy": -0.07,
-            "corr_oil": -0.28,
-            "corr_gold": 0.28,
-            "corr_spy": 0.85
+            "corr_tnx": 0.16,
+            "corr_dxy": 0.03,
+            "corr_oil": -0.32,
+            "corr_gold": 0.45,
+            "corr_spy": 0.88
         },
         {
             "symbol": "XLI",
             "name": "Industrials",
-            "corr_tnx": -0.11,
-            "corr_dxy": -0.12,
+            "corr_tnx": -0.03,
+            "corr_dxy": -0.03,
             "corr_oil": -0.39,
-            "corr_gold": 0.29,
-            "corr_spy": 0.7
-        },
-        {
-            "symbol": "XLV",
-            "name": "Healthcare",
-            "corr_tnx": -0.23,
-            "corr_dxy": -0.14,
-            "corr_oil": -0.14,
-            "corr_gold": 0.17,
-            "corr_spy": 0.16
+            "corr_gold": 0.38,
+            "corr_spy": 0.75
         },
         {
             "symbol": "XLF",
             "name": "Financials",
-            "corr_tnx": -0.24,
-            "corr_dxy": -0.26,
-            "corr_oil": -0.41,
-            "corr_gold": 0.35,
-            "corr_spy": 0.47
+            "corr_tnx": -0.18,
+            "corr_dxy": -0.2,
+            "corr_oil": -0.4,
+            "corr_gold": 0.36,
+            "corr_spy": 0.53
         },
         {
             "symbol": "XLY",
             "name": "Discretionary",
-            "corr_tnx": -0.3,
-            "corr_dxy": -0.33,
+            "corr_tnx": -0.21,
+            "corr_dxy": -0.27,
             "corr_oil": -0.54,
-            "corr_gold": 0.4,
-            "corr_spy": 0.72
+            "corr_gold": 0.45,
+            "corr_spy": 0.75
         },
         {
-            "symbol": "XLU",
-            "name": "Utilities",
-            "corr_tnx": -0.33,
-            "corr_dxy": -0.18,
-            "corr_oil": -0.09,
-            "corr_gold": 0.08,
-            "corr_spy": 0.06
-        },
-        {
-            "symbol": "XLP",
-            "name": "Staples",
-            "corr_tnx": -0.34,
-            "corr_dxy": -0.13,
-            "corr_oil": -0.22,
-            "corr_gold": 0.0,
-            "corr_spy": -0.1
+            "symbol": "XLV",
+            "name": "Healthcare",
+            "corr_tnx": -0.22,
+            "corr_dxy": -0.14,
+            "corr_oil": -0.15,
+            "corr_gold": 0.11,
+            "corr_spy": 0.17
         },
         {
             "symbol": "XLB",
             "name": "Materials",
-            "corr_tnx": -0.35,
-            "corr_dxy": -0.32,
-            "corr_oil": -0.38,
-            "corr_gold": 0.43,
-            "corr_spy": 0.48
+            "corr_tnx": -0.28,
+            "corr_dxy": -0.24,
+            "corr_oil": -0.37,
+            "corr_gold": 0.45,
+            "corr_spy": 0.53
+        },
+        {
+            "symbol": "XLU",
+            "name": "Utilities",
+            "corr_tnx": -0.32,
+            "corr_dxy": -0.13,
+            "corr_oil": -0.12,
+            "corr_gold": 0.1,
+            "corr_spy": 0.16
+        },
+        {
+            "symbol": "XLP",
+            "name": "Staples",
+            "corr_tnx": -0.38,
+            "corr_dxy": -0.13,
+            "corr_oil": -0.21,
+            "corr_gold": -0.07,
+            "corr_spy": -0.08
         }
     ]
 }

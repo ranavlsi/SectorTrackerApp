@@ -17,11 +17,10 @@ import ScreenerMonitorDashboard from './ScreenerMonitorDashboard'
 import { AdvancedRealTimeChart } from "react-ts-tradingview-widgets";
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { ScreenerDescriptions } from './ScreenerInfo';
-import { MarketHealthHeroCockpit, MarketHealthGuideCard, MarketHealthRadarMatrix, RegimePlaybookCard } from './MarketHealthGuideCard';
+import MarketHealthMacroStudio from './MarketHealthMacroStudio';
 import { StockPersonalityBadge, RossHaberPersonalityPanel } from './StockPersonalityBadge';
 import WeeklyPlaybookDashboard from './WeeklyPlaybookDashboard';
 import SeasonalityRadarDashboard from './SeasonalityRadarDashboard';
-import MacroMatrixDashboard from './MacroMatrixDashboard';
 import AiPlaybookDashboard from './AiPlaybookDashboard';
 import AskAiLiveDashboard from './AskAiLiveDashboard';
 import SwingTradingSystem from './SwingTradingSystem';
@@ -31,7 +30,6 @@ import ElliottWaveScreener from './ElliottWaveScreener';
 import GannScreener from './GannScreener';
 import StageCanslimScreener from './StageCanslimScreener';
 import RrgMoneyFlowDashboard from './RrgMoneyFlowDashboard';
-import SectorFlowTopBottomPredictor from './SectorFlowTopBottomPredictor';
 import SqueezeRadarDashboard from './SqueezeRadarDashboard';
 import IntradayRadarDashboard from './IntradayRadarDashboard';
 import CleanUptrendDashboard from './CleanUptrendDashboard';
@@ -371,9 +369,11 @@ function App() {
   
   // Market Health State
   const [marketHealth, setMarketHealth] = useState(null)
+  const [marketCycle50y, setMarketCycle50y] = useState(null)
   
   // Squeeze State
   const [squeezeData, setSqueezeData] = useState(null)
+  const [squeezeLoading, setSqueezeLoading] = useState(false)
   
   // Seasonality Radar State
   const [seasonalityData, setSeasonalityData] = useState(null)
@@ -394,8 +394,6 @@ function App() {
   
   // Advanced Analytics State
   const [correlationData, setCorrelationData] = useState(null)
-  const [healthMacroSection, setHealthMacroSection] = useState('unified')
-  const [healthChartCategory, setHealthChartCategory] = useState('all')
   const [gexSearch, setGexSearch] = useState('')
   const [searchedGex, setSearchedGex] = useState(null)
   const [gexLoading, setGexLoading] = useState(false)
@@ -409,7 +407,7 @@ function App() {
     setLoadingDna(true);
     setDnaData(null);
     try {
-      const res = await fetch(`/api/dna?ticker=${ticker}`);
+      const res = await fetch(`/api/dna?ticker=${encodeURIComponent(ticker)}&_t=${Date.now()}`);
       const data = await res.json();
       setDnaData(data);
     } catch (e) {
@@ -565,13 +563,29 @@ function App() {
       })
       .catch(err => console.warn("Market health data unavailable", err))
 
+    fetchNoCache('/market_cycle_50y.json')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
+      .then(text => {
+        const sanitized = text.replace(/:\s*NaN\b/g, ': null').replace(/:\s*undefined\b/g, ': null');
+        setMarketCycle50y(JSON.parse(sanitized));
+      })
+      .catch(() => {
+        fetch('/api/market_cycle_50y')
+          .then(r => (r.ok ? r.json() : null))
+          .then(d => { if (d && d.current_verdict) setMarketCycle50y(d); })
+          .catch(() => {});
+      })
+
     fetchNoCache('/weekly_playbook.json')
       .then(res => res.json())
       .then(data => setWeeklyPlaybook(data))
       .catch(err => console.warn("Weekly playbook unavailable", err))
       
-    fetchNoCache('/squeeze_results.json')
-      .then(res => res.json())
+    fetchNoCache('/api/squeeze/radar')
+      .then(res => res.ok ? res.json() : fetchNoCache('/squeeze_results.json').then(r => r.json()))
       .then(data => setSqueezeData(data))
       .catch(err => console.error("Error loading squeeze data:", err))
       
@@ -1186,16 +1200,14 @@ function App() {
             className={activeTab === 'swingsystem' ? 'tab-active' : ''} 
             onClick={() => setActiveTab('swingsystem')}
             style={{
-              background: activeTab === 'swingsystem' ? undefined : 'rgba(0, 242, 254, 0.08)',
-              borderLeft: activeTab === 'swingsystem' ? undefined : '3px solid #00f2fe',
-              color: activeTab === 'swingsystem' ? undefined : '#00f2fe',
-              fontWeight: 700
+              color: activeTab === 'swingsystem' ? '#00f2fe' : undefined,
+              fontWeight: activeTab === 'swingsystem' ? 700 : undefined
             }}
           >
             <Target size={18} color="#00f2fe" /> 1-3W Swing System 🎯
           </button>
           <button className={activeTab === 'gexprofiler' ? 'tab-active' : ''} onClick={() => setActiveTab('gexprofiler')}><BarChart2 size={18} /> GEX Profiler</button>
-          <button className={(activeTab === 'health' || activeTab === 'macromatrix') ? 'tab-active' : ''} onClick={() => { setActiveTab('health'); setHealthMacroSection('unified'); }}><HeartPulse size={18} /> Market Health &amp; Macro</button>
+          <button className={(activeTab === 'health' || activeTab === 'macromatrix') ? 'tab-active' : ''} onClick={() => setActiveTab('health')}><HeartPulse size={18} /> Market Health &amp; Macro</button>
           <button className={activeTab === 'playbook' ? 'tab-active' : ''} onClick={() => setActiveTab('playbook')}><BookOpen size={18} /> Weekly Playbook</button>
           <button className={activeTab === 'squeeze' ? 'tab-active' : ''} onClick={() => setActiveTab('squeeze')}><AlertCircle size={18} /> Squeeze Radar</button>
           <button className={activeTab === 'seasonality' ? 'tab-active' : ''} onClick={() => setActiveTab('seasonality')}><Compass size={18} /> Seasonality Radar</button>
@@ -1229,9 +1241,21 @@ function App() {
       </div>
 
       {/* Main Content Area */}
-      <div className="main-content">
+      <div
+        className="main-content"
+        style={activeTab === 'chart' ? { padding: '0.65rem 0.9rem', width: '100%' } : undefined}
+      >
         {/* Top Navbar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid #1e293b' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: activeTab === 'chart' ? '0.6rem' : '2rem',
+            paddingBottom: activeTab === 'chart' ? '0.5rem' : '1rem',
+            borderBottom: '1px solid #1e293b',
+          }}
+        >
           <form onSubmit={handleSearch} style={{ display: 'flex', width: '400px', position: 'relative' }}>
             <input 
               type="text" placeholder="Search any US Ticker (e.g., AAPL)..."
@@ -1587,16 +1611,19 @@ function App() {
       {activeTab === 'squeeze' && (
         <SqueezeRadarDashboard
           squeezeData={squeezeData}
+          isLoading={squeezeLoading}
           onTickerClick={fetchTickerData}
           onOpenFundamentals={(ticker) => {
             setDeepFundamentalsTicker(ticker);
             setActiveTab('deepfundamentals');
           }}
           onRefresh={() => {
-            fetch(`/squeeze_results.json?t=${Date.now()}`, { cache: 'no-store' })
+            setSqueezeLoading(true);
+            fetch('/api/squeeze/radar?refresh=1', { method: 'POST', cache: 'no-store' })
               .then((res) => res.json())
               .then((data) => setSqueezeData(data))
-              .catch((err) => console.error('Error refreshing squeeze data:', err));
+              .catch((err) => console.error('Error refreshing squeeze data:', err))
+              .finally(() => setSqueezeLoading(false));
           }}
         />
       )}
@@ -1679,585 +1706,26 @@ function App() {
         )
       )}
 
-      {/* Unified Market Health & Macro Command Center Tab */}
-      {(activeTab === 'health' || activeTab === 'macromatrix') && marketHealth && (
-        <div style={{ marginTop: '1.25rem' }}>
-          {/* 4-Pillar Unified Market Health & Macro Command Cockpit */}
-          <MarketHealthHeroCockpit
-            healthData={marketHealth}
-            macroData={correlationData}
-            onRefresh={(fresh) => setMarketHealth(fresh)}
-            onRefreshMacro={(freshMacro) => setCorrelationData(freshMacro)}
-            onTickerClick={fetchTickerData}
-            activeSection={healthMacroSection}
-            onSectionChange={setHealthMacroSection}
-            chartCategory={healthChartCategory}
-            onChartCategoryChange={setHealthChartCategory}
-          />
-
-          {/* Regime Rules of Engagement Playbook */}
-          {healthMacroSection !== 'macro' && (
-            <RegimePlaybookCard currentRegime={marketHealth.current_health.health_regime || (marketHealth.current_health.score_value >= 60 ? 'RISK_ON' : marketHealth.current_health.score_value <= 40 ? 'RISK_OFF' : 'CAUTIOUS')} />
-          )}
-
-          {/* 9-Factor Executive Health Matrix */}
-          {healthMacroSection !== 'macro' && (
-            <MarketHealthRadarMatrix healthData={marketHealth} />
-          )}
-
-          {/* Cross-Asset Macro Transmission & 4-Quadrant Cycle Matrix */}
-          {(healthMacroSection === 'unified' || healthMacroSection === 'macro') && (
-            <div style={{ marginBottom: healthMacroSection === 'unified' ? '2rem' : '0' }}>
-              <MacroMatrixDashboard data={correlationData} onTickerClick={fetchTickerData} />
-            </div>
-          )}
-
-          {healthMacroSection !== 'macro' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-            
-            {/* Global Gradients */}
-            <svg style={{ height: 0, position: 'absolute' }}>
-              <defs>
-                <linearGradient id="colorSpy" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorBreadth" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="healthColorGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={1}/> {/* Risk-On >= 60 */}
-                  <stop offset="40%" stopColor="#10b981" stopOpacity={1}/>
-                  <stop offset="50%" stopColor="#f59e0b" stopOpacity={1}/> {/* Cautious 40-59 */}
-                  <stop offset="60%" stopColor="#f59e0b" stopOpacity={1}/>
-                  <stop offset="65%" stopColor="#ef4444" stopOpacity={1}/> {/* Risk-Off < 40 */}
-                  <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
-                </linearGradient>
-              </defs>
-            </svg>
-            {(healthChartCategory === 'all' || healthChartCategory === 'breadth') && (
-              <>
-
-            {/* Chart 1: Master Composite Market Health Oscillator */}
-            <MarketHealthGuideCard
-              icon={Activity}
-              title="Master Composite Health Oscillator (0-100)"
-              subtitle="Multi-Factor Synthesis of Breadth, Momentum, Volatility & Credit"
-              badges={[
-                { label: 'Score', value: `${marketHealth.current_health.score_value}/100`, color: marketHealth.current_health.health_regime_color || '#f59e0b' },
-                { label: '5D Trend', value: `${(marketHealth.current_health.score_5d_delta || 0) > 0 ? '+' : ''}${marketHealth.current_health.score_5d_delta || 0} pts`, color: (marketHealth.current_health.score_5d_delta || 0) >= 0 ? '#10b981' : '#ef4444' }
-              ]}
-              biasLabel={marketHealth.current_health.health_regime === 'RISK_ON' ? 'RISK-ON (BULLISH)' : marketHealth.current_health.health_regime === 'CAUTIOUS' ? 'CAUTIOUS (CHOPPY)' : 'RISK-OFF (DEFENSIVE)'}
-              biasColor={marketHealth.current_health.health_regime_color || '#f59e0b'}
-              cardBorderColor={`${marketHealth.current_health.health_regime_color || '#f59e0b'}40`}
-              algoInsight={marketHealth.current_health.chart_observations?.oscillator || `Composite Health Oscillator is at ${marketHealth.current_health.score_value}/100.`}
-              whatItMeasures="A multi-factor quantitative macro synthesis combining 5 uncorrelated market health engines: McClellan Breadth Velocity, % Stocks above 50 SMA, 10-day New High/Low Differential, VIX Forward Skew, and HYG/IEF Credit Z-Scores. Normalized via rolling sigmoid transformation to eliminate single-factor false positives."
-              benchmarks={[
-                { level: '≥ 60', meaning: 'Risk-On: Broad institutional accumulation across sectors.', color: '#10b981' },
-                { level: '40 - 59', meaning: 'Cautious: Mixed internals, selective rotation, range chop.', color: '#f59e0b' },
-                { level: '< 40', meaning: 'Risk-Off: Internal breakdown, capital preservation mode.', color: '#ef4444' },
-                { level: '< 20', meaning: 'Capitulation: Structural panic; multi-month bottoms form.', color: '#ec4899' },
-                { level: '> 80', meaning: 'Euphoria / Overextended: Climax buying exhaustion.', color: '#38bdf8' }
-              ]}
-              playbook={[
-                'Risk-On (≥ 60): Deploy 80-100% capital into leading breakouts, VCPs, and high-RS momentum stocks.',
-                'Cautious (40-59): Reduce exposure to 40-60%. Take quick profits into strength; demand tight multi-week bases.',
-                'Risk-Off (< 40): Hold 60-100% cash. Cease buying new breakouts (breakout failure rate exceeds 70%). Tighten trailing stops.',
-                'Washout (< 20): Prepare buy watchlists for capitulation reversals when MCO hooks up from < -350.'
-              ]}
-            >
-              <div style={{ height: '350px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={marketHealth.historical_data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b'}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                    <YAxis yAxisId="left" stroke="#64748b" tick={{fill: '#64748b'}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
-                    <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" tick={{fill: '#f59e0b'}} domain={[0, 100]} axisLine={false} tickLine={false} />
-                    
-                    {/* Regime Zone Reference Areas */}
-                    <ReferenceArea yAxisId="right" y1={60} y2={100} fill="#10b981" fillOpacity={0.06} />
-                    <ReferenceArea yAxisId="right" y1={40} y2={60} fill="#f59e0b" fillOpacity={0.05} />
-                    <ReferenceArea yAxisId="right" y1={0} y2={40} fill="#ef4444" fillOpacity={0.07} />
-                    
-                    <ReferenceLine y={60} yAxisId="right" stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.6} label={{ position: 'right', value: 'Risk-On (60)', fill: '#10b981', fontSize: 10 }} />
-                    <ReferenceLine y={40} yAxisId="right" stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.6} label={{ position: 'right', value: 'Risk-Off (40)', fill: '#ef4444', fontSize: 10 }} />
-                    
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }} 
-                      formatter={(val, name, item) => {
-                        if (name === 'Composite Health') {
-                          const state = item.payload.health_label || (val >= 60 ? 'Risk-On' : val >= 40 ? 'Cautious' : 'Risk-Off');
-                          return [`${val}/100 [${state}]`, name];
-                        }
-                        if (name === 'SPY Price') return [`$${val.toFixed(2)}`, name];
-                        return [val, name];
-                      }}
-                    />
-                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
-                    <Area yAxisId="left" type="monotone" dataKey="spy" name="SPY Price" stroke="#94a3b8" fillOpacity={1} fill="url(#colorSpy)" strokeWidth={2} />
-                    <Line yAxisId="right" type="monotone" dataKey="health_oscillator" name="Composite Health" stroke="url(#healthColorGradient)" strokeWidth={4} dot={{ r: 3, fill: marketHealth.current_health.health_regime_color || '#f59e0b', strokeWidth: 0 }} style={{ filter: 'drop-shadow(0px 0px 8px rgba(245, 158, 11, 0.6))' }} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            </MarketHealthGuideCard>
-
-            {/* Grid for Dual Charts (MCO & % > 50 SMA) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem' }}>
-              
-              {/* Chart 2: McClellan Oscillator (MCO) */}
-              <MarketHealthGuideCard
-                icon={TrendingUp}
-                title="McClellan Oscillator (MCO) & SPY Signals"
-                subtitle="19-EMA vs 39-EMA Net Advances Velocity with Algorithmic Entry Signals"
-                badges={[
-                  { label: 'MCO', value: marketHealth.current_health.mco_value, color: marketHealth.current_health.mco_value > 0 ? '#10b981' : '#ef4444' },
-                  { label: '5D Delta', value: `${(marketHealth.current_health.mco_5d_delta || 0) > 0 ? '+' : ''}${marketHealth.current_health.mco_5d_delta || 0}`, color: (marketHealth.current_health.mco_5d_delta || 0) >= 0 ? '#10b981' : '#ef4444' },
-                  ...(marketHealth.current_health.latest_signal ? [{ label: 'Latest Signal', value: `${marketHealth.current_health.latest_signal.signal}: ${marketHealth.current_health.latest_signal.type}`, color: marketHealth.current_health.latest_signal.signal === 'BUY' ? '#10b981' : '#ef4444', bg: marketHealth.current_health.latest_signal.signal === 'BUY' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)' }] : [])
-                ]}
-                biasLabel={marketHealth.current_health.mco_status}
-                biasColor={marketHealth.current_health.mco_value > 300 ? '#f59e0b' : marketHealth.current_health.mco_value > 0 ? '#10b981' : marketHealth.current_health.mco_value < -300 ? '#ef4444' : '#64748b'}
-                algoInsight={marketHealth.current_health.chart_observations?.mco || `McClellan Oscillator is at ${marketHealth.current_health.mco_value}.`}
-                whatItMeasures="Difference between 19-day EMA and 39-day EMA of Net Advancing stocks (Advances - Declines). Serves as the market's speedometer: positive values indicate accelerating upside velocity, while negative values indicate broadening liquidation."
-                benchmarks={[
-                  { level: '> +300 / +500', meaning: 'Overbought / Extreme OB: Climax buying thrust.', color: '#f59e0b' },
-                  { level: '0 Line', meaning: 'Equilibrium: Above 0 is breadth expansion; below 0 is distribution.', color: '#64748b' },
-                  { level: '< -300', meaning: 'Oversold: Downside selling velocity slowing.', color: '#ef4444' },
-                  { level: '< -500', meaning: 'Extreme Capitulation: 5th percentile panic washout (77.1% SPY Buy Zone).', color: '#10b981' }
-                ]}
-                playbook={[
-                  '▲ BUY: Oversold Reversal (< -350 hook up) boasts 77.1% 20D SPY win rate; buy index calls or high-RS setups.',
-                  '▲ BUY: Bullish Zero Cross (> 0 after washout) confirms institutional breadth thrust; add to winning longs.',
-                  '▼ SELL: Overbought Rollover (> +350 rollover) marks climax exhaustion; trim into strength and trail tight stops.',
-                  '▼ SELL: Bearish Zero Cross (< 0) confirms distribution; cut lagging positions and hedge.'
-                ]}
-              >
-                <div style={{ height: '280px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={marketHealth.historical_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="mco" stroke="#64748b" tick={{fill: '#64748b', fontSize: 11}} domain={[-900, 700]} axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="spy" orientation="right" stroke="#94a3b8" tick={{fill: '#94a3b8', fontSize: 11}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
-                      
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} 
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            return (
-                              <div style={{ background: 'rgba(15, 23, 42, 0.98)', border: '1px solid rgba(255,255,255,0.15)', padding: '10px 14px', borderRadius: '8px', minWidth: '180px' }}>
-                                <p style={{ margin: '0 0 6px 0', color: '#94a3b8', fontSize: '0.8rem' }}>{data.date}</p>
-                                <p style={{ margin: '0 0 4px 0', color: data.mco >= 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                                  MCO: {data.mco}
-                                </p>
-                                <p style={{ margin: '0 0 4px 0', color: '#94a3b8', fontSize: '0.85rem' }}>
-                                  SPY: ${data.spy?.toFixed(2)}
-                                </p>
-                                {data.mco_signal && (
-                                  <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <span style={{ 
-                                      display: 'inline-block',
-                                      padding: '2px 8px', 
-                                      borderRadius: '4px', 
-                                      fontSize: '0.75rem', 
-                                      fontWeight: 'bold',
-                                      background: data.mco_signal === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                      color: data.mco_signal === 'BUY' ? '#10b981' : '#ef4444',
-                                      border: `1px solid ${data.mco_signal === 'BUY' ? '#10b981' : '#ef4444'}`
-                                    }}>
-                                      {data.mco_signal}: {data.mco_signal_type}
-                                    </span>
-                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#cbd5e1' }}>
-                                      {data.mco_signal_note}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-
-                      <Legend wrapperStyle={{ fontSize: 11, paddingTop: '8px' }} />
-                      
-                      {/* Zero Line */}
-                      <ReferenceLine yAxisId="mco" y={0} stroke="#475569" strokeWidth={2} />
-
-                      {/* Institutional Overbought Thresholds */}
-                      <ReferenceLine yAxisId="mco" y={300} stroke="#f59e0b" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'Overbought (+300)', fill: '#f59e0b', fontSize: 9 }} />
-                      <ReferenceLine yAxisId="mco" y={500} stroke="#ef4444" strokeDasharray="2 2" strokeOpacity={0.7} label={{ position: 'insideTopLeft', value: 'Extreme OB (+500)', fill: '#ef4444', fontSize: 9 }} />
-                      
-                      {/* Institutional Oversold Thresholds */}
-                      <ReferenceLine yAxisId="mco" y={-300} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'insideBottomLeft', value: 'Oversold (-300)', fill: '#10b981', fontSize: 9 }} />
-                      <ReferenceLine yAxisId="mco" y={-500} stroke="#059669" strokeDasharray="2 2" strokeOpacity={0.7} label={{ position: 'insideBottomLeft', value: 'Extreme OS (-500)', fill: '#34d399', fontSize: 9 }} />
-                      
-                      {/* SPY Comparison Line on Secondary Axis */}
-                      <Line yAxisId="spy" type="monotone" dataKey="spy" name="SPY Price" stroke="#64748b" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
-                      
-                      {/* MCO Histogram Bars */}
-                      <Bar yAxisId="mco" dataKey="mco" name="McClellan Oscillator" radius={[2, 2, 0, 0]}>
-                        {marketHealth.historical_data.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.mco > 0 ? '#10b981' : '#ef4444'} fillOpacity={entry.mco_signal ? 1.0 : 0.65} />
-                        ))}
-                      </Bar>
-
-                      {/* Buy Signals */}
-                      <Line 
-                        yAxisId="mco" 
-                        type="monotone" 
-                        dataKey={(d) => d.mco_signal === 'BUY' ? d.mco : null} 
-                        name="▲ BUY Signal" 
-                        stroke="#10b981" 
-                        strokeWidth={0}
-                        dot={{ r: 6, fill: '#10b981', stroke: '#064e3b', strokeWidth: 2 }} 
-                        isAnimationActive={false}
-                      />
-
-                      {/* Sell Signals */}
-                      <Line 
-                        yAxisId="mco" 
-                        type="monotone" 
-                        dataKey={(d) => d.mco_signal === 'SELL' ? d.mco : null} 
-                        name="▼ SELL Signal" 
-                        stroke="#ef4444" 
-                        strokeWidth={0}
-                        dot={{ r: 6, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 2 }} 
-                        isAnimationActive={false}
-                      />
-
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </MarketHealthGuideCard>
-
-              {/* Chart 3: Market Breadth (% > 50 SMA) */}
-              <MarketHealthGuideCard
-                icon={BarChart2}
-                title="Market Breadth (% Above 50 SMA)"
-                subtitle="Intermediate Trend Participation Across Lakehouse Equities"
-                badges={[
-                  { label: '% > 50 SMA', value: `${marketHealth.current_health.pct_above_50_value}%`, color: marketHealth.current_health.pct_above_50_value > 50 ? '#10b981' : '#ef4444' },
-                  { label: '% > 200 SMA', value: `${marketHealth.current_health.pct_above_200_value}%`, color: marketHealth.current_health.pct_above_200_value > 50 ? '#10b981' : '#ef4444' },
-                  { label: 'MACD Hist', value: `${marketHealth.current_health.macd_p50_val !== undefined ? marketHealth.current_health.macd_p50_val : ''}`, color: (marketHealth.current_health.macd_p50_val || 0) > 0 ? '#10b981' : '#ef4444' }
-                ]}
-                biasLabel={marketHealth.current_health.breadth_status}
-                biasColor={marketHealth.current_health.pct_above_50_value > 60 ? '#10b981' : marketHealth.current_health.pct_above_50_value < 50 ? '#ef4444' : '#f59e0b'}
-                cardBorderColor="rgba(59, 130, 246, 0.2)"
-                algoInsight={marketHealth.current_health.chart_observations?.p50 || `${marketHealth.current_health.pct_above_50_value}% of stocks above 50 SMA.`}
-                whatItMeasures="Percentage of all tracked equities trading above their 50-day moving average, paired with Breadth MACD. Strips out cap-weighting distortions to reveal whether the average stock is participating or rotting under the surface."
-                benchmarks={[
-                  { level: '> 75%', meaning: 'Strong Bull Market: Broad institutional sponsorship across sectors.', color: '#10b981' },
-                  { level: '50% Waterline', meaning: 'Bull/Bear Pivot: Above 50% favors longs; below 50% warns of decay.', color: '#64748b' },
-                  { level: '< 25%', meaning: 'Severe Washout: 3 out of 4 stocks broken; multi-week reversal bottoms form.', color: '#ef4444' }
-                ]}
-                playbook={[
-                  'Above 50% + MACD > 0: Aggressive offense. Breakouts (VCP, Cup & Handle, Bull Flags) have high follow-through (>65%).',
-                  'Below 50% + MACD < 0: Defense. Over 50% of stocks in intermediate downtrends. Breakouts will fail into overhead supply.',
-                  'Divergence: If SPY makes higher highs while % > 50 SMA makes lower highs, a major correction is brewing.'
-                ]}
-              >
-                <div style={{ height: '280px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={marketHealth.historical_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={[0, 100]} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Legend wrapperStyle={{ fontSize: 11, paddingTop: '8px' }} />
-                      <ReferenceLine y={50} stroke="#475569" strokeDasharray="3 3" label={{ position: 'right', value: '50% Waterline', fill: '#94a3b8', fontSize: 10 }} />
-                      <ReferenceLine y={75} stroke="#10b981" strokeDasharray="2 2" strokeOpacity={0.6} label={{ position: 'right', value: 'Bull Thrust (75%)', fill: '#10b981', fontSize: 9 }} />
-                      <ReferenceLine y={25} stroke="#ef4444" strokeDasharray="2 2" strokeOpacity={0.6} label={{ position: 'right', value: 'Oversold (25%)', fill: '#ef4444', fontSize: 9 }} />
-                      <Area type="monotone" dataKey="pct_above_50" name="% > 50 SMA" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorBreadth)" style={{ filter: 'drop-shadow(0px 0px 4px rgba(59, 130, 246, 0.4))' }} />
-                      <Line type="monotone" dataKey="pct_above_200" name="% > 200 SMA" stroke="#94a3b8" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </MarketHealthGuideCard>
-            </div>
-              </>
-            )}
-
-            {/* Grid for Secondary Indicators (NH-NL & Volatility Skew) */}
-            {(healthChartCategory === 'all' || healthChartCategory === 'breadth' || healthChartCategory === 'vol_credit') && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem' }}>
-              
-              {/* Chart 4: New Highs vs New Lows */}
-              {(healthChartCategory === 'all' || healthChartCategory === 'breadth') && (
-              <MarketHealthGuideCard
-                icon={BarChart2}
-                title="New Highs vs New Lows (NH-NL Expansion)"
-                subtitle="20-Day Extreme Differentials & Stealth Distribution Warnings"
-                badges={[
-                  { label: 'New Highs', value: marketHealth.current_health.new_highs_count || 0, color: '#10b981' },
-                  { label: 'New Lows', value: marketHealth.current_health.new_lows_count || 0, color: '#ef4444' },
-                  { label: '10D MA', value: marketHealth.current_health.nhnl_10d_ma !== undefined ? marketHealth.current_health.nhnl_10d_ma : (marketHealth.current_health.chart_observations?.nhnl || '0'), color: (marketHealth.current_health.nhnl_10d_ma || 0) > 0 ? '#10b981' : '#ef4444' }
-                ]}
-                biasLabel={(marketHealth.current_health.nhnl_10d_ma || 0) > 0 ? 'Accumulation' : 'Distribution'}
-                biasColor={(marketHealth.current_health.nhnl_10d_ma || 0) > 0 ? '#10b981' : '#ef4444'}
-                algoInsight={marketHealth.current_health.chart_observations?.nhnl || `10-Day NH-NL Differential MA is ${marketHealth.current_health.nhnl_10d_ma || 0}.`}
-                whatItMeasures="Daily count of stocks printing new 20-day highs vs new lows, smoothed by a 10-day MA. In healthy bull markets, New Highs vastly dominate. Expanding New Lows near market highs reveal 'stealth institutional distribution'."
-                benchmarks={[
-                  { level: '10D MA > +500', meaning: 'Net Institutional Accumulation: Leading equities breaking out.', color: '#10b981' },
-                  { level: '10D MA -200 to +200', meaning: 'Rotational Equilibrium: Healthy sector-by-sector rotation.', color: '#f59e0b' },
-                  { level: '10D MA < -500', meaning: 'Net Institutional Distribution: Systemic breakdowns dominating.', color: '#ef4444' },
-                  { level: 'Hindenburg / Titanic', meaning: 'Crash Warning: Index near highs while New Lows expand (>2.8%).', color: '#ec4899' }
-                ]}
-                playbook={[
-                  'When New Lows > 1,500 daily: Avoid buying early dip attempts; cascading stop-outs likely across secondary stocks.',
-                  'When New Lows contract < 300 and New Highs expand > 1,200: Institutional all-clear signal; buy new swing breakouts.',
-                  'Titanic Warning: If SPY is within 7 days of 52-week highs while New Lows > New Highs, cut weak positions immediately.'
-                ]}
-              >
-                <div style={{ height: '220px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={marketHealth.historical_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <ReferenceLine y={0} stroke="#64748b" strokeWidth={1} />
-                      <Bar dataKey="new_highs" name="New Highs" fill="#10b981" radius={[2, 2, 0, 0]} />
-                      <Bar dataKey="new_lows" name="New Lows" fill="#ef4444" radius={[2, 2, 0, 0]} />
-                      <Line type="monotone" dataKey="nhnl_10" name="10D Net Diff MA" stroke="#38bdf8" strokeWidth={2} dot={false} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </MarketHealthGuideCard>
-              )}
-
-              {/* Chart 5: Volatility Skew */}
-              {(healthChartCategory === 'all' || healthChartCategory === 'vol_credit') && (
-              <MarketHealthGuideCard
-                icon={ShieldAlert}
-                title="CBOE Volatility Skew (VIX vs VIX3M Term Structure)"
-                subtitle="Spot Fear vs 3-Month Hedging Premium & Bollinger Band Extreme Exits"
-                badges={[
-                  { label: 'Spot VIX', value: marketHealth.current_health.vix_value || 15.8, color: '#ef4444' },
-                  { label: 'VIX3M', value: marketHealth.current_health.vix3m_value || 18.6, color: '#3b82f6' },
-                  { label: 'Ratio', value: marketHealth.current_health.vix_ratio || 0.85, color: (marketHealth.current_health.vix_ratio || 0.85) < 1.0 ? '#10b981' : '#ef4444' }
-                ]}
-                biasLabel={marketHealth.current_health.vix_structure || 'Contango (Normal)'}
-                biasColor={marketHealth.current_health.vix_structure?.includes('Contango') ? '#10b981' : '#ef4444'}
-                cardBorderColor="rgba(239, 68, 68, 0.2)"
-                algoInsight={marketHealth.current_health.chart_observations?.vix_curve || marketHealth.current_health.chart_observations?.vix_bands || `VIX at ${marketHealth.current_health.vix_value || 15.8} vs VIX3M ${marketHealth.current_health.vix3m_value || 18.6}.`}
-                whatItMeasures="Ratio of spot 30-day implied volatility (VIX) to 3-month implied volatility (VIX3M). Contango (VIX < VIX3M, Ratio < 1.0) reflects normal calm conditions. Backwardation (VIX > VIX3M, Ratio > 1.0) reflects acute near-term institutional panic hedging."
-                benchmarks={[
-                  { level: 'Contango (< 0.90)', meaning: 'Normal Regime: Low-stress volatility curve favorable for equity swings.', color: '#10b981' },
-                  { level: 'Flat (0.90 - 1.00)', meaning: 'Caution: Hedging demand rising ahead of imminent catalysts.', color: '#f59e0b' },
-                  { level: 'Backwardation (> 1.00)', meaning: 'Inverted Panic Curve: Acute crisis hedging; market in high-volatility regime.', color: '#ef4444' },
-                  { level: 'VIX Upper BB Pierce', meaning: 'Extreme Fear Climax: VIX extended 2+ standard deviations above 20 SMA.', color: '#ec4899' }
-                ]}
-                playbook={[
-                  'In Backwardation (Ratio > 1.0): Do not hold overnight unhedged long momentum positions. Expect violent 1-2% intraday whipsaws.',
-                  'VIX Upper BB Re-entry: When VIX spikes outside its upper Bollinger Band and closes back inside, initiate long index swings with stop below recent pivot.',
-                  'In Contango: Trend continuation favored; hold winning long setups with trailing stops along 21-EMA.'
-                ]}
-              >
-                <div style={{ height: '220px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={marketHealth.historical_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                      <ReferenceLine y={20} stroke="#f59e0b" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'Elevated Fear (20)', fill: '#f59e0b', fontSize: 10 }} />
-                      <Line type="monotone" dataKey="vix" name="VIX (Spot Fear)" stroke="#ef4444" strokeWidth={3} dot={false} style={{ filter: 'drop-shadow(0px 0px 4px rgba(239, 68, 68, 0.5))' }} />
-                      <Line type="monotone" dataKey="vix3m" name="VIX3M (3-Month)" stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="5 5" />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </MarketHealthGuideCard>
-              )}
-
-            </div>
-            )}
-
-            {/* Grid for Bottom Indicators (Credit Spreads & Divergences) */}
-            {(healthChartCategory === 'all' || healthChartCategory === 'vol_credit') && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem' }}>
-              
-              {/* Chart 6: Credit Spreads */}
-              <MarketHealthGuideCard
-                icon={ActivitySquare}
-                title="Institutional Credit Spreads (HYG / IEF Risk-Appetite)"
-                subtitle="High Yield vs Treasury Ratio with 126-Day Rolling Z-Score"
-                badges={[
-                  { label: 'HYG/IEF', value: marketHealth.current_health.hyg_ratio_val || 0.86, color: '#f59e0b' },
-                  { label: 'Z-Score', value: `${(marketHealth.current_health.hyg_zscore_val || 0) > 0 ? '+' : ''}${marketHealth.current_health.hyg_zscore_val || 0}`, color: (marketHealth.current_health.hyg_zscore_val || 0) > 0 ? '#10b981' : '#ef4444' }
-                ]}
-                biasLabel={(marketHealth.current_health.hyg_zscore_val || 0) > 0 ? 'Risk Appetite (Z>0)' : 'Credit Risk-Off (Z<0)'}
-                biasColor={(marketHealth.current_health.hyg_zscore_val || 0) > 0 ? '#10b981' : '#ef4444'}
-                algoInsight={marketHealth.current_health.chart_observations?.credit || `HYG/IEF credit spread Z-Score is ${marketHealth.current_health.hyg_zscore_val || 0}.`}
-                whatItMeasures="Price ratio of High-Yield Junk Bonds (HYG) to 7-10 Year Treasuries (IEF), normalized via a 126-day rolling Z-Score. Bond institutions rigorously analyze default risk and corporate solvency. When credit spreads widen, liquidity dries up before it is visible in SPY."
-                benchmarks={[
-                  { level: 'Z-Score > +1.0', meaning: 'Strong Credit Appetite: Institutions actively funding corporate debt; confirms rallies.', color: '#10b981' },
-                  { level: 'Z-Score 0 to +1.0', meaning: 'Neutral / Stable: Normal credit risk conditions.', color: '#f59e0b' },
-                  { level: 'Z-Score < -1.5', meaning: 'Liquidity Warning: Credit spreads widening; capital cost surging.', color: '#ef4444' },
-                  { level: 'Z-Score < -2.0', meaning: 'Distress / Liquidity Contraction: High risk of forced equity liquidations.', color: '#ec4899' }
-                ]}
-                playbook={[
-                  'Bullish Confirmation: If SPY is breaking out and HYG/IEF Z-Score is > 0, institutions are financing risk. Size positions normally.',
-                  'Credit Divergence: If SPY rallies while HYG/IEF plunges (Z < -1.0), do NOT buy breakouts. Equity rallies without credit backing are traps.',
-                  'Credit Bottom: When HYG/IEF stabilizes after a deep drawdown and crosses above its 20-day EMA, buy high-beta equities.'
-                ]}
-              >
-                <div style={{ height: '220px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={marketHealth.historical_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="ratio" stroke="#f59e0b" tick={{fill: '#f59e0b', fontSize: 11}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="zscore" orientation="right" stroke="#38bdf8" tick={{fill: '#38bdf8', fontSize: 11}} domain={[-4, 4]} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-                      <ReferenceLine yAxisId="zscore" y={0} stroke="#64748b" strokeWidth={1} />
-                      <ReferenceLine yAxisId="zscore" y={-1.5} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'insideBottomRight', value: 'Stress Alert (-1.5σ)', fill: '#ef4444', fontSize: 9 }} />
-                      <Line yAxisId="ratio" type="monotone" dataKey="hyg_ratio" name="HYG/IEF Ratio" stroke="#f59e0b" strokeWidth={2.5} dot={false} />
-                      <Line yAxisId="zscore" type="monotone" dataKey="hyg_zscore" name="126D Z-Score" stroke="#38bdf8" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </MarketHealthGuideCard>
-
-              {/* Chart 7: Index Divergences */}
-              <MarketHealthGuideCard
-                icon={Compass}
-                title="Sector & Size Divergences (Mega-Cap vs Equal-Weight)"
-                subtitle="Cap-Weighted vs Equal-Weighted Breadth & Tech Leadership"
-                badges={[
-                  { label: 'SPY/RSP', value: marketHealth.current_health.spy_rsp_ratio_val || 3.56, color: '#94a3b8' },
-                  { label: 'QQQ/SPY', value: marketHealth.current_health.qqq_spy_ratio_val || 0.94, color: '#8b5cf6' },
-                  { label: 'XLK/XLU', value: marketHealth.current_health.xlk_xlu_ratio_val || 4.36, color: '#38bdf8' }
-                ]}
-                biasLabel="Mega-Cap Dominance"
-                biasColor="#8b5cf6"
-                algoInsight={marketHealth.current_health.chart_observations?.divergence || `Cap-weighted SPY/RSP ratio is ${marketHealth.current_health.spy_rsp_ratio_val || 3.56}. Tech/Defensive (XLK/XLU) ratio is ${marketHealth.current_health.xlk_xlu_ratio_val || 4.36}.`}
-                whatItMeasures="Compares Cap-Weighted S&P 500 (SPY) vs Equal-Weighted S&P 500 (RSP) to detect mega-cap concentration, paired with QQQ/SPY (tech momentum) and XLK/XLU (growth vs defensive utility bond-proxies)."
-                benchmarks={[
-                  { level: 'SPY/RSP Rising', meaning: 'Mega-Cap Concentration: Few giants carrying index; median stock lagging.', color: '#8b5cf6' },
-                  { level: 'SPY/RSP Falling', meaning: 'Democratic Breadth: Broad participation across small/mid/large caps (healthiest).', color: '#10b981' },
-                  { level: 'QQQ/SPY Rising', meaning: 'Tech Leadership: High-beta growth driving overall market returns.', color: '#38bdf8' },
-                  { level: 'XLK/XLU Rising', meaning: 'Offensive Growth: Capital rotating into risk assets from safe-havens.', color: '#10b981' }
-                ]}
-                playbook={[
-                  'When SPY/RSP is rising steeply: Limit new longs strictly to mega-cap market leaders (e.g. Mag 7); avoid secondary mid-caps.',
-                  'When SPY/RSP is declining: Broaden scan criteria to small-cap and mid-cap growth stocks (IWM/MDY setups).',
-                  'When XLK/XLU breaks below its 50-day MA: Defensive rotation underway; raise cash and reduce high-PE growth exposure.'
-                ]}
-              >
-                <div style={{ height: '220px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={marketHealth.historical_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="left" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="right" orientation="right" stroke="#8b5cf6" tick={{fill: '#8b5cf6', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                      <Line yAxisId="left" type="monotone" dataKey="spy_rsp_ratio" name="SPY/RSP (Mega-Cap)" stroke="#94a3b8" strokeWidth={2} dot={false} />
-                      <Line yAxisId="right" type="monotone" dataKey="qqq_spy_ratio" name="QQQ/SPY (Tech)" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </MarketHealthGuideCard>
-            </div>
-            )}
-
-            {/* Grid for Macro Institutional Data (COT & T-Bill) */}
-            {(healthChartCategory === 'all' || healthChartCategory === 'macro_cot') && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem' }}>
-              
-              {/* Chart 8: Money Market Liquidity (13-Week T-Bill) */}
-              <MarketHealthGuideCard
-                icon={Activity}
-                title="Money Market Liquidity (13-Week T-Bill Yield - ^IRX)"
-                subtitle="Benchmark Risk-Free Cash Return & Equity Multiple Hurdle Rate"
-                badges={[
-                  { label: '13W Yield', value: `${marketHealth.current_health.irx_val || 3.91}%`, color: '#38bdf8' }
-                ]}
-                biasLabel={(marketHealth.current_health.irx_val || 0) > 4.0 ? 'Elevated Hurdle' : 'Accommodative'}
-                biasColor={(marketHealth.current_health.irx_val || 0) > 4.0 ? '#f59e0b' : '#38bdf8'}
-                algoInsight={marketHealth.current_health.chart_observations?.irx_liquidity || `13-Week T-Bill Yield is ${marketHealth.current_health.irx_val || 3.91}%.`}
-                whatItMeasures="Annualized yield on 3-month US Treasury Bills (^IRX). Represents the baseline hurdle rate for institutional capital. When risk-free cash yields 4-5%, equity valuation multiples face valuation headwinds. When yields drop, liquidity floods into equities."
-                benchmarks={[
-                  { level: '> 4.5%', meaning: 'High Hurdle Rate: Cash competes with equities; PE multiples face compression.', color: '#f59e0b' },
-                  { level: '3.0% - 4.5%', meaning: 'Moderate Cost of Capital: Balanced monetary environment.', color: '#64748b' },
-                  { level: '< 3.0%', meaning: 'Accommodative: Low hurdle rate fuels multiple expansion and speculative risk.', color: '#10b981' },
-                  { level: 'Falling Trend', meaning: 'Monetary Easing: Capital departs money market funds seeking equity returns.', color: '#38bdf8' }
-                ]}
-                playbook={[
-                  'During Falling Yields: Favor high-duration growth assets, unprofitable high-revenue tech, and small-caps.',
-                  'During Elevated Yields (> 4%): Demand high free cash flow yields and robust balance sheets; speculative growth underperforms.',
-                  'Yield Spikes: Sudden yield surges trigger multi-day equity contractions as discount rates adjust.'
-                ]}
-              >
-                <div style={{ height: '220px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={marketHealth.historical_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <ReferenceLine y={4.0} stroke="#f59e0b" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'High Hurdle (4.0%)', fill: '#f59e0b', fontSize: 10 }} />
-                      <Line type="monotone" dataKey="irx" name="13-Week Yield (%)" stroke="#38bdf8" strokeWidth={3} dot={false} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </MarketHealthGuideCard>
-
-              {/* Chart 9: CFTC COT S&P 500 Positioning */}
-              <MarketHealthGuideCard
-                icon={FileText}
-                title="CFTC Commitments of Traders (COT S&P 500 Net Commercials)"
-                subtitle="Smart Money Institutional Commercial Positioning on CME E-Mini Futures"
-                badges={[
-                  { label: 'Net Contracts', value: marketHealth.current_health.cot_net_val ? marketHealth.current_health.cot_net_val.toLocaleString() : (marketHealth.current_health.chart_observations?.cot || '-50,017'), color: (marketHealth.current_health.cot_net_val || 0) > 0 ? '#10b981' : '#f59e0b' }
-                ]}
-                biasLabel={(marketHealth.current_health.cot_net_val || 0) > 0 ? 'Smart Money Long' : 'Hedging Inventory'}
-                biasColor={(marketHealth.current_health.cot_net_val || 0) > 0 ? '#10b981' : '#f59e0b'}
-                algoInsight={marketHealth.current_health.chart_observations?.cot || `Net Commercial Positioning on S&P 500 is ${marketHealth.current_health.cot_net_val || -50017}.`}
-                whatItMeasures="Weekly net positioning (Longs - Shorts) of Commercial Hedgers on CME E-Mini S&P 500 futures published by the CFTC. Commercials represent institutional producers, banks, and underwriters who hedge physical equities; speculators are trend-followers."
-                benchmarks={[
-                  { level: 'Net Short (-50k to -120k)', meaning: 'Normal Bull Hedging: Commercials hedge large physical long portfolios.', color: '#f59e0b' },
-                  { level: 'Extreme Short (< -150k)', meaning: 'Over-Hedged / Euphoria: Retail heavily long; market vulnerable to corrections.', color: '#ef4444' },
-                  { level: 'Net Positive / Zero Cross', meaning: 'Smart Money Accumulation: Commercials covering shorts or turning net long.', color: '#10b981' },
-                  { level: 'Positive Extremes', meaning: 'Generational Buying Climax: Historically coincides with secular market bottoms.', color: '#ec4899' }
-                ]}
-                playbook={[
-                  'Do not short a bull market simply because commercials are net short; this is their normal operational hedging baseline.',
-                  'Watch for turning points: When commercials rapidly cover 50,000+ contracts during a decline, institutional bottom-fishing has begun.',
-                  'When commercials flip net long: Aggressively deploy capital into multi-month swing and LEAPS call positions.'
-                ]}
-              >
-                <div style={{ height: '220px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={marketHealth.historical_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(str) => str.substring(5)} axisLine={false} tickLine={false} />
-                      <YAxis stroke="#64748b" tick={{fill: '#64748b', fontSize: 12}} domain={['auto', 'auto']} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <ReferenceLine y={0} stroke="#475569" strokeWidth={2} />
-                      <Bar dataKey="cot_net" name="Net Positioning" radius={[2, 2, 0, 0]}>
-                        {marketHealth.historical_data.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.cot_net > 0 ? '#10b981' : '#ef4444'} fillOpacity={0.8} />
-                        ))}
-                      </Bar>
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </MarketHealthGuideCard>
-
-            </div>
-            )}
-
-            {/* 10-Year Sector Flow Top/Bottom Predictor at Bottom of Page */}
-            <SectorFlowTopBottomPredictor onTickerClick={fetchTickerData} />
-
+      {/* Market Health & Macro Studio v3.0 */}
+      {(activeTab === 'health' || activeTab === 'macromatrix') && (
+        marketHealth ? (
+          <div style={{ marginTop: '0.65rem' }}>
+            <MarketHealthMacroStudio
+              healthData={marketHealth}
+              macroData={correlationData}
+              cycle50yData={marketCycle50y}
+              onRefreshHealth={(fresh) => setMarketHealth(fresh)}
+              onRefreshMacro={(freshMacro) => setCorrelationData(freshMacro)}
+              onRefreshCycle50y={(fresh50y) => setMarketCycle50y(fresh50y)}
+              onTickerClick={fetchTickerData}
+            />
           </div>
-          )}
-        </div>
+        ) : (
+          <div className="glass-card" style={{ padding: '2.5rem', textAlign: 'center', marginTop: '1rem', color: '#94a3b8' }}>
+            <h3 style={{ color: '#f8fafc', margin: '0 0 0.5rem 0' }}>Loading Market Health &amp; Macro Studio v3.0...</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem' }}>Synthesizing breadth internals, Zweig Thrust, VIX term structure, and cross-asset regimes.</p>
+          </div>
+        )
       )}
 
       {/* RRG Dashboard Tab */}
@@ -2408,11 +1876,11 @@ function App() {
       
       </div> {/* End main-content */}
 
-      {/* Right Pane (Live Agents & Sweeps Feed) - Foldable (Hidden on Deep Charting so chart takes full width) */}
+      {/* Right Pane (Live Agents & Sweeps Feed) - Foldable (Hidden on Deep Charting & Ask AI Live for full width) */}
       <div 
         className={`right-pane ${isLiveUpdatesFolded ? 'folded' : ''}`} 
         style={{ 
-          display: activeTab === 'chart' ? 'none' : 'flex',
+          display: (activeTab === 'chart' || activeTab === 'ask_ai') ? 'none' : 'flex',
           padding: isLiveUpdatesFolded ? '1rem 0.35rem' : '1.5rem',
           width: isLiveUpdatesFolded ? '52px' : '400px',
           minWidth: isLiveUpdatesFolded ? '52px' : '400px',

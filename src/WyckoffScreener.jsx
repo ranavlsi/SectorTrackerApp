@@ -20,10 +20,30 @@ export default function WyckoffScreener() {
   const [sortBy, setSortBy] = useState('wyckoff_score');
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'table'
   const [selectedTf, setSelectedTf] = useState('180D'); // '90D' | '180D' | '1Y' | 'BASE'
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 48;
 
   // Modal State for interactive deep chart inspection
   const [activeStock, setActiveStock] = useState(null);
   const [copiedTicket, setCopiedTicket] = useState(false);
+
+  const formatCap = (capB) => {
+    if (capB == null || isNaN(capB)) return '—';
+    return capB >= 1000 ? `$${(capB / 1000).toFixed(2)}T` : `$${Number(capB).toFixed(1)}B`;
+  };
+
+  // Close schematic modal cleanly on Escape key
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape' && activeStock) setActiveStock(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeStock]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedFilter, directionFilter, tableSearch, sortBy, viewMode]);
 
   // Fetch summary on load
   const loadSummary = async (force = false) => {
@@ -134,6 +154,8 @@ export default function WyckoffScreener() {
       list = list.filter(
         (s) =>
           (s.ticker || '').toUpperCase().includes(q) ||
+          (s.name || '').toUpperCase().includes(q) ||
+          (s.sector || '').toUpperCase().includes(q) ||
           (s.primary_setup?.name || '').toUpperCase().includes(q) ||
           (s.wyckoff_phase || '').toUpperCase().includes(q) ||
           (s.effort_result_bias || '').toUpperCase().includes(q)
@@ -142,6 +164,8 @@ export default function WyckoffScreener() {
 
     list.sort((a, b) => {
       if (sortBy === 'wyckoff_score') return (b.wyckoff_score || 0) - (a.wyckoff_score || 0);
+      if (sortBy === 'market_cap') return (b.market_cap_usd || 0) - (a.market_cap_usd || 0);
+      if (sortBy === 'avg_vol') return (b.avg_vol_20d || 0) - (a.avg_vol_20d || 0);
       if (sortBy === 'risk_reward') return (b.primary_setup?.risk_reward || 0) - (a.primary_setup?.risk_reward || 0);
       if (sortBy === 'rvol') return (b.rvol || 0) - (a.rvol || 0);
       if (sortBy === 'vol_flow') return (b.trading_range?.up_down_vol_ratio || 0) - (a.trading_range?.up_down_vol_ratio || 0);
@@ -155,6 +179,13 @@ export default function WyckoffScreener() {
 
     return list;
   }, [allStocks, selectedFilter, directionFilter, tableSearch, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredStocks.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedStocks = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredStocks.slice(start, start + pageSize);
+  }, [filteredStocks, safePage]);
 
   const handleCopyTicket = (stockObj) => {
     const sr = stockObj?.setup_result;
@@ -181,7 +212,7 @@ Entry: $${ps.entry?.toFixed(2)} | Stop: $${ps.stop_loss?.toFixed(2)} | T1: $${ps
             <div className="wyckoff-kicker-row">
               <span className="wyckoff-kicker-badge">WYCKOFF METHOD 3.0</span>
               <span className="wyckoff-kicker-meta">
-                3 FUNDAMENTAL LAWS • P&amp;F CAUSE &amp; EFFECT • WEIS WAVE VSA • {data?.total_scanned || allStocks.length} TICKERS
+                ALL US STOCKS • MCAP &ge; ${data?.universe_filters?.min_market_cap_b ?? 2}B • AVG VOL &gt; {data?.universe_filters?.min_avg_vol_m ?? 2}M • {data?.total_scanned || allStocks.length} EQUITIES
               </span>
             </div>
             <h1>
@@ -420,6 +451,8 @@ Entry: $${ps.entry?.toFixed(2)} | Stop: $${ps.stop_loss?.toFixed(2)} | T1: $${ps
             className="wyckoff-sort-select"
           >
             <option value="wyckoff_score">Sort: Wyckoff Score</option>
+            <option value="market_cap">Sort: Market Cap ($B)</option>
+            <option value="avg_vol">Sort: Daily Avg Vol (20D)</option>
             <option value="risk_reward">Sort: Highest R/R Ratio</option>
             <option value="rvol">Sort: RVOL Effort</option>
             <option value="vol_flow">Sort: Up/Down Vol Flow</option>
@@ -459,8 +492,9 @@ Entry: $${ps.entry?.toFixed(2)} | Stop: $${ps.stop_loss?.toFixed(2)} | T1: $${ps
           No stocks match the current Wyckoff filter. Try resetting filters or searching any ticker directly.
         </div>
       ) : viewMode === 'cards' ? (
+        <>
         <div className="wyckoff-cards-grid">
-          {filteredStocks.map((stock) => {
+          {paginatedStocks.map((stock) => {
             const s = stock.primary_setup || {};
             const tr = stock.trading_range || {};
             const isBull = s.direction === 'BULLISH';
@@ -494,6 +528,19 @@ Entry: $${ps.entry?.toFixed(2)} | Stop: $${ps.stop_loss?.toFixed(2)} | T1: $${ps
                         {isBear ? 'DISTRIBUTION' : 'ACCUMULATION'}
                       </span>
                     </div>
+                    {(stock.market_cap_b != null || stock.avg_vol_20_m != null) && (
+                      <div className="wyckoff-card-liq-row">
+                        <span>Cap <strong>{formatCap(stock.market_cap_b)}</strong></span>
+                        <span>•</span>
+                        <span>AvgVol <strong>{stock.avg_vol_20_m != null ? `${Number(stock.avg_vol_20_m).toFixed(2)}M` : '—'}</strong></span>
+                        {stock.sector && (
+                          <>
+                            <span>•</span>
+                            <span className="liq-sector-tag" title={stock.name || stock.sector}>{stock.sector}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="wyckoff-score-badge" style={{ borderColor: scoreColor, color: scoreColor }}>
@@ -581,12 +628,14 @@ Entry: $${ps.entry?.toFixed(2)} | Stop: $${ps.stop_loss?.toFixed(2)} | T1: $${ps
             );
           })}
         </div>
+        </>
       ) : (
         <div className="wyckoff-table-wrapper">
           <table className="wyckoff-table">
             <thead>
               <tr>
                 <th>Ticker</th>
+                <th>MCap / Avg Vol</th>
                 <th>Wyckoff Setup</th>
                 <th>Phase</th>
                 <th>Wyckoff Score</th>
@@ -598,7 +647,7 @@ Entry: $${ps.entry?.toFixed(2)} | Stop: $${ps.stop_loss?.toFixed(2)} | T1: $${ps
               </tr>
             </thead>
             <tbody>
-              {filteredStocks.map((stock) => {
+              {paginatedStocks.map((stock) => {
                 const s = stock.primary_setup || {};
                 const tr = stock.trading_range || {};
                 const isBull = s.direction === 'BULLISH';
@@ -621,6 +670,17 @@ Entry: $${ps.entry?.toFixed(2)} | Stop: $${ps.stop_loss?.toFixed(2)} | T1: $${ps
                           <span style={{ color: stock.pct_change >= 0 ? '#10b981' : '#f43f5e', marginLeft: '4px' }}>
                             {stock.pct_change >= 0 ? `+${stock.pct_change}%` : `${stock.pct_change}%`}
                           </span>
+                        </span>
+                        {stock.sector && (
+                          <span style={{ fontSize: '0.67rem', color: '#64748b' }}>{stock.sector}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontFamily: 'monospace', fontSize: '0.77rem' }}>
+                        <strong style={{ color: '#e2e8f0' }}>{formatCap(stock.market_cap_b)}</strong>
+                        <span style={{ color: '#38bdf8', fontSize: '0.72rem' }}>
+                          {stock.avg_vol_20_m != null ? `${Number(stock.avg_vol_20_m).toFixed(2)}M/d` : '—'}
                         </span>
                       </div>
                     </td>
@@ -713,6 +773,34 @@ Entry: $${ps.entry?.toFixed(2)} | Stop: $${ps.stop_loss?.toFixed(2)} | T1: $${ps
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* PAGINATION BAR */}
+      {!loading && !error && filteredStocks.length > pageSize && (
+        <div className="wyckoff-pagination-bar">
+          <span className="wyckoff-page-info">
+            Showing <strong>{((safePage - 1) * pageSize) + 1}</strong> – <strong>{Math.min(safePage * pageSize, filteredStocks.length)}</strong> of <strong>{filteredStocks.length}</strong> qualifying US equities
+          </span>
+          <div className="wyckoff-page-controls">
+            <button
+              type="button"
+              className="wyckoff-page-btn"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </button>
+            <span className="wyckoff-page-num">Page {safePage} of {totalPages}</span>
+            <button
+              type="button"
+              className="wyckoff-page-btn"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 

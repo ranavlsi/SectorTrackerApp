@@ -4,10 +4,47 @@ import json
 import logging
 import os
 import math
+import threading
 import yfinance as yf
+
+_YF_LOCK = threading.Lock()
+
+MACRO_BOUNDS = {
+    '^VIX': (7.0, 95.0),
+    '^VIX3M': (7.0, 95.0),
+    '^IRX': (0.0, 10.0),
+    '^TNX': (0.3, 12.0),
+    '^MOVE': (30.0, 300.0),
+    'JPY=X': (80.0, 220.0),
+}
+
+
+def _in_bounds(series: pd.Series, sym: str) -> bool:
+    s = pd.to_numeric(series, errors='coerce').dropna()
+    if len(s) < 5:
+        return False
+    lo, hi = MACRO_BOUNDS.get(sym, (0.01, 1_000_000.0))
+    med = float(s.median())
+    last = float(s.iloc[-1])
+    return (lo <= med <= hi) and (lo <= last <= hi)
+
+
+def _fetch_single_macro(sym: str, period: str = "2y") -> pd.Series:
+    try:
+        with _YF_LOCK:
+            hist = yf.Ticker(sym).history(period=period, interval="1d")
+        if hist is not None and not hist.empty and 'Close' in hist.columns:
+            s = hist['Close'].dropna()
+            s.index = pd.to_datetime(s.index).tz_localize(None).normalize()
+            s = s[~s.index.duplicated(keep='last')].sort_index()
+            if _in_bounds(s, sym):
+                return s
+    except Exception as exc:
+        print(f"Ticker.history fallback failed for {sym}: {exc}")
+    return pd.Series(dtype=float)
 import warnings
 import cot_reports as cot
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 warnings.filterwarnings('ignore')
 logger = logging.getLogger(__name__)
@@ -53,11 +90,22 @@ def generate_market_health_json():
     volume_df.index = pd.to_datetime(volume_df.index).tz_localize(None).normalize()
     volume_df = volume_df[~volume_df.index.duplicated(keep='last')].sort_index().fillna(0)
 
-    # --- Macro Tickers ---
-    macro_tickers = ['^VIX', '^VIX3M', '^IRX', 'JPY=X', '^MOVE', 'XLY', 'XLP', 'SMH', 'SPY', 'QQQ', 'RSP', 'HYG', 'IEF', 'XLU', 'XLK']
-    macro_yf = yf.download(macro_tickers, period="2y", interval="1d", progress=False)['Close']
-    macro_yf.index = pd.to_datetime(macro_yf.index).tz_localize(None).normalize()
-    macro_yf = macro_yf[~macro_yf.index.duplicated(keep='last')].sort_index()
+    # --- Macro Tickers (serialized & bounds-checked to prevent yfinance column swaps) ---
+    macro_tickers = ['^VIX', '^VIX3M', '^IRX', '^TNX', 'JPY=X', '^MOVE', 'XLY', 'XLP', 'SMH', 'SPY', 'QQQ', 'RSP', 'HYG', 'IEF', 'XLU', 'XLK']
+    with _YF_LOCK:
+        macro_raw = yf.download(macro_tickers, period="2y", interval="1d", progress=False, threads=False)
+    macro_yf = macro_raw['Close'] if isinstance(macro_raw, pd.DataFrame) and 'Close' in macro_raw else pd.DataFrame()
+    if isinstance(macro_yf, pd.DataFrame) and not macro_yf.empty:
+        macro_yf.index = pd.to_datetime(macro_yf.index).tz_localize(None).normalize()
+        macro_yf = macro_yf[~macro_yf.index.duplicated(keep='last')].sort_index()
+    else:
+        macro_yf = pd.DataFrame(index=breadth_df.index)
+
+    # Reject any column from batch download that violates domain sanity bounds & heal individually
+    for sym in list(MACRO_BOUNDS.keys()):
+        if sym in macro_yf.columns and not _in_bounds(macro_yf[sym], sym):
+            print(f"Sanity warning: batch {sym} failed bounds check, re-fetching individually...")
+            macro_yf[sym] = np.nan
 
     # Overlay ETFs present in Lakehouse so today's close is never missing when Yahoo 1d feed returns NaN
     for etf_col in ['XLY', 'XLP', 'SMH', 'SPY', 'QQQ', 'RSP', 'HYG', 'IEF', 'XLU', 'XLK']:
@@ -72,25 +120,21 @@ def generate_market_health_json():
     
     macro_df = pd.DataFrame(index=breadth_df.index)
     for idx in macro_tickers:
-        if idx in macro_yf_aligned.columns and not macro_yf_aligned[idx].isna().all():
+        if idx in macro_yf_aligned.columns and not macro_yf_aligned[idx].isna().all() and (idx not in MACRO_BOUNDS or _in_bounds(macro_yf_aligned[idx], idx)):
             macro_df[idx] = macro_yf_aligned[idx]
         else:
-            print(f"Warning: {idx} missing from batch fetch. Fetching individually...")
-            try:
-                single_yf = yf.download(idx, period="2y", interval="1d", progress=False)['Close']
-                if not single_yf.empty:
-                    if isinstance(single_yf, pd.DataFrame):
-                        single_yf = single_yf.iloc[:, 0]
-                    single_yf.index = pd.to_datetime(single_yf.index).tz_localize(None).normalize()
-                    single_yf = single_yf[~single_yf.index.duplicated(keep='last')]
-                    macro_df[idx] = single_yf.reindex(breadth_df.index).ffill().bfill()
-                else:
-                    macro_df[idx] = 1.0 # Safe fallback
-            except Exception as e:
-                print(f"Failed to fetch {idx} individually: {e}")
-                macro_df[idx] = 1.0
+            print(f"Fetching {idx} individually via Ticker.history...")
+            s_single = _fetch_single_macro(idx, period="2y")
+            if not s_single.empty:
+                macro_df[idx] = s_single.reindex(breadth_df.index).ffill().bfill()
+            else:
+                macro_df[idx] = np.nan
 
     macro_df = macro_df.ffill().bfill()
+    # Final fallback defaults only if network completely unreachable for a single index
+    for sym, default_val in [('^VIX', 18.0), ('^VIX3M', 20.0), ('^TNX', 4.3), ('^IRX', 4.0), ('^MOVE', 95.0), ('JPY=X', 150.0)]:
+        if sym not in macro_df.columns or macro_df[sym].isna().all() or not _in_bounds(macro_df[sym], sym):
+            macro_df[sym] = default_val
         
     if breadth_df.empty or macro_df.empty:
         print("Failed to fetch data")
@@ -118,6 +162,12 @@ def generate_market_health_json():
     ad_line = net_advances.cumsum()
     mco = calculate_mcclellan_oscillator(advances, declines)
     summation_index = mco.cumsum()
+
+    # Zweig Breadth Thrust (10D EMA of Adv / (Adv + Dec) in %)
+    adv_ratio = (advances / (advances + declines).replace(0, np.nan)).fillna(0.5) * 100.0
+    zbt = adv_ratio.ewm(span=10, adjust=False).mean()
+    zbt_10d_min = zbt.rolling(10, min_periods=1).min()
+    zbt_thrust_active = (zbt_10d_min < 40.0) & (zbt >= 61.5)
     
     sma20 = breadth_df.rolling(20, min_periods=15).mean()
     sma50 = breadth_df.rolling(50, min_periods=35).mean()
@@ -191,6 +241,14 @@ def generate_market_health_json():
     vix_sma20 = vix.rolling(20).mean()
     vix_std20 = vix.rolling(20).std()
     vix_upper = vix_sma20 + (2 * vix_std20)
+    vix_bb_buy = (vix.shift(1) > vix_upper.shift(1)) & (vix < vix_upper)
+    vix_ratio_series = vix / macro_df['^VIX3M'].replace(0, np.nan)
+
+    tnx_series = macro_df['^TNX']
+    irx_series = macro_df['^IRX']
+    yield_curve_10y3m = tnx_series - irx_series
+    move_series = macro_df['^MOVE']
+    jpy_series = macro_df['JPY=X']
     
     add_score(hist_p50.iloc[curr_idx] > 0, 1, 0, "Breadth MACD Histogram is negative (Decelerating participation)", None)
     add_score(nhnl_10.iloc[curr_idx] > 0, 1, 0, "10-day MA of New Highs/Lows is below zero", None)
@@ -289,8 +347,11 @@ def generate_market_health_json():
     print(full_summary)
     
     spy_rsp_ratio = macro_df['SPY'] / macro_df['RSP']
+    rsp_spy_ratio = macro_df['RSP'] / macro_df['SPY'].replace(0, np.nan)
     qqq_spy_ratio = macro_df['QQQ'] / macro_df['SPY']
     xlk_xlu_ratio = macro_df['XLK'] / macro_df['XLU']
+    xly_xlp_ratio = macro_df['XLY'] / macro_df['XLP'].replace(0, np.nan)
+    smh_spy_ratio = macro_df['SMH'] / macro_df['SPY'].replace(0, np.nan)
 
     # --- Algorithmic McClellan Oscillator (MCO) Buy & Sell Signals Compared with SPY Historical Data ---
     # Backtested rules on institutional Lakehouse data:
@@ -324,19 +385,28 @@ def generate_market_health_json():
             mco_signals[dt] = {"signal": "SELL", "type": "Bearish Zero Cross", "note": "Breadth deteriorating below 0"}
 
     historical_data = []
-    valid_dates = macro_df.index[-60:]
+    valid_dates = macro_df.index[-252:]
     
     for date in valid_dates:
         date_str = date.strftime('%Y-%m-%d')
         
-        def get_val(df_or_series, dt, default=0):
+        def get_val(df_or_series, dt, default=0, decimals=2):
             try:
                 val = df_or_series.loc[dt]
                 if isinstance(val, pd.Series):
                     val = val.iloc[0]
-                return round(float(val), 2) if not pd.isna(val) else default
+                return round(float(val), decimals) if not pd.isna(val) else default
             except:
                 return default
+
+        def get_bool(series, dt):
+            try:
+                val = series.loc[dt]
+                if isinstance(val, pd.Series):
+                    val = val.iloc[0]
+                return bool(val) if not pd.isna(val) else False
+            except:
+                return False
                 
         h_score = get_val(health_oscillator, date, 50.0)
         
@@ -365,6 +435,8 @@ def generate_market_health_json():
             "health_label": h_label,
             "ad_line": int(get_val(ad_line, date)),
             "mco": get_val(mco, date),
+            "summation_index": get_val(summation_index, date, 0.0, 1),
+            "zbt": get_val(zbt, date, 50.0, 2),
             "mco_signal": mco_sig_info["signal"] if mco_sig_info else None,
             "mco_signal_type": mco_sig_info["type"] if mco_sig_info else None,
             "mco_signal_note": mco_sig_info["note"] if mco_sig_info else None,
@@ -375,11 +447,23 @@ def generate_market_health_json():
             "new_lows": int(get_val(new_lows, date)),
             "vix": get_val(macro_df['^VIX'], date),
             "vix3m": get_val(macro_df['^VIX3M'], date),
-            "hyg_ratio": get_val(hyg_ratio, date),
-            "spy_rsp_ratio": get_val(spy_rsp_ratio, date),
-            "qqq_spy_ratio": get_val(qqq_spy_ratio, date),
-            "xlk_xlu_ratio": get_val(xlk_xlu_ratio, date),
-            "irx": get_val(macro_df['^IRX'], date),
+            "vix_upper_bb": get_val(vix_upper, date, None, 2),
+            "vix_ratio": get_val(vix_ratio_series, date, 1.0, 3),
+            "vix_bb_buy": get_bool(vix_bb_buy, date),
+            "hindenburg": get_bool(hindenburg_omen, date),
+            "titanic": get_bool(titanic_syndrome, date),
+            "hyg_ratio": get_val(hyg_ratio, date, 0.85, 3),
+            "spy_rsp_ratio": get_val(spy_rsp_ratio, date, 3.5, 3),
+            "rsp_spy_ratio": get_val(rsp_spy_ratio, date, 0.28, 4),
+            "qqq_spy_ratio": get_val(qqq_spy_ratio, date, 0.9, 3),
+            "xlk_xlu_ratio": get_val(xlk_xlu_ratio, date, 4.0, 3),
+            "xly_xlp_ratio": get_val(xly_xlp_ratio, date, 2.0, 3),
+            "smh_spy_ratio": get_val(smh_spy_ratio, date, 0.35, 4),
+            "irx": get_val(macro_df['^IRX'], date, 4.0, 2),
+            "tnx": get_val(tnx_series, date, 4.5, 2),
+            "yield_curve_10y3m": get_val(yield_curve_10y3m, date, 0.0, 2),
+            "move": get_val(move_series, date, 90.0, 1),
+            "jpy": get_val(jpy_series, date, 150.0, 2),
             "cot_net": get_val(cot_aligned, date),
             "trin_10": get_val(trin_10, date),
             "nhnl_10": get_val(nhnl_10, date),
@@ -447,10 +531,76 @@ def generate_market_health_json():
     qqq_prev = float(macro_df['QQQ'].iloc[curr_idx - 1]) if len(macro_df) > 1 else qqq_curr
     qqq_1d_chg = round(((qqq_curr - qqq_prev) / qqq_prev) * 100.0, 2) if qqq_prev > 0 else 0.0
 
+    # v3.0 Quantitative Enrichment (Zweig Thrust, Yield Curve, MOVE, Attribution, 1Y Percentiles)
+    curr_zbt = round(float(zbt.iloc[curr_idx]), 2) if not pd.isna(zbt.iloc[curr_idx]) else 50.0
+    curr_zbt_10m = round(float(zbt_10d_min.iloc[curr_idx]), 2) if not pd.isna(zbt_10d_min.iloc[curr_idx]) else 50.0
+    curr_zbt_active = bool(zbt_thrust_active.iloc[curr_idx])
+    if curr_zbt_active:
+        zbt_status = "THRUST ACTIVE"
+    elif curr_zbt < 40.0:
+        zbt_status = "OVERSOLD WATCH (<40%)"
+    elif curr_zbt_10m < 40.0 or curr_zbt >= 50.0:
+        zbt_status = "RECOVERING"
+    else:
+        zbt_status = "WEAK"
+
+    tnx_val = round(float(tnx_series.iloc[curr_idx]), 2) if not pd.isna(tnx_series.iloc[curr_idx]) else 4.5
+    irx_curr_val = round(float(irx_series.iloc[curr_idx]), 2) if not pd.isna(irx_series.iloc[curr_idx]) else 4.0
+    yc_10y3m_val = round(float(yield_curve_10y3m.iloc[curr_idx]), 2) if not pd.isna(yield_curve_10y3m.iloc[curr_idx]) else round(tnx_val - irx_curr_val, 2)
+    yc_bps_val = int(round(yc_10y3m_val * 100))
+    move_val = round(float(move_series.iloc[curr_idx]), 1) if not pd.isna(move_series.iloc[curr_idx]) else 95.0
+    jpy_val = round(float(jpy_series.iloc[curr_idx]), 2) if not pd.isna(jpy_series.iloc[curr_idx]) else 150.0
+    rsp_spy_val = round(float(rsp_spy_ratio.iloc[curr_idx]), 4) if not pd.isna(rsp_spy_ratio.iloc[curr_idx]) else 0.28
+    xly_xlp_val = round(float(xly_xlp_ratio.iloc[curr_idx]), 3) if not pd.isna(xly_xlp_ratio.iloc[curr_idx]) else 2.0
+    smh_spy_val = round(float(smh_spy_ratio.iloc[curr_idx]), 4) if not pd.isna(smh_spy_ratio.iloc[curr_idx]) else 0.35
+    vix_upper_bb_val = round(float(vix_upper.iloc[curr_idx]), 2) if not pd.isna(vix_upper.iloc[curr_idx]) else round(vix_curr * 1.15, 2)
+
+    factor_attribution = [
+        {"key": "mco", "label": "MCO Velocity", "z": round(float(z_mco.iloc[curr_idx]), 2), "raw": round(float(mco.iloc[curr_idx]), 1), "unit": ""},
+        {"key": "p50", "label": "Breadth >50 SMA", "z": round(float(z_p50.iloc[curr_idx]), 2), "raw": round(float(pct_above_50.iloc[curr_idx]), 1), "unit": "%"},
+        {"key": "nhnl", "label": "NH-NL 10D MA", "z": round(float(z_nhnl.iloc[curr_idx]), 2), "raw": round(float(nhnl_10.iloc[curr_idx]), 1), "unit": ""},
+        {"key": "vix", "label": "VIX Fear (Inv)", "z": round(float(z_vix.iloc[curr_idx]), 2), "raw": round(vix_curr, 2), "unit": ""},
+        {"key": "credit", "label": "Credit HYG/IEF", "z": round(float(z_credit.iloc[curr_idx]), 2), "raw": round(float(hyg_ratio.iloc[curr_idx]), 3), "unit": ""},
+    ]
+
+    def pct_rank_252(series):
+        s = series.dropna().iloc[-252:]
+        if len(s) == 0:
+            return 50.0
+        cur_v = float(s.iloc[-1])
+        return round(float((s <= cur_v).mean() * 100.0), 1)
+
+    percentiles_1y = {
+        "score": pct_rank_252(health_oscillator),
+        "mco": pct_rank_252(mco),
+        "pct_above_50": pct_rank_252(pct_above_50),
+        "vix": pct_rank_252(vix),
+        "move": pct_rank_252(move_series),
+        "hyg_ratio": pct_rank_252(hyg_ratio),
+        "yield_curve_10y3m": pct_rank_252(yield_curve_10y3m),
+        "cot_net": pct_rank_252(cot_aligned),
+    }
+
+    now_et = datetime.now(timezone.utc) - timedelta(hours=5)
+    et_mins = now_et.hour * 60 + now_et.minute
+    is_mkt_open = bool(now_et.weekday() < 5 and 570 <= et_mins <= 960)
+    trade_date_str = macro_df.index[curr_idx].strftime('%Y-%m-%d')
+    universe_count = int(total_valid.iloc[curr_idx]) if not pd.isna(total_valid.iloc[curr_idx]) else 0
+
     json_payload = {
+        "version": "3.0",
         "last_updated": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        "trade_date": macro_df.index[curr_idx].strftime('%Y-%m-%d'),
+        "trade_date": trade_date_str,
+        "data_meta": {
+            "source": "LAKEHOUSE_YFINANCE",
+            "trade_date": trade_date_str,
+            "fetched_at_et": now_et.strftime("%H:%M:%S ET"),
+            "is_market_open": is_mkt_open,
+            "universe_count": universe_count,
+            "history_days": len(historical_data),
+        },
         "current_health": {
+            "version": "3.0",
             "score_value": normalized_score,
             "score_label": caution_level,
             "score_5d_delta": score_5d_delta,
@@ -460,7 +610,7 @@ def generate_market_health_json():
             "historical_context": hist_context,
             "issues_list": issues,
             "strengths_list": strengths,
-            "total_universe": int(total_valid.iloc[curr_idx]) if not pd.isna(total_valid.iloc[curr_idx]) else 0,
+            "total_universe": universe_count,
             "advances_count": adv_curr,
             "declines_count": dec_curr,
             "adv_dec_ratio": adv_dec_ratio,
@@ -468,10 +618,16 @@ def generate_market_health_json():
             "summation_index_val": round(float(summation_index.iloc[curr_idx]), 1),
             "hindenburg_active": bool(hindenburg_omen.iloc[curr_idx]),
             "titanic_active": bool(titanic_syndrome.iloc[curr_idx]),
+            "zbt_val": curr_zbt,
+            "zbt_10d_min": curr_zbt_10m,
+            "zbt_status": zbt_status,
+            "zbt_thrust_active": curr_zbt_active,
             "spy_price": spy_curr,
             "spy_1d_chg": spy_1d_chg,
+            "spy_chg_pct": spy_1d_chg,
             "qqq_price": qqq_curr,
             "qqq_1d_chg": qqq_1d_chg,
+            "qqq_chg_pct": qqq_1d_chg,
             "mco_status": "Extreme Oversold" if mco.iloc[curr_idx] < -500 else "Oversold" if mco.iloc[curr_idx] < -300 else "Extreme Overbought" if mco.iloc[curr_idx] > 500 else "Overbought" if mco.iloc[curr_idx] > 300 else "Neutral",
             "breadth_status": "Strong Bullish (>75%)" if pct_above_50.iloc[curr_idx] > 75 else "Bearish Washout (<25%)" if pct_above_50.iloc[curr_idx] < 25 else "Below 50% Waterline" if pct_above_50.iloc[curr_idx] < 50 else "Constructive (>50%)",
             "summary_text": full_summary,
@@ -485,6 +641,7 @@ def generate_market_health_json():
             "vix_value": round(vix_curr, 2),
             "vix3m_value": round(vix3m_curr, 2),
             "vix_ratio": vix_ratio,
+            "vix_upper_bb_val": vix_upper_bb_val,
             "vix_structure": "Contango (Normal)" if vix_is_contango else "Backwardation (Inverted / Panic)",
             "new_highs_count": int(new_highs.iloc[curr_idx]),
             "new_lows_count": int(new_lows.iloc[curr_idx]),
@@ -493,12 +650,22 @@ def generate_market_health_json():
             "hyg_ratio_val": round(float(hyg_ratio.iloc[curr_idx]), 3),
             "hyg_zscore_val": round(float(hyg_zscore.iloc[curr_idx]), 2),
             "spy_rsp_ratio_val": round(float(spy_rsp_ratio.iloc[curr_idx]), 2),
+            "rsp_spy_ratio_val": rsp_spy_val,
             "qqq_spy_ratio_val": round(float(qqq_spy_ratio.iloc[curr_idx]), 2),
             "xlk_xlu_ratio_val": round(float(xlk_xlu_ratio.iloc[curr_idx]), 2),
-            "irx_val": round(float(macro_df['^IRX'].iloc[curr_idx]), 2) if not pd.isna(macro_df['^IRX'].iloc[curr_idx]) else 4.0,
+            "xly_xlp_ratio_val": xly_xlp_val,
+            "smh_spy_ratio_val": smh_spy_val,
+            "irx_val": irx_curr_val,
+            "tnx_val": tnx_val,
+            "yield_curve_10y3m": yc_10y3m_val,
+            "yield_curve_bps": yc_bps_val,
+            "move_val": move_val,
+            "jpy_val": jpy_val,
             "cot_net_val": int(cot_aligned.iloc[curr_idx]) if not pd.isna(cot_aligned.iloc[curr_idx]) else 0,
             "macd_p50_val": round(float(hist_p50.iloc[curr_idx]), 2) if not pd.isna(hist_p50.iloc[curr_idx]) else 0.0,
             "trin_10_val": round(float(trin_10.iloc[curr_idx]), 2) if not pd.isna(trin_10.iloc[curr_idx]) else 1.0,
+            "factor_attribution": factor_attribution,
+            "percentiles_1y": percentiles_1y,
             "chart_observations": {
                 "oscillator": f"Composite Health Oscillator is at {health_oscillator.iloc[-1]:.1f}/100 ({overall_regime_label}). 5-Day change is {score_5d_delta:+.1f} pts.",
                 "mco": f"McClellan Oscillator is at {mco.iloc[curr_idx]:.1f} ({'Extreme Oversold (< -500)' if mco.iloc[curr_idx] < -500 else 'Oversold (< -300)' if mco.iloc[curr_idx] < -300 else 'Overbought (> +300)' if mco.iloc[curr_idx] > 300 else 'Neutral Zone'}). Momentum is {'rebounding upwards (+)' if mco.iloc[curr_idx] > mco.iloc[curr_idx-1] else 'falling downwards (-)'}.",
@@ -507,7 +674,7 @@ def generate_market_health_json():
                 "vix_curve": f"VIX Spot is {vix_curr:.2f} vs VIX 3-Month at {vix3m_curr:.2f} (Ratio {vix_ratio:.2f}). Term structure is in {'healthy Contango (Complacent / Normal)' if vix_is_contango else 'Backwardation (Acute Panic / Hedging)'}.",
                 "credit": f"HYG/IEF Risk-Appetite Ratio is {hyg_ratio.iloc[curr_idx]:.2f} with 6-Month Z-Score at {hyg_zscore.iloc[curr_idx]:.2f} ({'Healthy Credit Appetite (Z > 0)' if hyg_zscore.iloc[curr_idx] > 0 else 'Credit Risk-Off / Tightening (Z < 0)'}).",
                 "divergence": f"Cap-weighted SPY/RSP ratio is {spy_rsp_ratio.iloc[curr_idx]:.2f} ({'Mega-cap leadership dominating breadth' if spy_rsp_ratio.iloc[curr_idx] > spy_rsp_ratio.iloc[curr_idx-20] else 'Broad market outperforming mega-caps'}). Tech/Defensive (XLK/XLU) ratio is {xlk_xlu_ratio.iloc[curr_idx]:.2f}.",
-                "irx_liquidity": f"13-Week T-Bill Yield is {float(macro_df['^IRX'].iloc[curr_idx]) if not pd.isna(macro_df['^IRX'].iloc[curr_idx]) else 4.0:.2f}%. {'Elevated cash return sets high hurdle rate for equity valuation.' if (float(macro_df['^IRX'].iloc[curr_idx]) if not pd.isna(macro_df['^IRX'].iloc[curr_idx]) else 4.0) > 3.5 else 'Accommodative yield environment supports equity multiples.'}",
+                "irx_liquidity": f"13-Week T-Bill Yield is {irx_curr_val:.2f}% vs 10Y {tnx_val:.2f}% (Slope {yc_bps_val:+d} bps).",
                 "cot": f"Net Commercial Positioning on E-mini S&P 500: {int(cot_aligned.iloc[curr_idx]) if not pd.isna(cot_aligned.iloc[curr_idx]) else 0:,} contracts. {'Commercials heavily hedging physical inventory.' if (cot_aligned.iloc[curr_idx] if not pd.isna(cot_aligned.iloc[curr_idx]) else 0) < -50000 else 'Commercials net neutral / accumulating.'}",
                 "ad_line": "A/D Line is rising with price." if ad_line.iloc[curr_idx] > ad_line.rolling(10).mean().iloc[curr_idx] else "A/D Line is lagging.",
                 "trin": f"TRIN 10-day MA is {trin_10.iloc[curr_idx]:.2f}. {'Panic capitulation (>1.5)' if trin_10.iloc[curr_idx] > 1.5 else 'Buying exhaustion (<0.8)' if trin_10.iloc[curr_idx] < 0.8 else 'Normal Equilibrium'}",

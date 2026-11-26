@@ -523,53 +523,56 @@
 /* QUANT VOLATILITY DESK KPI STRIP */
 .vol-kpis-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1100px) {
   .vol-kpis-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .vol-kpis-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 .vol-kpi-tile {
-  padding: 14px 16px;
-  border-radius: 12px;
+  padding: 11px 13px;
+  border-radius: 10px;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-width: 0;
+  overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .vol-kpi-tile.featured {
-  border-color: rgba(6, 182, 212, 0.3);
+  border-color: rgba(6, 182, 212, 0.32);
   background: rgba(15, 23, 42, 0.95);
 }
 
 .vol-kpi-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vol-kpi-val {
-  margin-top: 4px;
+  margin-top: 3px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 22px;
+  font-size: 17px;
+  line-height: 1.2;
   font-weight: 800;
   color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vol-kpi-val.cyan { color: #00F0FF; }
@@ -581,12 +584,15 @@
 .vol-kpi-sub {
   margin-top: 2px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 9.5px;
   color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.vol-kpi-sub.cyan { color: rgba(0, 240, 255, 0.8); }
-.vol-kpi-sub.emerald { color: rgba(0, 230, 118, 0.8); }
+.vol-kpi-sub.cyan { color: rgba(0, 240, 255, 0.85); }
+.vol-kpi-sub.emerald { color: rgba(0, 230, 118, 0.85); }
 
 /* Controls & View Mode Toggles */
 .vol-controls-row {
@@ -594,30 +600,33 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
-  padding-top: 4px;
+  gap: 10px;
+  padding-top: 2px;
 }
 
 .vol-view-tabs {
   display: flex;
+  flex-wrap: wrap;
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   padding: 3px;
   gap: 3px;
+  width: 100%;
 }
 
 .vol-view-btn {
-  padding: 6px 14px;
+  padding: 5px 10px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   border-radius: 6px;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   background: transparent;
   color: #94a3b8;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .vol-view-btn:hover {
@@ -684,15 +693,88 @@
 /* Plotly Canvas Container */
 .vol-canvas-container {
   width: 100%;
-  min-height: 580px;
+  min-height: 540px;
   background: #060910;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  align-items: stretch;
+  padding: 6px;
+  user-select: none;
+}
+
+/* HTML Micro Legend Strip below Canvas */
+.vol-canvas-micro-legend {
+  display: flex;
   align-items: center;
-  padding: 8px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+/* Live SVI Calibration & Backtest Scorecard Drawer */
+.vol-calibration-drawer {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(6, 12, 24, 0.98));
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vol-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .vol-cal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.vol-cal-metric {
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.vol-cal-metric .k {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: #94a3b8;
+  display: block;
+  text-transform: uppercase;
+}
+
+.vol-cal-metric .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 800;
+  color: #00E676;
+  margin-top: 2px;
+  display: block;
+}
+
+.vol-cal-metric .s {
+  font-size: 10px;
+  color: #cbd5e1;
+  margin-top: 2px;
+  display: block;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -826,7 +908,7 @@
 .vol-summary-item .val.emerald { color: #00E676; }
 .vol-summary-item .val.amber { color: #fbbf24; }
 
-/* The Derivatives Matrix Table */
+/* The Derivatives Matrix Table — Zero Horizontal Overflow Responsive Layout */
 .vol-table-scroll-wrap {
   overflow-x: auto;
   width: 100%;
@@ -839,27 +921,29 @@
 .vol-matrix-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1050px;
+  table-layout: fixed;
+  min-width: 0;
   text-align: left;
   font-family: -apple-system, sans-serif;
 }
 
 .vol-matrix-table th {
-  padding: 14px 16px;
+  padding: 10px 10px;
   background: #0f172a;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: #94a3b8;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .vol-matrix-table td {
-  padding: 14px 16px;
+  padding: 10px 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   vertical-align: middle;
+  word-break: break-word;
 }
 
 .vol-matrix-tr {
@@ -1757,6 +1841,13 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.target-micro-card:hover {
+  border-color: rgba(0, 240, 255, 0.45);
+  background: rgba(30, 41, 59, 0.85);
 }
 
 .tmc-top {
@@ -1925,3 +2016,1266 @@
 .guide-card-bullets strong {
   color: #00F0FF;
 }
+
+/* ============================================================================
+   VOL HEATMAP STUDIO v3.0 (.vhm-*) — Dark & Classic Light Responsive Styles
+   ============================================================================ */
+
+.vhm-studio {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.vhm-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 36px 20px;
+  border-radius: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.55);
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.vhm-verdict-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.72));
+}
+
+.vhm-light .vhm-verdict-strip {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+.vhm-verdict-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 280px;
+}
+
+.vhm-verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.vhm-light .vhm-verdict-badge {
+  background-color: #0f172a !important;
+}
+
+.vhm-verdict-headline {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.35;
+}
+
+.vhm-light .vhm-verdict-headline {
+  color: #0f172a;
+}
+
+.vhm-verdict-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.vhm-vkpi {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.vhm-vkpi-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.vhm-light .vhm-vkpi-lbl {
+  color: #475569;
+}
+
+.vhm-vkpi-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.vhm-light .vhm-vkpi-val {
+  color: #0f172a;
+}
+
+.vhm-vkpi-sub {
+  font-size: 10px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.vhm-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.vhm-lens-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.vhm-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.72);
+  color: #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.vhm-pill-btn:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  color: #f8fafc;
+}
+
+.vhm-pill-active {
+  background: rgba(14, 165, 233, 0.18);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+}
+
+.vhm-light .vhm-pill-btn {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #334155;
+}
+
+.vhm-light .vhm-pill-active {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+
+.vhm-coord-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.vhm-seg-group {
+  display: inline-flex;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.vhm-light .vhm-seg-group {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+.vhm-seg-btn {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.vhm-seg-btn + .vhm-seg-btn {
+  border-left: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.vhm-seg-active {
+  background: rgba(99, 102, 241, 0.25);
+  color: #e0e7ff;
+}
+
+.vhm-light .vhm-seg-btn {
+  color: #475569;
+}
+
+.vhm-light .vhm-seg-active {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.vhm-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.72);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vhm-toggle-on {
+  border-color: rgba(16, 185, 129, 0.48);
+  background: rgba(16, 185, 129, 0.14);
+  color: #34d399;
+}
+
+.vhm-light .vhm-toggle-btn {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #475569;
+}
+
+.vhm-light .vhm-toggle-on {
+  background: #059669;
+  border-color: #059669;
+  color: #ffffff;
+}
+
+.vhm-subbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.vhm-light .vhm-subbar {
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.vhm-lens-explain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #cbd5e1;
+  min-width: 0;
+}
+
+.vhm-light .vhm-lens-explain {
+  color: #1e293b;
+}
+
+.vhm-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.vhm-chip-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.vhm-light .vhm-chip-empty {
+  color: #334155;
+}
+
+.vhm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: transform 0.12s ease;
+}
+
+.vhm-chip:hover {
+  transform: translateY(-1px);
+}
+
+.vhm-chip-rich {
+  background: rgba(249, 115, 22, 0.14);
+  border-color: rgba(249, 115, 22, 0.45);
+  color: #fdba74;
+}
+
+.vhm-chip-cheap {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #6ee7b7;
+}
+
+.vhm-light .vhm-chip-rich {
+  background: #ffedd5;
+  border-color: #ea580c;
+  color: #9a3412;
+}
+
+.vhm-light .vhm-chip-cheap {
+  background: #d1fae5;
+  border-color: #059669;
+  color: #065f46;
+}
+
+.vhm-canvas-shell {
+  width: 100%;
+  min-width: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px;
+  overflow: hidden;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.vhm-bottom-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.vhm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.72);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.vhm-light .vhm-card {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+.vhm-card-hdr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vhm-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.vhm-light .vhm-card-title {
+  color: #0f172a;
+}
+
+.vhm-cell-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #38bdf8;
+}
+
+.vhm-light .vhm-cell-tag {
+  color: #0369a1;
+}
+
+.vhm-delta-pill,
+.vhm-version-pill {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vhm-light .vhm-delta-pill,
+.vhm-light .vhm-version-pill {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0369a1;
+}
+
+.vhm-insp-grid,
+.vhm-score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.vhm-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: rgba(30, 41, 59, 0.52);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  min-width: 0;
+}
+
+.vhm-light .vhm-stat {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+.vhm-stat-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.vhm-light .vhm-stat-lbl {
+  color: #475569;
+}
+
+.vhm-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.vhm-stat-val small {
+  font-weight: 500;
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.vhm-light .vhm-stat-val {
+  color: #0f172a;
+}
+
+.vhm-light .vhm-stat-val small {
+  color: #475569;
+}
+
+.vhm-advice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.45);
+}
+
+.vhm-advice-rich {
+  border-color: rgba(249, 115, 22, 0.42);
+  background: rgba(249, 115, 22, 0.10);
+}
+
+.vhm-advice-cheap {
+  border-color: rgba(16, 185, 129, 0.42);
+  background: rgba(16, 185, 129, 0.10);
+}
+
+.vhm-light .vhm-advice {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.vhm-advice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11.5px;
+  color: #e2e8f0;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.vhm-light .vhm-advice-text {
+  color: #0f172a;
+}
+
+.vhm-advice-text strong {
+  font-size: 11.5px;
+}
+
+.vhm-advice-text span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.vhm-light .vhm-advice-text span {
+  color: #334155;
+}
+
+.vhm-3d-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(14, 165, 233, 0.16);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vhm-light .vhm-3d-btn {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+
+.vhm-score-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.vhm-light .vhm-score-foot {
+  color: #334155;
+}
+
+.vhm-backtest-note {
+  color: #6ee7b7;
+  font-size: 10.5px;
+}
+
+.vhm-light .vhm-backtest-note {
+  color: #065f46;
+}
+
+/* Interday Multi-Day IV Motion Controls, Decomposition & Cell Trajectory */
+.vhm-interday-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vhm-interday-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 7px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.vhm-light .vhm-interday-bar {
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+.vhm-interday-bar-left,
+.vhm-interday-bar-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.vhm-interday-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.vhm-light .vhm-interday-title {
+  color: #0f172a;
+}
+
+.vhm-lb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vhm-lb-btn + .vhm-lb-btn {
+  border-left: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.vhm-lb-btn small {
+  font-size: 9.5px;
+  font-weight: 500;
+  opacity: 0.78;
+}
+
+.vhm-lb-active {
+  background: rgba(14, 165, 233, 0.25);
+  color: #38bdf8;
+}
+
+.vhm-light .vhm-lb-btn {
+  color: #475569;
+}
+
+.vhm-light .vhm-lb-active {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.vhm-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vhm-play-active {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+
+.vhm-light .vhm-play-btn {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0369a1;
+}
+
+.vhm-light .vhm-play-active {
+  background: #fef3c7;
+  border-color: #d97706;
+  color: #92400e;
+}
+
+.vhm-anchor-badge,
+.vhm-source-pill {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vhm-anchor-badge {
+  background: rgba(99, 102, 241, 0.16);
+  border: 1px solid rgba(99, 102, 241, 0.36);
+  color: #c7d2fe;
+}
+
+.vhm-source-pill {
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.36);
+  color: #6ee7b7;
+}
+
+.vhm-light .vhm-anchor-badge {
+  background: #e0e7ff;
+  border-color: #4f46e5;
+  color: #312e81;
+}
+
+.vhm-light .vhm-source-pill {
+  background: #d1fae5;
+  border-color: #059669;
+  color: #065f46;
+}
+
+.vhm-interday-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.vhm-light .vhm-interday-summary {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+.vhm-interday-sum-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.vhm-interday-headline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.vhm-light .vhm-interday-headline {
+  color: #1e293b;
+}
+
+.vhm-decomp-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
+  gap: 6px;
+}
+
+.vhm-decomp-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(30, 41, 59, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.vhm-light .vhm-decomp-pill {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+.vhm-decomp-pill span {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.vhm-light .vhm-decomp-pill span {
+  color: #475569;
+}
+
+.vhm-decomp-pill strong {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: #f8fafc;
+}
+
+.vhm-light .vhm-decomp-pill strong {
+  color: #0f172a !important;
+}
+
+.vhm-cell-traj {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.42);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.vhm-light .vhm-cell-traj {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.vhm-cell-traj-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.vhm-light .vhm-cell-traj-lbl {
+  color: #334155;
+}
+
+.vhm-cell-traj-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vhm-traj-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.65);
+  color: #cbd5e1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.vhm-traj-active {
+  border-color: #38bdf8;
+  background: rgba(14, 165, 233, 0.18);
+}
+
+.vhm-traj-k {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.vhm-traj-piv {
+  color: #94a3b8;
+  font-size: 10px;
+}
+
+.vhm-light .vhm-traj-chip {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+
+.vhm-light .vhm-traj-k {
+  color: #0284c7;
+}
+
+.vhm-light .vhm-traj-piv {
+  color: #475569;
+}
+
+.vhm-light .vhm-traj-chip strong {
+  color: #0f172a !important;
+}
+
+/* Collapsible Local Volatility & Heatmap Info Guide (.vhm-guide-*) */
+.vhm-guide-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  background: rgba(15, 23, 42, 0.88);
+  min-width: 0;
+}
+
+.vhm-light .vhm-guide-panel {
+  background: #ffffff;
+  border-color: rgba(2, 132, 199, 0.3);
+}
+
+.vhm-guide-hdr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vhm-guide-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.vhm-light .vhm-guide-title {
+  color: #0369a1;
+}
+
+.vhm-guide-close {
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(30, 41, 59, 0.72);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vhm-light .vhm-guide-close {
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+
+.vhm-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.vhm-guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.56);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  font-size: 11px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.vhm-light .vhm-guide-card {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #334155;
+}
+
+.vhm-guide-card > strong {
+  color: #f8fafc;
+  font-size: 11.5px;
+}
+
+.vhm-light .vhm-guide-card > strong {
+  color: #0f172a;
+}
+
+.vhm-guide-card p {
+  margin: 0;
+}
+
+.vhm-guide-list {
+  margin: 0;
+  padding-left: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.vhm-guide-list strong {
+  color: #e2e8f0;
+}
+
+.vhm-light .vhm-guide-list strong {
+  color: #0f172a;
+}
+
+.vhm-guide-formula {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: #94a3b8;
+  word-break: break-word;
+}
+
+.vhm-guide-formula strong {
+  color: #38bdf8;
+}
+
+.vhm-guide-formula code {
+  font-family: 'JetBrains Mono', monospace;
+  color: #6ee7b7;
+}
+
+.vhm-light .vhm-guide-formula {
+  background: #f1f5f9;
+  border-color: rgba(2, 132, 199, 0.24);
+  color: #334155;
+}
+
+.vhm-light .vhm-guide-formula strong {
+  color: #0369a1;
+}
+
+.vhm-light .vhm-guide-formula code {
+  color: #065f46;
+}
+
+.vhm-guide-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.vhm-guide-tab {
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(30, 41, 59, 0.55);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vhm-guide-tab-active {
+  background: rgba(14, 165, 233, 0.22);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.vhm-light .vhm-guide-tab {
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #334155;
+}
+
+.vhm-light .vhm-guide-tab-active {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+
+.vhm-playbook-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 9px;
+}
+
+.vhm-playbook-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  font-size: 11px;
+  line-height: 1.42;
+  color: #cbd5e1;
+}
+
+.vhm-light .vhm-playbook-card {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #334155;
+}
+
+.vhm-pb-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.vhm-pb-hdr strong {
+  color: #f8fafc;
+  font-size: 11.5px;
+}
+
+.vhm-light .vhm-pb-hdr strong {
+  color: #0f172a;
+}
+
+.vhm-pb-tag {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vhm-pb-tag.rich {
+  background: rgba(249, 115, 22, 0.18);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+}
+
+.vhm-pb-tag.cheap {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.vhm-pb-tag.event {
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.vhm-pb-tag.skew {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.vhm-pb-tag.replay {
+  background: rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.vhm-light .vhm-pb-tag {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #0f172a;
+}
+
+.vhm-pb-row span {
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.vhm-light .vhm-pb-row span {
+  color: #0369a1;
+}
+
+.vhm-pb-row strong {
+  color: #f8fafc;
+}
+
+.vhm-light .vhm-pb-row strong {
+  color: #0f172a;
+}
+
+.vhm-checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+.vhm-check-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.56);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  font-size: 11px;
+  line-height: 1.42;
+  color: #cbd5e1;
+}
+
+.vhm-light .vhm-check-step {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #334155;
+}
+
+.vhm-step-num {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 165, 233, 0.22);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.vhm-light .vhm-step-num {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+
+.vhm-check-step strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 11.5px;
+  margin-bottom: 2px;
+}
+
+.vhm-light .vhm-check-step strong {
+  color: #0f172a;
+}
+
+.vhm-check-step p {
+  margin: 0;
+}
+
+.vhm-check-step code {
+  font-family: 'JetBrains Mono', monospace;
+  color: #6ee7b7;
+}
+
+.vhm-light .vhm-check-step code {
+  color: #065f46;
+}
+
+
+
+

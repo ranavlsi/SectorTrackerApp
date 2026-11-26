@@ -7,6 +7,9 @@
   padding: 1.5rem;
   color: #f1f5f9;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Header & Banner */
@@ -14,6 +17,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
   border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: 12px;
@@ -21,6 +26,8 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   position: relative;
   overflow: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .options-screener-header::before {
@@ -51,10 +58,16 @@
   line-height: 1.4;
 }
 
+.header-left {
+  flex: 1 1 480px;
+  min-width: 0;
+}
+
 .header-meta {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.55rem;
   margin-top: 0.75rem;
   font-size: 0.8rem;
   color: #cbd5e1;
@@ -75,6 +88,27 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 0.75rem;
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.dump-scope-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  max-width: 100%;
+}
+
+.scope-select {
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8rem;
+  max-width: 225px;
 }
 
 .dump-btn {
@@ -513,9 +547,52 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 1.5rem;
+  padding: 1.1rem 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(30, 41, 59, 0.4);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.modal-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.1rem 1.4rem;
+  gap: 1rem;
+  background: rgba(30, 41, 59, 0.45);
+  flex-shrink: 0;
+}
+
+.modal-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-body-scroll {
+  padding: 1rem 1.4rem !important;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-action-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-action-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
 }
 
 .modal-title-left {
@@ -756,6 +833,22 @@
   border: 1px solid rgba(148, 163, 184, 0.4);
 }
 
+.ai-hero-title-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 240px;
+}
+
+.ai-hero-title-wrap h2 {
+  margin: 0;
+  font-size: 1.22rem;
+  color: #f8fafc;
+  line-height: 1.3;
+}
+
 .ai-conviction-box {
   display: flex;
   flex-direction: column;
@@ -767,36 +860,57 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.ai-conviction-box .conv-lbl,
 .conviction-label {
   font-size: 0.68rem;
   text-transform: uppercase;
   color: #94a3b8;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
+.ai-conviction-box .conv-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.22rem;
+}
+
+.ai-conviction-box .conv-num,
 .conviction-val {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 900;
   font-family: monospace;
   color: #f59e0b;
   line-height: 1.1;
 }
 
-/* Roadmap Grid */
+.ai-conviction-box .conv-denom {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+/* Roadmap Grid: clean 4x2 desktop, 2x4 tablet */
 .ai-roadmap-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
+}
+
+@media (max-width: 1050px) {
+  .ai-roadmap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .roadmap-chip {
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 8px;
-  padding: 0.55rem 0.85rem;
+  padding: 0.65rem 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.3rem;
 }
 
 .roadmap-chip.loss {
@@ -817,80 +931,172 @@
   color: #34d399;
 }
 
-.chip-label {
+.chip-label,
+.chip-lbl {
   font-size: 0.68rem;
   text-transform: uppercase;
   color: #94a3b8;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   display: flex;
   align-items: center;
   gap: 0.3rem;
 }
 
 .chip-val {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   font-family: monospace;
   color: #f1f5f9;
+  line-height: 1.35;
+}
+
+.chip-val.highlight {
+  color: #38bdf8;
+  font-family: inherit;
 }
 
 /* Rationale & Checklist */
 .ai-rationale-section {
   background: rgba(0, 0, 0, 0.25);
   border-left: 3px solid #f59e0b;
-  padding: 0.65rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0 8px 8px 0;
 }
 
-.rationale-text {
-  font-size: 0.85rem;
+.rationale-header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 0.35rem;
+}
+
+.rationale-text,
+.rationale-body {
+  font-size: 0.84rem;
   color: #cbd5e1;
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0;
 }
 
 .execution-checklist-wrap {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  padding-top: 0.35rem;
-  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
-.checklist-pills {
+.checklist-title {
   display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f8fafc;
 }
 
-.checklist-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.72rem;
-  color: #94a3b8;
-  background: rgba(255, 255, 255, 0.05);
+.checklist-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.6rem;
+}
+
+.checklist-step-item {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.2rem 0.55rem;
-  border-radius: 12px;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.step-content strong {
+  display: block;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+  margin-bottom: 3px;
+}
+
+.step-content p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+/* --- Tab 2: Greek Trend Badges Summary Bar & Cards --- */
+.greeks-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.greeks-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.7rem;
+}
+
+.sum-item {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sum-item .lbl {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.sum-item .val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+  font-family: monospace;
 }
 
 /* --- Color-Coded Greeks & Trend Cards Grid --- */
 .trend-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 0.9rem;
 }
 
 .trend-card {
   background: rgba(30, 41, 59, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  padding: 0.85rem 1rem;
+  padding: 0.95rem 1.05rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.55rem;
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
@@ -899,16 +1105,20 @@
   transform: translateY(-1px);
 }
 
-.trend-header {
+.trend-header,
+.card-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.trend-title {
-  font-size: 0.8rem;
+.trend-title,
+.card-title {
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: #cbd5e1;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -926,18 +1136,43 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
 
-.main-metric {
+.main-metric,
+.primary-metric {
   font-size: 1.35rem;
   font-weight: 800;
   font-family: monospace;
   color: #f8fafc;
 }
 
-.sub-lbl {
-  font-size: 0.7rem;
-  color: #64748b;
+.sub-lbl,
+.metric-context {
+  font-size: 0.73rem;
+  color: #94a3b8;
+}
+
+.card-desc {
+  margin: 0;
+  font-size: 0.79rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  flex: 1;
+}
+
+.card-footer-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.85rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.74rem;
+  color: #94a3b8;
+  font-family: monospace;
 }
 
 /* --- 30-Day Multi-Parameter Trends Chart --- */
@@ -1044,8 +1279,24 @@
 
 .hud-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.65rem;
+}
+
+.hud-metrics-grid.cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.hud-metrics-grid.cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1120px) {
+  .hud-metrics-grid,
+  .hud-metrics-grid.cols-5,
+  .hud-metrics-grid.cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .hud-stat-box {
@@ -1069,10 +1320,12 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .hud-primary-val {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #f8fafc;
 }
@@ -1086,9 +1339,8 @@
 .hud-note {
   font-size: 0.7rem;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 .hud-duo-bar {
@@ -1215,6 +1467,8 @@
 .ts-stat {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.74rem;
   color: #94a3b8;
 }

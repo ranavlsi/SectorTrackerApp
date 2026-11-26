@@ -4,10 +4,27 @@ import numpy as np
 
 def calculate_dna(ticker, years=10):
     try:
-        t = yf.Ticker(ticker)
-        # Fetch 10 years of data
-        df = t.history(period=f"{years}y")
-        if df.empty or len(df) < 250:
+        sym = ticker.upper().strip()
+        df = pd.DataFrame()
+        # Try Alpaca/Parquet first for recent 5Y daily, or Parquet multi-year + yfinance fallback
+        try:
+            from backend.deep_charting_engine import _fetch_parquet_daily, fetch_ohlcv_resilient
+            df_pq = _fetch_parquet_daily(sym, days_back=years * 365)
+            df_alp, _ = fetch_ohlcv_resilient(sym, "1D", "5Y")
+            if df_pq is not None and not df_pq.empty and df_alp is not None and not df_alp.empty:
+                merged = pd.concat([df_pq, df_alp])
+                df = merged[~merged.index.duplicated(keep="last")].sort_index()
+            elif df_alp is not None and not df_alp.empty:
+                df = df_alp
+            elif df_pq is not None and not df_pq.empty:
+                df = df_pq
+        except Exception:
+            pass
+
+        if df is None or df.empty or len(df) < 250:
+            t = yf.Ticker(sym)
+            df = t.history(period=f"{years}y")
+        if df is None or df.empty or len(df) < 250:
             return {"error": "Not enough historical data."}
 
         close = df['Close']
@@ -60,12 +77,14 @@ def calculate_dna(ticker, years=10):
 
         above_10 = close > ma10
         run_groups = (~above_10).cumsum()
-        def run_return(idx):
-            if len(idx) < 2: return 0
-            return (close.loc[idx.index[-1]] / close.loc[idx.index[0]]) - 1
-
-        run_returns = df.groupby(run_groups).apply(run_return)
-        max_run_pct = run_returns.max() if not run_returns.empty else 0
+        above_df = df[above_10]
+        if not above_df.empty:
+            run_returns = above_df.groupby(run_groups[above_10]).apply(
+                lambda g: (float(g['Close'].iloc[-1]) / float(g['Close'].iloc[0]) - 1.0) if len(g) >= 2 and float(g['Close'].iloc[0]) > 0 else 0.0
+            )
+            max_run_pct = float(run_returns.max()) if not run_returns.empty else 0.0
+        else:
+            max_run_pct = 0.0
 
         # 4. Whale Activity (Trend Continuation Check)
         vol_20 = vol.rolling(20).mean()

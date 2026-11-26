@@ -20,7 +20,6 @@ import {
   Maximize2,
   Minimize2,
 } from 'lucide-react';
-import { AdvancedRealTimeChart } from 'react-ts-tradingview-widgets';
 import UnifiedPlotlyChart from './UnifiedPlotlyChart';
 import { RossHaberPersonalityPanel } from './StockPersonalityBadge';
 
@@ -49,6 +48,8 @@ export default function DeepChartingTerminal({
     if (!expertTickerData && !isSearching && typeof onSelectTicker === 'function') {
       onSelectTicker('NVDA');
     }
+    const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 120);
+    return () => clearTimeout(t);
   }, []);
 
   // Auto-fetch 10-Year Historical DNA when user switches to DNA tab or changes ticker while on DNA tab
@@ -72,6 +73,9 @@ export default function DeepChartingTerminal({
 
   const sm = chartData?.summary_metrics || {};
   const maRibbon = chartData?.ma_ribbon || {};
+  const maRibbonList = Array.isArray(chartData?.ma_ribbon_list) && chartData.ma_ribbon_list.length > 0
+    ? chartData.ma_ribbon_list
+    : ['ema9', 'ema21', 'sma50', 'sma150', 'sma200'].map((k) => maRibbon[k]).filter(Boolean);
   const td = chartData?.trend_diagnostics || null;
   const trendTemplate = chartData?.trend_template || { checks: [], passed: 0, total: 8 };
   const vp = chartData?.volume_profile || {};
@@ -88,34 +92,36 @@ export default function DeepChartingTerminal({
       : stageText.includes('Stage 4')
       ? '#ef4444'
       : '#f59e0b');
-  const masterScore = expertTickerData?.score ?? null;
+  const masterScore = tp?.confluence_score ?? expertTickerData?.score ?? null;
   const scoreColor =
     masterScore >= 70 ? '#10b981' : masterScore >= 45 ? '#f59e0b' : '#ef4444';
+
+  const tvEmbedUrl = `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(activeTicker)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=0b101b&studies=MASimple%40tv-basicstudies%1FMAExp%40tv-basicstudies%1FRSI%40tv-basicstudies&theme=dark&style=1&timezone=America%2FNew_York&withdateranges=1&locale=en`;
 
   return (
     <div
       style={{
         width: '100%',
-        minHeight: 'calc(100vh - 115px)',
+        minHeight: 'calc(100vh - 105px)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.65rem',
+        gap: '0.45rem',
         color: '#f8fafc',
       }}
     >
       {/* ===================================================================== */}
-      {/* 1. TOP INSTITUTIONAL COMMAND HEADER & INSTANT TICKER SWITCHER         */}
+      {/* 1. COMPACT INSTITUTIONAL COMMAND HEADER & INSTANT TICKER SWITCHER     */}
       {/* ===================================================================== */}
       <div
         style={{
           background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(9, 13, 22, 0.98))',
           border: '1px solid rgba(56, 189, 248, 0.25)',
           borderRadius: '10px',
-          padding: '0.65rem 0.9rem',
+          padding: '0.48rem 0.75rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.55rem',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+          gap: '0.35rem',
+          boxShadow: '0 6px 18px rgba(0, 0, 0, 0.32)',
         }}
       >
         <div
@@ -124,15 +130,15 @@ export default function DeepChartingTerminal({
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: '0.75rem',
+            gap: '0.5rem',
           }}
         >
           {/* Left: Ticker Identity, Spot Price, Stage & Key Vital Badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', minWidth: 0 }}>
               <span
                 style={{
-                  fontSize: '1.65rem',
+                  fontSize: '1.45rem',
                   fontWeight: 900,
                   color: '#ffffff',
                   fontFamily: 'monospace',
@@ -141,22 +147,35 @@ export default function DeepChartingTerminal({
               >
                 {activeTicker}
               </span>
-              <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 500 }}>
-                {expertTickerData?.name || ''}
-              </span>
+              {expertTickerData?.name && (
+                <span
+                  title={expertTickerData.name}
+                  style={{
+                    fontSize: '0.76rem',
+                    color: '#94a3b8',
+                    fontWeight: 500,
+                    maxWidth: '190px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {expertTickerData.name}
+                </span>
+              )}
             </div>
 
             {spotPrice > 0 && (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', fontFamily: 'monospace' }}>
-                <span style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', fontFamily: 'monospace' }}>
+                <span style={{ fontSize: '1.22rem', fontWeight: 800, color: '#f8fafc' }}>
                   ${spotPrice.toFixed(2)}
                 </span>
                 <span
                   style={{
-                    fontSize: '0.8rem',
+                    fontSize: '0.75rem',
                     fontWeight: 800,
-                    padding: '2px 7px',
-                    borderRadius: '5px',
+                    padding: '1px 6px',
+                    borderRadius: '4px',
                     background: chg1d >= 0 ? 'rgba(16, 185, 129, 0.16)' : 'rgba(239, 68, 68, 0.16)',
                     border: `1px solid ${chg1d >= 0 ? 'rgba(16, 185, 129, 0.45)' : 'rgba(239, 68, 68, 0.45)'}`,
                     color: chg1d >= 0 ? '#10b981' : '#f87171',
@@ -168,71 +187,32 @@ export default function DeepChartingTerminal({
               </div>
             )}
 
-            {/* Weinstein / Minervini Sub-Stage Pill */}
+            {/* Compact Sub-Stage Pill */}
             <span
               style={{
-                padding: '3px 9px',
-                borderRadius: '6px',
+                padding: '2px 7px',
+                borderRadius: '5px',
                 background: `${stageColor}1f`,
                 border: `1px solid ${stageColor}77`,
                 color: stageColor,
-                fontSize: '0.73rem',
+                fontSize: '0.7rem',
                 fontWeight: 800,
                 fontFamily: 'monospace',
               }}
               title={td?.narrative || stageText}
             >
-              🏛️ {stageText}
+              🏛️ {td?.stage_code || stageText}
             </span>
 
-            {/* Trend Alignment Stack Pill */}
-            {td?.regime_short && (
-              <span
-                style={{
-                  padding: '3px 9px',
-                  borderRadius: '6px',
-                  background: `${td.regime_color || '#38bdf8'}1a`,
-                  border: `1px solid ${td.regime_color || '#38bdf8'}66`,
-                  color: td.regime_color || '#38bdf8',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  fontFamily: 'monospace',
-                }}
-                title={td.trend_regime}
-              >
-                📐 {td.regime_short}
-              </span>
-            )}
-
-            {/* Where We Are In Trend Pill */}
-            {td?.maturity_phase && (
-              <span
-                style={{
-                  padding: '3px 9px',
-                  borderRadius: '6px',
-                  background: 'rgba(56, 189, 248, 0.14)',
-                  border: '1px solid rgba(56, 189, 248, 0.45)',
-                  color: '#38bdf8',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  fontFamily: 'monospace',
-                }}
-                title="Where We Are in the Current Trend Cycle vs 50-SMA"
-              >
-                📍 {td.maturity_phase}
-              </span>
-            )}
-
-            {/* Overall Overextension / Stretch Verdict Badge */}
             {td?.verdict_short && (
               <span
                 style={{
-                  padding: '3px 9px',
-                  borderRadius: '6px',
+                  padding: '2px 7px',
+                  borderRadius: '5px',
                   background: `${td.verdict_color || '#f59e0b'}1f`,
                   border: `1px solid ${td.verdict_color || '#f59e0b'}77`,
                   color: td.verdict_color || '#f59e0b',
-                  fontSize: '0.72rem',
+                  fontSize: '0.69rem',
                   fontWeight: 800,
                   fontFamily: 'monospace',
                 }}
@@ -242,107 +222,74 @@ export default function DeepChartingTerminal({
               </span>
             )}
 
-            {/* Minervini Trend Template Score */}
             <span
               style={{
-                padding: '3px 9px',
-                borderRadius: '6px',
-                background:
-                  trendTemplate.passed >= 6
-                    ? 'rgba(16, 185, 129, 0.14)'
-                    : trendTemplate.passed >= 4
-                    ? 'rgba(245, 158, 11, 0.14)'
-                    : 'rgba(239, 68, 68, 0.14)',
-                border: `1px solid ${
-                  trendTemplate.passed >= 6
-                    ? 'rgba(16, 185, 129, 0.45)'
-                    : trendTemplate.passed >= 4
-                    ? 'rgba(245, 158, 11, 0.45)'
-                    : 'rgba(239, 68, 68, 0.45)'
-                }`,
-                color:
-                  trendTemplate.passed >= 6
-                    ? '#10b981'
-                    : trendTemplate.passed >= 4
-                    ? '#fbbf24'
-                    : '#f87171',
-                fontSize: '0.72rem',
+                padding: '2px 7px',
+                borderRadius: '5px',
+                background: trendTemplate.passed >= 6 ? 'rgba(16,185,129,0.14)' : trendTemplate.passed >= 4 ? 'rgba(245,158,11,0.14)' : 'rgba(239,68,68,0.14)',
+                border: `1px solid ${trendTemplate.passed >= 6 ? 'rgba(16,185,129,0.45)' : trendTemplate.passed >= 4 ? 'rgba(245,158,11,0.45)' : 'rgba(239,68,68,0.45)'}`,
+                color: trendTemplate.passed >= 6 ? '#10b981' : trendTemplate.passed >= 4 ? '#fbbf24' : '#f87171',
+                fontSize: '0.69rem',
                 fontWeight: 700,
                 fontFamily: 'monospace',
               }}
               title="Mark Minervini 8-Point Stage 2 Trend Template Score"
             >
-              Trend Template: {trendTemplate.passed}/8
+              TT: {trendTemplate.passed}/8
             </span>
 
-            {/* Master Algo Score */}
             {masterScore !== null && (
               <span
                 style={{
-                  padding: '3px 9px',
-                  borderRadius: '6px',
+                  padding: '2px 7px',
+                  borderRadius: '5px',
                   background: `${scoreColor}1a`,
                   border: `1px solid ${scoreColor}66`,
                   color: scoreColor,
-                  fontSize: '0.73rem',
+                  fontSize: '0.7rem',
                   fontWeight: 800,
                   fontFamily: 'monospace',
                 }}
+                title={tp?.active_setup || 'Walk-Forward Quantitative Confluence Score'}
               >
-                ⚡ Algo Score: {masterScore}/100
+                ⚡ Score: {masterScore}/100 ({tp?.grade || 'B'})
               </span>
             )}
 
-            {/* Quick Microstructure Pills */}
             {sm.adr_20_pct !== undefined && (
               <span
                 style={{
-                  fontSize: '0.72rem',
-                  fontFamily: 'monospace',
-                  color: '#cbd5e1',
-                  background: 'rgba(255,255,255,0.04)',
-                  padding: '2px 7px',
-                  borderRadius: '5px',
+                  fontSize: '0.69rem', fontFamily: 'monospace', color: '#cbd5e1',
+                  background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: '4px',
                   border: '1px solid rgba(148,163,184,0.16)',
                 }}
               >
-                20D ADR: <strong style={{ color: '#38bdf8' }}>{sm.adr_20_pct}%</strong> · ATR:{' '}
-                <strong style={{ color: '#f59e0b' }}>${sm.atr_14}</strong>
+                20D ADR:<strong style={{ color: '#38bdf8' }}>{sm.adr_20_pct}%</strong> · ATR:<strong style={{ color: '#f59e0b' }}>${sm.atr_14}</strong>
               </span>
             )}
 
-            {sm.ud_vol_ratio_20d !== undefined && (
+            {(sm.ud_vol_ratio_50d ?? sm.ud_vol_ratio_20d) !== undefined && (
               <span
                 style={{
-                  fontSize: '0.72rem',
-                  fontFamily: 'monospace',
-                  color: '#cbd5e1',
-                  background: 'rgba(255,255,255,0.04)',
-                  padding: '2px 7px',
-                  borderRadius: '5px',
+                  fontSize: '0.69rem', fontFamily: 'monospace', color: '#cbd5e1',
+                  background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: '4px',
                   border: '1px solid rgba(148,163,184,0.16)',
                 }}
               >
-                20D U/D Vol:{' '}
-                <strong style={{ color: sm.ud_vol_ratio_20d >= 1.2 ? '#10b981' : '#f87171' }}>
-                  {sm.ud_vol_ratio_20d}x
+                50D U/D:{' '}
+                <strong style={{ color: (sm.ud_vol_ratio_50d ?? sm.ud_vol_ratio_20d) >= 1.2 ? '#10b981' : '#f87171' }}>
+                  {sm.ud_vol_ratio_50d ?? sm.ud_vol_ratio_20d}x
                 </strong>
               </span>
             )}
           </div>
 
-          {/* Right: Chart Mode Switcher + Instant Ticker Search Bar + Full Chart + Dock Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-            {/* 3-Way Chart View Mode Switcher */}
+          {/* Right: Chart Mode Switcher + Ticker Input + Full Chart + Dock Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                background: 'rgba(2, 6, 23, 0.8)',
-                border: '1px solid rgba(148, 163, 184, 0.2)',
-                borderRadius: '6px',
-                padding: '2px',
+                display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(2, 6, 23, 0.8)',
+                border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '6px', padding: '2px',
               }}
             >
               {[
@@ -364,12 +311,12 @@ export default function DeepChartingTerminal({
                       }
                     }}
                     style={{
-                      padding: '3px 8px',
+                      padding: '3px 7px',
                       borderRadius: '4px',
                       border: isAct ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid transparent',
                       background: isAct ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
                       color: isAct ? '#38bdf8' : '#94a3b8',
-                      fontSize: '0.7rem',
+                      fontSize: '0.68rem',
                       fontFamily: 'monospace',
                       fontWeight: isAct ? 800 : 600,
                       cursor: 'pointer',
@@ -384,49 +331,34 @@ export default function DeepChartingTerminal({
             <form onSubmit={handleTickerSubmit} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  background: 'rgba(2, 6, 23, 0.75)',
-                  border: '1px solid rgba(56, 189, 248, 0.35)',
-                  borderRadius: '6px',
-                  padding: '3px 8px',
+                  display: 'flex', alignItems: 'center', background: 'rgba(2, 6, 23, 0.75)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)', borderRadius: '6px', padding: '2px 7px',
                 }}
               >
-                <Search size={13} color="#38bdf8" style={{ marginRight: '5px' }} />
+                <Search size={12} color="#38bdf8" style={{ marginRight: '4px', flexShrink: 0 }} />
                 <input
                   type="text"
                   value={localInput}
                   onChange={(e) => setLocalInput(e.target.value)}
-                  placeholder="Load ticker (e.g. NVDA, PLTR)..."
+                  placeholder="Ticker (e.g. NVDA)..."
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    color: '#f8fafc',
-                    fontFamily: 'monospace',
-                    fontSize: '0.76rem',
-                    width: '155px',
+                    background: 'transparent', border: 'none', outline: 'none',
+                    color: '#f8fafc', fontFamily: 'monospace', fontSize: '0.73rem', width: '148px',
                   }}
                 />
               </div>
               <button
                 type="submit"
                 style={{
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #38bdf8',
-                  background: 'rgba(56, 189, 248, 0.2)',
-                  color: '#38bdf8',
-                  fontSize: '0.73rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
+                  padding: '3px 9px', borderRadius: '5px', border: '1px solid #38bdf8',
+                  background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8',
+                  fontSize: '0.71rem', fontWeight: 800, cursor: 'pointer',
                 }}
               >
                 Plot
               </button>
             </form>
 
-            {/* Full-Screen Full Chart Button */}
             <button
               type="button"
               onClick={() => {
@@ -437,65 +369,42 @@ export default function DeepChartingTerminal({
                 });
               }}
               style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: '1px solid rgba(16, 185, 129, 0.45)',
+                padding: '3px 9px', borderRadius: '5px', border: '1px solid rgba(16, 185, 129, 0.45)',
                 background: isFullChartScreen ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.16)',
                 color: isFullChartScreen ? '#f87171' : '#10b981',
-                fontSize: '0.72rem',
-                fontFamily: 'monospace',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
+                fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 800,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
               }}
               title="Expand Active Chart to Fullscreen (100vw × 100vh)"
             >
-              {isFullChartScreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-              {isFullChartScreen ? 'Exit Full Chart' : 'Full Chart'}
+              {isFullChartScreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              {isFullChartScreen ? 'Exit Full' : 'Full Chart'}
             </button>
 
             <button
               type="button"
               onClick={() => setShowRightDock((d) => !d)}
               style={{
-                padding: '4px 8px',
-                borderRadius: '6px',
-                border: '1px solid rgba(148, 163, 184, 0.25)',
-                background: 'rgba(15, 23, 42, 0.8)',
-                color: '#cbd5e1',
-                fontSize: '0.72rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
+                padding: '3px 8px', borderRadius: '5px', border: '1px solid rgba(148, 163, 184, 0.25)',
+                background: 'rgba(15, 23, 42, 0.8)', color: '#cbd5e1',
+                fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
               }}
-              title={showRightDock ? 'Collapse Right Quant Telemetry Dock' : 'Open Right Quant Telemetry Dock'}
             >
-              {showRightDock ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+              {showRightDock ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />}
               {showRightDock ? 'Hide Dock' : 'Quant Dock'}
             </button>
           </div>
         </div>
 
-        {/* Quick Market Leaders & Benchmarks Strip */}
+        {/* Row 2: Quick Switch + 52W Range + Footprint Counters */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            paddingTop: '0.35rem',
-            borderTop: '1px solid rgba(148, 163, 184, 0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap',
+            gap: '0.35rem', paddingTop: '0.28rem', borderTop: '1px solid rgba(148, 163, 184, 0.12)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.69rem', color: '#64748b', fontWeight: 700, marginRight: '4px' }}>
-              QUICK SWITCH:
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, marginRight: '3px' }}>QUICK:</span>
             {QUICK_TICKERS.map((sym) => {
               const isCurr = sym === activeTicker;
               return (
@@ -504,15 +413,11 @@ export default function DeepChartingTerminal({
                   type="button"
                   onClick={() => onSelectTicker && onSelectTicker(sym)}
                   style={{
-                    padding: '2px 7px',
-                    borderRadius: '4px',
+                    padding: '1px 6px', borderRadius: '4px',
                     border: isCurr ? '1px solid #38bdf8' : '1px solid rgba(148, 163, 184, 0.16)',
                     background: isCurr ? 'rgba(56, 189, 248, 0.22)' : 'rgba(2, 6, 23, 0.45)',
                     color: isCurr ? '#38bdf8' : '#cbd5e1',
-                    fontSize: '0.7rem',
-                    fontFamily: 'monospace',
-                    fontWeight: isCurr ? 800 : 600,
-                    cursor: 'pointer',
+                    fontSize: '0.68rem', fontFamily: 'monospace', fontWeight: isCurr ? 800 : 600, cursor: 'pointer',
                   }}
                 >
                   {sym}
@@ -521,179 +426,80 @@ export default function DeepChartingTerminal({
             })}
           </div>
 
-          {/* 52-Week Range & Footprint Counters */}
           {sm.high_52w > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.71rem', fontFamily: 'monospace', color: '#94a3b8' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.69rem', fontFamily: 'monospace', color: '#94a3b8' }}>
               <span>
-                52W Range: <strong style={{ color: '#ef4444' }}>${sm.low_52w}</strong> —{' '}
-                <strong style={{ color: '#10b981' }}>${sm.high_52w}</strong> (
-                <span style={{ color: sm.pct_off_52w_high >= -10 ? '#10b981' : '#f59e0b' }}>
-                  {sm.pct_off_52w_high}% vs High
-                </span>
-                )
+                52W: <strong style={{ color: '#ef4444' }}>${sm.low_52w}</strong>–<strong style={{ color: '#10b981' }}>${sm.high_52w}</strong>{' '}
+                (<span style={{ color: sm.pct_off_52w_high >= -10 ? '#10b981' : '#f59e0b' }}>{sm.pct_off_52w_high}%</span>)
               </span>
-              <span>·</span>
-              <span style={{ color: '#00f2fe' }}>⚡ {sm.pocket_pivot_count || 0} Pocket Pivots</span>
-              <span>·</span>
-              <span style={{ color: '#fbbf24' }}>💧 {sm.vdu_count || 0} VDU Bars</span>
-              <span>·</span>
-              <span style={{ color: '#38bdf8' }}>🔵 {sm.blue_dot_count || 0} RS Blue Dots</span>
+              <span style={{ color: '#00f2fe' }}>⚡{sm.pocket_pivot_count || 0} PP</span>
+              <span style={{ color: '#fbbf24' }}>💧{sm.vdu_count || 0} VDU</span>
+              <span style={{ color: '#38bdf8' }}>🔵{sm.blue_dot_count || 0} RS</span>
             </div>
           )}
         </div>
 
-        {/* Row 3: Live SMA Overextension Telemetry & Where-In-Trend Strip */}
-        {Object.keys(maRibbon).length > 0 && (
+        {/* Row 3: Compact SMA Stretch + MarketSurge Buy Point Status */}
+        {(maRibbonList.length > 0 || chartData?.marketsurge?.buy_point > 0) && (
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.5rem',
-              paddingTop: '0.4rem',
-              borderTop: '1px solid rgba(148, 163, 184, 0.12)',
-              fontFamily: 'monospace',
-              fontSize: '0.69rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap',
+              gap: '0.35rem', paddingTop: '0.28rem', borderTop: '1px solid rgba(148, 163, 184, 0.12)',
+              fontFamily: 'monospace', fontSize: '0.67rem',
             }}
           >
-            {/* Individual SMA Stretch & Overextension Pills */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-              <span style={{ color: '#64748b', fontWeight: 800 }}>SMA STRETCH &amp; EXTENSION:</span>
-              {Object.values(maRibbon).map((m) => {
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+              <span style={{ color: '#64748b', fontWeight: 800 }}>SMA EXT:</span>
+              {maRibbonList.map((m) => {
                 if (m.dist_pct === null || m.dist_pct === undefined) return null;
                 const stColor = m.state_color || '#94a3b8';
                 return (
                   <span
                     key={m.label}
                     style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      padding: '2px 7px',
-                      borderRadius: '5px',
-                      background: 'rgba(2, 6, 23, 0.65)',
-                      border: `1px solid ${stColor}55`,
+                      display: 'inline-flex', alignItems: 'center', gap: '4px',
+                      padding: '1px 5px', borderRadius: '4px',
+                      background: 'rgba(2, 6, 23, 0.65)', border: `1px solid ${stColor}55`,
                     }}
-                    title={`${m.label} ($${m.value}): ${m.dist_pct >= 0 ? '+' : ''}${m.dist_pct}% (${m.atr_multiple >= 0 ? '+' : ''}${m.atr_multiple}x ATR | ${m.pct_rank_1y}th 1Y %ile) — ${m.stretch_state}`}
+                    title={`${m.label} ($${m.value}): ${m.dist_pct >= 0 ? '+' : ''}${m.dist_pct}% (${m.atr_multiple >= 0 ? '+' : ''}${m.atr_multiple}x ATR | ${m.pct_rank_ordinal || `${m.pct_rank_1y}%`} 1Y %ile) — ${m.stretch_state}`}
                   >
                     <strong style={{ color: m.color }}>{m.label}:</strong>
                     <span style={{ color: m.dist_pct >= 0 ? '#10b981' : '#f87171', fontWeight: 700 }}>
-                      {m.dist_pct >= 0 ? '+' : ''}
-                      {m.dist_pct}%
+                      {m.dist_pct >= 0 ? '+' : ''}{m.dist_pct}%
                     </span>
-                    {m.atr_multiple !== undefined && m.atr_multiple !== null && (
-                      <span style={{ color: '#94a3b8', fontSize: '0.64rem' }}>
-                        ({m.atr_multiple >= 0 ? '+' : ''}
-                        {m.atr_multiple}x ATR)
-                      </span>
-                    )}
-                    <span
-                      style={{
-                        padding: '1px 5px',
-                        borderRadius: '3px',
-                        background: `${stColor}22`,
-                        color: stColor,
-                        fontSize: '0.62rem',
-                        fontWeight: 800,
-                      }}
-                    >
-                      {m.stretch_state}
-                    </span>
+                    <span style={{ color: stColor, fontSize: '0.61rem', fontWeight: 800 }}>{m.stretch_state}</span>
                   </span>
                 );
               })}
             </div>
 
-            {/* Tactical Zone Summary */}
-            {td?.tactical_zone && (
-              <div
-                style={{
-                  color: td.verdict_color || '#38bdf8',
-                  fontWeight: 700,
-                  background: 'rgba(2, 6, 23, 0.65)',
-                  padding: '2px 8px',
-                  borderRadius: '5px',
-                  border: `1px solid ${(td.verdict_color || '#38bdf8')}44`,
-                }}
-              >
-                {td.tactical_zone}
-              </div>
-            )}
+            {chartData?.marketsurge?.buy_point > 0 && (() => {
+              const ms = chartData.marketsurge;
+              const distPct = ms.distance_to_pivot_pct ?? ms.dist_to_pivot_pct ?? 0;
+              const pColor = ms.pivot_status_color || ms.status_color || '#10b981';
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#c084fc', fontWeight: 800 }}>🏆 {ms.pattern_name}</span>
+                  <span style={{ color: '#94a3b8' }}>
+                    {ms.is_actionable_buy_point === false ? 'Reclaim' : 'Buy Pt'}:{' '}
+                    <strong style={{ color: ms.is_actionable_buy_point === false ? '#f59e0b' : '#10b981' }}>
+                      ${ms.buy_point.toFixed(2)}
+                    </strong>{' '}
+                    ({distPct >= 0 ? '+' : ''}{distPct}%)
+                  </span>
+                  <span
+                    style={{
+                      padding: '1px 6px', borderRadius: '4px', background: `${pColor}22`,
+                      border: `1px solid ${pColor}66`, color: pColor, fontWeight: 800,
+                    }}
+                  >
+                    {ms.pivot_badge || ms.pivot_status}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
         )}
-
-        {/* Row 4: MarketSurge Pattern Recognition & Official Buy Point Strip */}
-        {chartData?.marketsurge?.buy_point > 0 && (() => {
-          const ms = chartData.marketsurge;
-          const distPct = ms.distance_to_pivot_pct ?? ms.dist_to_pivot_pct ?? 0;
-          const pColor = ms.pivot_status_color || ms.status_color || '#10b981';
-          const pStage = ms.pattern_stage || `${ms.base_length_weeks || 5}w Base`;
-          return (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.5rem',
-                paddingTop: '0.35rem',
-                borderTop: '1px solid rgba(192, 132, 252, 0.22)',
-                fontFamily: 'monospace',
-                fontSize: '0.7rem',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    padding: '2px 8px',
-                    borderRadius: '5px',
-                    background: 'rgba(192, 132, 252, 0.18)',
-                    border: '1px solid rgba(192, 132, 252, 0.55)',
-                    color: '#c084fc',
-                    fontWeight: 900,
-                  }}
-                >
-                  🏆 MARKET-SURGE PATTERN: {ms.pattern_name} ({pStage})
-                </span>
-                <span style={{ color: '#e2e8f0' }}>
-                  Official Buy Pt: <strong style={{ color: '#10b981' }}>${ms.buy_point.toFixed(2)}</strong>
-                </span>
-                <span style={{ color: '#94a3b8' }}>
-                  5% Buy Zone: <strong style={{ color: '#34d399' }}>${ms.buy_point.toFixed(2)} – ${ms.buy_zone_high.toFixed(2)}</strong>
-                </span>
-                <span style={{ color: '#94a3b8' }}>
-                  -7.5% Stop: <strong style={{ color: '#ef4444' }}>${ms.stop_loss.toFixed(2)}</strong>
-                </span>
-                <span style={{ color: '#94a3b8' }}>
-                  +20-25% Goal: <strong style={{ color: '#38bdf8' }}>${ms.profit_goal_20.toFixed(2)} – ${ms.profit_goal_25.toFixed(2)}</strong>
-                </span>
-                {ms.base_depth_pct > 0 && (
-                  <span style={{ color: '#94a3b8' }}>
-                    Depth: <strong style={{ color: '#fbbf24' }}>-{ms.base_depth_pct}%</strong> ({ms.base_length_weeks}w)
-                  </span>
-                )}
-                {ms.handle_depth_pct > 0 && (
-                  <span style={{ color: '#94a3b8' }}>
-                    Handle: <strong style={{ color: '#f59e0b' }}>-{ms.handle_depth_pct}%</strong>
-                  </span>
-                )}
-              </div>
-              <span
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: '5px',
-                  background: `${pColor}22`,
-                  border: `1px solid ${pColor}66`,
-                  color: pColor,
-                  fontWeight: 800,
-                }}
-              >
-                {ms.pivot_badge || ms.pivot_status} ({distPct >= 0 ? '+' : ''}{distPct}% vs ${ms.buy_point.toFixed(2)})
-              </span>
-            </div>
-          );
-        })()}
       </div>
 
       {/* ===================================================================== */}
@@ -704,139 +510,105 @@ export default function DeepChartingTerminal({
           flex: 1,
           width: '100%',
           display: 'grid',
-          gridTemplateColumns: showRightDock ? 'minmax(0, 1fr) 375px' : 'minmax(0, 1fr)',
-          gap: '0.75rem',
+          gridTemplateColumns: showRightDock ? 'minmax(0, 1fr) clamp(310px, 25vw, 355px)' : 'minmax(0, 1fr)',
+          gap: '0.65rem',
           alignItems: 'stretch',
         }}
       >
-        {/* LEFT: Interactive Institutional Chart (4-Pane Quant, Full Price, or TradingView Full Chart) */}
-        <div style={{ minHeight: '720px', width: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          {chartViewMode === 'tradingview_full' ? (
-            (() => {
-              const tvNode = (
+        {/* LEFT: Interactive Institutional Chart (TradingView iframe when selected; UnifiedPlotlyChart stays mounted to preserve state) */}
+        <div style={{ minHeight: '690px', width: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          {chartViewMode === 'tradingview_full' && (() => {
+            const tvNode = (
+              <div
+                style={{
+                  position: isFullChartScreen ? 'fixed' : 'relative',
+                  inset: isFullChartScreen ? 0 : 'auto',
+                  width: isFullChartScreen ? '100vw' : '100%',
+                  height: isFullChartScreen ? '100vh' : '730px',
+                  zIndex: isFullChartScreen ? 999999 : 2,
+                  background: '#070b12',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  borderRadius: isFullChartScreen ? 0 : '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
                 <div
                   style={{
-                    position: isFullChartScreen ? 'fixed' : 'relative',
-                    inset: isFullChartScreen ? 0 : 'auto',
-                    top: isFullChartScreen ? 0 : 'auto',
-                    left: isFullChartScreen ? 0 : 'auto',
-                    width: isFullChartScreen ? '100vw' : '100%',
-                    height: isFullChartScreen ? '100vh' : '760px',
-                    zIndex: isFullChartScreen ? 999999 : 1,
-                    background: '#070b12',
-                    border: '1px solid rgba(56, 189, 248, 0.25)',
-                    borderRadius: isFullChartScreen ? 0 : '10px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '0.45rem 0.85rem', background: 'rgba(15, 23, 42, 0.96)',
+                    borderBottom: '1px solid rgba(148, 163, 184, 0.16)', flexWrap: 'wrap', gap: '0.5rem',
                   }}
                 >
-                  {/* TradingView Full Chart Top Control Strip */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '0.45rem 0.85rem',
-                      background: 'rgba(15, 23, 42, 0.96)',
-                      borderBottom: '1px solid rgba(148, 163, 184, 0.16)',
-                      flexWrap: 'wrap',
-                      gap: '0.5rem',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'monospace' }}>
-                        🏛️ TRADINGVIEW FULL INTERACTIVE CHART · {activeTicker}
-                      </span>
-                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                        (Full Drawing Toolbar, Fibonacci, Multi-Timeframe &amp; 100+ Indicators)
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setChartViewMode('quant_4pane');
-                          setShowRightDock(true);
-                        }}
-                        style={{
-                          padding: '3px 9px',
-                          borderRadius: '5px',
-                          border: '1px solid rgba(56, 189, 248, 0.4)',
-                          background: 'rgba(56, 189, 248, 0.15)',
-                          color: '#38bdf8',
-                          fontSize: '0.7rem',
-                          fontFamily: 'monospace',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        📊 Switch to 4-Pane Quant + GEX
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsFullChartScreen((f) => !f)}
-                        style={{
-                          padding: '3px 9px',
-                          borderRadius: '5px',
-                          border: '1px solid rgba(16, 185, 129, 0.45)',
-                          background: isFullChartScreen ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.16)',
-                          color: isFullChartScreen ? '#f87171' : '#10b981',
-                          fontSize: '0.7rem',
-                          fontFamily: 'monospace',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        {isFullChartScreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                        {isFullChartScreen ? 'Exit Fullscreen' : 'Fullscreen'}
-                      </button>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'monospace' }}>
+                      🏛️ TRADINGVIEW FULL INTERACTIVE CHART · {activeTicker}
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      (Drawing Tools, Fibonacci &amp; Multi-Timeframe Studies)
+                    </span>
                   </div>
-                  <div
-                    className="tv-full-widget-host"
-                    style={{
-                      flex: 1,
-                      width: '100%',
-                      height: isFullChartScreen ? 'calc(100vh - 45px)' : '710px',
-                      minHeight: isFullChartScreen ? 'calc(100vh - 45px)' : '710px',
-                    }}
-                  >
-                    <AdvancedRealTimeChart
-                      symbol={activeTicker}
-                      theme="dark"
-                      autosize
-                      interval="D"
-                      timezone="America/New_York"
-                      style="1"
-                      locale="en"
-                      toolbar_bg="#0b101b"
-                      enable_publishing={false}
-                      withdateranges={true}
-                      hide_side_toolbar={false}
-                      allow_symbol_change={true}
-                      save_image={true}
-                      details={true}
-                      hotlist={false}
-                      calendar={false}
-                      studies={[
-                        'MASimple@tv-basicstudies',
-                        'MAExp@tv-basicstudies',
-                        'RSI@tv-basicstudies',
-                        'Volume@tv-basicstudies',
-                      ]}
-                    />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChartViewMode('quant_4pane');
+                        setShowRightDock(true);
+                      }}
+                      style={{
+                        padding: '3px 9px', borderRadius: '5px', border: '1px solid rgba(56, 189, 248, 0.4)',
+                        background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8',
+                        fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      📊 Back to 4-Pane Quant + GEX
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsFullChartScreen((f) => !f)}
+                      style={{
+                        padding: '3px 9px', borderRadius: '5px', border: '1px solid rgba(16, 185, 129, 0.45)',
+                        background: isFullChartScreen ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.16)',
+                        color: isFullChartScreen ? '#f87171' : '#10b981',
+                        fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 800, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                      }}
+                    >
+                      {isFullChartScreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                      {isFullChartScreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                    </button>
                   </div>
                 </div>
-              );
-              return isFullChartScreen && typeof document !== 'undefined'
-                ? createPortal(tvNode, document.body)
-                : tvNode;
-            })()
-          ) : (
+                <iframe
+                  key={`tv_${activeTicker}`}
+                  title={`TradingView ${activeTicker}`}
+                  src={tvEmbedUrl}
+                  style={{
+                    flex: 1,
+                    width: '100%',
+                    height: isFullChartScreen ? 'calc(100vh - 45px)' : '685px',
+                    border: 'none',
+                    background: '#070b12',
+                  }}
+                  allowFullScreen
+                />
+              </div>
+            );
+            return isFullChartScreen && typeof document !== 'undefined'
+              ? createPortal(tvNode, document.body)
+              : tvNode;
+          })()}
+
+          <div
+            style={{
+              display: chartViewMode === 'tradingview_full' ? 'none' : 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              width: '100%',
+              minWidth: 0,
+            }}
+          >
             <UnifiedPlotlyChart
               ticker={activeTicker}
               onChartDataLoaded={setChartData}
@@ -852,7 +624,7 @@ export default function DeepChartingTerminal({
                 if (nextFs) setShowRightDock(false);
               }}
             />
-          )}
+          </div>
         </div>
 
         {/* RIGHT: High-Density Institutional Quant Telemetry Dock */}
@@ -914,10 +686,11 @@ export default function DeepChartingTerminal({
               style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: '0.75rem',
+                overflowX: 'hidden',
+                padding: '0.55rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.75rem',
+                gap: '0.6rem',
               }}
             >
               {/* =============================================================== */}
@@ -1151,66 +924,73 @@ export default function DeepChartingTerminal({
                       <span>📈 SMA Overextension &amp; Stretch Matrix</span>
                       <span style={{ color: '#94a3b8', fontSize: '0.67rem' }}>Spot ${spotPrice.toFixed(2)}</span>
                     </div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'monospace', fontSize: '0.69rem' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'monospace', fontSize: '0.63rem' }}>
                       <thead>
                         <tr style={{ color: '#64748b', borderBottom: '1px solid rgba(148,163,184,0.12)', textAlign: 'left' }}>
-                          <th style={{ padding: '3px 0' }}>MA</th>
-                          <th style={{ padding: '3px 0' }}>Level</th>
-                          <th style={{ padding: '3px 0' }}>% / ATR</th>
-                          <th style={{ padding: '3px 0' }}>1Y %ile</th>
-                          <th style={{ padding: '3px 0', textAlign: 'right' }}>Extension State</th>
+                          <th style={{ padding: '4px 3px 4px 0', whiteSpace: 'nowrap' }}>MA</th>
+                          <th style={{ padding: '4px 4px', whiteSpace: 'nowrap' }}>Level</th>
+                          <th style={{ padding: '4px 4px', whiteSpace: 'nowrap' }}>% / ATR</th>
+                          <th style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}>%ile</th>
+                          <th style={{ padding: '4px 0 4px 3px', textAlign: 'right', whiteSpace: 'nowrap' }}>State</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.values(maRibbon).map((m) => {
+                        {maRibbonList.map((m) => {
                           const stColor = m.state_color || (m.above ? '#10b981' : '#f87171');
+                          const shortStateMap = {
+                            'AT SUPPORT / TIGHT': 'TIGHT SUPP',
+                            'BELOW RESISTANCE': 'BELOW RES',
+                            'OVEREXTENDED': 'OVEREXT',
+                            'OVERSOLD STRETCH': 'OVERSOLD',
+                            'NORMAL TREND': 'NORMAL',
+                            'PULLBACK / BELOW': 'PULLBACK',
+                            'BROKEN / WEAK': 'WEAK',
+                          };
+                          const shortState = shortStateMap[m.stretch_state] || m.stretch_state || (m.above ? 'ABOVE' : 'BELOW');
                           return (
                             <tr key={m.label} style={{ borderBottom: '1px solid rgba(148,163,184,0.06)' }}>
-                              <td style={{ padding: '5px 0', fontWeight: 800, color: m.color }}>
+                              <td style={{ padding: '4px 3px 4px 0', fontWeight: 800, color: m.color, whiteSpace: 'nowrap' }}>
                                 {m.label}
                                 <span
                                   style={{
-                                    marginLeft: '3px',
-                                    fontSize: '0.62rem',
-                                    color:
-                                      m.slope === 'Rising'
-                                        ? '#10b981'
-                                        : m.slope === 'Falling'
-                                        ? '#f87171'
-                                        : '#94a3b8',
+                                    marginLeft: '2px',
+                                    fontSize: '0.6rem',
+                                    color: m.slope === 'Rising' ? '#10b981' : m.slope === 'Falling' ? '#f87171' : '#94a3b8',
                                   }}
                                   title={`Slope: ${m.slope}`}
                                 >
                                   {m.slope === 'Rising' ? '↗' : m.slope === 'Falling' ? '↘' : '→'}
                                 </span>
                               </td>
-                              <td style={{ padding: '5px 0', color: '#e2e8f0' }}>
+                              <td style={{ padding: '4px 4px', color: '#e2e8f0', whiteSpace: 'nowrap' }}>
                                 {m.value ? `$${m.value.toFixed(2)}` : '—'}
                               </td>
                               <td
                                 style={{
-                                  padding: '5px 0',
+                                  padding: '4px 4px',
                                   fontWeight: 700,
                                   color: m.dist_pct >= 0 ? '#10b981' : '#f87171',
+                                  whiteSpace: 'nowrap',
                                 }}
                               >
                                 {m.dist_pct !== null ? `${m.dist_pct >= 0 ? '+' : ''}${m.dist_pct}%` : '—'}
                                 {m.atr_multiple !== undefined && m.atr_multiple !== null && (
-                                  <div style={{ fontSize: '0.61rem', color: '#94a3b8', fontWeight: 600 }}>
+                                  <div style={{ fontSize: '0.58rem', color: '#94a3b8', fontWeight: 600 }}>
                                     {m.atr_multiple >= 0 ? '+' : ''}
-                                    {m.atr_multiple}x ATR
+                                    {m.atr_multiple}x
                                   </div>
                                 )}
                               </td>
-                              <td style={{ padding: '5px 0', color: '#cbd5e1', fontSize: '0.66rem' }}>
+                              <td style={{ padding: '4px 3px', color: '#cbd5e1', fontSize: '0.62rem', whiteSpace: 'nowrap' }}>
                                 {m.pct_rank_1y !== undefined && m.pct_rank_1y !== null ? `${m.pct_rank_1y}%` : '—'}
                               </td>
-                              <td style={{ padding: '5px 0', textAlign: 'right' }}>
+                              <td style={{ padding: '4px 0 4px 3px', textAlign: 'right' }}>
                                 <span
+                                  title={m.stretch_state || ''}
                                   style={{
-                                    padding: '2px 5px',
+                                    padding: '2px 4px',
                                     borderRadius: '4px',
-                                    fontSize: '0.61rem',
+                                    fontSize: '0.58rem',
                                     fontWeight: 800,
                                     background: `${stColor}22`,
                                     border: `1px solid ${stColor}55`,
@@ -1218,7 +998,7 @@ export default function DeepChartingTerminal({
                                     whiteSpace: 'nowrap',
                                   }}
                                 >
-                                  {m.stretch_state || (m.above ? 'ABOVE' : 'BELOW')}
+                                  {shortState}
                                 </span>
                               </td>
                             </tr>
@@ -1231,6 +1011,7 @@ export default function DeepChartingTerminal({
                   {/* 1.5 MarketSurge Official Pattern & Buy Point Card */}
                   {chartData?.marketsurge?.buy_point > 0 && (() => {
                     const ms = chartData.marketsurge;
+                    const isAct = ms.is_actionable_buy_point !== false;
                     const distPct = ms.distance_to_pivot_pct ?? ms.dist_to_pivot_pct ?? 0;
                     const pColor = ms.pivot_status_color || ms.status_color || '#10b981';
                     return (
@@ -1244,28 +1025,15 @@ export default function DeepChartingTerminal({
                       >
                         <div
                           style={{
-                            fontSize: '0.73rem',
-                            fontWeight: 800,
-                            color: '#c084fc',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.04em',
-                            marginBottom: '0.45rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: '6px',
+                            fontSize: '0.72rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase',
+                            marginBottom: '0.4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px',
                           }}
                         >
-                          <span>🏆 MarketSurge Buy Point</span>
+                          <span>🏆 {isAct ? 'MarketSurge Buy Pt' : 'Base Repair Watch'}</span>
                           <span
                             style={{
-                              fontFamily: 'monospace',
-                              fontSize: '0.64rem',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              background: `${pColor}22`,
-                              border: `1px solid ${pColor}66`,
-                              color: pColor,
+                              fontFamily: 'monospace', fontSize: '0.62rem', padding: '2px 6px', borderRadius: '4px',
+                              background: `${pColor}22`, border: `1px solid ${pColor}66`, color: pColor,
                             }}
                           >
                             {ms.pivot_badge || 'PIVOT'} ({distPct >= 0 ? '+' : ''}{distPct}%)
@@ -1273,42 +1041,37 @@ export default function DeepChartingTerminal({
                         </div>
                         <div
                           style={{
-                            fontSize: '0.73rem',
-                            fontWeight: 800,
-                            color: '#f8fafc',
-                            marginBottom: '0.4rem',
-                            fontFamily: 'monospace',
-                            display: 'flex',
-                            justifyContent: 'space-between',
+                            fontSize: '0.72rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.4rem',
+                            fontFamily: 'monospace', display: 'flex', justifyContent: 'space-between',
                           }}
                         >
                           <span>{ms.pattern_name}</span>
-                          <span style={{ color: '#fbbf24', fontSize: '0.67rem' }}>
+                          <span style={{ color: '#fbbf24', fontSize: '0.65rem' }}>
                             -{ms.base_depth_pct}% Depth · {ms.base_length_weeks}w
                           </span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontFamily: 'monospace' }}>
-                          <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #10b981' }}>
-                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Official Buy Point</div>
-                            <div style={{ fontSize: '0.92rem', fontWeight: 900, color: '#10b981' }}>
+                          <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: `3px solid ${isAct ? '#10b981' : '#f59e0b'}` }}>
+                            <div style={{ fontSize: '0.61rem', color: '#94a3b8' }}>{isAct ? 'Official Buy Point' : '21/50 Reclaim Pivot'}</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 900, color: isAct ? '#10b981' : '#f59e0b' }}>
                               ${ms.buy_point.toFixed(2)}
                             </div>
                           </div>
                           <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #34d399' }}>
-                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>5% Buy Zone</div>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
+                            <div style={{ fontSize: '0.61rem', color: '#94a3b8' }}>5% Pivot Zone</div>
+                            <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
                               ${ms.buy_point.toFixed(2)} – ${ms.buy_zone_high.toFixed(2)}
                             </div>
                           </div>
                           <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #ef4444' }}>
-                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>-7.5% Hard Stop</div>
-                            <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ef4444' }}>
+                            <div style={{ fontSize: '0.61rem', color: '#94a3b8' }}>{isAct ? '-7.5% Pivot Stop' : '-7.5% Spot Risk'}</div>
+                            <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ef4444' }}>
                               ${ms.stop_loss.toFixed(2)}
                             </div>
                           </div>
                           <div style={{ background: 'rgba(2,6,23,0.6)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #38bdf8' }}>
-                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>+20-25% Profit Goal</div>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
+                            <div style={{ fontSize: '0.61rem', color: '#94a3b8' }}>+20–25% Extension</div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
                               ${ms.profit_goal_20.toFixed(2)} – ${ms.profit_goal_25.toFixed(2)}
                             </div>
                           </div>
@@ -1317,57 +1080,82 @@ export default function DeepChartingTerminal({
                     );
                   })()}
 
-                  {/* 2. Algorithmic ATR Trade Plan Card */}
+                  {/* 2. Walk-Forward Validated & Direction-Aware Trade Plan Card */}
                   {tp && (
                     <div
                       style={{
-                        background: 'rgba(16, 185, 129, 0.06)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        background: tp.direction === 'DEFENSIVE' ? 'rgba(245, 158, 11, 0.06)' : 'rgba(16, 185, 129, 0.06)',
+                        border: `1px solid ${tp.direction === 'DEFENSIVE' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(16, 185, 129, 0.32)'}`,
                         borderRadius: '8px',
                         padding: '0.65rem',
                       }}
                     >
                       <div
                         style={{
-                          fontSize: '0.74rem',
-                          fontWeight: 800,
-                          color: '#10b981',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          marginBottom: '0.45rem',
-                          display: 'flex',
-                          justifyContent: 'space-between',
+                          fontSize: '0.72rem', fontWeight: 800,
+                          color: tp.direction === 'DEFENSIVE' ? '#f59e0b' : '#10b981',
+                          textTransform: 'uppercase', marginBottom: '0.35rem',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px',
                         }}
                       >
-                        <span>🎯 Algorithmic ATR Trade Plan</span>
-                        <span style={{ fontFamily: 'monospace', color: '#34d399' }}>R:R 2.0 : 1</span>
+                        <span>🎯 {tp.direction === 'DEFENSIVE' ? 'Capital Preservation Plan' : 'Walk-Forward Trade Plan'}</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.66rem', color: '#38bdf8' }}>
+                          {tp.grade || 'B'} ({tp.confluence_score ?? 50}/100)
+                        </span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem', fontFamily: 'monospace' }}>
-                        <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Pivot Entry</div>
-                          <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff' }}>
-                            ${tp.entry?.toFixed(2)}
-                          </div>
-                        </div>
-                        <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Stop Loss (-1.5 ATR)</div>
-                          <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ef4444' }}>
-                            ${tp.stop_loss?.toFixed(2)} (-{tp.risk_pct}%)
-                          </div>
-                        </div>
-                        <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Scale-Out T1 (+2 ATR)</div>
-                          <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#38bdf8' }}>
-                            ${(tp.target_1 || tp.entry * 1.04)?.toFixed(2)}
-                          </div>
-                        </div>
-                        <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Target T2 (+3 ATR)</div>
-                          <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#10b981' }}>
-                            ${tp.profit_target?.toFixed(2)} (+{tp.reward_pct || (tp.risk_pct * 2).toFixed(1)}%)
-                          </div>
-                        </div>
+                      <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: '#cbd5e1', marginBottom: '0.45rem' }}>
+                        {tp.status_label} · <span style={{ color: '#94a3b8' }}>{tp.active_setup}</span>
                       </div>
+                      {tp.direction === 'DEFENSIVE' ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontFamily: 'monospace' }}>
+                          <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Current Spot (Hold Cash)</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#f8fafc' }}>${tp.entry?.toFixed(2)}</div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Support Floor (-2 ATR)</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ef4444' }}>
+                              ${tp.stop_loss?.toFixed(2)} (-{tp.risk_pct}%)
+                            </div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>21-EMA Overhead Res</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#fb923c' }}>${tp.target_1?.toFixed(2)}</div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Bull Reclaim Trigger</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#f59e0b' }}>${tp.profit_target?.toFixed(2)}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontFamily: 'monospace' }}>
+                          <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>{tp.direction === 'WAIT_PULLBACK' ? '21-EMA Pullback Entry' : 'Pivot / Spot Entry'}</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>${tp.entry?.toFixed(2)}</div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Stop Loss (-2.0 ATR)</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ef4444' }}>
+                              ${tp.stop_loss?.toFixed(2)} (-{tp.risk_pct}%)
+                            </div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Scale 50% (+2 ATR→BE)</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#38bdf8' }}>${(tp.target_1 || tp.entry * 1.04)?.toFixed(2)}</div>
+                          </div>
+                          <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Runner T2 (+3.5 ATR)</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#10b981' }}>
+                              ${tp.profit_target?.toFixed(2)} (+{tp.reward_pct}%)
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {tp.backtest_evidence && (
+                        <div style={{ marginTop: '0.4rem', fontSize: '0.61rem', color: '#64748b', fontFamily: 'monospace' }}>
+                          ✓ OOS Walk-Forward (25 Leaders): {tp.backtest_evidence.oos_win_rate_pct}% Win · PF {tp.backtest_evidence.oos_profit_factor} · Avg +{tp.backtest_evidence.oos_avg_return_pct}%
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1615,45 +1403,72 @@ export default function DeepChartingTerminal({
                       </div>
 
                       {/* AI Options Strategy Playbook */}
-                      {opt.ai_recommendation && (
-                        <div
-                          style={{
-                            background: 'rgba(56, 189, 248, 0.06)',
-                            border: '1px solid rgba(56, 189, 248, 0.28)',
-                            borderRadius: '8px',
-                            padding: '0.65rem',
-                          }}
-                        >
+                      {opt.ai_recommendation && (() => {
+                        const ai = opt.ai_recommendation;
+                        const biasTxt = ai.bias || ai.directional_bias || 'TACTICAL';
+                        const stratTxt = ai.strategy || ai.strategy_name || ai.title || 'Options Structure';
+                        const summaryTxt = ai.microstructure_rationale || ai.executive_summary || '';
+                        const biasCol = ai.bias_color || (String(biasTxt).includes('BEAR') ? '#ef4444' : String(biasTxt).includes('BULL') ? '#10b981' : '#38bdf8');
+                        return (
                           <div
                             style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginBottom: '0.35rem',
+                              background: 'rgba(56, 189, 248, 0.06)',
+                              border: '1px solid rgba(56, 189, 248, 0.28)',
+                              borderRadius: '8px',
+                              padding: '0.65rem',
                             }}
                           >
-                            <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#38bdf8' }}>
-                              🤖 AI OPTIONS STRATEGY
-                            </span>
-                            <span
+                            <div
                               style={{
-                                fontSize: '0.66rem',
-                                fontFamily: 'monospace',
-                                fontWeight: 800,
-                                color: opt.ai_recommendation.bias_color || '#10b981',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '0.35rem',
+                                gap: '6px',
                               }}
                             >
-                              {opt.ai_recommendation.directional_bias} ({opt.ai_recommendation.conviction_score}/100)
-                            </span>
+                              <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#38bdf8' }}>
+                                🤖 AI OPTIONS STRATEGY
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: '0.65rem',
+                                  fontFamily: 'monospace',
+                                  fontWeight: 800,
+                                  color: biasCol,
+                                }}
+                              >
+                                {biasTxt} ({ai.conviction_score}/100)
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc', marginBottom: '3px' }}>
+                              {stratTxt}
+                            </div>
+                            {ai.options_spec && (
+                              <div style={{ fontSize: '0.69rem', fontFamily: 'monospace', color: '#c084fc', marginBottom: '4px' }}>
+                                Spec: {ai.options_spec}
+                              </div>
+                            )}
+                            {summaryTxt && (
+                              <div style={{ fontSize: '0.71rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                                {summaryTxt}
+                              </div>
+                            )}
+                            {(ai.risk_reward || ai.stop_loss || ai.target_primary) && (
+                              <div
+                                style={{
+                                  marginTop: '0.45rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(148,163,184,0.14)',
+                                  display: 'flex', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: '0.67rem', color: '#94a3b8',
+                                }}
+                              >
+                                {ai.stop_loss != null && <span>Stop: <strong style={{ color: '#ef4444' }}>${ai.stop_loss}</strong></span>}
+                                {ai.target_primary != null && <span>Target: <strong style={{ color: '#10b981' }}>${ai.target_primary}</strong></span>}
+                                {ai.risk_reward && <span>R:R <strong style={{ color: '#38bdf8' }}>{ai.risk_reward}</strong></span>}
+                              </div>
+                            )}
                           </div>
-                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc', marginBottom: '4px' }}>
-                            {opt.ai_recommendation.strategy_name}
-                          </div>
-                          <div style={{ fontSize: '0.71rem', color: '#cbd5e1', lineHeight: 1.45 }}>
-                            {opt.ai_recommendation.executive_summary}
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </>
                   ) : (
                     <div style={{ padding: '1.5rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
@@ -1810,10 +1625,12 @@ export default function DeepChartingTerminal({
                             style={{
                               fontSize: '0.9rem',
                               fontWeight: 800,
-                              color: expertTickerData.fundamentals.revenue_growth > 20 ? '#10b981' : '#f8fafc',
+                              color: (expertTickerData.fundamentals.revenue_growth || 0) > 20 ? '#10b981' : '#f8fafc',
                             }}
                           >
-                            {expertTickerData.fundamentals.revenue_growth.toFixed(1)}%
+                            {expertTickerData.fundamentals.is_etf || expertTickerData.fundamentals.revenue_growth == null
+                              ? 'ETF (N/A)'
+                              : `${expertTickerData.fundamentals.revenue_growth.toFixed(1)}%`}
                           </div>
                         </div>
                         <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
@@ -1822,10 +1639,12 @@ export default function DeepChartingTerminal({
                             style={{
                               fontSize: '0.9rem',
                               fontWeight: 800,
-                              color: expertTickerData.fundamentals.profit_margin > 15 ? '#10b981' : '#f8fafc',
+                              color: (expertTickerData.fundamentals.profit_margin || 0) > 15 ? '#10b981' : '#f8fafc',
                             }}
                           >
-                            {expertTickerData.fundamentals.profit_margin.toFixed(1)}%
+                            {expertTickerData.fundamentals.is_etf || expertTickerData.fundamentals.profit_margin == null
+                              ? 'ETF (N/A)'
+                              : `${expertTickerData.fundamentals.profit_margin.toFixed(1)}%`}
                           </div>
                         </div>
                         <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
@@ -1834,18 +1653,20 @@ export default function DeepChartingTerminal({
                             style={{
                               fontSize: '0.9rem',
                               fontWeight: 800,
-                              color: expertTickerData.fundamentals.roe > 15 ? '#10b981' : '#f8fafc',
+                              color: (expertTickerData.fundamentals.roe || 0) > 15 ? '#10b981' : '#f8fafc',
                             }}
                           >
-                            {expertTickerData.fundamentals.roe.toFixed(1)}%
+                            {expertTickerData.fundamentals.is_etf || expertTickerData.fundamentals.roe == null
+                              ? 'ETF (N/A)'
+                              : `${expertTickerData.fundamentals.roe.toFixed(1)}%`}
                           </div>
                         </div>
                         <div style={{ background: 'rgba(2,6,23,0.55)', padding: '6px 8px', borderRadius: '6px' }}>
                           <div style={{ fontSize: '0.64rem', color: '#94a3b8' }}>PEG Ratio</div>
                           <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#38bdf8' }}>
-                            {expertTickerData.fundamentals.peg_ratio
-                              ? expertTickerData.fundamentals.peg_ratio.toFixed(2)
-                              : 'N/A'}
+                            {expertTickerData.fundamentals.is_etf || !expertTickerData.fundamentals.peg_ratio
+                              ? 'N/A'
+                              : expertTickerData.fundamentals.peg_ratio.toFixed(2)}
                           </div>
                         </div>
                       </div>

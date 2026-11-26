@@ -46,6 +46,25 @@ const formatKMB = (num) => {
   return Math.round(num).toLocaleString();
 };
 
+// Properly placed negative sign currency formatters (always -$X.XX, never $-X.XX)
+const formatSignedDollar = (num, suffix = '', decimals = 2, showPlus = false) => {
+  if (num === null || num === undefined || isNaN(Number(num))) return `$0${suffix}`;
+  const n = Number(num);
+  const absStr = Math.abs(n).toFixed(decimals);
+  if (n < 0) return `-$${absStr}${suffix}`;
+  if (n > 0 && showPlus) return `+$${absStr}${suffix}`;
+  return `$${absStr}${suffix}`;
+};
+
+const formatSignedCompact = (num, showPlus = true) => {
+  if (num === null || num === undefined || isNaN(Number(num))) return '$0';
+  const n = Number(num);
+  const absStr = formatKMB(Math.abs(n));
+  if (n < 0) return `-$${absStr}`;
+  if (n > 0 && showPlus) return `+$${absStr}`;
+  return `$${absStr}`;
+};
+
 const OPTIONS_SCREENER_GUIDE = {
   presets: [
     {
@@ -275,7 +294,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
   const pageSize = 50;
 
   // Dumper status & scope state
-  const [dumpScope, setDumpScope] = useState('all'); // 'all' (6,175) or 'liquid' (500)
+  const [dumpScope, setDumpScope] = useState('all'); // 'all' (6,132+ US optionable) or 'liquid' (top 500)
   const [dumperStatus, setDumperStatus] = useState({ is_running: false, percentage: 0, message: '' });
   const [dumping, setDumping] = useState(false);
   
@@ -291,8 +310,22 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
   const [strikeViewMode, setStrikeViewMode] = useState('dual_gex_dex'); // 'dual_gex_dex', 'call_put_gex', 'dex', 'oi'
   const [termStructureMetric, setTermStructureMetric] = useState('iv_3d_trend'); // 'iv_3d_trend', 'iv_curve', 'gex_curve', 'oi_curve'
   const [hoveredTsIndex, setHoveredTsIndex] = useState(null);
+  const [unusualTypeFilter, setUnusualTypeFilter] = useState('ALL'); // 'ALL', 'CALL', 'PUT'
+
+  // Close active modal cleanly on Escape key
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showGuideModal) setShowGuideModal(false);
+        else if (selectedTicker) setSelectedTicker(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showGuideModal, selectedTicker]);
 
   const pollIntervalRef = useRef(null);
+  const wasRunningRef = useRef(false);
 
   // 1. Fetch Summary Data
   const fetchSummary = async () => {
@@ -311,19 +344,19 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
     }
   };
 
-  // 2. Fetch Dumper Status
+  // 2. Fetch Dumper Status (PID-verified backend status; syncs dumping lock without stale closures)
   const checkDumperStatus = async () => {
     try {
       const res = await fetch('/api/options_screener/status');
       if (res.ok) {
         const json = await res.json();
+        const isRunningNow = Boolean(json.is_running);
         setDumperStatus(json);
-        if (json.is_running) {
-          setDumping(true);
-        } else if (dumping) {
-          setDumping(false);
-          fetchSummary(); // reload when dump finishes
+        setDumping(isRunningNow);
+        if (wasRunningRef.current && !isRunningNow) {
+          fetchSummary();
         }
+        wasRunningRef.current = isRunningNow;
       }
     } catch (e) {
       // ignore
@@ -333,7 +366,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
   useEffect(() => {
     fetchSummary();
     checkDumperStatus();
-    
+
     // Polling dumper status every 3s
     pollIntervalRef.current = setInterval(checkDumperStatus, 3000);
     return () => clearInterval(pollIntervalRef.current);
@@ -343,10 +376,11 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
   const handleDumpNow = async (scopeToRun = dumpScope) => {
     try {
       setDumping(true);
-      const res = await fetch('/api/options_screener/dump_now', { 
+      wasRunningRef.current = true;
+      const res = await fetch('/api/options_screener/dump_now', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scope: scopeToRun })
+        body: JSON.stringify({ scope: scopeToRun, force: true })
       });
       if (!res.ok) {
         let errorMsg = `HTTP ${res.status}: Failed to start options dump`;
@@ -357,10 +391,23 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
         } catch (_) {}
         throw new Error(errorMsg);
       }
-      checkDumperStatus();
+      await checkDumperStatus();
     } catch (err) {
       alert(`Error starting dump: ${err.message}`);
+      wasRunningRef.current = false;
       setDumping(false);
+    }
+  };
+
+  const handleStopDump = async () => {
+    try {
+      await fetch('/api/options_screener/stop', { method: 'POST' });
+    } catch (_) {
+      // ignore
+    } finally {
+      wasRunningRef.current = false;
+      setDumping(false);
+      await checkDumperStatus();
     }
   };
 
@@ -380,8 +427,8 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
     }
   };
 
-  // 4. One-Click Deep Analytics Fetch (0ms Instant Cache Hit)
-  const handleOpenDeepAnalytics = async (ticker, preferredTab = null) => {
+  // 4. One-Click Deep Analytics Fetch (0ms Instant Cache Hit unless forceRefresh=true)
+  const handleOpenDeepAnalytics = async (ticker, preferredTab = null, forceRefresh = false) => {
     setSelectedTicker(ticker);
     setAnalyticsError(null);
     if (preferredTab) {
@@ -389,7 +436,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
     }
     
     // Instant client-side cache hit: 0ms latency, zero spinner
-    if (analyticsCache.current[ticker]) {
+    if (!forceRefresh && analyticsCache.current[ticker]) {
       setDeepAnalytics(analyticsCache.current[ticker]);
       setLoadingAnalytics(false);
       return;
@@ -397,7 +444,8 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
 
     setLoadingAnalytics(true);
     try {
-      const res = await fetch(`/api/options_screener/deep_analytics?ticker=${ticker}`);
+      const url = `/api/options_screener/deep_analytics?ticker=${ticker}${forceRefresh ? '&refresh=1' : ''}`;
+      const res = await fetch(url);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.error || `HTTP ${res.status}: Failed to load deep analytics`);
@@ -565,11 +613,21 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
     return filteredRecords.slice(start, start + pageSize);
   }, [filteredRecords, currentPage, pageSize]);
 
-  // Pre-warm top 12 visible records in client cache so clicks are 0ms instant
+  // Delayed sequential pre-warm for top 3 visible records (full row hover also prefetches)
   useEffect(() => {
     if (!paginatedRecords || !paginatedRecords.length) return;
-    const topVisible = paginatedRecords.slice(0, 12).map(r => r.ticker);
-    topVisible.forEach(sym => prefetchDeepAnalytics(sym));
+    let cancelled = false;
+    const topVisible = paginatedRecords.slice(0, 3).map(r => r.ticker);
+    const timer = setTimeout(async () => {
+      for (const sym of topVisible) {
+        if (cancelled) break;
+        await prefetchDeepAnalytics(sym);
+      }
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [paginatedRecords]);
 
   // Modal keyboard navigation (Escape to close, Left/Right arrows to flip tickers)
@@ -676,19 +734,86 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
               className="scope-select"
               title="Select equity surveillance coverage"
             >
-              <option value="all">Dump All US Stocks (6,175)</option>
-              <option value="liquid">Dump Top 500 Liquid Only</option>
+              <option value="all">
+                All US Optionable ({dumperStatus.total_optionable_universe ? dumperStatus.total_optionable_universe.toLocaleString() : '6,132'})
+              </option>
+              <option value="liquid">Top 500 Liquid (~25s)</option>
             </select>
             <button 
               className="dump-btn" 
               onClick={() => handleDumpNow(dumpScope)} 
               disabled={dumperStatus.is_running || dumping}
-              title="Triggers full market options dump in background using ThreadPoolExecutor"
+              title="Triggers Alpaca Global Batch options dump across US optionable stocks"
             >
               <RefreshCw size={15} className={dumperStatus.is_running ? "spin-slow" : ""} />
-              <span>{dumperStatus.is_running ? 'Dumping Active...' : 'Sync Market Options Now'}</span>
+              <span>
+                {dumperStatus.is_running
+                  ? 'Dumping Active...'
+                  : (dumperStatus.dumped_today_full ? 'Re-Sync All US Options' : 'Sync All US Options Now')}
+              </span>
             </button>
+            {(dumperStatus.is_running || dumping) && (
+              <button
+                type="button"
+                onClick={handleStopDump}
+                title="Stop active dump process or clear a stale/stuck lock"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'rgba(244, 63, 94, 0.16)',
+                  border: '1px solid rgba(244, 63, 94, 0.45)',
+                  color: '#fda4af',
+                  padding: '0.52rem 0.85rem',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                }}
+              >
+                <X size={14} />
+                <span>Stop / Reset</span>
+              </button>
+            )}
           </div>
+
+          {!dumperStatus.is_running && (
+            <div
+              data-testid="daily-options-status-pill"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                padding: '0.42rem 0.8rem',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                border: dumperStatus.dumped_today_full
+                  ? '1px solid rgba(16, 185, 129, 0.4)'
+                  : dumperStatus.today_tickers_count > 0
+                    ? '1px solid rgba(245, 158, 11, 0.4)'
+                    : '1px solid rgba(56, 189, 248, 0.35)',
+                background: dumperStatus.dumped_today_full
+                  ? 'rgba(16, 185, 129, 0.12)'
+                  : dumperStatus.today_tickers_count > 0
+                    ? 'rgba(245, 158, 11, 0.12)'
+                    : 'rgba(56, 189, 248, 0.10)',
+                color: dumperStatus.dumped_today_full
+                  ? '#34d399'
+                  : dumperStatus.today_tickers_count > 0
+                    ? '#fbbf24'
+                    : '#7dd3fc',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span>
+                {dumperStatus.dumped_today_full ? '✅' : dumperStatus.today_tickers_count > 0 ? '⚠️' : '🕒'}
+              </span>
+              <span>
+                {dumperStatus.daily_status_text || 'Scheduled daily at 6:00 AM CST'} · Auto-syncs daily 6:00 AM CST
+              </span>
+            </div>
+          )}
 
           {dumperStatus.is_running && (
             <div className="dump-progress-wrap">
@@ -1605,9 +1730,9 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                           style={{ color: (r.net_delta_flow || 0) >= 0 ? '#10b981' : '#f87171' }}
                           title={`Net Directional Delta Flow: ${(r.net_delta_flow || 0) >= 0 ? 'Call Delta Buying Demand' : 'Put Delta Downside Demand'}`}
                         >
-                          {(r.net_delta_flow || 0) >= 0 ? '+' : ''}${formatKMB(r.net_delta_flow)} Net Δ
+                          {formatSignedCompact(r.net_delta_flow || 0, true)} Net Δ
                           {r.flow_imbalance_ratio > 1.2 && (
-                            <span className="flow-ratio-tag"> ({r.flow_imbalance_ratio}x {r.call_vol_pct >= 50 ? 'C' : 'P'})</span>
+                            <span className="flow-ratio-tag"> ({r.flow_imbalance_ratio > 99 ? '99+' : r.flow_imbalance_ratio}x {r.call_vol_pct >= 50 ? 'C' : 'P'})</span>
                           )}
                         </div>
                       </div>
@@ -1625,7 +1750,10 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                         <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600, color: oiUp ? '#10b981' : '#ef4444' }}>
                           {oiUp ? '+' : ''}{r.oi_chg_5d_pct.toFixed(1)}%
                           <div style={{ fontSize: '0.65rem', color: '#64748b' }}>
-                            5d Δ: {(r.oi_chg_5d / 1000).toFixed(0)}k
+                            5d Δ: {(() => {
+                              const kVal = Math.round((r.oi_chg_5d || 0) / 1000);
+                              return `${kVal === 0 ? '0' : kVal}k`;
+                            })()}
                           </div>
                         </div>
                       </div>
@@ -1869,7 +1997,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                   onClick={() => {
                     if (selectedTicker) {
                       delete analyticsCache.current[selectedTicker];
-                      handleOpenDeepAnalytics(selectedTicker, modalTab);
+                      handleOpenDeepAnalytics(selectedTicker, modalTab, true);
                     }
                   }}
                   title="Force refresh live options data"
@@ -1951,63 +2079,158 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                   {/* TAB 1: AI OPTIONS RECOMMENDATION */}
                   {modalTab === 'ai_recommendation' && deepAnalytics?.ai_recommendation && (() => {
                     const ai = deepAnalytics.ai_recommendation;
+                    const gm = deepAnalytics.greeks_matrix || {};
+                    const vega = gm.vega_volatility || {};
+                    const eqCtx = deepAnalytics.equity_context || {};
+                    const brk = ai.conviction_breakdown || null;
+                    const empCal = ai.empirical_calibration || vega.empirical_calibration || null;
+                    const biasUpper = String(ai.bias || '').toUpperCase();
+                    const isBull = biasUpper.includes('BULL') || biasUpper.includes('LONG');
+                    const isBear = biasUpper.includes('BEAR') || biasUpper.includes('SHORT');
                     return (
                       <div className="ai-rec-container">
                         <div className="ai-hero-card">
                           <div className="ai-hero-top">
                             <div className="ai-hero-title-wrap">
                               <span className="ai-bias-badge" style={{
-                                background: ai.bias?.includes('BULL') ? 'rgba(16, 185, 129, 0.2)' : ai.bias?.includes('BEAR') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(56, 189, 248, 0.2)',
-                                color: ai.bias?.includes('BULL') ? '#10b981' : ai.bias?.includes('BEAR') ? '#f87171' : '#38bdf8',
-                                border: `1px solid ${ai.bias?.includes('BULL') ? '#10b981' : ai.bias?.includes('BEAR') ? '#ef4444' : '#38bdf8'}60`
+                                background: isBull ? 'rgba(16, 185, 129, 0.2)' : isBear ? 'rgba(239, 68, 68, 0.2)' : 'rgba(56, 189, 248, 0.2)',
+                                color: isBull ? '#10b981' : isBear ? '#f87171' : '#38bdf8',
+                                border: `1px solid ${isBull ? '#10b981' : isBear ? '#ef4444' : '#38bdf8'}60`
                               }}>
                                 {ai.bias}
                               </span>
                               <h2>{ai.title}</h2>
                             </div>
                             <div className="ai-conviction-box">
-                              <span className="conv-lbl">AI Conviction</span>
+                              <span className="conv-lbl">Calibrated Conviction</span>
                               <div className="conv-val-row">
-                                <span className="conv-num">{ai.conviction_score}</span>
+                                <span className="conv-num" style={{ color: ai.conviction_score >= 70 ? '#10b981' : ai.conviction_score >= 52 ? '#f59e0b' : '#f87171' }}>
+                                  {ai.conviction_score}
+                                </span>
                                 <span className="conv-denom">/ 100</span>
                               </div>
                             </div>
                           </div>
 
+                          {ai.conflict_warning && (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.55rem',
+                              padding: '0.55rem 0.85rem',
+                              borderRadius: '8px',
+                              background: 'rgba(245, 158, 11, 0.12)',
+                              border: '1px solid rgba(245, 158, 11, 0.45)',
+                              color: '#fde68a',
+                              fontSize: '0.79rem',
+                              lineHeight: 1.4
+                            }}>
+                              <AlertTriangle size={16} color="#f59e0b" style={{ flexShrink: 0 }} />
+                              <div>
+                                <strong style={{ color: '#fbbf24' }}>Signal Divergence Notice: </strong>
+                                {ai.conflict_warning}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* BALANCED 4x2 QUANT PLAYBOOK GRID */}
                           <div className="ai-roadmap-grid">
                             <div className="roadmap-chip">
                               <span className="chip-lbl">Recommended Strategy</span>
                               <span className="chip-val highlight">{ai.strategy}</span>
                             </div>
                             <div className="roadmap-chip">
-                              <span className="chip-lbl">Optimal Contract Spec</span>
+                              <span className="chip-lbl">Listed Contract Spec</span>
                               <span className="chip-val font-mono">{ai.options_spec}</span>
                             </div>
                             <div className="roadmap-chip">
                               <span className="chip-lbl">Ideal Entry Corridor</span>
-                              <span className="chip-val font-mono">{ai.entry_range || `$${ai.ideal_entry}`}</span>
+                              <span className="chip-val font-mono">{ai.entry_range || `$${Number(ai.ideal_entry || 0).toFixed(2)}`}</span>
                             </div>
                             <div className="roadmap-chip">
                               <span className="chip-lbl">Stop Loss / Invalidation</span>
-                              <span className="chip-val font-mono" style={{ color: '#f87171' }}>${ai.stop_loss}</span>
+                              <span className="chip-val font-mono" style={{ color: '#f87171' }}>${Number(ai.stop_loss || 0).toFixed(2)}</span>
                             </div>
                             <div className="roadmap-chip">
                               <span className="chip-lbl">Primary Profit Target</span>
-                              <span className="chip-val font-mono" style={{ color: '#10b981' }}>${ai.target_primary}</span>
+                              <span className="chip-val font-mono" style={{ color: '#10b981' }}>${Number(ai.target_primary || 0).toFixed(2)}</span>
                             </div>
                             <div className="roadmap-chip">
-                              <span className="chip-lbl">Risk / Reward Ratio</span>
-                              <span className="chip-val font-mono" style={{ color: '#fbbf24' }}>{ai.risk_reward}</span>
+                              <span className="chip-lbl">R:R &amp; BS Probability</span>
+                              <span className="chip-val font-mono" style={{ color: '#fbbf24' }}>
+                                {ai.risk_reward}
+                                {ai.prob_of_profit_pct != null && (
+                                  <span style={{ display: 'block', fontSize: '0.73rem', color: '#38bdf8', fontWeight: 600, marginTop: '2px' }}>
+                                    POP {ai.prob_of_profit_pct}% · Touch {ai.prob_of_touch_pct}%
+                                  </span>
+                                )}
+                              </span>
                             </div>
                             <div className="roadmap-chip">
-                              <span className="chip-lbl">Target Holding Period</span>
-                              <span className="chip-val">{ai.expected_holding}</span>
+                              <span className="chip-lbl">VRP Pricing Edge</span>
+                              <span className="chip-val font-mono" style={{ color: vega.vrp_color || '#38bdf8', fontSize: '0.82rem' }}>
+                                IV {vega.atm_iv_pct}% vs HV20 {vega.hv_20d ?? '—'}%
+                                <span style={{ display: 'block', fontSize: '0.71rem', color: '#cbd5e1', fontWeight: 600, marginTop: '2px' }}>
+                                  {vega.vrp_spread != null ? `${vega.vrp_spread >= 0 ? '+' : ''}${vega.vrp_spread} pts` : 'Fair'} ({(vega.vrp_regime || 'FAIR').replace('_VOL_', ' ').replace('_VOL', '')})
+                                </span>
+                              </span>
+                            </div>
+                            <div className="roadmap-chip">
+                              <span className="chip-lbl">Equity Stage &amp; Horizon</span>
+                              <span className="chip-val" style={{ color: eqCtx.stage_color || '#cbd5e1', fontSize: '0.82rem' }}>
+                                {eqCtx.stage_code || ai.stage_alignment || 'Stage 1'} ({eqCtx.trend_bias || ai.trend_bias || 'NEUTRAL'})
+                                <span style={{ display: 'block', fontSize: '0.71rem', color: '#94a3b8', fontWeight: 500, marginTop: '2px' }}>
+                                  {ai.expected_holding}
+                                </span>
+                              </span>
                             </div>
                           </div>
 
+                          {/* 5-PILLAR CONVICTION & ZERO-LOOKAHEAD CALIBRATION STRIP */}
+                          {(brk || empCal) && (
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.45rem',
+                              padding: '0.65rem 0.85rem',
+                              borderRadius: '8px',
+                              background: 'rgba(2, 6, 23, 0.55)',
+                              border: '1px solid rgba(56, 189, 248, 0.18)',
+                              fontSize: '0.74rem'
+                            }}>
+                              {brk && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                  <span style={{ color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.69rem' }}>
+                                    5-Pillar Conviction Breakdown:
+                                  </span>
+                                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', fontFamily: 'monospace', color: '#e2e8f0' }}>
+                                    <span>GEX <strong>{brk.gex_regime}/25</strong></span>
+                                    <span>Flow <strong>{brk.order_flow}/25</strong></span>
+                                    <span>VRP <strong>{brk.vrp_edge}/20</strong></span>
+                                    <span>Stage <strong>{brk.stage_alignment}/20</strong></span>
+                                    <span>Liq <strong>{brk.liquidity_pace}/10</strong></span>
+                                    {brk.conflict_penalty < 0 && (
+                                      <span style={{ color: '#f59e0b' }}>Conflict <strong>{brk.conflict_penalty}</strong></span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {empCal && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', color: '#94a3b8', borderTop: brk ? '1px dashed rgba(255,255,255,0.08)' : 'none', paddingTop: brk ? '0.4rem' : 0 }}>
+                                  <span>
+                                    <strong style={{ color: '#38bdf8' }}>OOS Regime Backtest ({empCal.cohort_label}):</strong> {empCal.summary_note}
+                                  </span>
+                                  <span style={{ fontFamily: 'monospace', color: '#cbd5e1', whiteSpace: 'nowrap' }}>
+                                    Med |5D Move|: {empCal.gex_median_5d_move_pct}% · 1σ Hold: {empCal.inside_1sigma_5d_pct}%
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {/* OPTION FLOW MARKET IMPACT ANALYSIS CARD */}
                           {deepAnalytics.flow_impact && (
-                            <div className="flow-impact-modal-card">
+                            <div className="flow-impact-modal-card" style={{ marginBottom: 0 }}>
                               <div className="flow-impact-modal-header">
                                 <div className="impact-title-group">
                                   <Zap size={17} color="#f59e0b" />
@@ -2031,19 +2254,26 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               
                               <div className="impact-metrics-strip">
                                 <div className="impact-metric-box">
-                                  <span className="imb-label">Total Notional Flow</span>
-                                  <span className="imb-val font-mono">${formatKMB(deepAnalytics.flow_impact.notional_flow)}</span>
+                                  <span className="imb-label">Share-Eq Notional Flow</span>
+                                  <span className="imb-val font-mono">
+                                    ${formatKMB(deepAnalytics.flow_impact.notional_flow)}
+                                    {deepAnalytics.flow_impact.est_premium_flow != null && (
+                                      <span style={{ display: 'block', fontSize: '0.68rem', color: '#94a3b8', fontWeight: 500 }}>
+                                        Est. Cash Prem: ~${formatKMB(deepAnalytics.flow_impact.est_premium_flow)}
+                                      </span>
+                                    )}
+                                  </span>
                                 </div>
                                 <div className="impact-metric-box">
                                   <span className="imb-label">Net Directional Delta Flow</span>
                                   <span className="imb-val font-mono" style={{ color: (deepAnalytics.flow_impact.net_delta_flow || 0) >= 0 ? '#10b981' : '#f87171' }}>
-                                    {(deepAnalytics.flow_impact.net_delta_flow || 0) >= 0 ? '+' : ''}${formatKMB(deepAnalytics.flow_impact.net_delta_flow)}
+                                    {formatSignedCompact(deepAnalytics.flow_impact.net_delta_flow || 0, true)}
                                   </span>
                                 </div>
                                 <div className="impact-metric-box">
                                   <span className="imb-label">Order Flow Imbalance</span>
                                   <span className="imb-val font-mono" style={{ color: (deepAnalytics.flow_impact.call_vol_pct || 50) >= 50 ? '#10b981' : '#f87171' }}>
-                                    {deepAnalytics.flow_impact.imbalance_ratio}x {deepAnalytics.flow_impact.call_vol_pct >= 50 ? 'Calls' : 'Puts'}
+                                    {deepAnalytics.flow_impact.imbalance_ratio}x {deepAnalytics.flow_impact.call_vol_pct >= 50 ? 'Calls' : 'Puts'} ({Math.round(deepAnalytics.flow_impact.call_vol_pct || 50)}% C)
                                   </span>
                                 </div>
                                 <div className="impact-metric-box">
@@ -2089,7 +2319,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                           <div className="ai-rationale-section">
                             <div className="rationale-header">
                               <Compass size={16} color="#38bdf8" />
-                              <span>Dealer Microstructure & Institutional Order Flow Rationale</span>
+                              <span>Dealer Microstructure &amp; Institutional Order Flow Rationale</span>
                             </div>
                             <p className="rationale-body">
                               {ai.microstructure_rationale}
@@ -2170,37 +2400,37 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               </span>
                             </div>
                             <div className="card-metric-row">
-                              <span className="primary-metric" style={{ color: gamma.net_gex_millions >= 0 ? '#10b981' : '#f87171' }}>
-                                ${gamma.net_gex_millions}M
+                              <span className="primary-metric" style={{ color: (gamma.net_gex_millions || 0) >= 0 ? '#10b981' : '#f87171' }}>
+                                {formatSignedDollar(gamma.net_gex_millions, 'M', 2, true)}
                               </span>
                               <span className="metric-context">Net Gamma / pt</span>
                             </div>
                             <p className="card-desc">{ti.gamma?.desc}</p>
                             <div className="card-footer-stats">
-                              <span>Call GEX: <strong style={{ color: '#10b981' }}>+${gamma.call_gex_millions}M</strong></span>
-                              <span>Put GEX: <strong style={{ color: '#f87171' }}>-${Math.abs(gamma.put_gex_millions)}M</strong></span>
+                              <span>Call GEX: <strong style={{ color: '#10b981' }}>+${Math.abs(gamma.call_gex_millions || 0).toFixed(2)}M</strong></span>
+                              <span>Put GEX: <strong style={{ color: '#f87171' }}>-${Math.abs(gamma.put_gex_millions || 0).toFixed(2)}M</strong></span>
                             </div>
                           </div>
 
                           {/* 2. DELTA FLOW */}
-                          <div className="trend-card" style={{ borderLeft: `4px solid ${delta.net_dex_millions >= 0 ? '#10b981' : '#f87171'}` }}>
+                          <div className="trend-card" style={{ borderLeft: `4px solid ${(delta.net_dex_millions || 0) >= 0 ? '#10b981' : '#f87171'}` }}>
                             <div className="card-top">
                               <span className="card-title">Dealer Net Delta (DEX)</span>
                               <span className="trend-pill" style={{ 
-                                background: delta.net_dex_millions >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', 
-                                color: delta.net_dex_millions >= 0 ? '#10b981' : '#f87171' 
+                                background: (delta.net_dex_millions || 0) >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', 
+                                color: (delta.net_dex_millions || 0) >= 0 ? '#10b981' : '#f87171' 
                               }}>
-                                {delta.net_dex_millions >= 0 ? '↑ LONG DELTA' : '↓ SHORT DELTA'}
+                                {(delta.net_dex_millions || 0) >= 0 ? '↑ LONG DELTA' : '↓ SHORT DELTA'}
                               </span>
                             </div>
                             <div className="card-metric-row">
-                              <span className="primary-metric" style={{ color: delta.net_dex_millions >= 0 ? '#10b981' : '#f87171' }}>
-                                ${delta.net_dex_millions}M
+                              <span className="primary-metric" style={{ color: (delta.net_dex_millions || 0) >= 0 ? '#10b981' : '#f87171' }}>
+                                {formatSignedDollar(delta.net_dex_millions, 'M', 2, true)}
                               </span>
                               <span className="metric-context">Aggregate Delta</span>
                             </div>
                             <p className="card-desc">
-                              Absolute delta gravity is concentrated at the ${delta.absolute_delta_strike} strike. Market makers hold net {delta.net_dex_millions >= 0 ? 'long' : 'short'} delta against option open interest.
+                              Absolute delta gravity is concentrated at the ${delta.absolute_delta_strike} strike. Market makers hold net {(delta.net_dex_millions || 0) >= 0 ? 'long' : 'short'} delta against option open interest.
                             </p>
                             <div className="card-footer-stats">
                               <span>Abs Delta Strike: <strong>${delta.absolute_delta_strike}</strong></span>
@@ -2208,24 +2438,27 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                             </div>
                           </div>
 
-                          {/* 3. IMPLIED VOLATILITY */}
+                          {/* 3. IMPLIED VOLATILITY & VRP */}
                           <div className="trend-card" style={{ borderLeft: `4px solid ${ti.iv?.color || '#a855f7'}` }}>
                             <div className="card-top">
-                              <span className="card-title">30-Day ATM Implied Volatility</span>
-                              <span className="trend-pill" style={{ background: `${ti.iv?.color}20`, color: ti.iv?.color, border: `1px solid ${ti.iv?.color}50` }}>
-                                {ti.iv?.arrow} {ti.iv?.badge}
+                              <span className="card-title">30-Day ATM IV &amp; VRP</span>
+                              <span className="trend-pill" style={{ background: `${vega.vrp_color || ti.iv?.color}20`, color: vega.vrp_color || ti.iv?.color, border: `1px solid ${vega.vrp_color || ti.iv?.color}50` }}>
+                                {vega.vrp_spread != null ? `VRP ${vega.vrp_spread >= 0 ? '+' : ''}${vega.vrp_spread}%` : `${ti.iv?.arrow} ${ti.iv?.badge}`}
                               </span>
                             </div>
                             <div className="card-metric-row">
                               <span className="primary-metric" style={{ color: '#38bdf8' }}>
                                 {vega.atm_iv_pct}%
                               </span>
-                              <span className="metric-context">5D Shift: <strong style={{ color: ti.iv?.color }}>{ti.iv?.value}</strong></span>
+                              <span className="metric-context">
+                                HV20: <strong style={{ color: '#e2e8f0' }}>{vega.hv_20d ?? '—'}%</strong> · 5D: <strong style={{ color: ti.iv?.color }}>{ti.iv?.value}</strong>
+                              </span>
                             </div>
-                            <p className="card-desc">{ti.iv?.desc}</p>
+                            <p className="card-desc">{vega.vrp_label || ti.iv?.desc}</p>
                             <div className="card-footer-stats">
-                              <span>30D IV Rank: <strong>{vega.iv_rank_30d}%</strong></span>
-                              <span>Expected 5D: <strong>&plusmn;${vega.expected_move_5d}</strong></span>
+                              <span>IV Rank: <strong>{vega.iv_rank_30d}%</strong></span>
+                              <span>IV %ile: <strong>{vega.iv_percentile_30d}%</strong></span>
+                              <span>5D EM: <strong>&plusmn;${vega.expected_move_5d}</strong></span>
                             </div>
                           </div>
 
@@ -2274,7 +2507,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                           {/* 6. VOLUME PACE & GAUGE RISK */}
                           <div className="trend-card" style={{ borderLeft: `4px solid ${ti.volume?.color || '#f59e0b'}` }}>
                             <div className="card-top">
-                              <span className="card-title">Unusual Volume & Fragility Risk</span>
+                              <span className="card-title">Unusual Volume &amp; Fragility Risk</span>
                               <span className="trend-pill" style={{ background: `${ti.volume?.color}20`, color: ti.volume?.color, border: `1px solid ${ti.volume?.color}50` }}>
                                 {ti.volume?.badge}
                               </span>
@@ -2762,6 +2995,8 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               <span style={{ color: '#f59e0b' }}>
                                 — 25Δ Skew: {activeH.skew_25d > 0 ? '+' : ''}{activeH.skew_25d.toFixed(2)}% ({skew5dChg >= 0 ? '+' : ''}{skew5dChg.toFixed(2)}% 5D)
                               </span>
+                              <span style={{ color: '#f87171', fontSize: '0.67rem' }}>▲ &gt;0% Put Skew</span>
+                              <span style={{ color: '#10b981', fontSize: '0.67rem' }}>▼ &lt;0% Call Skew</span>
                             </div>
                           </div>
 
@@ -2811,19 +3046,13 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                   </g>
                                 );
                               })}
-                              {/* Skew Right-Axis Ticks & Bullish/Bearish Zone Annotations */}
+                              {/* Skew Right-Axis Ticks (Clean, zero-overlap with plotted curves) */}
                               <text x={padLeft + plotW + 8} y={padTop + 10} fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="start">
                                 +{absSkewMax.toFixed(0)}%
-                              </text>
-                              <text x={padLeft + plotW - 6} y={zeroY - 6} fill="rgba(248, 113, 113, 0.78)" fontSize="8.5" fontFamily="monospace" textAnchor="end">
-                                ▲ Above 0%: Put Skew (Bearish Fear / Hedging)
                               </text>
                               <line x1={padLeft} x2={padLeft + plotW} y1={zeroY} y2={zeroY} stroke="rgba(245, 158, 11, 0.35)" strokeDasharray="4 2" />
                               <text x={padLeft + plotW + 8} y={zeroY + 3.5} fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="start">
                                 0% Skew
-                              </text>
-                              <text x={padLeft + plotW - 6} y={zeroY + 12} fill="rgba(16, 185, 129, 0.82)" fontSize="8.5" fontFamily="monospace" textAnchor="end">
-                                ▼ Below 0%: Call Skew (Bullish Call Bid)
                               </text>
                               <text x={padLeft + plotW + 8} y={padTop + plotH - 2} fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="start">
                                 -{absSkewMax.toFixed(0)}%
@@ -2850,16 +3079,30 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                       );
                     };
 
-                    // 5. CHART: Dealer Net GEX Evolution (Continuous Trend Curve with Zero-Flip Shading)
+                    // 5. CHART: Dealer Net GEX Evolution (Piecewise Signed Curve: Emerald >= $0, Red < $0)
                     const renderGEXChart = () => {
                       const gexs = history.map(h => h.net_gex);
                       const absGexMax = Math.max(...gexs.map(g => Math.abs(g)), 1);
                       const zeroY = padTop + plotH / 2;
                       const yGEX = (val) => zeroY - (val / absGexMax) * (plotH * 0.44);
-
-                      const gexPoints = history.map((h, i) => `${xPos(i).toFixed(1)},${yGEX(h.net_gex).toFixed(1)}`).join(' ');
-                      const areaPoints = `${xPos(0).toFixed(1)},${zeroY.toFixed(1)} ${gexPoints} ${xPos(N - 1).toFixed(1)},${zeroY.toFixed(1)}`;
                       const isPosNow = activeH.net_gex >= 0;
+
+                      // Build sign-exact line segments and area quads split cleanly at zero crossings
+                      const segs = [];
+                      for (let i = 0; i < N - 1; i++) {
+                        const x1 = xPos(i), x2 = xPos(i + 1);
+                        const v1 = history[i].net_gex, v2 = history[i + 1].net_gex;
+                        const y1 = yGEX(v1), y2 = yGEX(v2);
+                        if ((v1 >= 0 && v2 >= 0) || (v1 <= 0 && v2 <= 0)) {
+                          const pos = (v1 + v2) >= 0;
+                          segs.push({ x1, y1, x2, y2, pos });
+                        } else {
+                          const t = Math.abs(v1) / (Math.abs(v1) + Math.abs(v2));
+                          const xz = x1 + t * (x2 - x1);
+                          segs.push({ x1, y1, x2: xz, y2: zeroY, pos: v1 >= 0 });
+                          segs.push({ x1: xz, y1: zeroY, x2, y2, pos: v2 >= 0 });
+                        }
+                      }
 
                       return (
                         <div className="svg-chart-card">
@@ -2871,30 +3114,14 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               <span style={{ color: '#10b981' }}>🟢 Long Gamma Cushion (&gt;$0)</span>
                               <span style={{ color: '#ef4444' }}>🔴 Short Gamma Accelerator (&lt;$0)</span>
                               <span style={{ color: isPosNow ? '#10b981' : '#f87171' }}>
-                                Latest: {isPosNow ? '+' : ''}${activeH.net_gex.toFixed(2)}M
+                                Latest: {formatSignedDollar(activeH.net_gex, 'M', 2, true)}
                               </span>
                             </div>
                           </div>
                           <div className="interactive-svg-container" onMouseLeave={() => setHoveredHistoryIndex(null)}>
                             <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-                              <defs>
-                                <linearGradient id="gexAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
-                                  <stop offset="48%" stopColor="#10b981" stopOpacity="0.05" />
-                                  <stop offset="50%" stopColor="#64748b" stopOpacity="0.0" />
-                                  <stop offset="52%" stopColor="#ef4444" stopOpacity="0.05" />
-                                  <stop offset="100%" stopColor="#ef4444" stopOpacity="0.4" />
-                                </linearGradient>
-                                <linearGradient id="gexLineGrad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#10b981" />
-                                  <stop offset="48%" stopColor="#10b981" />
-                                  <stop offset="50%" stopColor="#38bdf8" />
-                                  <stop offset="52%" stopColor="#ef4444" />
-                                  <stop offset="100%" stopColor="#ef4444" />
-                                </linearGradient>
-                              </defs>
                               {/* Zero Axis */}
-                              <line x1={padLeft} x2={padLeft + plotW} y1={zeroY} y2={zeroY} stroke="rgba(255, 255, 255, 0.3)" strokeWidth="1.2" strokeDasharray="4 2" />
+                              <line x1={padLeft} x2={padLeft + plotW} y1={zeroY} y2={zeroY} stroke="rgba(255, 255, 255, 0.35)" strokeWidth="1.2" strokeDasharray="4 2" />
                               <text x={padLeft - 8} y={zeroY + 3.5} fill="#94a3b8" fontSize="10" fontFamily="monospace" textAnchor="end">
                                 $0
                               </text>
@@ -2906,10 +3133,24 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               <text x={padLeft - 8} y={padTop + plotH - 2} fill="#ef4444" fontSize="9" fontFamily="monospace" textAnchor="end">
                                 -${absGexMax.toFixed(0)}M
                               </text>
-                              {/* Area Shading to Zero Baseline */}
-                              <polygon points={areaPoints} fill="url(#gexAreaGrad)" />
-                              {/* Continuous Net GEX Curve */}
-                              <polyline points={gexPoints} fill="none" stroke="url(#gexLineGrad)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                              {/* Strictly signed area shading & segments */}
+                              {segs.map((sg, idx) => (
+                                <g key={idx}>
+                                  <polygon
+                                    points={`${sg.x1.toFixed(1)},${zeroY.toFixed(1)} ${sg.x1.toFixed(1)},${sg.y1.toFixed(1)} ${sg.x2.toFixed(1)},${sg.y2.toFixed(1)} ${sg.x2.toFixed(1)},${zeroY.toFixed(1)}`}
+                                    fill={sg.pos ? 'rgba(16, 185, 129, 0.22)' : 'rgba(239, 68, 68, 0.22)'}
+                                  />
+                                  <line
+                                    x1={sg.x1}
+                                    y1={sg.y1}
+                                    x2={sg.x2}
+                                    y2={sg.y2}
+                                    stroke={sg.pos ? '#10b981' : '#ef4444'}
+                                    strokeWidth="2.4"
+                                    strokeLinecap="round"
+                                  />
+                                </g>
+                              ))}
                               {/* Session Anchor Dots */}
                               {history.map((h, i) => (
                                 <circle
@@ -2957,7 +3198,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                             <span className="hud-hint">Hover anywhere across the charts to inspect that session</span>
                           </div>
 
-                          <div className="hud-metrics-grid">
+                          <div className="hud-metrics-grid cols-5">
                             <div className="hud-stat-box">
                               <span className="hud-lbl">Spot vs Max Pain</span>
                               <div className="hud-val-row">
@@ -2989,7 +3230,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               </div>
                               <div className="hud-duo-bar">
                                 <span style={{ color: '#10b981' }}>C: {formatKMB(activeH.call_vol)} ({callVolPct.toFixed(0)}%)</span>
-                                <span style={{ color: '#ef4444' }}>P: {formatKMB(activeH.put_vol)}</span>
+                                <span style={{ color: '#ef4444' }}>P: {formatKMB(activeH.put_vol)} ({(100 - callVolPct).toFixed(0)}%)</span>
                               </div>
                             </div>
 
@@ -3026,7 +3267,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               <span className="hud-lbl">Dealer Net GEX</span>
                               <div className="hud-val-row">
                                 <span className="hud-primary-val font-mono" style={{ color: activeH.net_gex >= 0 ? '#10b981' : '#f87171' }}>
-                                  {activeH.net_gex >= 0 ? '+' : ''}${activeH.net_gex.toFixed(2)}M
+                                  {formatSignedDollar(activeH.net_gex, 'M', 2, true)}
                                 </span>
                               </div>
                               <span className="hud-note" style={{ color: activeH.net_gex >= 0 ? '#10b981' : '#f87171' }}>
@@ -3137,19 +3378,42 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                     const activeStrike = hoveredStrike || strikes.find(s => s.is_spot) || strikes[Math.floor(strikes.length / 2)];
                     const M = strikes.length;
 
-                    // Chart dimensions
+                    // Chart dimensions & multi-lane collision-free marker pills (up to 4 vertical lanes if strikes coincide)
                     const svgW = 840;
-                    const svgH = 250;
-                    const padLeft = 70;
-                    const padRight = 70;
-                    const padTop = 32;
-                    const padBottom = 35;
+                    const padLeft = 72;
+                    const padRight = 76;
+                    const padBottom = 36;
                     const plotW = svgW - padLeft - padRight;
-                    const plotH = svgH - padTop - padBottom;
-                    const zeroY = padTop + plotH / 2;
                     const colW = plotW / M;
                     const barW = Math.max(3.5, colW * 0.65);
                     const xStrike = (i) => padLeft + i * colW + colW / 2;
+
+                    const rawMarkers = [];
+                    strikes.forEach((s, i) => {
+                      const rx = xStrike(i);
+                      if (s.is_spot) rawMarkers.push({ key: `spot-${i}`, rawX: rx, label: `SPOT $${spot.toFixed(1)}`, w: 68, fill: '#38bdf8', text: '#0f172a', stroke: '#38bdf8', dash: '4 2', prio: 1 });
+                      if (s.is_call_wall) rawMarkers.push({ key: `cw-${i}`, rawX: rx, label: 'CALL WALL', w: 58, fill: '#10b981', text: '#052e16', stroke: '#10b981', dash: '3 3', prio: 2 });
+                      if (s.is_put_wall) rawMarkers.push({ key: `pw-${i}`, rawX: rx, label: 'PUT WALL', w: 54, fill: '#ef4444', text: '#ffffff', stroke: '#ef4444', dash: '3 3', prio: 2 });
+                      if (s.is_zero_gamma && !s.is_spot && !s.is_call_wall && !s.is_put_wall) rawMarkers.push({ key: `zg-${i}`, rawX: rx, label: 'ZERO GEX', w: 52, fill: '#fbbf24', text: '#451a03', stroke: '#fbbf24', dash: '2 2', prio: 3 });
+                    });
+                    rawMarkers.sort((a, b) => a.rawX - b.rawX || a.prio - b.prio);
+                    const laneLastX = [-999, -999, -999, -999];
+                    let maxLaneUsed = 0;
+                    const markerLayouts = rawMarkers.map((m) => {
+                      const cx = Math.min(padLeft + plotW - m.w / 2, Math.max(padLeft + m.w / 2, m.rawX));
+                      let lane = 0;
+                      while (lane < laneLastX.length - 1 && (cx - m.w / 2 - 6) < laneLastX[lane]) {
+                        lane++;
+                      }
+                      laneLastX[lane] = Math.max(laneLastX[lane], cx + m.w / 2);
+                      if (lane > maxLaneUsed) maxLaneUsed = lane;
+                      const pillY = 6 + lane * 19;
+                      return { ...m, cx, pillY };
+                    });
+                    const padTop = Math.max(48, 10 + (maxLaneUsed + 1) * 19);
+                    const svgH = 218 + padTop;
+                    const plotH = svgH - padTop - padBottom;
+                    const zeroY = padTop + plotH / 2;
 
                     // Normalization
                     const absMaxGex = Math.max(...strikes.map(s => Math.max(Math.abs(s.net_gex), Math.abs(s.call_gex), Math.abs(s.put_gex)))) || 1;
@@ -3161,6 +3425,26 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                     const yOI = (val) => padTop + plotH - (val / maxOI) * plotH;
 
                     const dexPoints = strikes.map((s, i) => `${xStrike(i).toFixed(1)},${yDex(s.net_dex).toFixed(1)}`).join(' ');
+
+                    // Precompute collision-free X-axis strike labels (min 48px separation)
+                    const labelIndices = new Set();
+                    const placedLabelX = [];
+                    strikes.forEach((s, i) => {
+                      if (s.is_spot || s.is_call_wall || s.is_put_wall) {
+                        const x = xStrike(i);
+                        if (placedLabelX.every(px => Math.abs(px - x) >= 44)) {
+                          labelIndices.add(i);
+                          placedLabelX.push(x);
+                        }
+                      }
+                    });
+                    strikes.forEach((s, i) => {
+                      const x = xStrike(i);
+                      if (placedLabelX.every(px => Math.abs(px - x) >= 48)) {
+                        labelIndices.add(i);
+                        placedLabelX.push(x);
+                      }
+                    });
 
                     return (
                       <div className="strike-curve-container">
@@ -3180,19 +3464,19 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 {activeStrike.is_max_pain && <span className="hud-live-tag" style={{ background: 'rgba(168, 85, 247, 0.25)', color: '#c084fc', borderColor: 'rgba(168, 85, 247, 0.5)' }}>🧲 MAX PAIN</span>}
                               </div>
                             </div>
-                            <span className="hud-hint">Hover over any strike bar below to inspect strike Greeks & positioning</span>
+                            <span className="hud-hint">Hover over any strike bar below to inspect strike Greeks &amp; positioning</span>
                           </div>
 
-                          <div className="hud-metrics-grid">
+                          <div className="hud-metrics-grid cols-4">
                             <div className="hud-stat-box">
                               <span className="hud-lbl">Net Gamma Exposure (GEX)</span>
                               <div className="hud-val-row">
                                 <span className="hud-primary-val font-mono" style={{ color: activeStrike.net_gex >= 0 ? '#10b981' : '#f87171' }}>
-                                  {activeStrike.net_gex >= 0 ? '+' : ''}${activeStrike.net_gex.toFixed(2)}M
+                                  {formatSignedDollar(activeStrike.net_gex, 'M', 2, true)}
                                 </span>
                               </div>
                               <div className="hud-duo-bar">
-                                <span style={{ color: '#10b981' }}>Call GEX: +${activeStrike.call_gex.toFixed(2)}M</span>
+                                <span style={{ color: '#10b981' }}>Call GEX: +${Math.abs(activeStrike.call_gex).toFixed(2)}M</span>
                                 <span style={{ color: '#f87171' }}>Put GEX: -${Math.abs(activeStrike.put_gex).toFixed(2)}M</span>
                               </div>
                             </div>
@@ -3201,7 +3485,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                               <span className="hud-lbl">Net Delta Exposure (DEX)</span>
                               <div className="hud-val-row">
                                 <span className="hud-primary-val font-mono" style={{ color: activeStrike.net_dex >= 0 ? '#38bdf8' : '#fb923c' }}>
-                                  {activeStrike.net_dex >= 0 ? '+' : ''}${activeStrike.net_dex.toFixed(2)}M
+                                  {formatSignedDollar(activeStrike.net_dex, 'M', 2, true)}
                                 </span>
                               </div>
                               <span className="hud-note" style={{ color: activeStrike.net_dex >= 0 ? '#38bdf8' : '#fb923c' }}>
@@ -3281,7 +3565,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 <>
                                   <span style={{ color: '#10b981' }}>■ Net GEX (+)</span>
                                   <span style={{ color: '#ef4444' }}>■ Net GEX (-)</span>
-                                  <span style={{ color: '#38bdf8' }}>— Net DEX Curve (${activeStrike.net_dex.toFixed(1)}M)</span>
+                                  <span style={{ color: '#38bdf8' }}>— Net DEX Curve ({formatSignedDollar(activeStrike.net_dex, 'M', 1, true)})</span>
                                 </>
                               )}
                               {strikeViewMode === 'call_put_gex' && (
@@ -3291,7 +3575,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 </>
                               )}
                               {strikeViewMode === 'dex' && (
-                                <span style={{ color: '#38bdf8' }}>■ Dealer Net Delta: ${activeStrike.net_dex.toFixed(1)}M</span>
+                                <span style={{ color: '#38bdf8' }}>■ Dealer Net Delta: {formatSignedDollar(activeStrike.net_dex, 'M', 1, true)}</span>
                               )}
                               {strikeViewMode === 'oi' && (
                                 <>
@@ -3324,12 +3608,16 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                   <text x={padLeft - 8} y={padTop + plotH - 2} fill="#ef4444" fontSize="9" fontFamily="monospace" textAnchor="end">
                                     -${absMaxGex.toFixed(0)}M
                                   </text>
-                                  <text x={padLeft + plotW + 8} y={padTop + 10} fill="#38bdf8" fontSize="9" fontFamily="monospace" textAnchor="start">
-                                    +${absMaxDex.toFixed(0)}M DEX
-                                  </text>
-                                  <text x={padLeft + plotW + 8} y={padTop + plotH - 2} fill="#fb923c" fontSize="9" fontFamily="monospace" textAnchor="start">
-                                    -${absMaxDex.toFixed(0)}M DEX
-                                  </text>
+                                  {(strikeViewMode === 'dual_gex_dex' || strikeViewMode === 'dex') && (
+                                    <>
+                                      <text x={padLeft + plotW + 8} y={padTop + 10} fill="#38bdf8" fontSize="9" fontFamily="monospace" textAnchor="start">
+                                        +${absMaxDex.toFixed(0)}M DEX
+                                      </text>
+                                      <text x={padLeft + plotW + 8} y={padTop + plotH - 2} fill="#fb923c" fontSize="9" fontFamily="monospace" textAnchor="start">
+                                        -${absMaxDex.toFixed(0)}M DEX
+                                      </text>
+                                    </>
+                                  )}
                                 </>
                               )}
 
@@ -3445,52 +3733,18 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 </>
                               )}
 
-                              {/* KEY LEVEL MARKERS */}
-                              {strikes.map((s, i) => {
-                                const x = xStrike(i);
-                                if (s.is_call_wall) {
-                                  return (
-                                    <g key={`cw-${i}`}>
-                                      <line x1={x} x2={x} y1={padTop} y2={padTop + plotH} stroke="#10b981" strokeWidth="1.8" strokeDasharray="3 3" />
-                                      <rect x={x - 28} y={padTop - 20} width="56" height="15" rx="3" fill="#10b981" />
-                                      <text x={x} y={padTop - 9} fill="#064e3b" fontSize="8" fontWeight="800" textAnchor="middle">CALL WALL</text>
-                                    </g>
-                                  );
-                                }
-                                if (s.is_put_wall) {
-                                  return (
-                                    <g key={`pw-${i}`}>
-                                      <line x1={x} x2={x} y1={padTop} y2={padTop + plotH} stroke="#ef4444" strokeWidth="1.8" strokeDasharray="3 3" />
-                                      <rect x={x - 26} y={padTop - 20} width="52" height="15" rx="3" fill="#ef4444" />
-                                      <text x={x} y={padTop - 9} fill="#ffffff" fontSize="8" fontWeight="800" textAnchor="middle">PUT WALL</text>
-                                    </g>
-                                  );
-                                }
-                                if (s.is_spot) {
-                                  return (
-                                    <g key={`spot-${i}`}>
-                                      <line x1={x} x2={x} y1={padTop} y2={padTop + plotH} stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 2" />
-                                      <rect x={x - 28} y={padTop - 20} width="56" height="15" rx="3" fill="#38bdf8" />
-                                      <text x={x} y={padTop - 9} fill="#0f172a" fontSize="8" fontWeight="800" textAnchor="middle">SPOT ${spot.toFixed(1)}</text>
-                                    </g>
-                                  );
-                                }
-                                if (s.is_zero_gamma && !s.is_spot && !s.is_call_wall && !s.is_put_wall) {
-                                  return (
-                                    <g key={`zg-${i}`}>
-                                      <line x1={x} x2={x} y1={padTop} y2={padTop + plotH} stroke="#fbbf24" strokeWidth="1.5" strokeDasharray="2 2" />
-                                      <rect x={x - 22} y={padTop - 20} width="44" height="15" rx="3" fill="#fbbf24" />
-                                      <text x={x} y={padTop - 9} fill="#78350f" fontSize="8" fontWeight="800" textAnchor="middle">ZERO GEX</text>
-                                    </g>
-                                  );
-                                }
-                                return null;
-                              })}
+                              {/* COLLISION-FREE 2-LANE KEY LEVEL MARKERS */}
+                              {markerLayouts.map((m) => (
+                                <g key={m.key}>
+                                  <line x1={m.rawX} x2={m.rawX} y1={padTop} y2={padTop + plotH} stroke={m.stroke} strokeWidth="1.8" strokeDasharray={m.dash} />
+                                  <rect x={m.cx - m.w / 2} y={m.pillY} width={m.w} height="15" rx="3" fill={m.fill} />
+                                  <text x={m.cx} y={m.pillY + 10.5} fill={m.text} fontSize="8" fontWeight="800" textAnchor="middle">{m.label}</text>
+                                </g>
+                              ))}
 
-                              {/* X-AXIS LABELS */}
+                              {/* COLLISION-FREE X-AXIS LABELS */}
                               {strikes.map((s, i) => {
-                                const shouldShow = i % 4 === 0 || s.is_spot || s.is_call_wall || s.is_put_wall;
-                                if (!shouldShow) return null;
+                                if (!labelIndices.has(i)) return null;
                                 return (
                                   <text
                                     key={`label-${i}`}
@@ -3632,6 +3886,11 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                   {shiftSummary.regime_badge}
                                 </span>
                               )}
+                              {sessions.some(s => s.is_modeled_curve) && (
+                                <span style={{ fontSize: '0.67rem', fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: 'rgba(148, 163, 184, 0.14)', color: '#cbd5e1', border: '1px solid rgba(148, 163, 184, 0.3)' }}>
+                                  Anchored to 30D SQLite ATM IV History
+                                </span>
+                              )}
                             </div>
                             <div style={{ display: 'flex', gap: '14px', fontSize: '0.8rem', fontFamily: 'monospace', flexWrap: 'wrap' }}>
                               <span style={{ color: (shiftSummary.front_iv_shift_3d || 0) >= 0 ? '#10b981' : '#f87171' }}>
@@ -3665,7 +3924,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                             <span className="hud-hint">Hover any expiration node on the curve below to inspect multi-session shifts</span>
                           </div>
 
-                          <div className="hud-metrics-grid">
+                          <div className="hud-metrics-grid cols-4">
                             <div className="hud-stat-box">
                               <span className="hud-lbl">ATM Implied Volatility</span>
                               <div className="hud-val-row">
@@ -3724,14 +3983,13 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                             <div className="hud-stat-box">
                               <span className="hud-lbl">Dealer Net GEX Horizon</span>
                               <div className="hud-val-row">
-                                <span className="hud-primary-val font-mono" style={{ color: (activeTs.net_gex_millions || activeTs.net_gex) >= 0 ? '#10b981' : '#f87171' }}>
-                                  {(activeTs.net_gex_millions || (activeTs.net_gex / 1e6)) >= 0 ? '+' : ''}
-                                  ${(activeTs.net_gex_millions || (activeTs.net_gex / 1e6)).toFixed(2)}M
+                                <span className="hud-primary-val font-mono" style={{ color: (activeTs.net_gex_millions ?? activeTs.net_gex ?? 0) >= 0 ? '#10b981' : '#f87171' }}>
+                                  {formatSignedDollar(activeTs.net_gex_millions ?? (activeTs.net_gex / 1e6), 'M', 2, true)}
                                 </span>
                               </div>
                               <div className="hud-duo-bar">
-                                <span style={{ color: '#10b981' }}>Call: +${(activeTs.call_gex_millions || (activeTs.call_gex / 1e6)).toFixed(1)}M</span>
-                                <span style={{ color: '#f87171' }}>Put: -${Math.abs(activeTs.put_gex_millions || (activeTs.put_gex / 1e6)).toFixed(1)}M</span>
+                                <span style={{ color: '#10b981' }}>Call: +${Math.abs(activeTs.call_gex_millions ?? (activeTs.call_gex / 1e6)).toFixed(1)}M</span>
+                                <span style={{ color: '#f87171' }}>Put: -${Math.abs(activeTs.put_gex_millions ?? (activeTs.put_gex / 1e6)).toFixed(1)}M</span>
                               </div>
                             </div>
 
@@ -3981,32 +4239,42 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 );
                               })}
 
-                              {/* X-AXIS EXPIRATIONS & DTE */}
-                              {ts.map((item, i) => (
-                                <g key={`ts-axis-${i}`}>
-                                  <text
-                                    x={xTs(i)}
-                                    y={padTop + plotH + 16}
-                                    fill="#f8fafc"
-                                    fontSize="9.5"
-                                    fontWeight="700"
-                                    fontFamily="monospace"
-                                    textAnchor="middle"
-                                  >
-                                    {item.expiry.slice(5)}
-                                  </text>
-                                  <text
-                                    x={xTs(i)}
-                                    y={padTop + plotH + 28}
-                                    fill="#38bdf8"
-                                    fontSize="8.5"
-                                    fontFamily="monospace"
-                                    textAnchor="middle"
-                                  >
-                                    {item.dte}d
-                                  </text>
-                                </g>
-                              ))}
+                              {/* COLLISION-FREE X-AXIS EXPIRATIONS & DTE (min 58px spacing) */}
+                              {(() => {
+                                const minGap = 58;
+                                let lastLabelX = -999;
+                                return ts.map((item, i) => {
+                                  const cx = xTs(i);
+                                  const isHover = hoveredTsIndex === i;
+                                  if (!isHover && i !== 0 && (cx - lastLabelX < minGap)) return null;
+                                  if (!isHover) lastLabelX = cx;
+                                  return (
+                                    <g key={`ts-axis-${i}`}>
+                                      <text
+                                        x={cx}
+                                        y={padTop + plotH + 16}
+                                        fill={isHover ? '#38bdf8' : '#f8fafc'}
+                                        fontSize="9.5"
+                                        fontWeight="700"
+                                        fontFamily="monospace"
+                                        textAnchor="middle"
+                                      >
+                                        {item.expiry.slice(5)}
+                                      </text>
+                                      <text
+                                        x={cx}
+                                        y={padTop + plotH + 28}
+                                        fill="#38bdf8"
+                                        fontSize="8.5"
+                                        fontFamily="monospace"
+                                        textAnchor="middle"
+                                      >
+                                        {item.dte}d
+                                      </text>
+                                    </g>
+                                  );
+                                });
+                              })()}
 
                               {/* HOVER OVERLAY RECTS */}
                               {ts.map((item, i) => (
@@ -4050,13 +4318,20 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 </div>
                                 <div className="ts-stat">
                                   <span>ATM IV</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <span style={{ color: '#38bdf8', fontWeight: 700, fontFamily: 'monospace' }}>
                                       {(item.atm_iv || 30).toFixed(1)}%
                                     </span>
                                     {cardDelta3d !== null && (
-                                      <span style={{ fontSize: '0.7rem', color: Number(cardDelta3d) >= 0 ? '#10b981' : '#f87171', fontFamily: 'monospace' }}>
-                                        {Number(cardDelta3d) >= 0 ? '+' : ''}{cardDelta3d}%
+                                      <span style={{
+                                        fontSize: '0.68rem',
+                                        padding: '1px 5px',
+                                        borderRadius: '4px',
+                                        background: Number(cardDelta3d) >= 0 ? 'rgba(16, 185, 129, 0.14)' : 'rgba(248, 113, 113, 0.14)',
+                                        color: Number(cardDelta3d) >= 0 ? '#10b981' : '#f87171',
+                                        fontFamily: 'monospace'
+                                      }}>
+                                        {Number(cardDelta3d) >= 0 ? '+' : ''}{cardDelta3d}% 3D Δ
                                       </span>
                                     )}
                                   </div>
@@ -4064,7 +4339,7 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
                                 <div className="ts-stat">
                                   <span>Net GEX</span>
                                   <span style={{ color: gexVal >= 0 ? '#10b981' : '#f87171', fontWeight: 700, fontFamily: 'monospace' }}>
-                                    {gexVal >= 0 ? '+' : ''}${gexVal.toFixed(2)}M
+                                    {formatSignedDollar(gexVal, 'M', 2, true)}
                                   </span>
                                 </div>
                                 <div className="ts-stat">
@@ -4092,50 +4367,134 @@ export default function OptionsIntelligenceScreener({ onNavigateTab }) {
 
 
                   {/* TAB 6: UNUSUAL CONTRACTS & WHALE BLOCKS */}
-                  {modalTab === 'unusual' && deepAnalytics && (
-                    <div className="unusual-tab-wrap">
-                      {deepAnalytics.unusual_contracts?.length > 0 ? (
-                        <table className="modal-unusual-table">
-                          <thead>
-                            <tr>
-                              <th>Contract</th>
-                              <th>Type</th>
-                              <th>Strike</th>
-                              <th>Expiration</th>
-                              <th>Volume</th>
-                              <th>Open Interest</th>
-                              <th>Vol / OI</th>
-                              <th>Est. Premium</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {deepAnalytics.unusual_contracts.map((c, i) => (
-                              <tr key={i}>
-                                <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{c.contract}</td>
-                                <td>
-                                  <span style={{ color: c.type === 'CALL' ? '#10b981' : '#ef4444', fontWeight: 700 }}>
-                                    {c.type}
-                                  </span>
-                                </td>
-                                <td>${c.strike}</td>
-                                <td>{c.expiration ? c.expiration.slice(0, 10) : 'N/A'}</td>
-                                <td style={{ fontFamily: 'monospace' }}>{c.volume.toLocaleString()}</td>
-                                <td style={{ fontFamily: 'monospace' }}>{c.open_interest.toLocaleString()}</td>
-                                <td style={{ color: '#f59e0b', fontWeight: 700, fontFamily: 'monospace' }}>{c.vol_oi_ratio}x</td>
-                                <td style={{ fontFamily: 'monospace', color: '#38bdf8' }}>
-                                  ${Math.round(c.est_premium).toLocaleString()}
-                                </td>
-                              </tr>
+                  {modalTab === 'unusual' && deepAnalytics && (() => {
+                    const allSweeps = deepAnalytics.unusual_contracts || [];
+                    const uSum = deepAnalytics.unusual_summary || {};
+                    const filteredSweeps = unusualTypeFilter === 'ALL'
+                      ? allSweeps
+                      : allSweeps.filter(c => String(c.type || '').toUpperCase() === unusualTypeFilter);
+                    return (
+                      <div className="unusual-tab-wrap" style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                        {/* WHALE SUMMARY KPI STRIP */}
+                        {allSweeps.length > 0 && (
+                          <div className="hud-metrics-grid cols-4">
+                            <div className="hud-stat-box">
+                              <span className="hud-lbl">Total Whale Est. Premium</span>
+                              <span className="hud-primary-val font-mono" style={{ color: '#38bdf8' }}>
+                                ${formatKMB(uSum.total_est_premium || 0)}
+                              </span>
+                              <span className="hud-note" style={{ color: '#94a3b8' }}>
+                                Across {uSum.count || allSweeps.length} anomalous contracts
+                              </span>
+                            </div>
+                            <div className="hud-stat-box">
+                              <span className="hud-lbl">Call vs Put Whale Flow</span>
+                              <span className="hud-primary-val font-mono" style={{ color: (uSum.call_premium_pct || 50) >= 50 ? '#10b981' : '#f87171' }}>
+                                {(uSum.call_premium_pct ?? 50).toFixed(0)}% Calls
+                              </span>
+                              <div className="hud-duo-bar">
+                                <span style={{ color: '#10b981' }}>C: ${formatKMB(uSum.call_premium || 0)}</span>
+                                <span style={{ color: '#ef4444' }}>P: ${formatKMB(uSum.put_premium || 0)}</span>
+                              </div>
+                            </div>
+                            <div className="hud-stat-box">
+                              <span className="hud-lbl">Institutional Whale Bias</span>
+                              <span className="hud-primary-val font-mono" style={{
+                                color: uSum.whale_bias === 'CALL HEAVY' ? '#10b981' : uSum.whale_bias === 'PUT HEAVY' ? '#f87171' : '#fbbf24'
+                              }}>
+                                {uSum.whale_bias || 'BALANCED'}
+                              </span>
+                              <span className="hud-note" style={{ color: '#94a3b8' }}>Dollar-premium weighted tilt</span>
+                            </div>
+                            <div className="hud-stat-box">
+                              <span className="hud-lbl">Average Vol / OI Surge</span>
+                              <span className="hud-primary-val font-mono" style={{ color: '#f59e0b' }}>
+                                {(uSum.avg_vol_oi || 0).toFixed(2)}x
+                              </span>
+                              <span className="hud-note" style={{ color: '#94a3b8' }}>Cutoff &ge; 1.4x open interest</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* TYPE FILTER PILLS */}
+                        {allSweeps.length > 0 && (
+                          <div className="trend-subtabs">
+                            {[
+                              { id: 'ALL', label: `All Sweeps (${allSweeps.length})` },
+                              { id: 'CALL', label: `Calls (${allSweeps.filter(c => c.type === 'CALL').length})` },
+                              { id: 'PUT', label: `Puts (${allSweeps.filter(c => c.type === 'PUT').length})` },
+                            ].map(f => (
+                              <button
+                                key={f.id}
+                                type="button"
+                                className={`subtab-btn ${unusualTypeFilter === f.id ? 'active' : ''}`}
+                                onClick={() => setUnusualTypeFilter(f.id)}
+                              >
+                                {f.label}
+                              </button>
                             ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-                          No contracts currently exceed the 1.4x Vol/OI anomaly threshold for this session.
-                        </div>
-                      )}
-                    </div>
-                  )}
+                          </div>
+                        )}
+
+                        {filteredSweeps.length > 0 ? (
+                          <table className="modal-unusual-table">
+                            <thead>
+                              <tr>
+                                <th>Contract</th>
+                                <th>Type</th>
+                                <th>Strike</th>
+                                <th>Moneyness</th>
+                                <th>Expiration</th>
+                                <th>DTE</th>
+                                <th>Volume</th>
+                                <th>Open Interest</th>
+                                <th>Vol / OI</th>
+                                <th>Est. Premium</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredSweeps.map((c, i) => (
+                                <tr key={i}>
+                                  <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{c.contract}</td>
+                                  <td>
+                                    <span style={{ color: c.type === 'CALL' ? '#10b981' : '#ef4444', fontWeight: 700 }}>
+                                      {c.type}
+                                    </span>
+                                  </td>
+                                  <td style={{ fontFamily: 'monospace' }}>${c.strike}</td>
+                                  <td>
+                                    <span style={{
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      fontSize: '0.7rem',
+                                      fontWeight: 700,
+                                      fontFamily: 'monospace',
+                                      background: c.moneyness === 'ITM' ? 'rgba(16, 185, 129, 0.16)' : c.moneyness === 'ATM' ? 'rgba(56, 189, 248, 0.16)' : 'rgba(148, 163, 184, 0.14)',
+                                      color: c.moneyness === 'ITM' ? '#34d399' : c.moneyness === 'ATM' ? '#38bdf8' : '#cbd5e1'
+                                    }}>
+                                      {c.moneyness || 'OTM'} {c.pct_otm != null ? `(${c.pct_otm >= 0 ? '+' : ''}${c.pct_otm}%)` : ''}
+                                    </span>
+                                  </td>
+                                  <td>{c.expiration ? c.expiration.slice(0, 10) : 'N/A'}</td>
+                                  <td style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{c.dte != null ? `${c.dte}d` : '—'}</td>
+                                  <td style={{ fontFamily: 'monospace' }}>{(c.volume ?? 0).toLocaleString()}</td>
+                                  <td style={{ fontFamily: 'monospace' }}>{(c.open_interest ?? 0).toLocaleString()}</td>
+                                  <td style={{ color: '#f59e0b', fontWeight: 700, fontFamily: 'monospace' }}>{c.vol_oi_ratio}x</td>
+                                  <td style={{ fontFamily: 'monospace', color: '#38bdf8' }}>
+                                    ${Math.round(c.est_premium || 0).toLocaleString()}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                            No contracts currently match the selected filter above the 1.4x Vol/OI anomaly threshold.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* QUICK BRIDGE NAVIGATION BUTTONS */}
                   <div className="quick-bridge-links">

@@ -1,0 +1,474 @@
+/* Apex Squeeze Radar 4.0 — Institutional Quantitative Volatility UI */
+
+.sr4-root {
+  width: 100%;
+  max-width: 1720px;
+  margin: 0 auto;
+  padding: 20px 24px 64px;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+}
+
+.sr4-root *, .sr4-root *::before, .sr4-root *::after {
+  box-sizing: border-box;
+}
+
+.sr4-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.94) 55%, rgba(56, 189, 248, 0.06));
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.sr4-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.sr4-title {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #fff, #34d399 60%, #38bdf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sr4-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  max-width: 780px;
+  line-height: 1.45;
+}
+
+.sr4-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.71rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.sr4-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sr4-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border-radius: 9px;
+  font-size: 0.79rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(30, 41, 59, 0.78);
+  color: #e2e8f0;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.sr4-btn:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(30, 41, 59, 0.96);
+}
+
+.sr4-btn-primary {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #6ee7b7;
+}
+
+.sr4-btn-primary:hover {
+  background: rgba(16, 185, 129, 0.28);
+}
+
+.sr4-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+/* KPI Strip */
+.sr4-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.sr4-kpi-card {
+  background: rgba(15, 23, 42, 0.84);
+  border: 1px solid rgba(51, 65, 85, 0.75);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.sr4-kpi-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.sr4-kpi-val {
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.sr4-kpi-sub {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+/* Walk-Forward Calibration Drawer */
+.sr4-wf-panel {
+  margin-bottom: 18px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.sr4-wf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  margin-top: 10px;
+}
+
+.sr4-wf-table th {
+  text-align: left;
+  padding: 7px 10px;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.6);
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.sr4-wf-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.45);
+}
+
+/* Spotlight #1 Apex Setup */
+.sr4-spotlight {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.11), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 14px;
+  padding: 18px 22px;
+}
+
+@media (max-width: 1020px) {
+  .sr4-spotlight {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sr4-spot-info {
+  min-width: 0;
+}
+
+.sr4-spot-spark {
+  width: 100%;
+  min-width: 0;
+  background: rgba(2, 6, 23, 0.48);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+/* Tabs & Filters */
+.sr4-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.sr4-tab-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sr4-tab-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sr4-tab-btn {
+  padding: 7px 12px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid rgba(51, 65, 85, 0.75);
+  background: rgba(15, 23, 42, 0.75);
+  color: #94a3b8;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.sr4-tab-btn.active {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #34d399;
+}
+
+.sr4-filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 12px;
+}
+
+.sr4-input, .sr4-select {
+  background: rgba(2, 6, 23, 0.75);
+  color: #f8fafc;
+  border: 1px solid rgba(71, 85, 105, 0.6);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  outline: none;
+}
+
+.sr4-input:focus, .sr4-select:focus {
+  border-color: #38bdf8;
+}
+
+/* Matrix Table (Clean Scroll + Sticky Ticker + No Clipping) */
+.sr4-table-wrap {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.75);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.sr4-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.sr4-table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  font-size: 0.79rem;
+}
+
+.sr4-table thead th {
+  text-align: left;
+  padding: 10px 11px;
+  background: rgba(2, 6, 23, 0.65);
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.85);
+  white-space: nowrap;
+}
+
+.sr4-table tbody td {
+  padding: 9px 11px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.85);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sr4-table tbody tr {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.sr4-table tbody tr:hover {
+  background: rgba(56, 189, 248, 0.07);
+}
+
+.sr4-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: rgba(15, 23, 42, 0.98);
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Institutional 2-Column Card Grid */
+.sr4-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 680px) {
+  .sr4-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sr4-card {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(51, 65, 85, 0.78);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.sr4-card:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+}
+
+.sr4-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sr4-card-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.sr4-company-name {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.sr4-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sr4-tele-cell {
+  background: rgba(2, 6, 23, 0.52);
+  border: 1px solid rgba(30, 41, 59, 0.9);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+.sr4-tele-lbl {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.sr4-tele-val {
+  font-size: 0.81rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.sr4-bracket-box {
+  background: rgba(2, 6, 23, 0.62);
+  border: 1px solid rgba(51, 65, 85, 0.68);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.sr4-bracket-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Deep Dive Slide-Over Drawer */
+.sr4-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sr4-drawer {
+  width: min(760px, 100vw);
+  max-width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: #0b1120;
+  border-left: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 22px 24px 48px;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.65);
+}
+
+.sr4-pillar-row {
+  display: grid;
+  grid-template-columns: 165px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.77rem;
+  margin-bottom: 6px;
+}
+
+.sr4-pillar-bar-bg {
+  height: 7px;
+  background: rgba(30, 41, 59, 0.9);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.sr4-pillar-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+}

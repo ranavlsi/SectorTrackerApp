@@ -187,6 +187,20 @@ def detect_character_change(df, adr_10d, adr_50d):
             "signal": "1st day below 21-day SMA. Watch for reclaim or risk 2-day sell rule trigger.",
             "consecutive_closes_below_21": 1
         }
+    elif last_close < last_sma:
+        below_count = 0
+        for val_c, val_ma in zip(close.iloc[::-1], sma_21.iloc[::-1]):
+            if pd.notna(val_ma) and val_c < val_ma:
+                below_count += 1
+            else:
+                break
+        return {
+            "character_change_detected": True,
+            "status": "BELOW_21SMA_DOWNTREND",
+            "warning_level": "HIGH",
+            "signal": f"⚠️ Below 21-day SMA for {below_count} bars — Overhead resistance; wait for volume reclaim.",
+            "consecutive_closes_below_21": int(below_count)
+        }
     else:
         return {
             "character_change_detected": False,
@@ -202,8 +216,12 @@ def get_stock_personality_profile(ticker, df=None):
     """
     try:
         if df is None or len(df) < 25:
-            t = yf.Ticker(ticker)
-            df = t.history(period="1y")
+            try:
+                from backend.deep_charting_engine import fetch_ohlcv_resilient
+                df, _ = fetch_ohlcv_resilient(ticker, "1D", "1Y")
+            except Exception:
+                t = yf.Ticker(ticker)
+                df = t.history(period="1y")
             
         if df.empty or len(df) < 15:
             return {"error": f"Insufficient price data for {ticker}"}

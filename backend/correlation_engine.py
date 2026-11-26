@@ -4,7 +4,23 @@ import numpy as np
 import json
 import os
 import datetime
+import math
+import threading
 import warnings
+
+try:
+    from market_health_engine import _YF_LOCK as _SHARED_YF_LOCK
+except Exception:
+    _SHARED_YF_LOCK = threading.Lock()
+
+_CORR_MACRO_BOUNDS = {
+    "^TNX": (0.3, 12.0),
+    "DX-Y.NYB": (70.0, 135.0),
+    "CL=F": (15.0, 200.0),
+    "GC=F": (900.0, 9000.0),
+    "BTC-USD": (5000.0, 500000.0),
+    "^VIX": (7.0, 95.0),
+}
 
 warnings.filterwarnings('ignore')
 
@@ -137,7 +153,8 @@ def run_correlation_engine():
     print("Executing Institutional Macro Matrix & Correlation Engine...")
     
     all_tickers = list(MACRO_DRIVERS.keys()) + list(SECTOR_ETFS.keys()) + BENCHMARKS + STOCKS_UNIVERSE
-    df = yf.download(all_tickers, period="120d", interval="1d", group_by="ticker", progress=False)
+    with _SHARED_YF_LOCK:
+        df = yf.download(all_tickers, period="120d", interval="1d", group_by="ticker", progress=False, threads=False)
     
     closes = pd.DataFrame()
     for t in all_tickers:
@@ -146,6 +163,18 @@ def run_correlation_engine():
             s.index = pd.to_datetime(s.index).tz_localize(None).normalize()
             s = s[~s.index.duplicated(keep='last')]
             if len(s) >= 20:
+                if t in _CORR_MACRO_BOUNDS:
+                    lo, hi = _CORR_MACRO_BOUNDS[t]
+                    if not (lo <= float(s.median()) <= hi and lo <= float(s.iloc[-1]) <= hi):
+                        try:
+                            with _SHARED_YF_LOCK:
+                                s2 = yf.Ticker(t).history(period="120d", interval="1d")['Close'].dropna()
+                            s2.index = pd.to_datetime(s2.index).tz_localize(None).normalize()
+                            s2 = s2[~s2.index.duplicated(keep='last')]
+                            if len(s2) >= 20:
+                                s = s2
+                        except Exception:
+                            pass
                 closes[t] = s
 
     # Overlay Lakehouse daily closes for all Equities, Sector ETFs & Benchmarks so today's candle is never missing
@@ -224,6 +253,7 @@ def run_correlation_engine():
                 "change_5d": chg_5d,
                 "change_20d": chg_20d,
                 "trend": trend,
+                "sparkline_20d": [round(float(v), 2) for v in s.iloc[-20:].tolist()],
                 "description": meta["description"],
                 "transmission": meta["transmission"],
                 "bull_sectors": meta["bull_sectors"],
@@ -332,6 +362,8 @@ def run_correlation_engine():
             "full_name": meta["name"],
             "symbol": driver_sym,
             "category": meta["category"],
+            "current_price": driver_info.get("current_price"),
+            "unit": meta["unit"],
             "current_value": f"{driver_info.get('current_price', '-')} {meta['unit']}",
             "change_1d": driver_info.get("change_1d", 0.0),
             "trend": driver_info.get("trend", "Neutral"),
@@ -401,18 +433,84 @@ def run_correlation_engine():
     # Sort sector sensitivities by correlation to TNX descending
     sector_sensitivities.sort(key=lambda x: x["corr_tnx"], reverse=True)
 
+    # 6. 12-Week Macro Quadrant Trajectory Trail (5 trading days apart, ending at latest bar)
+    regime_trail = []
+    if 'SPY' in closes.columns and len(closes) >= 25:
+        n_bars = len(closes)
+        trail_indices = sorted(set([max(21, n_bars - 1 - 5 * k) for k in range(12)]))[-12:]
+        for idx_t in trail_indices:
+            dt_t = closes.index[idx_t]
+            is_last = (idx_t == n_bars - 1)
+            spy_s = closes['SPY'].iloc[:idx_t + 1].dropna()
+            vix_s = closes['^VIX'].iloc[:idx_t + 1].dropna() if '^VIX' in closes.columns else pd.Series(dtype=float)
+            tnx_s = closes['^TNX'].iloc[:idx_t + 1].dropna() if '^TNX' in closes.columns else pd.Series(dtype=float)
+            oil_s = closes['CL=F'].iloc[:idx_t + 1].dropna() if 'CL=F' in closes.columns else pd.Series(dtype=float)
+
+            spy_20d_t = ((float(spy_s.iloc[-1]) - float(spy_s.iloc[-21])) / float(spy_s.iloc[-21]) * 100.0) if len(spy_s) > 20 and spy_s.iloc[-21] > 0 else 0.0
+            vix_t = float(vix_s.iloc[-1]) if len(vix_s) > 0 else 16.0
+            tnx_20d_t = ((float(tnx_s.iloc[-1]) - float(tnx_s.iloc[-21])) / float(tnx_s.iloc[-21]) * 100.0) if len(tnx_s) > 20 and tnx_s.iloc[-21] > 0 else 0.0
+            oil_20d_t = ((float(oil_s.iloc[-1]) - float(oil_s.iloc[-21])) / float(oil_s.iloc[-21]) * 100.0) if len(oil_s) > 20 and oil_s.iloc[-21] > 0 else 0.0
+
+            g_up = (spy_20d_t > -2.0) and (vix_t < 21.0)
+            i_up = (tnx_20d_t > 1.0) or (oil_20d_t > 2.5)
+            if is_last and regime_id in ("REFLATION", "GOLDILOCKS", "STAGFLATION", "DEFLATION"):
+                q_t = regime_id
+                g_up = regime_id in ("REFLATION", "GOLDILOCKS")
+                i_up = regime_id in ("REFLATION", "STAGFLATION")
+            elif g_up and i_up:
+                q_t = "REFLATION"
+            elif g_up and not i_up and vix_t < 20.0:
+                q_t = "GOLDILOCKS"
+            elif (not g_up) and i_up:
+                q_t = "STAGFLATION"
+            elif (not g_up) and (not i_up):
+                q_t = "DEFLATION"
+            else:
+                q_t = "GOLDILOCKS" if g_up else "DEFLATION"
+
+            g_mag = max(0.35, min(3.0, abs((spy_20d_t + 2.0) / 4.0) + ((max(0.0, 21.0 - vix_t) / 6.0) if g_up else (max(0.0, vix_t - 21.0) / 8.0))))
+            growth_score = round(g_mag if g_up else -g_mag, 2)
+            i_mag = max(0.35, min(3.0, max(abs(tnx_20d_t - 1.0) / 3.5, abs(oil_20d_t - 2.5) / 8.0)))
+            inflation_score = round(i_mag if i_up else -i_mag, 2)
+
+            regime_trail.append({
+                "date": dt_t.strftime('%Y-%m-%d'),
+                "label": dt_t.strftime('%m/%d'),
+                "growth_score": growth_score,
+                "inflation_score": inflation_score,
+                "quadrant": q_t,
+            })
+
+    trade_date_str = closes.index[-1].strftime('%Y-%m-%d') if len(closes) > 0 else datetime.date.today().strftime('%Y-%m-%d')
+
     results = {
+        "version": "3.0",
+        "trade_date": trade_date_str,
         "last_updated": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         "macro_quotes": macro_quotes,
         "active_regime": active_regime,
+        "regime_trail": regime_trail,
         "scenarios": scenarios,
         "cross_asset_matrix": matrix_data,
         "sector_sensitivities": sector_sensitivities
     }
 
+    def sanitize_for_json(obj):
+        if isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return None
+            return obj
+        elif isinstance(obj, dict):
+            return {k: sanitize_for_json(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [sanitize_for_json(x) for x in obj]
+        return obj
+
+    results = sanitize_for_json(results)
+
     output_path = os.path.join(os.path.dirname(__file__), '..', 'public', 'correlation_results.json')
     with open(output_path, 'w') as f:
-        json.dump(results, f, indent=4)
+        json.dump(results, f, indent=4, allow_nan=False)
         
     print(f"Institutional Macro Matrix & Correlation Engine scan complete. Output saved to {output_path}")
     return results

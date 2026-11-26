@@ -441,7 +441,7 @@ def compute_sector_flow_predictor(force_refresh=False):
             "type": "BOTTOM",
             "title": "Bottom Signal A: Universal Sector Liquidation Capitulation",
             "subtitle": "True major market bottoms occur ONLY when institutions liquidate Defensive & Cyclical shelters alike (PosSec% <= 18%)",
-            "status": "ACTIVE NOW" if bool(bot_sig_a.iloc[-1]) else ("INACTIVE (9/11 SECTORS STILL POSITIVE)" if curr_pos_cnt >= 6 else "WATCH"),
+            "status": "ACTIVE NOW" if bool(bot_sig_a.iloc[-1]) else (f"INACTIVE ({curr_pos_cnt}/11 SECTORS STILL POSITIVE)" if curr_pos_cnt >= 6 else "WATCH"),
             "status_color": "#10b981" if bool(bot_sig_a.iloc[-1]) else "#64748b",
             "recent_trigger_dates": [],
             "conditions": [
@@ -567,25 +567,103 @@ def compute_sector_flow_predictor(force_refresh=False):
         })
 
     # Actionable Next Bottom / Top Forecast Roadmap
-    top3_in = ", ".join([f"{r['ticker']} ({r['cmf_20d']:+.3f})" for r in sector_rankings[:3]])
+    bot_a_active = bool(bot_sig_a.iloc[-1])
+    bot_b_active = bool(bot_sig_b.iloc[-1])
+    top_a_active = bool(top_sig_a.iloc[-1])
+    top_b_active = bool(top_sig_b.iloc[-1])
+    pos_met = bool(curr_pos_pct <= 18.5)
+    panic_met = bool(curr_panic_pct >= 45.0)
+    def_met = bool(curr_def20 < 0.0)
+
+    pos_in_list = [f"{r['ticker']} ({r['cmf_20d']:+.3f})" for r in sector_rankings if r['cmf_20d'] > 0][:3]
+    pos_in_str = ", ".join(pos_in_list) if pos_in_list else "none (broad outflows)"
     bot2_out = ", ".join([f"{r['ticker']} ({r['cmf_20d']:+.3f})" for r in sector_rankings[-2:]])
-    roadmap = {
-        "why_qqq_and_tech_weak_now": (
-            f"Top Signal A is active as Defensive minus Offensive 20D CMF sits at {curr_spread:+.3f} while XLK ({curr_xlk20:+.3f}) "
+
+    if bot_a_active:
+        regime_diag = (
+            f"Bottom Signal A (Universal Capitulation Washout) is ACTIVE NOW as only {curr_pos_cnt}/11 GICS sectors retain positive 20D inflows "
+            f"({curr_pos_pct:.1f}%), {curr_panic_cnt}/11 are in panic outflow ({curr_panic_pct:.1f}%), and DefCMF(20D) flipped negative ({curr_def20:+.3f}). "
+            f"As of {latest_date_str}, positive 20D inflows remain only in {pos_in_str} while heaviest outflows hit {bot2_out}."
+        )
+    elif bot_b_active:
+        regime_diag = (
+            f"Bottom Signal B (High-Beta Re-Accumulation Thrust) is ACTIVE NOW as 5D Fast CMF turned positive across SMH ({curr_smh5:+.3f}), "
+            f"XLK ({curr_xlk5:+.3f}), and IWM ({curr_iwm5:+.3f}). As of {latest_date_str}, inflows lead in {pos_in_str} while {bot2_out} lag."
+        )
+    elif top_a_active or top_b_active:
+        regime_diag = (
+            f"Top Signal is active as Defensive minus Offensive 20D CMF sits at {curr_spread:+.3f} while XLK ({curr_xlk20:+.3f}) "
             f"and SMH ({curr_smh20:+.3f}) experience institutional distribution. As of {latest_date_str}, capital is rotating into "
-            f"{top3_in} while rotating out of {bot2_out}."
-        ),
+            f"{pos_in_str} while rotating out of {bot2_out}."
+        )
+    else:
+        regime_diag = (
+            f"Defensive minus Offensive 20D CMF spread is {curr_spread:+.3f} with XLK at {curr_xlk20:+.3f} and SMH at {curr_smh20:+.3f}. "
+            f"As of {latest_date_str}, {curr_pos_cnt}/11 sectors show positive 20D inflows ({pos_in_str}) while heaviest distribution sits in {bot2_out}."
+        )
+
+    if bot_a_active:
+        path1_trigger = (
+            f"TRIGGERED NOW — All 3 washout criteria met: PosSec% at {curr_pos_pct:.1f}% ({curr_pos_cnt}/11 <= 18.2%), "
+            f"PanicOut% at {curr_panic_pct:.1f}% ({curr_panic_cnt}/11 >= 45.5%), and DefCMF(20D) at {curr_def20:+.3f} (< 0.000)."
+        )
+        path1_meaning = (
+            f"Only {curr_pos_cnt} of 11 GICS sectors retain positive 20D inflows while {curr_panic_cnt} of 11 are in panic outflow "
+            f"and defensive shelters (DefCMF {curr_def20:+.3f}) have been liquidated — matching historical Stage 1A washout capitulation zones."
+        )
+    else:
+        met_parts = []
+        wait_parts = []
+        if pos_met:
+            met_parts.append(f"PosSec% at {curr_pos_pct:.1f}% ({curr_pos_cnt}/11 <= 18.2%)")
+        else:
+            wait_parts.append(f"PosSec% to drop from {curr_pos_pct:.1f}% ({curr_pos_cnt}/11) down to <=18.2% (<=2/11)")
+        if panic_met:
+            met_parts.append(f"PanicOut% at {curr_panic_pct:.1f}% ({curr_panic_cnt}/11 >= 45.5%)")
+        else:
+            wait_parts.append(f"PanicOut% to rise from {curr_panic_pct:.1f}% ({curr_panic_cnt}/11) to >=45.5% (>=5/11)")
+        if def_met:
+            met_parts.append(f"DefCMF(20D) at {curr_def20:+.3f} (< 0.000)")
+        else:
+            wait_parts.append(f"DefCMF(20D) to drop from {curr_def20:+.3f} below 0.000")
+        met_prefix = f"Already MET: {' & '.join(met_parts)}. " if met_parts else ""
+        path1_trigger = f"{met_prefix}Wait for {' AND '.join(wait_parts)}."
+        path1_meaning = (
+            f"Right now {curr_pos_cnt} of 11 sectors still hold positive 20D inflows ({curr_panic_cnt}/11 in panic outflow). "
+            f"A true market-wide washout bottom completes once institutions liquidate defensive shelters (DefCMF < 0.000) and breadth hits <=2/11 positive with >=5/11 in panic outflow."
+        )
+
+    if bot_b_active:
+        path2_trigger = (
+            f"TRIGGERED NOW — 5D Fast CMF surged above thresholds on SMH ({curr_smh5:+.3f} >= +0.050), "
+            f"XLK ({curr_xlk5:+.3f} >= +0.030), and IWM ({curr_iwm5:+.3f} >= +0.030) with Off−Def 5D thrust {(curr_off5 - curr_def5):+.3f} (>= +0.060)."
+        )
+    elif curr_def5 < 0:
+        path2_trigger = (
+            f"DefCMF(5D) is already negative ({curr_def5:+.3f}); wait for 5D Fast CMF on SMH ({curr_smh5:+.3f}), "
+            f"XLK ({curr_xlk5:+.3f}), and IWM ({curr_iwm5:+.3f}) to cross above +0.050 / +0.030 / +0.030 with Off−Def 5D thrust >= +0.060."
+        )
+    else:
+        path2_trigger = (
+            f"Watch for 5D Fast CMF on SMH (currently {curr_smh5:+.3f}), XLK ({curr_xlk5:+.3f}), and IWM ({curr_iwm5:+.3f}) "
+            f"to cross simultaneously above +0.050 / +0.030 / +0.030 while DefCMF(5D) ({curr_def5:+.3f}) turns negative."
+        )
+
+    roadmap = {
+        "why_qqq_and_tech_weak_now": regime_diag,
         "when_will_market_bottom": [
             {
                 "path": "Path 1: Full Broad Market Washout Bottom (Classic Stage 1A Capitulation)",
-                "trigger": f"Wait for PosSec% to drop from {curr_pos_pct:.1f}% ({curr_pos_cnt}/11) down to <=18.2% (<=2/11) AND PanicOut% to rise from {curr_panic_pct:.1f}% ({curr_panic_cnt}/11) to >=45.5% (>=5/11).",
-                "meaning": "Right now 9 of 11 sectors still have positive 20D inflows. A true market-wide washout bottom only arrives when institutions sell their defensive/cyclical shelters (XLU, XLRE, XLB, XLI) too.",
+                "triggered": bot_a_active,
+                "trigger": path1_trigger,
+                "meaning": path1_meaning,
                 "historical_win_rate": f"{bt_bot_a['win_rate_60d']}% 60D Win Rate (+{bt_bot_a['fwd_60d_avg']}% avg 60D SPY return)"
             },
             {
                 "path": "Path 2: Rotational Pullback Bottom (Tech/Semi/Small-Cap Re-Accumulation Pivot)",
-                "trigger": f"Watch for 5D Fast CMF on SMH (currently {curr_smh5:+.3f}), XLK ({curr_xlk5:+.3f}), and IWM ({curr_iwm5:+.3f}) to cross simultaneously above +0.050 / +0.030 / +0.030 while XLU/XLP 5D CMF turns negative.",
-                "meaning": "If the market resolves via rotation rather than a crash, the bottom in QQQ/SPY will be signaled the day 5D institutional order flow pivots out of XLU/XLRE and surges back into SMH, XLK & IWM.",
+                "triggered": bot_b_active,
+                "trigger": path2_trigger,
+                "meaning": "If the market resolves via rotation rather than a crash, the bottom in QQQ/SPY will be signaled the day 5D institutional order flow pivots out of Defensives and surges back into SMH, XLK & IWM.",
                 "historical_win_rate": f"{bt_bot_b['win_rate_60d']}% 60D Win Rate (+{bt_bot_b['fwd_60d_avg']}% avg 60D SPY return)"
             }
         ]

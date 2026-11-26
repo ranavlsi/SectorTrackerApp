@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './VolatilitySurface3D.css';
+import VolHeatmapStudio from './VolHeatmapStudio';
 import { 
   Loader2, Zap, Target, TrendingUp, TrendingDown, 
   Activity, Compass, Layers, AlertCircle, ArrowUpRight, 
@@ -10,6 +11,7 @@ import {
 
 const COLOR_PALETTES = [
   { id: 'HedgingRegimes', label: '🛡️ Hedging Regimes (Over/Under)' },
+  { id: 'LocalVol', label: '🔥 Dupire Local Vol (σ_loc)' },
   { id: 'Plasma', label: 'Plasma (Purple / Gold)' },
   { id: 'Viridis', label: 'Viridis (Teal / Emerald)' },
   { id: 'Turbo', label: 'Turbo (Full Spectrum)' },
@@ -60,22 +62,96 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
   const [heatmapFilter, setHeatmapFilter] = useState('core'); // 'core' | 'all'
   const [showHvPlane, setShowHvPlane] = useState(true);
   const [show3dLabels, setShow3dLabels] = useState(true);
-  const [showHedgingGuide, setShowHedgingGuide] = useState(true);
+  const [showHedgingGuide, setShowHedgingGuide] = useState(false);
+  const [showAxesGuide, setShowAxesGuide] = useState(false);
+  const [showCalibrationPanel, setShowCalibrationPanel] = useState(false);
+  const [showSviChartInfo, setShowSviChartInfo] = useState(true);
   const [highlightedSetupId, setHighlightedSetupId] = useState(null);
   const [focusedHotspot, setFocusedHotspot] = useState(null);
   const [expandedSetupId, setExpandedSetupId] = useState(null);
   const [setupCategory, setSetupCategory] = useState('ALL');
-  const [volMoveLookback, setVolMoveLookback] = useState('OFF'); // 'OFF' | '1D' | '3D' | '5D' | '10D'
+  const [volMoveLookback, setVolMoveLookback] = useState('OFF'); // 'OFF' | 'INTRADAY' | '1D' | '2D' | '3D' | '5D' | '10D'
   const [volMoveColorByDelta, setVolMoveColorByDelta] = useState(false);
-  const [interdayShiftMode, setInterdayShiftMode] = useState(false); // true => Z-axis plots ΔIV (Today - Prior) around 0.0% plane
+  const [interdayShiftMode, setInterdayShiftMode] = useState(false); // true => Motion Engine ON (Intraday Open->Live or Interday 1D-10D)
+  const [motionCoordFrame, setMotionCoordFrame] = useState('sticky_strike'); // 'sticky_strike' | 'sticky_delta' | 'spot_slide'
+  const [motionVisualStyle, setMotionVisualStyle] = useState('delta_relief'); // 'delta_relief' | 'before_after'
+  const [intradayFrameIdx, setIntradayFrameIdx] = useState(-1); // -1 => latest intraday checkpoint
+  const [isMotionPlaying, setIsMotionPlaying] = useState(false);
+  const [motionPlaySpeed, setMotionPlaySpeed] = useState(900); // 900 (1x) | 480 (2x)
   const [multiDayChartSubmode, setMultiDayChartSubmode] = useState('term_shift'); // 'term_shift' | 'daily_iv_skew'
   const [surfacePrecision, setSurfacePrecision] = useState('exact'); // 'exact' | 'smooth' (exact preserves earnings/event kinks!)
   const [zRelief, setZRelief] = useState('1.15'); // '1.15' | '1.55'
   const [plotlyReady, setPlotlyReady] = useState(Boolean(window.Plotly));
   const plotRef = useRef(null);
+  const [plotWidth, setPlotWidth] = useState(0);
+
+  useEffect(() => {
+    const el = plotRef.current;
+    if (!el) return undefined;
+    const upd = () => {
+      if (el.clientWidth > 0) setPlotWidth(el.clientWidth);
+    };
+    upd();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(upd);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+    window.addEventListener('resize', upd);
+    return () => window.removeEventListener('resize', upd);
+  }, [activeViewMode, loading, error]);
   const surfaceCardRef = useRef(null);
   const rotateAngleRef = useRef(0);
   const animFrameRef = useRef(null);
+
+  // Reset ticker-scoped focus locks & selections whenever switching tickers
+  useEffect(() => {
+    setFocusedHotspot(null);
+    setHighlightedSetupId(null);
+    setExpandedSetupId(null);
+    setSelectedExpiry('All');
+    setIntradayFrameIdx(-1);
+    setIsMotionPlaying(false);
+  }, [ticker]);
+
+  // Keep motion playback smooth across Intraday checkpoints or Chronological Interday lookbacks
+  useEffect(() => {
+    if (!isMotionPlaying || !interdayShiftMode || volMoveLookback === 'OFF') return undefined;
+    const isIntra = volMoveLookback === 'INTRADAY';
+    const cps = data?.intraday_iv_motion?.checkpoints || [];
+    const replayOrder = data?.interday_iv_motion?.replay_order || ['10D', '5D', '3D', '2D', '1D'];
+
+    if (isIntra && cps.length < 2) {
+      setIsMotionPlaying(false);
+      return undefined;
+    }
+    if (!isIntra && replayOrder.length < 2) {
+      setIsMotionPlaying(false);
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      if (isIntra) {
+        setIntradayFrameIdx((prev) => {
+          const cur = (prev < 0 || prev >= cps.length) ? 0 : prev;
+          return (cur + 1) % cps.length;
+        });
+      } else {
+        setVolMoveLookback((curr) => {
+          const idx = replayOrder.indexOf(curr);
+          const nextIdx = idx >= 0 ? (idx + 1) % replayOrder.length : 0;
+          return replayOrder[nextIdx];
+        });
+      }
+    }, motionPlaySpeed);
+    return () => window.clearInterval(timer);
+  }, [isMotionPlaying, interdayShiftMode, volMoveLookback, motionPlaySpeed, data]);
+
+  useEffect(() => {
+    if (!interdayShiftMode && isMotionPlaying) {
+      setIsMotionPlaying(false);
+    }
+  }, [interdayShiftMode, isMotionPlaying]);
 
   // Dynamically slice surface, term structure, hotspots, and hedging diagnostics to the chosen Tenor Horizon (1M, 3M, 6M, 1Y, 2Y, ALL)
   const horizonData = useMemo(() => {
@@ -453,7 +529,12 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
     }
   };
 
+  const heatmapExportRef = useRef(null);
   const handleExportSnapshot = () => {
+    if (activeViewMode === 'heatmap' && typeof heatmapExportRef.current === 'function') {
+      heatmapExportRef.current();
+      return;
+    }
     if (!plotRef.current || !window.Plotly) return;
     try {
       window.Plotly.downloadImage(plotRef.current, {
@@ -468,6 +549,12 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
   };
 
   useEffect(() => {
+    if (activeViewMode === 'heatmap') {
+      if (plotRef.current && window.Plotly) {
+        try { window.Plotly.purge(plotRef.current); } catch (_) {}
+      }
+      return;
+    }
     const activeData = horizonData || data;
     if (!activeData || !activeData.surface || activeData.surface.length === 0 || !plotRef.current || !window.Plotly) {
       return;
@@ -546,6 +633,9 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
             const w = (right.strike - left.strike) > 0 ? (targetStrike - left.strike) / (right.strike - left.strike) : 0;
             const iv = Number((left.iv + w * (right.iv - left.iv)).toFixed(2));
             const fit_iv = Number(((left.fit_iv || left.iv) + w * ((right.fit_iv || right.iv) - (left.fit_iv || left.iv))).toFixed(2));
+            const local_vol = Number(((left.local_vol || fit_iv) + w * ((right.local_vol || fit_iv) - (left.local_vol || fit_iv))).toFixed(2));
+            const iv_bid = (left.iv_bid && right.iv_bid) ? Number((left.iv_bid + w * (right.iv_bid - left.iv_bid)).toFixed(2)) : null;
+            const iv_ask = (left.iv_ask && right.iv_ask) ? Number((left.iv_ask + w * (right.iv_ask - left.iv_ask)).toFixed(2)) : null;
             const dislocation_pct = Number(((left.dislocation_pct || 0) + w * ((right.dislocation_pct || 0) - (left.dislocation_pct || 0))).toFixed(1));
             return {
               expiry: exp,
@@ -553,9 +643,12 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
               strike: targetStrike,
               iv,
               fit_iv,
+              local_vol,
+              iv_bid,
+              iv_ask,
               dislocation_pct,
               type: targetStrike < (spot || left.strike) ? 'otm_put' : 'otm_call',
-              hedge_label: dislocation_pct >= 5 ? 'OVERHEDGED (Rich)' : (dislocation_pct <= -5 ? 'UNDERHEDGED (Cheap)' : 'BALANCED (Fair Value)')
+              hedge_label: dislocation_pct >= 4 ? 'OVERHEDGED (Rich vs SVI)' : (dislocation_pct <= -4 ? 'UNDERHEDGED (Cheap vs SVI)' : 'BALANCED (Fair SVI Value)')
             };
           }
         }
@@ -647,6 +740,8 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         }
       }
 
+      const todayZData = zData.map(row => [...row]);
+
       const xValues = strikeMode === 'moneyness' 
         ? strikes.map(s => +(s / (spot || 1)).toFixed(3)) 
         : strikes;
@@ -660,42 +755,225 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
       let cmaxVal = undefined;
       let colorbarTitle = 'Implied Vol (%)';
 
-      // Build Historical Lookback 3D Surface (1D / 3D / 5D / 10D Ago) if volMoveLookback !== 'OFF'
-      const lookbackSnap = (volMoveLookback && volMoveLookback !== 'OFF')
-        ? activeData.multi_day_vol_movement?.historical_snapshots?.[volMoveLookback]
+      // Helper: bilinearly resample any backend (srcExps x srcStrikes) motion matrix onto current (expirations x strikes)
+      const sampleMotionMatrix = (srcExps, srcStrikes, srcMat, fallbackVal = 0.0) => {
+        if (!Array.isArray(srcExps) || !Array.isArray(srcStrikes) || !Array.isArray(srcMat) || srcExps.length === 0 || srcStrikes.length === 0) {
+          return expirations.map(() => strikes.map(() => fallbackVal));
+        }
+        const rowMap = new Map();
+        srcExps.forEach((e, idx) => rowMap.set(e, idx));
+        const dteIdxPairs = srcExps.map((e, idx) => {
+          const tsF = (data.term_structure || []).find(t => t.expiry === e);
+          const dVal = tsF?.dte ?? (activeData.term_structure || []).find(t => t.expiry === e)?.dte ?? (idx + 1) * 14;
+          return { exp: e, idx, dte: dVal };
+        });
+
+        const interpCol = (rowArr, targetK) => {
+          if (!Array.isArray(rowArr) || rowArr.length === 0) return fallbackVal;
+          if (targetK <= srcStrikes[0]) return Number(rowArr[0] ?? fallbackVal);
+          if (targetK >= srcStrikes[srcStrikes.length - 1]) return Number(rowArr[rowArr.length - 1] ?? fallbackVal);
+          for (let sIdx = 0; sIdx < srcStrikes.length - 1; sIdx++) {
+            const k0 = srcStrikes[sIdx];
+            const k1 = srcStrikes[sIdx + 1];
+            if (targetK >= k0 && targetK <= k1) {
+              const w = (k1 - k0) > 1e-6 ? (targetK - k0) / (k1 - k0) : 0;
+              const v0 = Number(rowArr[sIdx] ?? fallbackVal);
+              const v1 = Number(rowArr[sIdx + 1] ?? fallbackVal);
+              return Number((v0 + w * (v1 - v0)).toFixed(2));
+            }
+          }
+          return fallbackVal;
+        };
+
+        return expirations.map((exp) => {
+          const exactRowIdx = rowMap.get(exp);
+          if (exactRowIdx !== undefined && srcMat[exactRowIdx]) {
+            return strikes.map(st => interpCol(srcMat[exactRowIdx], st));
+          }
+          const tDte = (activeData.term_structure || []).find(t => t.expiry === exp)?.dte ?? 30;
+          let lo = dteIdxPairs[0];
+          let hi = dteIdxPairs[dteIdxPairs.length - 1];
+          for (let r = 0; r < dteIdxPairs.length; r++) {
+            if (dteIdxPairs[r].dte <= tDte) lo = dteIdxPairs[r];
+            if (dteIdxPairs[r].dte >= tDte) { hi = dteIdxPairs[r]; break; }
+          }
+          const den = hi.dte - lo.dte;
+          const wt = den > 0 ? Math.max(0, Math.min(1, (tDte - lo.dte) / den)) : 0;
+          const rLo = srcMat[lo.idx];
+          const rHi = srcMat[hi.idx];
+          return strikes.map((st) => {
+            const v0 = interpCol(rLo, st);
+            const v1 = interpCol(rHi, st);
+            return Number((v0 + wt * (v1 - v0)).toFixed(2));
+          });
+        });
+      };
+
+      const pickMatrixByFrame = (motionObj) => {
+        if (!motionObj) return null;
+        if (motionCoordFrame === 'sticky_delta' && motionObj.delta_sticky_delta_matrix) return motionObj.delta_sticky_delta_matrix;
+        if (motionCoordFrame === 'spot_slide' && motionObj.delta_spot_slide_matrix) return motionObj.delta_spot_slide_matrix;
+        return motionObj.delta_strike_matrix || null;
+      };
+
+      // Build Motion ΔIV Surface (True Intraday Open->Live OR Real Interday 1D/2D/3D/5D/10D)
+      const intraMotion = data.intraday_iv_motion;
+      const interMotionV4 = data.interday_iv_motion;
+      const isIntradayMode = volMoveLookback === 'INTRADAY' && Boolean(intraMotion?.available && Array.isArray(intraMotion?.checkpoints) && intraMotion.checkpoints.length > 0);
+      const effIntraIdx = isIntradayMode
+        ? ((intradayFrameIdx >= 0 && intradayFrameIdx < intraMotion.checkpoints.length) ? intradayFrameIdx : intraMotion.checkpoints.length - 1)
+        : -1;
+      const activeIntraCp = isIntradayMode ? intraMotion.checkpoints[effIntraIdx] : null;
+      const activeInterLbV4 = (!isIntradayMode && volMoveLookback && volMoveLookback !== 'OFF' && interMotionV4?.available)
+        ? (interMotionV4.lookbacks?.[volMoveLookback] || null)
         : null;
+
+      const lookbackSnap = (volMoveLookback && volMoveLookback !== 'OFF' && !isIntradayMode)
+        ? (activeData.multi_day_vol_movement?.historical_snapshots?.[volMoveLookback]
+          || (activeInterLbV4 ? { key: activeInterLbV4.key, label: activeInterLbV4.label, date: activeInterLbV4.date, iv_shift_pts: activeInterLbV4.summary?.atm_delta_iv || 0, skew_shift_pts: activeInterLbV4.summary?.skew_delta || 0 } : null))
+        : null;
+
+      const activeMotionMeta = activeIntraCp || activeInterLbV4 || null;
+      const hasTrueV4Motion = Boolean(activeIntraCp || activeInterLbV4);
+      const realDelta1dInfo = activeData.multi_day_vol_movement?.real_delta_iv_1d;
+      let isRealPerContractDelta = hasTrueV4Motion;
+      let realPointGrid = null;
       let pastZData = null;
       let deltaIvMatrix = null;
+      let currentFrameZData = todayZData.map(r => [...r]);
+      let motionZBounds = isIntradayMode ? intraMotion?.z_bounds : (activeInterLbV4 ? interMotionV4?.z_bounds : null);
 
-      if (lookbackSnap) {
+      if (isIntradayMode && activeIntraCp) {
+        const srcExps = intraMotion.grid_expirations || [];
+        const srcStrikes = intraMotion.grid_strikes || [];
+        const rawDelta = pickMatrixByFrame(activeIntraCp);
+        deltaIvMatrix = sampleMotionMatrix(srcExps, srcStrikes, rawDelta, 0.0);
+        currentFrameZData = activeIntraCp.iv_matrix
+          ? sampleMotionMatrix(srcExps, srcStrikes, activeIntraCp.iv_matrix, 22.0)
+          : todayZData.map(r => [...r]);
+        pastZData = intraMotion.baseline_iv_matrix
+          ? sampleMotionMatrix(srcExps, srcStrikes, intraMotion.baseline_iv_matrix, 22.0)
+          : expirations.map((_, i) => strikes.map((__, j) => Number(Math.max(4.0, currentFrameZData[i][j] - deltaIvMatrix[i][j]).toFixed(2))));
+      } else if (activeInterLbV4) {
+        const srcExps = interMotionV4.grid_expirations || [];
+        const srcStrikes = interMotionV4.grid_strikes || [];
+        const rawDelta = pickMatrixByFrame(activeInterLbV4);
+        deltaIvMatrix = sampleMotionMatrix(srcExps, srcStrikes, rawDelta, 0.0);
+        currentFrameZData = interMotionV4.today_iv_matrix
+          ? sampleMotionMatrix(srcExps, srcStrikes, interMotionV4.today_iv_matrix, 22.0)
+          : todayZData.map(r => [...r]);
+        pastZData = activeInterLbV4.prior_iv_matrix
+          ? sampleMotionMatrix(srcExps, srcStrikes, activeInterLbV4.prior_iv_matrix, 22.0)
+          : expirations.map((_, i) => strikes.map((__, j) => Number(Math.max(4.0, currentFrameZData[i][j] - deltaIvMatrix[i][j]).toFixed(2))));
+      } else if (lookbackSnap) {
         const snapTsMap = new Map();
         (lookbackSnap.term_structure || []).forEach(t => snapTsMap.set(t.expiry, t));
         const baseShift = -(lookbackSnap.iv_shift_pts || 0); // past_iv - today_iv
         const skewShift = -(lookbackSnap.skew_shift_pts || 0);
 
-        pastZData = expirations.map((exp, i) => {
+        const fallbackPastZ = expirations.map((exp, i) => {
           const tsPast = snapTsMap.get(exp);
           const tenorDelta = tsPast ? (tsPast.atm_iv - tsPast.today_atm_iv) : baseShift;
           return strikes.map((st, j) => {
-            const todayIv = zData[i][j];
+            const todayIv = todayZData[i][j];
             const moneynessOffset = spot ? ((st - spot) / spot) : 0;
-            // Put wing (<0) vs Call wing (>0) historical skew tilt adjustment
             const wingTilt = -moneynessOffset * skewShift * 1.4;
             return Number(Math.max(4.0, todayIv + tenorDelta + wingTilt).toFixed(2));
           });
         });
 
-        deltaIvMatrix = expirations.map((exp, i) =>
-          strikes.map((st, j) => Number((zData[i][j] - pastZData[i][j]).toFixed(2)))
-        );
+        if (volMoveLookback === '1D' && realDelta1dInfo?.available) {
+          isRealPerContractDelta = true;
+          realPointGrid = expirations.map((_, i) =>
+            strikes.map((__, j) => {
+              const p = evalGrid[i][j];
+              return Boolean(p && typeof p.real_delta_iv_1d === 'number' && !isNaN(p.real_delta_iv_1d));
+            })
+          );
+          deltaIvMatrix = expirations.map((exp, i) => {
+            const row = strikes.map((st, j) => {
+              const p = evalGrid[i][j];
+              if (p && typeof p.real_delta_iv_1d === 'number' && !isNaN(p.real_delta_iv_1d)) {
+                return Number(p.real_delta_iv_1d.toFixed(2));
+              }
+              return null;
+            });
+            let lastIdx = -1;
+            for (let j = 0; j < strikes.length; j++) {
+              if (row[j] !== null) {
+                if (lastIdx !== -1 && j > lastIdx + 1) {
+                  const v0 = row[lastIdx];
+                  const v1 = row[j];
+                  for (let k = lastIdx + 1; k < j; k++) {
+                    row[k] = Number((v0 + ((v1 - v0) * (k - lastIdx)) / (j - lastIdx)).toFixed(2));
+                  }
+                }
+                lastIdx = j;
+              }
+            }
+            const firstIdx = row.findIndex(v => v !== null);
+            if (firstIdx !== -1) {
+              for (let j = firstIdx - 1; j >= 0; j--) {
+                const fb = todayZData[i][j] - fallbackPastZ[i][j];
+                row[j] = Number((0.65 * row[j + 1] + 0.35 * fb).toFixed(2));
+              }
+              for (let j = lastIdx + 1; j < strikes.length; j++) {
+                const fb = todayZData[i][j] - fallbackPastZ[i][j];
+                row[j] = Number((0.65 * row[j - 1] + 0.35 * fb).toFixed(2));
+              }
+            } else {
+              for (let j = 0; j < strikes.length; j++) {
+                row[j] = Number((todayZData[i][j] - fallbackPastZ[i][j]).toFixed(2));
+              }
+            }
+            return row;
+          });
+          pastZData = expirations.map((_, i) =>
+            strikes.map((__, j) => Number(Math.max(4.0, todayZData[i][j] - deltaIvMatrix[i][j]).toFixed(2)))
+          );
+        } else {
+          pastZData = fallbackPastZ;
+          deltaIvMatrix = expirations.map((_, i) =>
+            strikes.map((__, j) => Number((todayZData[i][j] - pastZData[i][j]).toFixed(2)))
+          );
+        }
       }
 
-      const isInterdayDeltaZ = Boolean(interdayShiftMode && lookbackSnap && deltaIvMatrix);
+      const hasMotionLookback = Boolean((isIntradayMode && activeIntraCp) || activeInterLbV4 || lookbackSnap);
+      const isBeforeAfterMode = Boolean(interdayShiftMode && hasMotionLookback && motionVisualStyle === 'before_after' && pastZData && deltaIvMatrix);
+      const isInterdayDeltaZ = Boolean(interdayShiftMode && hasMotionLookback && !isBeforeAfterMode && deltaIvMatrix);
+
       if (isInterdayDeltaZ) {
+        // Gentle 1-pass Laplacian smoothing on delta manifold for crisp saddle/ridge relief without erasing spikes
+        let sm = deltaIvMatrix.map(row => row.map(v => Number(v)));
+        for (let pass = 0; pass < 1; pass++) {
+          const nextSm = sm.map(row => [...row]);
+          for (let i = 0; i < expirations.length; i++) {
+            for (let j = 0; j < strikes.length; j++) {
+              const c = sm[i][j];
+              const l = j > 0 ? sm[i][j - 1] : c;
+              const r = j < strikes.length - 1 ? sm[i][j + 1] : c;
+              const u = i > 0 ? sm[i - 1][j] : c;
+              const d = i < expirations.length - 1 ? sm[i + 1][j] : c;
+              nextSm[i][j] = Number((0.62 * c + 0.13 * (l + r) + 0.06 * (u + d)).toFixed(2));
+            }
+          }
+          sm = nextSm;
+        }
+        deltaIvMatrix = sm;
         zData = deltaIvMatrix.map(row => row.map(v => Number(v)));
+      } else if (isBeforeAfterMode) {
+        zData = currentFrameZData.map(row => row.map(v => Number(v)));
       }
 
-      if (lookbackSnap && (volMoveColorByDelta || isInterdayDeltaZ) && deltaIvMatrix) {
+      const coordTagLabel = motionCoordFrame === 'sticky_delta'
+        ? 'Pure Vol (Sticky-Δ)'
+        : (motionCoordFrame === 'spot_slide' ? 'Spot-Slide' : 'Sticky-Strike');
+      const motionScopeLabel = isIntradayMode
+        ? `${activeIntraCp?.label_et || 'Intraday'} vs Open`
+        : `${volMoveLookback} Ago`;
+
+      if (hasMotionLookback && (volMoveColorByDelta || isInterdayDeltaZ || isBeforeAfterMode) && deltaIvMatrix) {
         surfaceColorMatrix = deltaIvMatrix;
         surfaceColorscale = [
           [0.0, '#10b981'],  // Deep Vol Crush (Emerald)
@@ -704,9 +982,20 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           [0.65, '#f59e0b'], // Mild Vol Expansion (Amber)
           [1.0, '#ef4444']   // Strong Vol Expansion (Crimson)
         ];
-        cminVal = -6;
-        cmaxVal = 6;
-        colorbarTitle = `ΔIV vs ${volMoveLookback} Ago (%)`;
+        cminVal = motionZBounds ? motionZBounds[0] : -6;
+        cmaxVal = motionZBounds ? motionZBounds[1] : 6;
+        colorbarTitle = isIntradayMode
+          ? `Intraday ${coordTagLabel} ΔIV (%)`
+          : (hasTrueV4Motion ? `Real ${volMoveLookback} ${coordTagLabel} ΔIV (%)` : `ΔIV vs ${volMoveLookback} Ago (%)`);
+      } else if (surfaceColor === 'LocalVol') {
+        surfaceColorMatrix = expirations.map((exp, i) =>
+          strikes.map((st, j) => {
+            const cell = evalGrid[i][j];
+            return cell ? (cell.local_vol || cell.fit_iv || todayZData[i][j]) : todayZData[i][j];
+          })
+        );
+        surfaceColorscale = 'Inferno';
+        colorbarTitle = 'Dupire Local Vol (%)';
       } else if (surfaceColor === 'HedgingRegimes') {
         surfaceColorMatrix = expirations.map((exp, i) => {
           return strikes.map((st, j) => {
@@ -782,49 +1071,90 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         return dte ? `${dte}D (${exp.slice(5)})` : exp;
       });
 
-      // Rich hover template matrix
+      // Rich hover template matrix (uses immutable todayZData so ΔIV mode never corrupts Live IV)
       const hoverTextMatrix = expirations.map((exp, i) => {
         return strikes.map((st, j) => {
           const p = evalGrid[i][j];
-          const surfIv = zData[i][j];
+          const frameIv = currentFrameZData[i][j];
           const pastIv = pastZData ? pastZData[i][j] : null;
           const dIv = deltaIvMatrix ? deltaIvMatrix[i][j] : null;
+          if ((isInterdayDeltaZ || isBeforeAfterMode) && dIv !== null && hasMotionLookback) {
+            const regimeTxt = dIv >= 0.4 ? 'Vol Expansion' : (dIv <= -0.4 ? 'Vol Crush' : 'Flat');
+            const srcTag = isIntradayMode
+              ? `Alpaca 30m Option + SIP Bars (${activeIntraCp?.label_et})`
+              : (activeInterLbV4 ? `Alpaca Real Daily Option Bars (${activeInterLbV4.date})` : 'Term/Skew Shift Model');
+            const optType = p ? (p.type === 'otm_put' ? 'PUT' : (p.type === 'otm_call' ? 'CALL' : 'ATM')) : 'NODE';
+            return `<b>${optType} $${st}</b> (${(st / (spot || 1)).toFixed(2)}x Spot)<br>` +
+                   `Tenor: ${exp}${p?.dte ? ` (${p.dte}d)` : ''}<br>` +
+                   `<b>${coordTagLabel} ΔIV (${motionScopeLabel}): ${dIv >= 0 ? '+' : ''}${dIv}% (${regimeTxt})</b><br>` +
+                   `${isIntradayMode ? activeIntraCp?.label_et : 'Current'} IV: <b>${frameIv}%</b> | ${isIntradayMode ? intraMotion.baseline_label : (lookbackSnap?.label || volMoveLookback)} IV: <b>${pastIv}%</b>` +
+                   `<br><i>Source: ${srcTag}</i>`;
+          }
+          const todayIv = todayZData[i][j];
           const moveLine = (pastIv !== null && dIv !== null && lookbackSnap)
             ? `<br>${lookbackSnap.label} IV: <b>${pastIv}%</b> (Shift: <b>${dIv >= 0 ? '+' : ''}${dIv}%</b>)`
             : '';
           if (!p) {
-            return `<b>Strike: $${st}</b> (${(st / (spot || 1)).toFixed(2)}x Spot)<br>Tenor: ${exp}<br>Surface IV: <b>${surfIv}%</b>${moveLine}`;
+            return `<b>Strike: $${st}</b> (${(st / (spot || 1)).toFixed(2)}x Spot)<br>Tenor: ${exp}<br>Surface IV: <b>${todayIv}%</b>${moveLine}`;
           }
           const dis = p.dislocation_pct !== undefined ? (p.dislocation_pct > 0 ? `+${p.dislocation_pct}%` : `${p.dislocation_pct}%`) : '0%';
-          const state = p.hedge_label || 'BALANCED (Fair Value)';
-          const fit = p.fit_iv || surfIv;
+          const state = p.hedge_label || 'BALANCED (Fair SVI Value)';
+          const fit = p.fit_iv || todayIv;
+          const locV = p.local_vol ? `<br>Dupire Local Vol (σ_loc): <b>${p.local_vol}%</b>` : '';
+          const baLine = (p.iv_bid && p.iv_ask) ? `<br>Bid–Ask IV Band: ${p.iv_bid}% – ${p.iv_ask}%` : '';
           const optType = p.type === 'otm_put' ? 'PUT' : (p.type === 'otm_call' ? 'CALL' : 'ATM');
           return `<b>${optType} $${st}</b> (${(st / (spot || 1)).toFixed(2)}x Spot)<br>` +
                  `Tenor: ${p.expiry} (${p.dte}d)<br>` +
-                 `Market IV (Today): <b>${surfIv}%</b>${moveLine}<br>` +
-                 `Smile Baseline: ${fit}%<br>` +
-                 `Dislocation: <b>${dis}</b><br>` +
+                 `Market IV (Mid B76): <b>${todayIv}%</b>${baLine}${moveLine}<br>` +
+                 `Arb-Free SVI Fair: <b>${fit}%</b> (${dis})${locV}<br>` +
                  `State: <b>${state}</b>`;
         });
       });
 
-      // Compute robust Z-bounds so single-contract wing outlier quotes (e.g. 170% IV on SPY)
-      // never squash real 3-15% vol kinks and valleys into a flat plane.
+      // Compute robust Z-bounds separately for signed ΔIV mode vs positive IV surface mode
       const flatZ = zData.flat().filter(v => typeof v === 'number' && !isNaN(v)).sort((a, b) => a - b);
-      let robustZMin = flatZ.length ? flatZ[0] : 10;
-      let robustZMax = flatZ.length ? flatZ[flatZ.length - 1] : 60;
+      let robustZMin = flatZ.length ? flatZ[0] : (isInterdayDeltaZ ? -3 : 10);
+      let robustZMax = flatZ.length ? flatZ[flatZ.length - 1] : (isInterdayDeltaZ ? 3 : 60);
       if (flatZ.length >= 10) {
         const p02 = flatZ[Math.floor(flatZ.length * 0.02)];
         const p95 = flatZ[Math.floor(flatZ.length * 0.95)];
         const p98 = flatZ[Math.floor(flatZ.length * 0.98)];
-        robustZMin = p02;
-        if (robustZMax > p95 * 1.85) {
-          robustZMax = p98 * 1.08;
-          zData = zData.map(row => row.map(v => (typeof v === 'number' && v > robustZMax ? Number(robustZMax.toFixed(2)) : v)));
+        if (isInterdayDeltaZ) {
+          robustZMin = p02;
+          robustZMax = p98;
+          if ((flatZ[flatZ.length - 1] - flatZ[0]) > 28.0) {
+            const clipLo = Number((p02 - 2.0).toFixed(2));
+            const clipHi = Number((p98 + 2.0).toFixed(2));
+            zData = zData.map(row => row.map(v => typeof v === 'number' ? Number(Math.max(clipLo, Math.min(clipHi, v)).toFixed(2)) : v));
+            robustZMin = clipLo;
+            robustZMax = clipHi;
+          }
+        } else {
+          robustZMin = p02;
+          if (robustZMax > p95 * 1.85) {
+            robustZMax = p98 * 1.08;
+            zData = zData.map(row => row.map(v => (typeof v === 'number' && v > robustZMax ? Number(robustZMax.toFixed(2)) : v)));
+          }
         }
       }
-      const zSpan = Math.max(2.0, robustZMax - robustZMin);
-      const zAxisRange = [Number((robustZMin - zSpan * 0.06).toFixed(2)), Number((robustZMax + zSpan * 0.08).toFixed(2))];
+      let zAxisRange;
+      if (isInterdayDeltaZ) {
+        if (motionZBounds && motionZBounds.length === 2) {
+          zAxisRange = [Number(motionZBounds[0]), Number(motionZBounds[1])];
+          const symMax = Math.max(Math.abs(motionZBounds[0]), Math.abs(motionZBounds[1]));
+          cminVal = -Number(symMax.toFixed(1));
+          cmaxVal = Number(symMax.toFixed(1));
+        } else {
+          const zPad = Math.max(0.8, (robustZMax - robustZMin) * 0.12);
+          zAxisRange = [Number(Math.min(-1.5, robustZMin - zPad).toFixed(2)), Number(Math.max(1.5, robustZMax + zPad).toFixed(2))];
+          const symAbs = Math.max(Math.abs(robustZMin), Math.abs(robustZMax));
+          cminVal = -Math.max(2.5, Math.min(18.0, Math.ceil(symAbs)));
+          cmaxVal = -cminVal;
+        }
+      } else {
+        const zSpan = Math.max(2.0, robustZMax - robustZMin);
+        zAxisRange = [Number((robustZMin - zSpan * 0.06).toFixed(2)), Number((robustZMax + zSpan * 0.08).toFixed(2))];
+      }
 
       // Shape-preserving PCHIP (Fritsch-Carlson) Y-axis upsampling (2 sub-steps per tenor span)
       // Connects front-end kinks & valleys into a continuous sculpted surface while passing through EVERY exact market tenor!
@@ -888,9 +1218,13 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
               const rowCol = colorMesh ? new Array(nX) : null;
               for (let j = 0; j < nX; j++) {
                 const v = h00 * zData[i][j] + h10 * h * slopes[i][j] + h01 * zData[i + 1][j] + h11 * h * slopes[i + 1][j];
-                const clampedV = Number(Math.max(4.0, Math.min(robustZMax * 1.05, v)).toFixed(2));
+                const clampedV = isInterdayDeltaZ
+                  ? Number(Math.max(zAxisRange[0], Math.min(zAxisRange[1], v)).toFixed(2))
+                  : Number(Math.max(4.0, Math.min(robustZMax * 1.05, v)).toFixed(2));
                 rowZ[j] = clampedV;
-                rowHover[j] = `<b>Strike: $${strikes[j]}</b> (${(strikes[j] / (spot || 1)).toFixed(2)}x Spot)<br>Interpolated Tenor: ~${interpDte}D<br>Surface IV: <b>${clampedV}%</b>`;
+                rowHover[j] = isInterdayDeltaZ
+                  ? `<b>Strike: $${strikes[j]}</b> (${(strikes[j] / (spot || 1)).toFixed(2)}x Spot)<br>Interpolated Tenor: ~${interpDte}D<br>ΔIV Shift vs ${volMoveLookback}: <b>${clampedV >= 0 ? '+' : ''}${clampedV}%</b>`
+                  : `<b>Strike: $${strikes[j]}</b> (${(strikes[j] / (spot || 1)).toFixed(2)}x Spot)<br>Interpolated Tenor: ~${interpDte}D<br>Surface IV: <b>${clampedV}%</b>`;
                 if (rowCol) {
                   rowCol[j] = Number((surfaceColorMatrix[i][j] + t * (surfaceColorMatrix[i + 1][j] - surfaceColorMatrix[i][j])).toFixed(2));
                 }
@@ -916,13 +1250,15 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
       // Base 3D Surface with High-Relief Terrain Lighting & Crisp Contour Lines
       const baseSurfaceTrace = {
         type: 'surface',
-        name: 'Today Live Vol Surface',
+        name: isInterdayDeltaZ
+          ? `${coordTagLabel} ΔIV (${motionScopeLabel})`
+          : (isBeforeAfterMode ? `${isIntradayMode ? activeIntraCp?.label_et : 'Current'} IV Surface` : 'Today Live Vol Surface'),
         z: zMesh,
         x: xValues,
         y: yMesh,
         colorscale: surfaceColorscale,
         showscale: true,
-        opacity: lookbackSnap ? 0.88 : 0.95,
+        opacity: (hasMotionLookback || isBeforeAfterMode) ? 0.88 : 0.95,
         lighting: {
           ambient: 0.52,
           diffuse: 0.95,
@@ -934,11 +1270,16 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         hoverinfo: 'text',
         text: hoverMesh,
         colorbar: { 
-          title: { text: colorbarTitle, font: { color: currentBg.text, family: 'monospace', size: 11 } }, 
-          tickfont: { color: currentBg.text, family: 'monospace', size: 10 },
-          len: 0.78,
-          thickness: 14,
-          xpad: 10
+          title: { text: colorbarTitle, font: { color: currentBg.text, family: "'JetBrains Mono', monospace", size: 10 }, side: 'top' }, 
+          tickfont: { color: currentBg.text, family: "'JetBrains Mono', monospace", size: 9.5 },
+          orientation: 'h',
+          len: 0.34,
+          thickness: 10,
+          x: 0.99,
+          xanchor: 'right',
+          y: 1.01,
+          yanchor: 'bottom',
+          ypad: 4
         },
         contours: {
           x: { show: true, color: 'rgba(255, 255, 255, 0.14)', width: 1 },
@@ -947,15 +1288,17 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         }
       };
 
-      if ((surfaceColor === 'HedgingRegimes' || (lookbackSnap && (volMoveColorByDelta || isInterdayDeltaZ))) && colorMesh) {
+      if ((surfaceColor === 'HedgingRegimes' || surfaceColor === 'LocalVol' || (hasMotionLookback && (volMoveColorByDelta || isInterdayDeltaZ || isBeforeAfterMode))) && colorMesh) {
         baseSurfaceTrace.surfacecolor = colorMesh;
-        baseSurfaceTrace.cmin = cminVal;
-        baseSurfaceTrace.cmax = cmaxVal;
+        if (cminVal !== undefined && cmaxVal !== undefined) {
+          baseSurfaceTrace.cmin = cminVal;
+          baseSurfaceTrace.cmax = cmaxVal;
+        }
       }
 
       const plotData = [baseSurfaceTrace];
 
-      // Overlay Historical Ghost 3D Surface when comparing vs 1D / 3D / 5D / 10D Ago (or 0.0% plane in Interday ΔIV mode)
+      // Overlay Historical/Open Baseline Surface OR 0.0% Zero-Shift Plane + 3D Vertical Motion Vectors
       if (isInterdayDeltaZ) {
         plotData.push({
           type: 'surface',
@@ -964,27 +1307,96 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           y: [yExpCoords[0], yExpCoords[yExpCoords.length - 1]],
           z: [[0, 0], [0, 0]],
           showscale: false,
-          opacity: 0.24,
+          opacity: 0.28,
           colorscale: [[0, '#94a3b8'], [1, '#94a3b8']],
-          hoverinfo: 'skip'
-        });
-      } else if (lookbackSnap && pastZData) {
-        plotData.push({
-          type: 'surface',
-          name: `👻 ${lookbackSnap.label} Ghost Surface`,
-          z: pastZData,
-          x: xValues,
-          y: yExpCoords,
-          showscale: false,
-          opacity: 0.34,
-          colorscale: [[0, '#38bdf8'], [1, '#00F0FF']],
           contours: {
-            x: { show: true, color: 'rgba(0, 240, 255, 0.45)', width: 1.5 },
-            y: { show: true, color: 'rgba(0, 240, 255, 0.45)', width: 1.5 },
+            x: { show: true, color: 'rgba(148, 163, 184, 0.25)', width: 1 },
+            y: { show: true, color: 'rgba(148, 163, 184, 0.25)', width: 1 },
             z: { show: false }
           },
           hoverinfo: 'skip'
         });
+      } else if ((isBeforeAfterMode || lookbackSnap) && pastZData) {
+        plotData.push({
+          type: 'surface',
+          name: `👻 ${isIntradayMode ? intraMotion.baseline_label : (lookbackSnap?.label || volMoveLookback)} Baseline Surface`,
+          z: pastZData,
+          x: xValues,
+          y: yExpCoords,
+          showscale: false,
+          opacity: isBeforeAfterMode ? 0.42 : 0.34,
+          colorscale: [[0, '#38bdf8'], [1, '#00F0FF']],
+          contours: {
+            x: { show: true, color: 'rgba(0, 240, 255, 0.55)', width: 1.5 },
+            y: { show: true, color: 'rgba(0, 240, 255, 0.55)', width: 1.5 },
+            z: { show: false }
+          },
+          hoverinfo: 'skip'
+        });
+      }
+
+      // 3D Vertical Motion Flow Vectors (Rising crimson / Crushing emerald stems showing exact ΔIV movement direction)
+      if ((isInterdayDeltaZ || isBeforeAfterMode) && deltaIvMatrix && expirations.length >= 2 && strikes.length >= 3) {
+        const upX = [], upY = [], upZ = [], upTipX = [], upTipY = [], upTipZ = [], upTipTxt = [];
+        const dnX = [], dnY = [], dnZ = [], dnTipX = [], dnTipY = [], dnTipZ = [], dnTipTxt = [];
+        const rStep = Math.max(1, Math.floor(expirations.length / 5));
+        const cStep = Math.max(1, Math.floor(strikes.length / 7));
+        for (let i = 0; i < expirations.length; i += rStep) {
+          for (let j = 1; j < strikes.length - 1; j += cStep) {
+            const dVal = Number(deltaIvMatrix[i]?.[j] ?? 0);
+            if (Math.abs(dVal) < 0.30) continue;
+            const z0 = isBeforeAfterMode ? Number(pastZData[i]?.[j] ?? 20) : 0.0;
+            const z1 = isBeforeAfterMode ? Number(zData[i]?.[j] ?? 20) : dVal;
+            const xv = xValues[j];
+            const yv = yExpCoords[i];
+            const lbl = `${dVal >= 0 ? '▲' : '▼'} $${strikes[j]} (${expirations[i].slice(5)}): ${dVal >= 0 ? '+' : ''}${dVal.toFixed(1)}%`;
+            if (dVal >= 0) {
+              upX.push(xv, xv, null); upY.push(yv, yv, null); upZ.push(z0, z1, null);
+              upTipX.push(xv); upTipY.push(yv); upTipZ.push(z1); upTipTxt.push(lbl);
+            } else {
+              dnX.push(xv, xv, null); dnY.push(yv, yv, null); dnZ.push(z0, z1, null);
+              dnTipX.push(xv); dnTipY.push(yv); dnTipZ.push(z1); dnTipTxt.push(lbl);
+            }
+          }
+        }
+        if (upTipX.length > 0) {
+          plotData.push({
+            type: 'scatter3d',
+            mode: 'lines',
+            name: '▲ Rising IV Vectors',
+            x: upX, y: upY, z: upZ,
+            line: { color: 'rgba(248, 113, 113, 0.85)', width: 3.5 },
+            hoverinfo: 'skip'
+          });
+          plotData.push({
+            type: 'scatter3d',
+            mode: 'markers',
+            name: '▲ IV Expansion Tips',
+            x: upTipX, y: upTipY, z: upTipZ,
+            marker: { size: 4, color: '#ef4444', symbol: 'diamond', line: { color: '#fff', width: 1 } },
+            hoverinfo: 'text',
+            hovertext: upTipTxt
+          });
+        }
+        if (dnTipX.length > 0) {
+          plotData.push({
+            type: 'scatter3d',
+            mode: 'lines',
+            name: '▼ Crushing IV Vectors',
+            x: dnX, y: dnY, z: dnZ,
+            line: { color: 'rgba(52, 211, 153, 0.85)', width: 3.5 },
+            hoverinfo: 'skip'
+          });
+          plotData.push({
+            type: 'scatter3d',
+            mode: 'markers',
+            name: '▼ IV Crush Tips',
+            x: dnTipX, y: dnTipY, z: dnTipZ,
+            marker: { size: 4, color: '#10b981', symbol: 'diamond', line: { color: '#fff', width: 1 } },
+            hoverinfo: 'text',
+            hovertext: dnTipTxt
+          });
+        }
       }
 
       // Helper to get smoothed surface Z height at any (expiry, strike) within the 3D grid
@@ -1004,161 +1416,243 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         return fallbackIv;
       };
 
-      // Floating 3D Overhedge / Underhedge Radar Callout Pins (Strictly Clamped to Core Surface Grid & Deduplicated)
-      const rawTopOver = activeData.hedging_diagnostics?.top_overhedged || [];
-      const rawTopUnder = activeData.hedging_diagnostics?.top_underhedged || [];
-      const topOver = rawTopOver
-        .filter(h => expSet.has(h.expiry) && h.strike >= minGridStrike && h.strike <= maxGridStrike)
-        .slice(0, 3);
-      const topUnder = rawTopUnder
-        .filter(h => expSet.has(h.expiry) && h.strike >= minGridStrike && h.strike <= maxGridStrike)
-        .slice(0, 3);
-
       const overPositions = ['top center', 'top right', 'top left'];
       const underPositions = ['bottom center', 'bottom left', 'bottom right'];
 
-      if (topOver.length > 0) {
-        plotData.push({
-          type: 'scatter3d',
-          mode: show3dLabels ? 'markers+text' : 'markers',
-          name: '🔴 Overhedged Peaks',
-          x: topOver.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
-          y: topOver.map(h => expToY(h.expiry)),
-          z: topOver.map(h => +(getSurfaceZAt(h.expiry, h.strike, h.iv) + 0.6).toFixed(2)),
-          text: topOver.map(h => `$${h.strike} (+${Math.round(h.dislocation_pct)}%)`),
-          textposition: topOver.map((_, idx) => overPositions[idx % overPositions.length]),
-          textfont: { color: '#f87171', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
-          hoverinfo: 'text',
-          hovertext: topOver.map(h => 
-            `<b>🔴 OVERHEDGED PEAK (Rich Premium)</b><br>` +
-            `Strike: <b>$${h.strike}</b> (${h.type === 'otm_put' ? 'PUT' : 'CALL'})<br>` +
-            `Expiry: <b>${h.expiry}</b><br>` +
-            `Market IV: <b>${h.iv}%</b> (Baseline: ${h.fit_iv || h.iv}%)<br>` +
-            `Dislocation: <b>+${h.dislocation_pct}% Rich</b><br>` +
-            `<i>Strategy: ${h.strategy || 'Sell Vol / Credit Spread'}</i>`
-          ),
-          marker: { size: 7, color: '#ef4444', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
-        });
-      }
+      if (isInterdayDeltaZ || isBeforeAfterMode) {
+        // ΔIV-native pins & ATM spine across BOTH Intraday Open->Live AND Real Interday 1D/2D/3D/5D/10D!
+        const pinSource = activeMotionMeta || (isRealPerContractDelta ? realDelta1dInfo : null);
+        if (pinSource) {
+          const topExpPins = (pinSource.top_expanding || [])
+            .filter(h => expSet.has(h.expiry) && h.strike >= minGridStrike && h.strike <= maxGridStrike)
+            .slice(0, 3);
+          const topCrushPins = (pinSource.top_crushing || [])
+            .filter(h => expSet.has(h.expiry) && h.strike >= minGridStrike && h.strike <= maxGridStrike)
+            .slice(0, 3);
 
-      if (topUnder.length > 0) {
-        plotData.push({
-          type: 'scatter3d',
-          mode: show3dLabels ? 'markers+text' : 'markers',
-          name: '🟢 Underhedged Valleys',
-          x: topUnder.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
-          y: topUnder.map(h => expToY(h.expiry)),
-          z: topUnder.map(h => +(getSurfaceZAt(h.expiry, h.strike, h.iv) - 0.5).toFixed(2)),
-          text: topUnder.map(h => `$${h.strike} (${Math.round(h.dislocation_pct)}%)`),
-          textposition: topUnder.map((_, idx) => underPositions[idx % underPositions.length]),
-          textfont: { color: '#4ade80', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
-          hoverinfo: 'text',
-          hovertext: topUnder.map(h => 
-            `<b>🟢 UNDERHEDGED VOL VALLEY (Cheap Convexity)</b><br>` +
-            `Strike: <b>$${h.strike}</b> (${h.type === 'otm_put' ? 'PUT' : 'CALL'})<br>` +
-            `Expiry: <b>${h.expiry}</b><br>` +
-            `Market IV: <b>${h.iv}%</b> (Baseline: ${h.fit_iv || h.iv}%)<br>` +
-            `Dislocation: <b>${h.dislocation_pct}% Cheap</b><br>` +
-            `<b>Trader Meaning:</b> Statistical IV discount. Buy cheap gamma/vega with asymmetric upside.<br>` +
-            `<i>Strategy: ${h.strategy || 'Buy Cheap Wings / Diagonal'}</i>`
-          ),
-          marker: { size: 7, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
-        });
-      }
+          if (topExpPins.length > 0) {
+            plotData.push({
+              type: 'scatter3d',
+              mode: show3dLabels ? 'markers+text' : 'markers',
+              name: '🔥 Vol Expansion Peaks',
+              x: topExpPins.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
+              y: topExpPins.map(h => expToY(h.expiry)),
+              z: topExpPins.map(h => +(getSurfaceZAt(h.expiry, h.strike, isBeforeAfterMode ? (h.iv_now || 25) : h.delta_iv) + 0.4).toFixed(2)),
+              text: topExpPins.map(h => `$${h.strike} (${h.delta_iv >= 0 ? '+' : ''}${Number(h.delta_iv).toFixed(1)}%)`),
+              textposition: topExpPins.map((_, idx) => overPositions[idx % overPositions.length]),
+              textfont: { color: '#f87171', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
+              hoverinfo: 'text',
+              hovertext: topExpPins.map(h =>
+                `<b>🔥 VOL EXPANSION PEAK</b><br>` +
+                `${h.type} $${h.strike} (${h.expiry} · ${h.dte}D)<br>` +
+                `ΔIV (${motionScopeLabel}): <b>${h.delta_iv >= 0 ? '+' : ''}${h.delta_iv}%</b><br>` +
+                `IV: <b>${h.iv_now}%</b> (Base: ${h.iv_prev}%)`
+              ),
+              marker: { size: 7, color: '#ef4444', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
+            });
+          }
 
-      // Realized HV Horizon Cutoff Plane (Z = HV_30d) with VRP diagnostics
-      const hvLevel = data.desk_metrics?.realized_hv_30d;
-      const atmIv = data.desk_metrics?.atm_iv_30d;
-      const vrpSpread = (atmIv !== undefined && hvLevel !== undefined) ? (atmIv - hvLevel) : null;
-      if (!isInterdayDeltaZ && showHvPlane && hvLevel && hvLevel > 0) {
-        const vrpSign = vrpSpread !== null ? (vrpSpread >= 0 ? `+${vrpSpread.toFixed(1)}%` : `${vrpSpread.toFixed(1)}%`) : '';
-        const vrpEdge = vrpSpread !== null ? (vrpSpread > 1.5 ? 'Sell Vol Edge (Rich)' : vrpSpread < -1.5 ? 'Buy Vol Edge (Cheap Vega)' : 'Fair Value Vol') : '';
-        const planeLabel = `30D Realized HV Floor: ${hvLevel}% | VRP Spread: ${vrpSign} (${vrpEdge})`;
-        plotData.push({
-          type: 'surface',
-          name: `30D Realized HV Floor (${hvLevel}%)`,
-          x: [xValues[0], xValues[xValues.length - 1]],
-          y: [yExpCoords[0], yExpCoords[yExpCoords.length - 1]],
-          z: [[hvLevel, hvLevel], [hvLevel, hvLevel]],
-          showscale: false,
-          opacity: 0.20,
-          colorscale: [[0, '#38bdf8'], [1, '#38bdf8']],
-          hoverinfo: 'text',
-          text: [
-            [planeLabel, planeLabel],
-            [planeLabel, planeLabel]
-          ]
-        });
-      }
-
-      // Golden ATM Ridge Line (snapped to the smoothed surface spine)
-      if (term_structure.length > 0 && spot) {
-        const clampedSpot = Math.min(maxGridStrike, Math.max(minGridStrike, spot));
-        const atmX = strikeMode === 'moneyness' ? 1.00 : clampedSpot;
-        const ridgeTerms = term_structure.filter(ts => expSet.has(ts.expiry));
-        if (ridgeTerms.length > 0) {
-          plotData.push({
-            type: 'scatter3d',
-            mode: 'lines+markers',
-            name: 'ATM Ridge Spine',
-            x: ridgeTerms.map(() => atmX),
-            y: ridgeTerms.map(ts => expToY(ts.expiry)),
-            z: ridgeTerms.map(ts => +(getSurfaceZAt(ts.expiry, clampedSpot, ts.atm_iv) + 0.25).toFixed(2)),
-            line: { color: '#fbbf24', width: 5 },
-            marker: { size: 4, color: '#fbbf24' }
-          });
-        }
-      }
-
-      // Highlight Earnings / Event Vol Kink Ridges (peaks) AND Vol Valleys (troughs) across the 3D surface
-      if (term_structure.length >= 3) {
-        const kinkTenors = [];
-        const valleyTenors = [];
-        for (let i = 1; i < term_structure.length - 1; i++) {
-          const prevT = term_structure[i - 1];
-          const currT = term_structure[i];
-          const nextT = term_structure[i + 1];
-          if (!expSet.has(currT.expiry)) continue;
-          const dSpan = Math.max(1, (nextT.dte || 1) - (prevT.dte || 0));
-          const interpIv = (prevT.atm_iv || 0) + ((nextT.atm_iv || 0) - (prevT.atm_iv || 0)) * (((currT.dte || 0) - (prevT.dte || 0)) / dSpan);
-          const kinkPts = (currT.atm_iv || 0) - interpIv;
-          if (kinkPts >= 0.7 && (currT.atm_iv || 0) >= (prevT.atm_iv || 0) && (currT.atm_iv || 0) > (nextT.atm_iv || 0)) {
-            kinkTenors.push({ ...currT, kinkPts: Number(kinkPts.toFixed(1)) });
-          } else if (kinkPts <= -0.7 && (currT.atm_iv || 0) <= (prevT.atm_iv || 0) && (currT.atm_iv || 0) < (nextT.atm_iv || 0)) {
-            valleyTenors.push({ ...currT, valleyPts: Number(Math.abs(kinkPts).toFixed(1)) });
+          if (topCrushPins.length > 0) {
+            plotData.push({
+              type: 'scatter3d',
+              mode: show3dLabels ? 'markers+text' : 'markers',
+              name: '🧊 Vol Crush / Lagging Pockets',
+              x: topCrushPins.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
+              y: topCrushPins.map(h => expToY(h.expiry)),
+              z: topCrushPins.map(h => +(getSurfaceZAt(h.expiry, h.strike, isBeforeAfterMode ? (h.iv_now || 20) : h.delta_iv) - 0.35).toFixed(2)),
+              text: topCrushPins.map(h => `$${h.strike} (${h.delta_iv >= 0 ? '+' : ''}${Number(h.delta_iv).toFixed(1)}%)`),
+              textposition: topCrushPins.map((_, idx) => underPositions[idx % underPositions.length]),
+              textfont: { color: '#34d399', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
+              hoverinfo: 'text',
+              hovertext: topCrushPins.map(h =>
+                `<b>🧊 VOL CRUSH / LAGGING STRIKE</b><br>` +
+                `${h.type} $${h.strike} (${h.expiry} · ${h.dte}D)<br>` +
+                `ΔIV (${motionScopeLabel}): <b>${h.delta_iv >= 0 ? '+' : ''}${h.delta_iv}%</b><br>` +
+                `IV: <b>${h.iv_now}%</b> (Base: ${h.iv_prev}%)`
+              ),
+              marker: { size: 7, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
+            });
           }
         }
-        kinkTenors.sort((a, b) => b.kinkPts - a.kinkPts).slice(0, 2).forEach((kt, kIdx) => {
-          const expIdx = expirations.indexOf(kt.expiry);
-          if (expIdx === -1) return;
+
+        if (term_structure.length > 0 && spot) {
+          const activeSpotLine = (isIntradayMode && activeIntraCp?.spot) ? activeIntraCp.spot : spot;
+          const clampedSpot = Math.min(maxGridStrike, Math.max(minGridStrike, activeSpotLine));
+          const atmX = strikeMode === 'moneyness' ? +(clampedSpot / (spot || 1)).toFixed(3) : clampedSpot;
+          const ridgeTerms = term_structure.filter(ts => expSet.has(ts.expiry));
+          if (ridgeTerms.length > 0) {
+            plotData.push({
+              type: 'scatter3d',
+              mode: 'lines+markers',
+              name: isBeforeAfterMode ? 'ATM Spot Spine' : 'ATM ΔIV Spine',
+              x: ridgeTerms.map(() => atmX),
+              y: ridgeTerms.map(ts => expToY(ts.expiry)),
+              z: ridgeTerms.map(ts => +(getSurfaceZAt(ts.expiry, clampedSpot, 0) + 0.14).toFixed(2)),
+              line: { color: '#fbbf24', width: 5 },
+              marker: { size: 4, color: '#fbbf24' }
+            });
+          }
+        }
+      } else {
+        // Floating 3D Overhedge / Underhedge Radar Callout Pins (Spaced >=7% apart so text never hits Kinks or ATM Spine)
+        const rawTopOver = activeData.hedging_diagnostics?.top_overhedged || [];
+        const rawTopUnder = activeData.hedging_diagnostics?.top_underhedged || [];
+        const pickSpacedPins = (pool) => {
+          const filtered = pool.filter(h => expSet.has(h.expiry) && h.strike >= minGridStrike && h.strike <= maxGridStrike);
+          const picked = [];
+          for (const item of filtered) {
+            if (picked.some(p => Math.abs(p.strike - item.strike) / Math.max(spot || 1, 1) < 0.06)) continue;
+            picked.push(item);
+            if (picked.length >= 2) break;
+          }
+          return picked;
+        };
+        const topOver = pickSpacedPins(rawTopOver);
+        const topUnder = pickSpacedPins(rawTopUnder);
+
+        if (topOver.length > 0) {
           plotData.push({
             type: 'scatter3d',
-            mode: 'lines',
-            name: kIdx === 0 ? `⚡ Event Vol Kink (${kt.expiry} • +${kt.kinkPts}%)` : `⚡ Vol Kink (${kt.expiry})`,
-            x: xValues,
-            y: xValues.map(() => yExpCoords[expIdx]),
-            z: zData[expIdx].map(v => +(v + 0.35).toFixed(2)),
-            line: { color: '#ff007a', width: 6 },
-            hoverinfo: 'name+x+z'
+            mode: show3dLabels ? 'markers+text' : 'markers',
+            name: '🔴 Overhedged Peaks',
+            x: topOver.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
+            y: topOver.map(h => expToY(h.expiry)),
+            z: topOver.map(h => +(getSurfaceZAt(h.expiry, h.strike, h.iv) + 1.05).toFixed(2)),
+            text: topOver.map(h => `$${h.strike} (+${Math.round(h.dislocation_pct)}%)`),
+            textposition: topOver.map((_, idx) => overPositions[idx % overPositions.length]),
+            textfont: { color: '#f87171', family: "'JetBrains Mono', monospace", size: 10.5, weight: 'bold' },
+            hoverinfo: 'text',
+            hovertext: topOver.map(h => 
+              `<b>🔴 OVERHEDGED PEAK (Rich Premium)</b><br>` +
+              `Strike: <b>$${h.strike}</b> (${h.type === 'otm_put' ? 'PUT' : 'CALL'})<br>` +
+              `Expiry: <b>${h.expiry}</b><br>` +
+              `Market IV: <b>${h.iv}%</b> (SVI Fair: ${h.fit_iv || h.iv}%)<br>` +
+              `Dislocation: <b>+${h.dislocation_pct}% Rich</b><br>` +
+              `<i>Strategy: ${h.strategy || 'Sell Vol / Credit Spread'}</i>`
+            ),
+            marker: { size: 6.5, color: '#ef4444', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
           });
-        });
-        valleyTenors.sort((a, b) => b.valleyPts - a.valleyPts).slice(0, 1).forEach((vt) => {
-          const expIdx = expirations.indexOf(vt.expiry);
-          if (expIdx === -1) return;
+        }
+
+        if (topUnder.length > 0) {
           plotData.push({
             type: 'scatter3d',
-            mode: 'lines',
-            name: `🕳️ Vol Valley (${vt.expiry} • -${vt.valleyPts}%)`,
-            x: xValues,
-            y: xValues.map(() => yExpCoords[expIdx]),
-            z: zData[expIdx].map(v => +(v + 0.35).toFixed(2)),
-            line: { color: '#00f0ff', width: 6 },
-            hoverinfo: 'name+x+z'
+            mode: show3dLabels ? 'markers+text' : 'markers',
+            name: '🟢 Underhedged Valleys',
+            x: topUnder.map(h => strikeMode === 'moneyness' ? +(h.strike / (spot || 1)).toFixed(3) : h.strike),
+            y: topUnder.map(h => expToY(h.expiry)),
+            z: topUnder.map(h => +(getSurfaceZAt(h.expiry, h.strike, h.iv) - 0.65).toFixed(2)),
+            text: topUnder.map(h => `$${h.strike} (${Math.round(h.dislocation_pct)}%)`),
+            textposition: topUnder.map((_, idx) => underPositions[idx % underPositions.length]),
+            textfont: { color: '#4ade80', family: "'JetBrains Mono', monospace", size: 10.5, weight: 'bold' },
+            hoverinfo: 'text',
+            hovertext: topUnder.map(h => 
+              `<b>🟢 UNDERHEDGED VOL VALLEY (Cheap Convexity)</b><br>` +
+              `Strike: <b>$${h.strike}</b> (${h.type === 'otm_put' ? 'PUT' : 'CALL'})<br>` +
+              `Expiry: <b>${h.expiry}</b><br>` +
+              `Market IV: <b>${h.iv}%</b> (SVI Fair: ${h.fit_iv || h.iv}%)<br>` +
+              `Dislocation: <b>${h.dislocation_pct}% Cheap</b><br>` +
+              `<b>Trader Meaning:</b> Statistical IV discount. Buy cheap gamma/vega with asymmetric upside.<br>` +
+              `<i>Strategy: ${h.strategy || 'Buy Cheap Wings / Diagonal'}</i>`
+            ),
+            marker: { size: 6.5, color: '#10b981', symbol: 'diamond', line: { color: '#ffffff', width: 1.5 } }
           });
-        });
+        }
+
+        // Realized HV Horizon Cutoff Plane (Z = HV_30d) with VRP diagnostics
+        const hvLevel = data.desk_metrics?.realized_hv_30d;
+        const atmIv = data.desk_metrics?.atm_iv_30d;
+        const vrpSpread = (atmIv !== undefined && hvLevel !== undefined) ? (atmIv - hvLevel) : null;
+        if (showHvPlane && hvLevel && hvLevel > 0) {
+          const vrpSign = vrpSpread !== null ? (vrpSpread >= 0 ? `+${vrpSpread.toFixed(1)}%` : `${vrpSpread.toFixed(1)}%`) : '';
+          const vrpEdge = vrpSpread !== null ? (vrpSpread > 1.5 ? 'Sell Vol Edge (Rich)' : vrpSpread < -1.5 ? 'Buy Vol Edge (Cheap Vega)' : 'Fair Value Vol') : '';
+          const planeLabel = `30D Realized HV Floor: ${hvLevel}% | VRP Spread: ${vrpSign} (${vrpEdge})`;
+          plotData.push({
+            type: 'surface',
+            name: `30D Realized HV Floor (${hvLevel}%)`,
+            x: [xValues[0], xValues[xValues.length - 1]],
+            y: [yExpCoords[0], yExpCoords[yExpCoords.length - 1]],
+            z: [[hvLevel, hvLevel], [hvLevel, hvLevel]],
+            showscale: false,
+            opacity: 0.20,
+            colorscale: [[0, '#38bdf8'], [1, '#38bdf8']],
+            hoverinfo: 'text',
+            text: [
+              [planeLabel, planeLabel],
+              [planeLabel, planeLabel]
+            ]
+          });
+        }
+
+        // Golden ATM Ridge Line (snapped to the smoothed surface spine)
+        if (term_structure.length > 0 && spot) {
+          const clampedSpot = Math.min(maxGridStrike, Math.max(minGridStrike, spot));
+          const atmX = strikeMode === 'moneyness' ? 1.00 : clampedSpot;
+          const ridgeTerms = term_structure.filter(ts => expSet.has(ts.expiry));
+          if (ridgeTerms.length > 0) {
+            plotData.push({
+              type: 'scatter3d',
+              mode: 'lines+markers',
+              name: 'ATM Ridge Spine',
+              x: ridgeTerms.map(() => atmX),
+              y: ridgeTerms.map(ts => expToY(ts.expiry)),
+              z: ridgeTerms.map(ts => +(getSurfaceZAt(ts.expiry, clampedSpot, ts.atm_iv) + 0.25).toFixed(2)),
+              line: { color: '#fbbf24', width: 5 },
+              marker: { size: 4, color: '#fbbf24' }
+            });
+          }
+        }
+
+        // Highlight Earnings / Event Vol Kink Ridges (peaks) AND Vol Valleys (troughs) across the 3D surface
+        if (term_structure.length >= 3) {
+          const kinkTenors = [];
+          const valleyTenors = [];
+          for (let i = 1; i < term_structure.length - 1; i++) {
+            const prevT = term_structure[i - 1];
+            const currT = term_structure[i];
+            const nextT = term_structure[i + 1];
+            if (!expSet.has(currT.expiry)) continue;
+            const dSpan = Math.max(1, (nextT.dte || 1) - (prevT.dte || 0));
+            const interpIv = (prevT.atm_iv || 0) + ((nextT.atm_iv || 0) - (prevT.atm_iv || 0)) * (((currT.dte || 0) - (prevT.dte || 0)) / dSpan);
+            const kinkPts = (currT.atm_iv || 0) - interpIv;
+            if (kinkPts >= 0.7 && (currT.atm_iv || 0) >= (prevT.atm_iv || 0) && (currT.atm_iv || 0) > (nextT.atm_iv || 0)) {
+              kinkTenors.push({ ...currT, kinkPts: Number(kinkPts.toFixed(1)) });
+            } else if (kinkPts <= -0.7 && (currT.atm_iv || 0) <= (prevT.atm_iv || 0) && (currT.atm_iv || 0) < (nextT.atm_iv || 0)) {
+              valleyTenors.push({ ...currT, valleyPts: Number(Math.abs(kinkPts).toFixed(1)) });
+            }
+          }
+          kinkTenors.sort((a, b) => b.kinkPts - a.kinkPts).slice(0, 2).forEach((kt, kIdx) => {
+            const expIdx = expirations.indexOf(kt.expiry);
+            if (expIdx === -1) return;
+            plotData.push({
+              type: 'scatter3d',
+              mode: 'lines',
+              name: kIdx === 0 ? `⚡ Event Vol Kink (${kt.expiry} • +${kt.kinkPts}%)` : `⚡ Vol Kink (${kt.expiry})`,
+              x: xValues,
+              y: xValues.map(() => yExpCoords[expIdx]),
+              z: zData[expIdx].map(v => +(v + 0.35).toFixed(2)),
+              line: { color: '#ff007a', width: 6 },
+              hoverinfo: 'name+x+z'
+            });
+          });
+          valleyTenors.sort((a, b) => b.valleyPts - a.valleyPts).slice(0, 1).forEach((vt) => {
+            const expIdx = expirations.indexOf(vt.expiry);
+            if (expIdx === -1) return;
+            plotData.push({
+              type: 'scatter3d',
+              mode: 'lines',
+              name: `🕳️ Vol Valley (${vt.expiry} • -${vt.valleyPts}%)`,
+              x: xValues,
+              y: xValues.map(() => yExpCoords[expIdx]),
+              z: zData[expIdx].map(v => +(v + 0.35).toFixed(2)),
+              line: { color: '#00f0ff', width: 6 },
+              hoverinfo: 'name+x+z'
+            });
+          });
+        }
       }
 
-      // If a trade setup is focused, render an illuminated radar target marker clamped to the grid
+      // If a trade setup or ΔIV strike is focused, render an illuminated radar target marker clamped to the grid
       if (focusedHotspot && focusedHotspot.strike) {
         const matchedExpiry = expirations.find(e => e === focusedHotspot.expiry) || expirations[0];
         const clampedFocusStrike = Math.min(maxGridStrike, Math.max(minGridStrike, focusedHotspot.strike));
@@ -1169,7 +1663,9 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
             name: '🎯 Target Lock',
             x: [strikeMode === 'moneyness' ? +(clampedFocusStrike / (spot || 1)).toFixed(3) : clampedFocusStrike],
             y: [expToY(matchedExpiry)],
-            z: [+(getSurfaceZAt(matchedExpiry, clampedFocusStrike, focusedHotspot.iv || 20) + 0.8).toFixed(2)],
+            z: [isInterdayDeltaZ
+              ? +(getSurfaceZAt(matchedExpiry, clampedFocusStrike, 0) + 0.35).toFixed(2)
+              : +(getSurfaceZAt(matchedExpiry, clampedFocusStrike, focusedHotspot.iv || 20) + 0.8).toFixed(2)],
             text: [`🎯 $${focusedHotspot.strike}`],
             textposition: 'top center',
             textfont: { color: '#00F0FF', family: 'monospace', size: 12 },
@@ -1179,29 +1675,23 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
       }
 
       const cameraEye = focusedHotspot
-        ? { x: 1.15, y: 1.15, z: 0.82 }
-        : (CAMERA_PRESETS[cameraPreset]?.eye || { x: 1.55, y: 1.55, z: 0.68 });
+        ? { x: 1.28, y: 1.28, z: 0.86 }
+        : ((isInterdayDeltaZ || isBeforeAfterMode) ? { x: 1.72, y: 1.68, z: 0.78 } : (CAMERA_PRESETS[cameraPreset]?.eye || { x: 1.55, y: 1.55, z: 0.68 }));
 
       const layout = {
         autosize: true,
-        height: 640,
-        margin: { l: 0, r: 0, b: 0, t: 0 },
+        height: 560,
+        margin: { l: 4, r: 4, b: 4, t: 38 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        showlegend: true,
-        legend: { 
-          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' }, 
-          x: 0.01, 
-          y: 0.99,
-          bgcolor: 'rgba(15, 23, 42, 0.82)',
-          bordercolor: 'rgba(255, 255, 255, 0.12)',
-          borderwidth: 1
-        },
+        showlegend: false,
+        uirevision: `vol-surface-3d-${ticker}-${surfaceBg}`,
         scene: {
+          uirevision: `vol-surface-3d-scene-${ticker}`,
           aspectmode: 'manual',
-          aspectratio: { x: 1.35, y: 1.25, z: zRelief === '1.55' ? 1.55 : 1.12 },
+          aspectratio: { x: 1.32, y: 1.22, z: zRelief === '1.55' ? 1.50 : 1.08 },
           xaxis: { 
-            title: { text: xAxisTitle, font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            title: { text: xAxisTitle, font: { color: '#00F0FF', size: 11, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
             gridcolor: 'rgba(255, 255, 255, 0.10)', 
             color: '#f8fafc', 
             tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 10 },
@@ -1209,7 +1699,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
             showbackground: true
           },
           yaxis: { 
-            title: { text: 'Expiration Tenor (Log DTE)', font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            title: { text: 'Tenor (Log DTE)', font: { color: '#00F0FF', size: 11, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
             tickmode: 'array',
             tickvals: yTickVals,
             ticktext: yTickLabels,
@@ -1220,7 +1710,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
             showbackground: true
           },
           zaxis: { 
-            title: { text: isInterdayDeltaZ ? `Interday ΔIV Shift vs ${volMoveLookback} (%)` : 'Implied Volatility (%)', font: { color: isInterdayDeltaZ ? '#fbbf24' : '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+            title: { text: isInterdayDeltaZ ? `${coordTagLabel} ΔIV (${motionScopeLabel}) %` : 'Implied Vol (%)', font: { color: isInterdayDeltaZ ? '#fbbf24' : '#00F0FF', size: 11, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
             range: zAxisRange,
             gridcolor: 'rgba(255, 255, 255, 0.10)', 
             color: '#f8fafc', 
@@ -1233,9 +1723,13 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
       };
 
       try {
-        window.Plotly.newPlot(plotRef.current, plotData, layout, { responsive: true, displayModeBar: false });
+        window.Plotly.react(plotRef.current, plotData, layout, { responsive: true, displayModeBar: false });
       } catch (err) {
-        console.warn("Plotly render error caught:", err);
+        try {
+          window.Plotly.newPlot(plotRef.current, plotData, layout, { responsive: true, displayModeBar: false });
+        } catch (err2) {
+          console.warn("Plotly render error caught:", err2 || err);
+        }
       }
 
     } else if (activeViewMode === '2d_skew') {
@@ -1259,36 +1753,71 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
 
       const filtered = filterCoreBand(surface.filter(p => p.expiry === activeExp));
       const hvLevel = activeData.desk_metrics?.realized_hv_30d;
+      const activeSvi = (activeData.svi_slices || []).find(s => s.expiry === activeExp) || null;
 
+      // Identify clearest tradable Rich (+SVI) and Cheap (-SVI) strikes near core spot band
+      const coreCands = filtered.filter(p => !spot || Math.abs(p.strike - spot) / spot <= 0.16);
+      const edgePool = coreCands.length >= 6 ? coreCands : filtered;
+      const getEdgeScore = (p) => Number(p.residual_vp ?? p.dislocation_pct ?? 0);
+      const richCands = edgePool.filter(p => p.hedge_state === 'overhedged' || getEdgeScore(p) >= 0.45);
+      const cheapCands = edgePool.filter(p => p.hedge_state === 'underhedged' || getEdgeScore(p) <= -0.45);
+      const richPt = (richCands.filter(p => p.hedge_state === 'overhedged').length
+        ? richCands.filter(p => p.hedge_state === 'overhedged')
+        : richCands).sort((a, b) => getEdgeScore(b) - getEdgeScore(a))[0] || null;
+      const cheapPt = (cheapCands.filter(p => p.hedge_state === 'underhedged').length
+        ? cheapCands.filter(p => p.hedge_state === 'underhedged')
+        : cheapCands).sort((a, b) => getEdgeScore(a) - getEdgeScore(b))[0] || null;
+
+      const hasBidAsk = filtered.some(p => p.iv_bid && p.iv_ask);
       const plotData = [
-        {
-          x: filtered.map(p => p.strike),
-          y: filtered.map(p => p.iv),
-          type: 'scatter',
-          mode: 'lines+markers',
-          name: `Market Smile (${activeExp}${activeTermMeta?.dte ? ` · ${activeTermMeta.dte}D` : ''})`,
-          line: { color: '#00F0FF', width: 3.5, shape: 'spline', smoothing: 0.6 },
-          marker: { 
-            size: 7, 
-            color: filtered.map(p => p.hedge_state === 'overhedged' ? '#ef4444' : (p.hedge_state === 'underhedged' ? '#10b981' : '#00F0FF')),
-            line: { color: '#0f172a', width: 1 }
-          },
-          text: filtered.map(p => (
-            `<b>Strike $${p.strike} (${p.type === 'otm_put' ? 'OTM PUT' : (p.type === 'otm_call' ? 'OTM CALL' : 'ATM')})</b><br>` +
-            `Tenor: ${p.expiry} (${p.dte}D)<br>` +
-            `Market IV: <b>${p.iv}%</b> | Wing-Damped Baseline: <b>${p.fit_iv || p.iv}%</b><br>` +
-            `Dislocation: <b>${p.dislocation_pct > 0 ? `+${p.dislocation_pct}%` : `${p.dislocation_pct || 0}%`}</b> (${p.hedge_label || 'Balanced'})`
-          )),
-          hoverinfo: 'text'
-        },
         {
           x: filtered.map(p => p.strike),
           y: filtered.map(p => p.fit_iv || p.iv),
           type: 'scatter',
           mode: 'lines',
-          name: `Fair Smile Fit`,
-          line: { color: 'rgba(255, 255, 255, 0.45)', width: 2, dash: 'dash' },
+          name: `Arb-Free SVI Fair Fit (${activeExp})`,
+          line: { color: '#fbbf24', width: 2.8 },
           hoverinfo: 'none'
+        },
+        {
+          x: filtered.map(p => p.strike),
+          y: filtered.map(p => p.iv),
+          type: 'scatter',
+          mode: 'markers',
+          name: `Market Mid B76 IV (${activeExp}${activeTermMeta?.dte ? ` · ${activeTermMeta.dte}D` : ''})`,
+          ...(hasBidAsk ? {
+            error_y: {
+              type: 'data',
+              symmetric: false,
+              array: filtered.map(p => p.iv_ask ? Math.max(0.05, +(p.iv_ask - p.iv).toFixed(2)) : 0),
+              arrayminus: filtered.map(p => p.iv_bid ? Math.max(0.05, +(p.iv - p.iv_bid).toFixed(2)) : 0),
+              color: 'rgba(148, 163, 184, 0.42)',
+              thickness: 1.2,
+              width: 2
+            }
+          } : {}),
+          marker: { 
+            size: 6.5, 
+            color: filtered.map(p => p.hedge_state === 'overhedged' ? '#ef4444' : (p.hedge_state === 'underhedged' ? '#10b981' : '#00F0FF')),
+            line: { color: '#0f172a', width: 1 }
+          },
+          text: filtered.map(p => {
+            const rv = getEdgeScore(p);
+            const sigLine = (p.hedge_state === 'overhedged' || rv > 0.35)
+              ? '🔴 RICH vs SVI Fair → SELL VOL / Credit Spread'
+              : ((p.hedge_state === 'underhedged' || rv < -0.35)
+                ? '🟢 CHEAP vs SVI Fair → BUY VOL / Debit Spread'
+                : '⚖️ FAIRLY PRICED (On SVI Smile / Inside Spread)');
+            return (
+              `<b>Strike $${p.strike} (${p.type === 'otm_put' ? 'OTM PUT' : (p.type === 'otm_call' ? 'OTM CALL' : 'ATM')})</b><br>` +
+              `Tenor: ${p.expiry} (${p.dte}D)<br>` +
+              `Market Mid IV: <b>${p.iv}%</b>${(p.iv_bid && p.iv_ask) ? ` (Bid ${p.iv_bid}% – Ask ${p.iv_ask}%)` : ''}<br>` +
+              `Arb-Free SVI Fit: <b>${p.fit_iv || p.iv}%</b>${p.local_vol ? ` | Local Vol: <b>${p.local_vol}%</b>` : ''}<br>` +
+              `Dislocation: <b>${p.dislocation_pct > 0 ? `+${p.dislocation_pct}%` : `${p.dislocation_pct || 0}%`}</b> (${rv >= 0 ? '+' : ''}${rv.toFixed(2)}v)<br>` +
+              `Trade Signal: <b>${sigLine}</b>`
+            );
+          }),
+          hoverinfo: 'text'
         }
       ];
 
@@ -1383,19 +1912,156 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
       const minY = Math.max(1, +(rawMinY - yPad).toFixed(1));
       const maxY = +(rawMaxY + yPad).toFixed(1);
 
+      const skewAnnotations = [];
+      const containerW = plotWidth || plotRef.current?.clientWidth || 950;
+      const isNarrowSkew = containerW < 780;
+      const xSpanSkew = Math.max(1, maxXStrike - minXStrike);
+      let maxAnchorSlot = 0;
+      const placedAnchors = [];
+      const minSepSkew = isNarrowSkew ? 0.28 : 0.22;
+      const addAnchorBadge = (xVal, label, bgColor, textColor = '#040812') => {
+        if (!xVal || xVal < minXStrike || xVal > maxXStrike) return;
+        const nx = (xVal - minXStrike) / xSpanSkew;
+        let slot = 0;
+        while (placedAnchors.some(a => a.slot === slot && Math.abs(a.nx - nx) < minSepSkew) && slot < 3) {
+          slot += 1;
+        }
+        if (slot > maxAnchorSlot) maxAnchorSlot = slot;
+        placedAnchors.push({ nx, slot });
+        skewAnnotations.push({
+          xref: 'x',
+          yref: 'paper',
+          x: xVal,
+          y: 1.01,
+          yanchor: 'bottom',
+          xanchor: nx < 0.08 ? 'left' : (nx > 0.92 ? 'right' : 'center'),
+          yshift: slot * 19,
+          text: `<b>${label}</b>`,
+          showarrow: false,
+          font: { color: textColor, size: isNarrowSkew ? 8.3 : 9, family: "'JetBrains Mono', monospace" },
+          bgcolor: bgColor,
+          borderpad: 2.5
+        });
+      };
+
+      if (put25Strike && put25Iv) addAnchorBadge(put25Strike, `25Δ PUT $${put25Strike} (${put25Iv}%)`, '#f43f5e', '#ffffff');
+      if (spot && atmIvVal) addAnchorBadge(spot, `SPOT $${spot.toFixed(1)} (${atmIvVal}%)`, '#fbbf24', '#040812');
+      if (call25Strike && call25Iv) addAnchorBadge(call25Strike, `25Δ CALL $${call25Strike} (${call25Iv}%)`, '#10b981', '#040812');
+
+      if (hvLevel && hvLevel >= minY && hvLevel <= maxY && filtered.length > 0) {
+        skewAnnotations.push({
+          xref: 'paper',
+          yref: 'y',
+          x: 0.01,
+          y: hvLevel,
+          xanchor: 'left',
+          yanchor: 'bottom',
+          yshift: 3,
+          text: `<b>30D HV ${hvLevel}% (VRP Floor)</b>`,
+          showarrow: false,
+          font: { color: '#7dd3fc', size: 9, family: "'JetBrains Mono', monospace" },
+          bgcolor: 'rgba(7, 11, 20, 0.88)',
+          bordercolor: 'rgba(56, 189, 248, 0.45)',
+          borderwidth: 1,
+          borderpad: 2.5
+        });
+      }
+
+      if (showSviChartInfo) {
+        const sviParamLine = activeSvi
+          ? `<br><span style="color:#94a3b8">SVI(${activeExp}): ρ ${activeSvi.svi_rho} · σ ${activeSvi.svi_sigma} · b ${activeSvi.svi_b}</span>`
+          : '';
+        skewAnnotations.push({
+          xref: 'paper',
+          yref: 'paper',
+          x: 0.99,
+          y: 0.97,
+          xanchor: 'right',
+          yanchor: 'top',
+          align: 'left',
+          text:
+            `<b style="color:#fbbf24">🟡 ARB-FREE SVI FAIR FIT</b><br>` +
+            `Gold Line = Arbitrage-free fair IV smile<br>` +
+            `<span style="color:#fda4af">🔴 ABOVE Gold → Rich (SELL Vol / Spreads)</span><br>` +
+            `<span style="color:#6ee7b7">🟢 BELOW Gold → Cheap (BUY Vol / Spreads)</span><br>` +
+            `<span style="color:#7dd3fc">🔵 ON Gold → Fair Value (Inside Spread)</span>` +
+            sviParamLine,
+          showarrow: false,
+          font: { color: '#e2e8f0', size: 9.2, family: "'JetBrains Mono', monospace" },
+          bgcolor: 'rgba(7, 11, 20, 0.92)',
+          bordercolor: 'rgba(251, 191, 36, 0.45)',
+          borderwidth: 1,
+          borderpad: 6
+        });
+
+        if (richPt) {
+          const rNx = (richPt.strike - minXStrike) / xSpanSkew;
+          const rDiff = Math.abs(getEdgeScore(richPt));
+          skewAnnotations.push({
+            xref: 'x',
+            yref: 'y',
+            x: richPt.strike,
+            y: richPt.iv,
+            xanchor: rNx > 0.72 ? 'right' : (rNx < 0.14 ? 'left' : 'center'),
+            ax: rNx > 0.72 ? -34 : 0,
+            ay: -28,
+            showarrow: true,
+            arrowhead: 2,
+            arrowsize: 0.9,
+            arrowwidth: 1.4,
+            arrowcolor: '#ef4444',
+            text: `<b>🔴 RICH $${richPt.strike} (+${rDiff.toFixed(1)}v) · SELL VOL</b>`,
+            font: { color: '#fda4af', size: 9, family: "'JetBrains Mono', monospace" },
+            bgcolor: 'rgba(7, 11, 20, 0.92)',
+            bordercolor: '#ef4444',
+            borderwidth: 1,
+            borderpad: 2.5
+          });
+        }
+
+        if (cheapPt && (!richPt || Math.abs(cheapPt.strike - richPt.strike) / xSpanSkew > 0.08 || Math.abs(cheapPt.iv - richPt.iv) > 2.0)) {
+          const cNx = (cheapPt.strike - minXStrike) / xSpanSkew;
+          const cDiff = Math.abs(getEdgeScore(cheapPt));
+          skewAnnotations.push({
+            xref: 'x',
+            yref: 'y',
+            x: cheapPt.strike,
+            y: cheapPt.iv,
+            xanchor: cNx > 0.72 ? 'right' : (cNx < 0.14 ? 'left' : 'center'),
+            ax: cNx > 0.72 ? -34 : 0,
+            ay: 30,
+            showarrow: true,
+            arrowhead: 2,
+            arrowsize: 0.9,
+            arrowwidth: 1.4,
+            arrowcolor: '#10b981',
+            text: `<b>🟢 CHEAP $${cheapPt.strike} (-${cDiff.toFixed(1)}v) · BUY VOL</b>`,
+            font: { color: '#6ee7b7', size: 9, family: "'JetBrains Mono', monospace" },
+            bgcolor: 'rgba(7, 11, 20, 0.92)',
+            bordercolor: '#10b981',
+            borderwidth: 1,
+            borderpad: 2.5
+          });
+        }
+      }
+
+      const skewTopMargin = maxAnchorSlot >= 2 ? (isNarrowSkew ? 132 : 120) : 104;
+      const skewLegendY = maxAnchorSlot >= 2 ? (isNarrowSkew ? 1.26 : 1.24) : 1.18;
+
       const layout = {
         autosize: true,
-        height: 530,
-        margin: { l: 62, r: 28, b: 56, t: 52 },
+        ...(containerW > 100 ? { width: containerW } : {}),
+        height: 555,
+        margin: { l: 58, r: 22, b: 54, t: skewTopMargin },
         paper_bgcolor: 'transparent',
         plot_bgcolor: '#090d16',
         legend: {
           orientation: 'h',
           x: 0,
           xanchor: 'left',
-          y: 1.03,
+          y: skewLegendY,
           yanchor: 'bottom',
-          font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 10 },
+          font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 9.5 },
           bgcolor: 'rgba(15, 23, 42, 0.78)',
           bordercolor: 'rgba(255, 255, 255, 0.08)',
           borderwidth: 1
@@ -1435,7 +2101,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
             line: { color: 'rgba(56, 189, 248, 0.55)', width: 1.5, dash: 'dot' }
           }] : [])
         ],
-        annotations: []
+        annotations: skewAnnotations
       };
 
       try {
@@ -1522,17 +2188,17 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
 
       const layout = {
         autosize: true,
-        height: 530,
-        margin: { l: 62, r: 28, b: 58, t: 52 },
+        height: 520,
+        margin: { l: 58, r: 22, b: 54, t: 74 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: '#090d16',
         legend: {
           orientation: 'h',
           x: 0,
           xanchor: 'left',
-          y: 1.03,
+          y: 1.04,
           yanchor: 'bottom',
-          font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 10 },
+          font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 9.5 },
           bgcolor: 'rgba(15, 23, 42, 0.78)',
           bordercolor: 'rgba(255, 255, 255, 0.08)',
           borderwidth: 1
@@ -1572,12 +2238,21 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
       }
 
     } else if (activeViewMode === 'heatmap') {
-      // 4. BUILD 2D VOLATILITY HEATMAP MATRIX
+      // 4. BUILD 2D VOLATILITY HEATMAP MATRIX (OR INTERDAY ΔIV MATRIX WHEN ⚡ INTERDAY ΔIV IS ON)
       const expirations = allExpirations;
+      const hmLookbackSnap = (volMoveLookback && volMoveLookback !== 'OFF')
+        ? activeData.multi_day_vol_movement?.historical_snapshots?.[volMoveLookback]
+        : null;
+      const useDeltaHeatmap = Boolean(interdayShiftMode && hmLookbackSnap);
+      const hmRealDelta1d = activeData.multi_day_vol_movement?.real_delta_iv_1d;
+      const isReal1dHm = Boolean(useDeltaHeatmap && volMoveLookback === '1D' && hmRealDelta1d?.available);
+
       const ptMap = new Map();
+      const fullPtMap = new Map();
       surface.forEach(p => {
-        if (p && p.expiry && p.strike !== undefined && p.iv !== undefined) {
-          ptMap.set(`${p.expiry}_${p.strike}`, p.iv);
+        if (p && p.expiry && p.strike !== undefined) {
+          fullPtMap.set(`${p.expiry}_${p.strike}`, p);
+          if (p.iv !== undefined) ptMap.set(`${p.expiry}_${p.strike}`, p.iv);
         }
       });
 
@@ -1589,82 +2264,186 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         }
       }
 
-      let zData = expirations.map(exp => {
+      let ivZData = expirations.map(exp => {
         return displayedStrikes.map(str => {
           const val = ptMap.get(`${exp}_${str}`);
           return (val !== undefined && val !== null && !isNaN(val)) ? val : null;
         });
       });
 
-      // Linear horizontal strike interpolation across missing strikes
-      for (let i = 0; i < expirations.length; i++) {
-        let lastIdx = -1;
-        for (let j = 0; j < displayedStrikes.length; j++) {
-          if (zData[i][j] !== null) {
-            if (lastIdx !== -1 && j > lastIdx + 1) {
-              const startVal = zData[i][lastIdx];
-              const endVal = zData[i][j];
-              const span = j - lastIdx;
-              for (let k = lastIdx + 1; k < j; k++) {
-                zData[i][k] = startVal + (endVal - startVal) * ((k - lastIdx) / span);
-              }
-            }
-            lastIdx = j;
-          }
-        }
-        // Outer boundaries flat-hold
-        if (lastIdx !== -1) {
-          for (let j = lastIdx + 1; j < displayedStrikes.length; j++) {
-            zData[i][j] = zData[i][lastIdx];
-          }
-          const firstVal = zData[i].find(v => v !== null);
-          for (let j = 0; j < displayedStrikes.length; j++) {
-            if (zData[i][j] === null) zData[i][j] = firstVal;
-            else break;
-          }
-        }
-      }
-
-      // Vertical expiration interpolation
-      for (let j = 0; j < displayedStrikes.length; j++) {
-        let lastIdx = -1;
+      const fillMatrix2D = (mat, fallbackVal = 25.0) => {
         for (let i = 0; i < expirations.length; i++) {
-          if (zData[i][j] !== null) {
-            if (lastIdx !== -1 && i > lastIdx + 1) {
-              const startVal = zData[lastIdx][j];
-              const endVal = zData[i][j];
-              const span = i - lastIdx;
-              for (let k = lastIdx + 1; k < i; k++) {
-                zData[k][j] = startVal + (endVal - startVal) * ((k - lastIdx) / span);
+          let lastIdx = -1;
+          for (let j = 0; j < displayedStrikes.length; j++) {
+            if (mat[i][j] !== null) {
+              if (lastIdx !== -1 && j > lastIdx + 1) {
+                const startVal = mat[i][lastIdx];
+                const endVal = mat[i][j];
+                const span = j - lastIdx;
+                for (let k = lastIdx + 1; k < j; k++) {
+                  mat[i][k] = startVal + (endVal - startVal) * ((k - lastIdx) / span);
+                }
               }
+              lastIdx = j;
             }
-            lastIdx = i;
           }
-        }
-        if (lastIdx !== -1) {
-          for (let i = lastIdx + 1; i < expirations.length; i++) {
-            zData[i][j] = zData[lastIdx][j];
-          }
-          let firstVal = null;
-          for (let i = 0; i < expirations.length; i++) {
-            if (zData[i][j] !== null) { firstVal = zData[i][j]; break; }
-          }
-          if (firstVal !== null) {
-            for (let i = 0; i < expirations.length; i++) {
-              if (zData[i][j] === null) zData[i][j] = firstVal;
+          if (lastIdx !== -1) {
+            for (let j = lastIdx + 1; j < displayedStrikes.length; j++) {
+              mat[i][j] = mat[i][lastIdx];
+            }
+            const firstVal = mat[i].find(v => v !== null);
+            for (let j = 0; j < displayedStrikes.length; j++) {
+              if (mat[i][j] === null) mat[i][j] = firstVal;
               else break;
             }
           }
         }
-      }
-
-      const defaultIv = (data.desk_metrics && data.desk_metrics.atm_iv_30d) || 25.0;
-      for (let i = 0; i < expirations.length; i++) {
         for (let j = 0; j < displayedStrikes.length; j++) {
-          if (zData[i][j] === null || isNaN(zData[i][j])) {
-            zData[i][j] = defaultIv;
+          let lastIdx = -1;
+          for (let i = 0; i < expirations.length; i++) {
+            if (mat[i][j] !== null) {
+              if (lastIdx !== -1 && i > lastIdx + 1) {
+                const startVal = mat[lastIdx][j];
+                const endVal = mat[i][j];
+                const span = i - lastIdx;
+                for (let k = lastIdx + 1; k < i; k++) {
+                  mat[k][j] = startVal + (endVal - startVal) * ((k - lastIdx) / span);
+                }
+              }
+              lastIdx = i;
+            }
+          }
+          if (lastIdx !== -1) {
+            for (let i = lastIdx + 1; i < expirations.length; i++) {
+              mat[i][j] = mat[lastIdx][j];
+            }
+            let firstVal = null;
+            for (let i = 0; i < expirations.length; i++) {
+              if (mat[i][j] !== null) { firstVal = mat[i][j]; break; }
+            }
+            if (firstVal !== null) {
+              for (let i = 0; i < expirations.length; i++) {
+                if (mat[i][j] === null) mat[i][j] = firstVal;
+                else break;
+              }
+            }
           }
         }
+        for (let i = 0; i < expirations.length; i++) {
+          for (let j = 0; j < displayedStrikes.length; j++) {
+            if (mat[i][j] === null || isNaN(mat[i][j])) mat[i][j] = fallbackVal;
+            else mat[i][j] = Number(mat[i][j].toFixed(2));
+          }
+        }
+      };
+
+      fillMatrix2D(ivZData, (data.desk_metrics && data.desk_metrics.atm_iv_30d) || 25.0);
+
+      let zData = ivZData;
+      if (surfaceColor === 'LocalVol' && !useDeltaHeatmap) {
+        const lvZ = expirations.map(exp =>
+          displayedStrikes.map(str => {
+            const fp = fullPtMap.get(`${exp}_${str}`);
+            return (fp && fp.local_vol) ? fp.local_vol : null;
+          })
+        );
+        fillMatrix2D(lvZ, (data.desk_metrics && data.desk_metrics.atm_iv_30d) || 25.0);
+        zData = lvZ;
+      }
+      let hmHoverMatrix = null;
+      let hmColorscale = surfaceColor === 'HedgingRegimes' ? 'Viridis' : (surfaceColor === 'LocalVol' ? 'Inferno' : surfaceColor);
+      let hmZMin;
+      let hmZMax;
+      let hmZMid;
+      let hmColorbarTitle = surfaceColor === 'LocalVol' ? 'Dupire Local Vol (%)' : 'Implied Vol (%)';
+      let hmChartTitle = surfaceColor === 'LocalVol'
+        ? `Dupire Local Volatility (σ_loc) Heatmap · Strike vs Expiration`
+        : `Implied Volatility Heatmap Matrix · Strike Price vs Expiration Tenor`;
+
+      if (useDeltaHeatmap) {
+        const snapTsMap = new Map();
+        (hmLookbackSnap.term_structure || []).forEach(t => snapTsMap.set(t.expiry, t));
+        const baseShift = -(hmLookbackSnap.iv_shift_pts || 0);
+        const skewShift = -(hmLookbackSnap.skew_shift_pts || 0);
+
+        const fbDelta = expirations.map((exp, i) => {
+          const tsPast = snapTsMap.get(exp);
+          const tenorDelta = tsPast ? (tsPast.today_atm_iv - tsPast.atm_iv) : -baseShift;
+          return displayedStrikes.map(st => {
+            const moneynessOffset = spot ? ((st - spot) / spot) : 0;
+            const wingTilt = moneynessOffset * skewShift * 1.4;
+            return Number((tenorDelta + wingTilt).toFixed(2));
+          });
+        });
+
+        let deltaMat;
+        if (isReal1dHm) {
+          deltaMat = expirations.map((exp, i) =>
+            displayedStrikes.map((st, j) => {
+              const p = fullPtMap.get(`${exp}_${st}`);
+              return (p && typeof p.real_delta_iv_1d === 'number' && !isNaN(p.real_delta_iv_1d))
+                ? Number(p.real_delta_iv_1d.toFixed(2))
+                : null;
+            })
+          );
+          // Blend missing rows/edges toward modeled shift only where contract history wasn't directly matched
+          for (let i = 0; i < expirations.length; i++) {
+            const hasAny = deltaMat[i].some(v => v !== null);
+            if (!hasAny) {
+              deltaMat[i] = [...fbDelta[i]];
+            }
+          }
+          fillMatrix2D(deltaMat, hmRealDelta1d.atm_delta_iv || 0.0);
+        } else {
+          deltaMat = fbDelta;
+        }
+
+        // Gentle 1-pass Laplacian smoothing for clean regional heat zones across Strike x Expiration
+        const smHm = deltaMat.map(row => [...row]);
+        for (let i = 0; i < expirations.length; i++) {
+          for (let j = 0; j < displayedStrikes.length; j++) {
+            const c = deltaMat[i][j];
+            const l = j > 0 ? deltaMat[i][j - 1] : c;
+            const r = j < displayedStrikes.length - 1 ? deltaMat[i][j + 1] : c;
+            const u = i > 0 ? deltaMat[i - 1][j] : c;
+            const d = i < expirations.length - 1 ? deltaMat[i + 1][j] : c;
+            smHm[i][j] = Number((0.56 * c + 0.14 * (l + r) + 0.08 * (u + d)).toFixed(2));
+          }
+        }
+        zData = smHm;
+        const flatAbs = zData.flat().filter(v => typeof v === 'number' && !isNaN(v)).map(Math.abs);
+        const maxAbs = flatAbs.length ? Math.max(...flatAbs.sort((a, b) => a - b).slice(0, Math.max(1, Math.floor(flatAbs.length * 0.98)))) : 4.0;
+        const cBound = Math.max(2.5, Math.min(18.0, Math.ceil(maxAbs)));
+        hmZMin = -cBound;
+        hmZMax = cBound;
+        hmZMid = 0;
+        hmColorscale = [
+          [0.0, '#10b981'],
+          [0.35, '#06b6d4'],
+          [0.50, '#1e293b'],
+          [0.65, '#f59e0b'],
+          [1.0, '#ef4444']
+        ];
+        hmColorbarTitle = isReal1dHm ? 'Real 1D ΔIV (%)' : `ΔIV (${volMoveLookback})`;
+        hmChartTitle = `Interday ΔIV Matrix (${volMoveLookback} vs Live · ${isReal1dHm ? 'Real Per-Contract Repricing' : 'Term/Skew Model'})`;
+
+        hmHoverMatrix = expirations.map((exp, i) =>
+          displayedStrikes.map((st, j) => {
+            const p = fullPtMap.get(`${exp}_${st}`);
+            const dVal = zData[i][j];
+            const todayIv = ivZData[i][j];
+            const priorIv = Number(Math.max(4.0, todayIv - dVal).toFixed(2));
+            const volStr = (p && p.contract_vol > 0) ? `<br>Today Vol: <b>${p.contract_vol.toLocaleString()}</b>` : '';
+            const srcTag = (p && typeof p.real_delta_iv_1d === 'number' && isReal1dHm)
+              ? 'Real Per-Contract Repricing'
+              : (isReal1dHm ? 'Interpolated from Live Contracts' : 'Term/Skew Shift Model');
+            return `<b>Strike: $${st}</b> | Exp: <b>${exp}</b><br>` +
+                   `<b>ΔIV (${volMoveLookback}): ${dVal >= 0 ? '+' : ''}${dVal}%</b><br>` +
+                   `Today IV: <b>${todayIv}%</b> | Prior IV: <b>${priorIv}%</b>` +
+                   volStr +
+                   `<br><i>${srcTag}</i>`;
+          })
+        );
       }
 
       const currentBg = BG_THEMES.find(t => t.id === surfaceBg) || BG_THEMES[0];
@@ -1675,43 +2454,68 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
       const hmXTitle = strikeMode === 'moneyness' ? 'Moneyness (K/S)' : 'Strike Price ($)';
       const spotX = strikeMode === 'moneyness' ? 1.00 : spot;
 
-      const plotData = [{
+      const hmTrace = {
         z: zData,
         x: hmXValues,
         y: expirations,
         type: 'heatmap',
-        colorscale: surfaceColor === 'HedgingRegimes' ? 'Viridis' : surfaceColor,
-        zsmooth: false, // Disables blur smoothing for crisp matrix grid cells!
+        colorscale: hmColorscale,
+        zsmooth: false,
         hoverongaps: false,
         colorbar: {
-          title: { text: 'Implied Vol (%)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' } },
-          tickfont: { color: '#f8fafc', family: "'JetBrains Mono', monospace", size: 11 },
-          thickness: 16,
-          len: 0.90
-        },
-        hovertemplate: `<b>Strike Price:</b> %{x}<br><b>Expiration:</b> %{y}<br><b>Implied Volatility:</b> %{z:.1f}%<extra></extra>`
-      }];
+          title: { text: hmColorbarTitle, font: { color: useDeltaHeatmap ? '#fbbf24' : '#00F0FF', family: "'JetBrains Mono', monospace", size: 10, weight: 'bold' }, side: 'top' },
+          tickfont: { color: '#f8fafc', family: "'JetBrains Mono', monospace", size: 9.5 },
+          orientation: 'h',
+          thickness: 10,
+          len: 0.34,
+          x: 0.99,
+          xanchor: 'right',
+          y: 1.03,
+          yanchor: 'bottom',
+          ypad: 4
+        }
+      };
+      if (useDeltaHeatmap) {
+        hmTrace.zmin = hmZMin;
+        hmTrace.zmax = hmZMax;
+        hmTrace.zmid = hmZMid;
+        hmTrace.hoverinfo = 'text';
+        hmTrace.text = hmHoverMatrix;
+      } else {
+        hmTrace.hovertemplate = `<b>Strike Price:</b> %{x}<br><b>Expiration:</b> %{y}<br><b>Implied Volatility:</b> %{z:.1f}%<extra></extra>`;
+      }
 
-      // Overlay Air Pocket Pinpoints directly onto the Heatmap
-      const visibleAirPockets = detectedAirPockets.filter(p => 
-        displayedStrikes.some(s => Math.abs(s - p.strike) < 1.0)
-      );
+      const plotData = [hmTrace];
+
+      // Overlay Spatially Separated Air Pocket Pinpoints onto Heatmap (Zero overlapping circles/labels)
+      const rawVisiblePockets = !useDeltaHeatmap
+        ? detectedAirPockets.filter(p => displayedStrikes.some(s => Math.abs(s - p.strike) < 1.0))
+        : [];
+      const visibleAirPockets = [];
+      const minHmSep = Math.max(8.0, (spot || 100) * 0.045);
+      for (const pk of rawVisiblePockets) {
+        const collides = visibleAirPockets.some(existing =>
+          existing.expiry === pk.expiry && Math.abs(existing.strike - pk.strike) < minHmSep
+        );
+        if (!collides) visibleAirPockets.push(pk);
+      }
 
       if (visibleAirPockets.length > 0) {
+        const pocketPositions = ['top left', 'bottom right', 'top right', 'bottom left'];
         plotData.push({
           x: visibleAirPockets.map(p => strikeMode === 'moneyness' ? +(p.strike / (spot || 1)).toFixed(3) : p.strike),
           y: visibleAirPockets.map(p => p.expiry),
           type: 'scatter',
           mode: 'markers+text',
           name: '🕳️ Vol Air Pocket (Cheap Vega)',
-          text: visibleAirPockets.map(p => `🕳️ $${p.strike} (${p.iv}%)`),
-          textposition: 'top center',
-          textfont: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' },
+          text: visibleAirPockets.map(p => `$${p.strike} (${p.iv}%)`),
+          textposition: visibleAirPockets.map((_, idx) => pocketPositions[idx % pocketPositions.length]),
+          textfont: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 10.5, weight: 'bold' },
           marker: {
-            size: 16,
+            size: 13,
             color: '#00F0FF',
             symbol: 'circle-open',
-            line: { color: '#00F0FF', width: 3 }
+            line: { color: '#00F0FF', width: 2.5 }
           },
           hovertemplate: '<b>🕳️ VOLATILITY AIR POCKET</b><br>Strike: $%{x}<br>Tenor: %{y}<br>IV: %{text}<extra></extra>'
         });
@@ -1727,9 +2531,9 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           name: '🎯 Target Focus',
           text: ['🎯 FOCUS LOCK'],
           textposition: 'bottom center',
-          textfont: { color: '#00E676', family: "'JetBrains Mono', monospace", size: 12, weight: 'bold' },
+          textfont: { color: '#00E676', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
           marker: {
-            size: 20,
+            size: 18,
             color: '#00E676',
             symbol: 'cross',
             line: { color: '#ffffff', width: 2 }
@@ -1739,22 +2543,22 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
 
       const layout = {
         autosize: true,
-        height: 580,
-        margin: { l: 90, r: 40, b: 60, t: 50 },
+        height: 540,
+        margin: { l: 84, r: 18, b: 54, t: 60 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: '#090d16',
-        title: { text: `Implied Volatility Heatmap Matrix · Strike Price vs Expiration Tenor`, font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 14, weight: 'bold' } },
+        showlegend: false,
         xaxis: { 
-          title: { text: hmXTitle, font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+          title: { text: hmXTitle, font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
           gridcolor: 'rgba(255, 255, 255, 0.12)', 
           color: '#f8fafc', 
-          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 } 
+          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 10.5 } 
         },
         yaxis: { 
-          title: { text: 'Expiration Tenor', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+          title: { text: 'Expiration Tenor', font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
           gridcolor: 'rgba(255, 255, 255, 0.12)', 
           color: '#f8fafc', 
-          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
+          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 10 },
           type: 'category'
         },
         shapes: spot ? [{
@@ -1765,20 +2569,21 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           x1: spotX,
           y0: 0,
           y1: 1,
-          line: { color: '#00F0FF', width: 2.5, dash: 'dash' }
+          line: { color: '#00F0FF', width: 2, dash: 'dash' }
         }] : [],
         annotations: spot ? [{
           xref: 'x',
           yref: 'paper',
           x: spotX,
-          y: 1.05,
-          text: strikeMode === 'moneyness' ? 'ATM Spot (1.00x)' : `Spot Price $${spot.toFixed(2)}`,
+          y: 1.04,
+          yanchor: 'bottom',
+          text: strikeMode === 'moneyness' ? 'Spot 1.00x' : `Spot $${spot.toFixed(2)}`,
           showarrow: false,
-          font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 11, weight: 'bold' },
-          bgcolor: 'rgba(15, 23, 42, 0.95)',
+          font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 10.5, weight: 'bold' },
+          bgcolor: 'rgba(15, 23, 42, 0.96)',
           bordercolor: '#00F0FF',
           borderwidth: 1,
-          borderpad: 4
+          borderpad: 3
         }] : []
       };
 
@@ -1893,118 +2698,77 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         regimeColor = '#fbbf24';
       }
 
+      const xsAll = scatterPts.map(p => p.spot_return_pct);
+      const ysAll = scatterPts.map(p => p.vol_change_pct);
+      const minXSc = xsAll.length ? Math.min(...xsAll, -1.5) : -3.5;
+      const maxXSc = xsAll.length ? Math.max(...xsAll, 1.5) : 3.5;
+      const minYSc = ysAll.length ? Math.min(...ysAll, -5.0) : -8.0;
+      const maxYSc = ysAll.length ? Math.max(...ysAll, 5.0) : 8.0;
+      const xPadSc = Math.max(0.6, (maxXSc - minXSc) * 0.22);
+      const yPadSc = Math.max(1.5, (maxYSc - minYSc) * 0.24);
+
       const layout = {
         autosize: true,
-        height: 560,
-        margin: { l: 60, r: 40, b: 60, t: 60 },
+        height: 520,
+        margin: { l: 58, r: 22, b: 54, t: 62 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: '#090d16',
-        title: { 
-          text: `Spot-Vol Correlation Scatter Plot · ${ticker} (ρ = ${spotVolCorr > 0 ? '+' : ''}${spotVolCorr})`, 
-          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 14, weight: 'bold' } 
-        },
         xaxis: { 
-          title: { text: 'Daily Underlying Spot Return (%)', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
-          gridcolor: 'rgba(255, 255, 255, 0.12)', 
+          title: { text: 'Daily Underlying Spot Return (%)', font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+          gridcolor: 'rgba(255, 255, 255, 0.10)', 
           color: '#f8fafc', 
-          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
-          zerolinecolor: '#cbd5e1',
-          zerolinewidth: 1.5
+          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 10.5 },
+          zerolinecolor: 'rgba(203, 213, 225, 0.45)',
+          zerolinewidth: 1.5,
+          range: [+(minXSc - xPadSc).toFixed(2), +(maxXSc + xPadSc).toFixed(2)]
         },
         yaxis: { 
-          title: { text: 'Daily Volatility Change (%)', font: { color: '#00F0FF', size: 13, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
-          gridcolor: 'rgba(255, 255, 255, 0.12)', 
+          title: { text: 'Daily Volatility Change (%)', font: { color: '#00F0FF', size: 12, family: "'JetBrains Mono', monospace", weight: 'bold' } }, 
+          gridcolor: 'rgba(255, 255, 255, 0.10)', 
           color: '#f8fafc', 
-          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 11 },
-          zerolinecolor: '#cbd5e1',
-          zerolinewidth: 1.5
+          tickfont: { family: "'JetBrains Mono', monospace", color: '#cbd5e1', size: 10.5 },
+          zerolinecolor: 'rgba(203, 213, 225, 0.45)',
+          zerolinewidth: 1.5,
+          range: [+(minYSc - yPadSc).toFixed(2), +(maxYSc + yPadSc).toFixed(2)]
         },
         legend: {
-          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 11 },
+          orientation: 'h',
+          x: 0,
+          y: 1.03,
+          yanchor: 'bottom',
+          font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 9.5 },
           bgcolor: 'rgba(15, 23, 42, 0.85)',
-          bordercolor: 'rgba(255, 255, 255, 0.15)',
+          bordercolor: 'rgba(255, 255, 255, 0.12)',
           borderwidth: 1
         },
         annotations: [
-          // Top-Center Regime Summary Banner
           {
-            xref: 'paper',
-            yref: 'paper',
-            x: 0.50,
-            y: 1.08,
-            text: `<b>${regimeSummaryTitle}</b> | Pearson Correlation (ρ): <b>${spotVolCorr > 0 ? '+' : ''}${spotVolCorr}</b>`,
-            showarrow: false,
-            xanchor: 'center',
-            yanchor: 'bottom',
-            font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 11 },
-            bgcolor: 'rgba(15, 23, 42, 0.95)',
-            bordercolor: regimeColor,
-            borderwidth: 1.5,
-            borderpad: 5
+            xref: 'paper', yref: 'paper', x: 0.015, y: 0.985,
+            text: `<b>Q1 PUT PANIC</b> (${putPanic.length}d · ${q1Pct}%)`,
+            showarrow: false, xanchor: 'left', yanchor: 'top',
+            font: { color: '#ef4444', family: "'JetBrains Mono', monospace", size: 9.5 },
+            bgcolor: 'rgba(15, 23, 42, 0.78)', bordercolor: 'rgba(239, 68, 68, 0.45)', borderwidth: 1, borderpad: 3
           },
-          // Quadrant 1 (Top-Left): Put Panic (Spot < 0, Vol > 0)
           {
-            xref: 'paper',
-            yref: 'paper',
-            x: 0.02,
-            y: 0.96,
-            text: `<b>🚨 Q1: PUT PANIC ZONE</b><br>Spot ↓ / Vol ↑<br><b>${putPanic.length} days (${q1Pct}%)</b>`,
-            showarrow: false,
-            xanchor: 'left',
-            yanchor: 'top',
-            font: { color: '#ef4444', family: "'JetBrains Mono', monospace", size: 10 },
-            bgcolor: 'rgba(239, 68, 68, 0.12)',
-            bordercolor: 'rgba(239, 68, 68, 0.4)',
-            borderwidth: 1,
-            borderpad: 5
+            xref: 'paper', yref: 'paper', x: 0.985, y: 0.985,
+            text: `<b>Q2 CALL SQUEEZE</b> (${callSqueeze.length}d · ${q2Pct}%)`,
+            showarrow: false, xanchor: 'right', yanchor: 'top',
+            font: { color: '#10b981', family: "'JetBrains Mono', monospace", size: 9.5 },
+            bgcolor: 'rgba(15, 23, 42, 0.78)', bordercolor: 'rgba(16, 185, 129, 0.45)', borderwidth: 1, borderpad: 3
           },
-          // Quadrant 2 (Top-Right): Call Squeeze (Spot > 0, Vol > 0)
           {
-            xref: 'paper',
-            yref: 'paper',
-            x: 0.98,
-            y: 0.96,
-            text: `<b>🚀 Q2: CALL SQUEEZE ZONE</b><br>Spot ↑ / Vol ↑<br><b>${callSqueeze.length} days (${q2Pct}%)</b>`,
-            showarrow: false,
-            xanchor: 'right',
-            yanchor: 'top',
-            font: { color: '#10b981', family: "'JetBrains Mono', monospace", size: 10 },
-            bgcolor: 'rgba(16, 185, 129, 0.12)',
-            bordercolor: 'rgba(16, 185, 129, 0.4)',
-            borderwidth: 1,
-            borderpad: 5
+            xref: 'paper', yref: 'paper', x: 0.015, y: 0.015,
+            text: `<b>Q3 DRIFT</b> (${sinkingDrift.length}d · ${q3Pct}%)`,
+            showarrow: false, xanchor: 'left', yanchor: 'bottom',
+            font: { color: '#94a3b8', family: "'JetBrains Mono', monospace", size: 9.5 },
+            bgcolor: 'rgba(15, 23, 42, 0.78)', bordercolor: 'rgba(148, 163, 184, 0.45)', borderwidth: 1, borderpad: 3
           },
-          // Quadrant 3 (Bottom-Left): Sinking Drift (Spot < 0, Vol < 0)
           {
-            xref: 'paper',
-            yref: 'paper',
-            x: 0.02,
-            y: 0.04,
-            text: `<b>📉 Q3: SINKING DRIFT ZONE</b><br>Spot ↓ / Vol ↓<br><b>${sinkingDrift.length} days (${q3Pct}%)</b>`,
-            showarrow: false,
-            xanchor: 'left',
-            yanchor: 'bottom',
-            font: { color: '#94a3b8', family: "'JetBrains Mono', monospace", size: 10 },
-            bgcolor: 'rgba(148, 163, 184, 0.12)',
-            bordercolor: 'rgba(148, 163, 184, 0.4)',
-            borderwidth: 1,
-            borderpad: 5
-          },
-          // Quadrant 4 (Bottom-Right): Vol-Crush Rally (Spot > 0, Vol < 0)
-          {
-            xref: 'paper',
-            yref: 'paper',
-            x: 0.98,
-            y: 0.04,
-            text: `<b>🟢 Q4: NORMAL RALLYS / VOL CRUSH</b><br>Spot ↑ / Vol ↓<br><b>${volCrushRally.length} days (${q4Pct}%)</b>`,
-            showarrow: false,
-            xanchor: 'right',
-            yanchor: 'bottom',
-            font: { color: '#38bdf8', family: "'JetBrains Mono', monospace", size: 10 },
-            bgcolor: 'rgba(56, 189, 248, 0.12)',
-            bordercolor: 'rgba(56, 189, 248, 0.4)',
-            borderwidth: 1,
-            borderpad: 5
+            xref: 'paper', yref: 'paper', x: 0.985, y: 0.015,
+            text: `<b>Q4 VOL CRUSH</b> (${volCrushRally.length}d · ${q4Pct}%)`,
+            showarrow: false, xanchor: 'right', yanchor: 'bottom',
+            font: { color: '#38bdf8', family: "'JetBrains Mono', monospace", size: 9.5 },
+            bgcolor: 'rgba(15, 23, 42, 0.78)', bordercolor: 'rgba(56, 189, 248, 0.45)', borderwidth: 1, borderpad: 3
           }
         ]
       };
@@ -2079,40 +2843,37 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
 
         const layout = {
           autosize: true,
-          height: 550,
-          margin: { l: 64, r: 64, b: 64, t: 54 },
+          height: 520,
+          margin: { l: 58, r: 58, b: 56, t: 82 },
           paper_bgcolor: 'transparent',
           plot_bgcolor: '#090d16',
-          title: {
-            text: `Last Few Days Volatility Trajectory · 30D ATM IV vs 10D Realized HV & 25Δ Skew (${ticker})`,
-            font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 13.5, weight: 'bold' }
-          },
           legend: {
             orientation: 'h',
             x: 0,
             y: 1.04,
-            font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 10.5 },
+            yanchor: 'bottom',
+            font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 10 },
             bgcolor: 'rgba(15, 23, 42, 0.82)'
           },
           xaxis: {
-            title: { text: 'Recent Trading Sessions (Last 10 Days → Today)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12 } },
+            title: { text: 'Recent Trading Sessions (Last 10 Days → Today)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 11.5 } },
             gridcolor: 'rgba(255, 255, 255, 0.08)',
             color: '#cbd5e1',
-            tickfont: { family: "'JetBrains Mono', monospace", size: 10.5 }
+            tickfont: { family: "'JetBrains Mono', monospace", size: 10 }
           },
           yaxis: {
-            title: { text: 'Implied / Realized Volatility (%)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12 } },
+            title: { text: 'Implied / Realized Volatility (%)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 11.5 } },
             gridcolor: 'rgba(255, 255, 255, 0.08)',
             color: '#f8fafc',
-            tickfont: { family: "'JetBrains Mono', monospace", size: 11 }
+            tickfont: { family: "'JetBrains Mono', monospace", size: 10.5 }
           },
           yaxis2: {
-            title: { text: '25Δ Skew & 1D ΔIV Shift (%)', font: { color: '#fbbf24', family: "'JetBrains Mono', monospace", size: 11 } },
+            title: { text: '25Δ Skew & 1D ΔIV Shift (%)', font: { color: '#fbbf24', family: "'JetBrains Mono', monospace", size: 10.5 } },
             overlaying: 'y',
             side: 'right',
             showgrid: false,
             color: '#fbbf24',
-            tickfont: { family: "'JetBrains Mono', monospace", size: 10.5 },
+            tickfont: { family: "'JetBrains Mono', monospace", size: 10 },
             zeroline: true,
             zerolinecolor: 'rgba(255,255,255,0.2)'
           }
@@ -2194,44 +2955,48 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           });
         }
 
+        const deltaRangePad = (refSnap && Array.isArray(refSnap.term_structure))
+          ? Math.max(2.0, ...term_structure.map(ts => {
+              const m = refSnap.term_structure.find(item => item.expiry === ts.expiry);
+              return Math.abs(m ? m.iv_change : 0);
+            }))
+          : 4.0;
         const layout = {
           autosize: true,
-          height: 550,
-          margin: { l: 64, r: 64, b: 64, t: 54 },
+          height: 520,
+          margin: { l: 58, r: 58, b: 56, t: 88 },
           paper_bgcolor: 'transparent',
           plot_bgcolor: '#090d16',
-          title: {
-            text: `Multi-Day Volatility Term Structure Evolution · Today vs 1D, 3D, 5D & 10D Ago (${ticker})`,
-            font: { color: '#ffffff', family: "'JetBrains Mono', monospace", size: 13.5, weight: 'bold' }
-          },
           legend: {
             orientation: 'h',
             x: 0,
             y: 1.04,
-            font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 10 },
+            yanchor: 'bottom',
+            font: { color: '#cbd5e1', family: "'JetBrains Mono', monospace", size: 9.5 },
             bgcolor: 'rgba(15, 23, 42, 0.82)'
           },
           xaxis: {
-            title: { text: 'Expiration Tenor (DTE & Date)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12 } },
+            title: { text: 'Expiration Tenor (DTE & Date)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 11.5 } },
             gridcolor: 'rgba(255, 255, 255, 0.08)',
             color: '#cbd5e1',
             tickfont: { family: "'JetBrains Mono', monospace", size: 10 }
           },
           yaxis: {
-            title: { text: 'ATM Implied Volatility (%)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 12 } },
+            title: { text: 'ATM Implied Volatility (%)', font: { color: '#00F0FF', family: "'JetBrains Mono', monospace", size: 11.5 } },
             gridcolor: 'rgba(255, 255, 255, 0.08)',
             color: '#f8fafc',
-            tickfont: { family: "'JetBrains Mono', monospace", size: 11 }
+            tickfont: { family: "'JetBrains Mono', monospace", size: 10.5 }
           },
           yaxis2: {
-            title: { text: `Net ΔIV Shift vs ${refSnap ? refSnap.key : '3D'} Ago (%)`, font: { color: '#f59e0b', family: "'JetBrains Mono', monospace", size: 11 } },
+            title: { text: `Net ΔIV Shift vs ${refSnap ? refSnap.key : '3D'} Ago (%)`, font: { color: '#f59e0b', family: "'JetBrains Mono', monospace", size: 10.5 } },
             overlaying: 'y',
             side: 'right',
             showgrid: false,
             color: '#f59e0b',
-            tickfont: { family: "'JetBrains Mono', monospace", size: 10.5 },
+            tickfont: { family: "'JetBrains Mono', monospace", size: 10 },
             zeroline: true,
-            zerolinecolor: 'rgba(255,255,255,0.22)'
+            zerolinecolor: 'rgba(255,255,255,0.22)',
+            range: [+( -deltaRangePad * 1.15).toFixed(1), +(deltaRangePad * 1.25).toFixed(1)]
           }
         };
 
@@ -2242,7 +3007,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         }
       }
     }
-  }, [data, horizonData, tenorHorizon, selectedExpiry, activeViewMode, focusedHotspot, plotlyReady, detectedAirPockets, surfaceColor, surfaceBg, cameraPreset, strikeMode, heatmapFilter, showHvPlane, show3dLabels, volMoveLookback, volMoveColorByDelta, interdayShiftMode, multiDayChartSubmode, surfacePrecision, zRelief]);
+  }, [data, horizonData, tenorHorizon, selectedExpiry, activeViewMode, focusedHotspot, plotlyReady, plotWidth, detectedAirPockets, surfaceColor, surfaceBg, cameraPreset, strikeMode, heatmapFilter, showHvPlane, show3dLabels, showSviChartInfo, volMoveLookback, volMoveColorByDelta, interdayShiftMode, motionCoordFrame, motionVisualStyle, intradayFrameIdx, multiDayChartSubmode, surfacePrecision, zRelief]);
 
   if (loading) {
     return (
@@ -2387,438 +3152,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
     <div className="vol-root" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
       
       {/* ========================================================================= */}
-      {/* 1. FIRST: AI VIEW ON THE TICKER BASED ON THE 3D VOLATILITY SURFACE       */}
-      {/* ========================================================================= */}
-      <div 
-        className="vol-ai-card"
-        style={{
-          position: 'relative',
-          background: 'linear-gradient(135deg, #0a0e1c 0%, #060912 100%)',
-          border: '1px solid rgba(139, 92, 246, 0.35)',
-          borderRadius: '16px',
-          padding: '22px',
-          boxShadow: '0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-          overflow: 'hidden'
-        }}
-      >
-        {/* Ambient Glow */}
-        <div className="vol-ai-glow-1" />
-        <div className="vol-ai-glow-2" />
-
-        {/* AI Header Ribbon */}
-        <div 
-          className="vol-ai-header"
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '16px',
-            paddingBottom: '16px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
-          }}
-        >
-          <div className="vol-ai-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div className="vol-ai-icon-badge">
-              <Brain style={{ width: '22px', height: '22px', color: '#00F0FF' }} />
-            </div>
-            <div className="vol-ai-titles">
-              <div className="vol-ai-main-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 style={{ margin: 0, fontFamily: "'JetBrains Mono', monospace", fontSize: '15px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#ffffff' }}>
-                  Quant AI Volatility Intelligence · {ticker} Surface Synthesis
-                </h2>
-                <span className="vol-ai-live-tag">
-                  <Sparkles style={{ width: '12px', height: '12px', color: '#00F0FF' }} />
-                  AI SYNTHESIS ACTIVE
-                </span>
-              </div>
-              <p className="vol-ai-subtitle" style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
-                Autonomous multi-tenor implied vs realized variance diagnostics · Volatility surface anomaly modeling
-              </p>
-            </div>
-          </div>
-
-          {/* AI Quant Conviction & Posture Ribbon */}
-          <div className="vol-ai-badges-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <div className="vol-conviction-pill">
-              <span className="label">Conviction:</span>
-              <span className="score">{ai.conviction_score}/100</span>
-              <span className="vol-pulse-dot" />
-            </div>
-            <div className={`vol-posture-pill ${postureTheme}`}>
-              {ai.verdict_posture}
-            </div>
-          </div>
-        </div>
-
-        {/* Executive Synthesis Hero Box */}
-        <div 
-          className={`vol-hero-box ${postureTheme}`}
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            marginTop: '18px',
-            padding: '20px',
-            borderRadius: '14px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '20px',
-            flexWrap: 'wrap'
-          }}
-        >
-          <div className="vol-hero-text-wrap" style={{ flex: 1, minWidth: '280px', maxWidth: '820px' }}>
-            <div className="vol-hero-header-line" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-              <span className="vol-hero-badge">
-                {ai.verdict_badge}
-              </span>
-              <h3 className="vol-hero-title">
-                {ai.verdict_title}
-              </h3>
-            </div>
-            <p className="vol-hero-summary">
-              {ai.executive_summary}
-            </p>
-          </div>
-
-          {/* Implied Move Range Box */}
-          {ai.market_implied_move && (
-            <div className="vol-implied-box">
-              <div className="vol-implied-top">
-                <span>Market Implied Move</span>
-                <span className="vol-implied-tenor">{ai.market_implied_move.tenor}</span>
-              </div>
-              <div className="vol-implied-move-val">
-                {ai.market_implied_move.formatted}
-              </div>
-              <div className="vol-implied-targets">
-                <span>Low: <strong style={{ color: '#f43f5e' }}>${ai.market_implied_move.range_low}</strong></span>
-                <span>Spot: <strong style={{ color: '#ffffff' }}>${spot?.toFixed(2)}</strong></span>
-                <span>High: <strong style={{ color: '#00E676' }}>${ai.market_implied_move.range_high}</strong></span>
-              </div>
-              <div className="vol-implied-bar">
-                <div className="vol-implied-bar-low" />
-                <div className="vol-implied-bar-center" />
-                <div className="vol-implied-bar-high" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 4-Pillar AI Diagnostic Analysis Grid */}
-        <div 
-          className="vol-pillars-grid"
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '14px',
-            marginTop: '18px'
-          }}
-        >
-          {(ai.four_pillars || []).map((pillar) => {
-            const isEmerald = pillar.color === 'emerald';
-            const isRose = pillar.color === 'rose';
-            const isPurple = pillar.color === 'purple';
-            const colorClass = isEmerald ? 'emerald' : (isRose ? 'rose' : (isPurple ? 'purple' : 'cyan'));
-            const borderClass = isEmerald ? 'border-emerald' : (isRose ? 'border-rose' : (isPurple ? 'border-purple' : 'border-cyan'));
-
-            return (
-              <div 
-                key={pillar.id}
-                className={`vol-pillar-card ${borderClass}`}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div>
-                  <div className="vol-pillar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px' }}>
-                    <span className="vol-pillar-title">
-                      {pillar.title}
-                    </span>
-                    <span className={`vol-pillar-status ${colorClass}`}>
-                      {pillar.status}
-                    </span>
-                  </div>
-                  <div className={`vol-pillar-metric ${colorClass}`}>
-                    {pillar.metric}
-                  </div>
-                  <p className="vol-pillar-takeaway">
-                    {pillar.takeaway}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Tail Risk & Microstructure Alert Ribbon */}
-        <div 
-          className="vol-risk-ribbon"
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            marginTop: '14px',
-            padding: '12px 18px',
-            borderRadius: '10px',
-            background: 'rgba(5, 8, 16, 0.85)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '14px',
-            flexWrap: 'wrap'
-          }}
-        >
-          <div className="vol-risk-left" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ShieldCheck style={{ width: '18px', height: '18px', color: '#00F0FF', flexShrink: 0 }} />
-            <span>
-              <strong style={{ color: '#ffffff', fontFamily: 'monospace' }}>Risk Directive:</strong> {ai.tail_risk_warning}
-            </span>
-          </div>
-          <a 
-            href="#trade-ideas-section"
-            onClick={(e) => {
-              e.preventDefault();
-              const el = document.getElementById('trade-ideas-section');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="vol-risk-jump-link"
-          >
-            Jump to Trade Ideas ↓
-          </a>
-        </div>
-
-      </div>
-
-      {/* ========================================================================= */}
-      {/* INSTITUTIONAL OVERHEDGE / UNDERHEDGE RADAR & TRADER PLAYBOOK               */}
-      {/* ========================================================================= */}
-      {data.hedging_diagnostics && (
-        <div className="vol-hedging-card">
-          <div className="hedging-header-row">
-            <div className="hedging-title-group">
-              <div className="hedging-icon-badge">
-                <Shield style={{ width: '22px', height: '22px', color: data.hedging_diagnostics.badge_color }} />
-              </div>
-              <div>
-                <div className="hedging-main-title">
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#ffffff', fontFamily: "'JetBrains Mono', monospace" }}>
-                    Institutional Overhedge / Underhedge Radar
-                  </h3>
-                  <span 
-                    className="hedging-state-badge"
-                    style={{
-                      background: `${data.hedging_diagnostics.badge_color}20`,
-                      color: data.hedging_diagnostics.badge_color,
-                      borderColor: data.hedging_diagnostics.badge_color
-                    }}
-                  >
-                    {data.hedging_diagnostics.verdict_badge}
-                  </span>
-                </div>
-                <p className="hedging-subtitle">
-                  {data.hedging_diagnostics.net_hedging_state}
-                </p>
-              </div>
-            </div>
-
-            <div className="hedging-quick-stats">
-              <div className="hedging-stat-chip">
-                <span className="lbl">25Δ Put Skew:</span>
-                <span className="val" style={{ color: data.hedging_diagnostics.put_skew_25d > 1.25 ? '#ef4444' : '#38bdf8' }}>
-                  {data.hedging_diagnostics.put_skew_25d}x ATM
-                </span>
-              </div>
-              <div className="hedging-stat-chip">
-                <span className="lbl">25Δ Call Skew:</span>
-                <span className="val" style={{ color: data.hedging_diagnostics.call_skew_25d > 1.15 ? '#c084fc' : '#10b981' }}>
-                  {data.hedging_diagnostics.call_skew_25d}x ATM
-                </span>
-              </div>
-              <div className="hedging-stat-chip">
-                <span className="lbl">Crash Cushion:</span>
-                <span className="val" style={{ color: data.hedging_diagnostics.crash_cushion_score >= 70 ? '#10b981' : '#f59e0b' }}>
-                  {data.hedging_diagnostics.crash_cushion_score}/100
-                </span>
-              </div>
-              <div className="hedging-stat-chip">
-                <span className="lbl">Vanna Risk:</span>
-                <span className="val" style={{ color: '#f43f5e' }}>
-                  {data.hedging_diagnostics.vanna_squeeze_risk?.split(' ')[0] || 'NORMAL'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowHedgingGuide(prev => !prev)}
-                className="hedging-guide-toggle-btn"
-                title="Toggle Trader Guide: What does Underhedge / Overhedge mean to a trader?"
-              >
-                <Info size={13} />
-                <span>Trader Guide: What is an Underhedge Valley?</span>
-                {showHedgingGuide ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Collapsible Trader Educational & Tactical Guide */}
-          {showHedgingGuide && (
-            <div className="hedging-trader-guide-box">
-              <div className="guide-box-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={14} style={{ color: '#10b981' }} />
-                  <strong style={{ color: '#ffffff', fontSize: '13px', fontFamily: "'JetBrains Mono', monospace" }}>
-                    Trader Playbook: What Does an "Underhedge Valley" Mean to You?
-                  </strong>
-                </div>
-                <span className="guide-tag green">TACTICAL DERIVATIVES INTEL</span>
-              </div>
-
-              <div className="guide-grid">
-                <div className="guide-card">
-                  <div className="guide-card-top">
-                    <span className="guide-card-icon">🏷️</span>
-                    <span className="guide-card-title">1. Cheap Convexity & Vega Discount</span>
-                  </div>
-                  <p className="guide-card-desc">
-                    An <strong>Underhedge Valley</strong> is where market implied volatility (IV) is trading significantly <em>below</em> the theoretical smile baseline.
-                    Options here are statistically underpriced: you pay minimal extrinsic value and theta burn for premium leverage.
-                  </p>
-                </div>
-
-                <div className="guide-card">
-                  <div className="guide-card-top">
-                    <span className="guide-card-icon">🕳️</span>
-                    <span className="guide-card-title">2. Complacency & Air Pocket</span>
-                  </div>
-                  <p className="guide-card-desc">
-                    Dealers and market participants have under-allocated protection to this strike zone. If the stock makes an unexpected move toward this valley, 
-                    dealers scramble to re-hedge gamma, triggering a violent <strong>IV expansion kick</strong> that multiplies option gains.
-                  </p>
-                </div>
-
-                <div className="guide-card">
-                  <div className="guide-card-top">
-                    <span className="guide-card-icon">⚖️</span>
-                    <span className="guide-card-title">3. Asymmetric Risk / Reward</span>
-                  </div>
-                  <p className="guide-card-desc">
-                    Downside risk is strictly limited to the discounted premium paid, while upside payoff is convex. 
-                    Buying cheap valley wings allows you to participate in explosive breakout or breakdown moves with superior risk/reward vs flat stock.
-                  </p>
-                </div>
-
-                <div className="guide-card highlight">
-                  <div className="guide-card-top">
-                    <span className="guide-card-icon">🎯</span>
-                    <span className="guide-card-title">4. Actionable Trader Playbooks</span>
-                  </div>
-                  <ul className="guide-card-bullets">
-                    <li><strong>Long Diagonals / Calendars:</strong> Buy the cheap underhedged month/strike, finance by selling an expensive overhedged strike.</li>
-                    <li><strong>Broken-Wing Butterflies:</strong> Buy the underhedged valley wing at a discount and sell adjacent overhedged strikes for credit.</li>
-                    <li><strong>Skew Arbitrage:</strong> Exploit the smile dislocation by going long underpriced IV and short overpriced IV.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Surface Hedging Distribution Spectrum Bar */}
-          <div className="hedging-spectrum-wrap">
-            <div className="spectrum-labels">
-              <span className="spec-lbl-green">
-                🟢 Underhedged Valleys: {activeData.hedging_diagnostics?.counts?.underhedged} strikes ({activeData.hedging_diagnostics?.percentages?.underhedged_pct}%) — Cheap Convexity
-              </span>
-              <span className="spec-lbl-slate">
-                ⚖️ Fair Value Balanced: {activeData.hedging_diagnostics?.counts?.balanced} strikes ({activeData.hedging_diagnostics?.percentages?.balanced_pct}%)
-              </span>
-              <span className="spec-lbl-red">
-                🔴 Overhedged Peaks: {activeData.hedging_diagnostics?.counts?.overhedged} strikes ({activeData.hedging_diagnostics?.percentages?.overhedged_pct}%) — Expensive Panic
-              </span>
-            </div>
-            <div className="hedging-bar-track">
-              <div 
-                className="bar-segment bar-underhedged" 
-                style={{ width: `${activeData.hedging_diagnostics?.percentages?.underhedged_pct}%` }} 
-                title="Underhedged: Cheap protection / convexity" 
-              />
-              <div 
-                className="bar-segment bar-balanced" 
-                style={{ width: `${activeData.hedging_diagnostics?.percentages?.balanced_pct}%` }} 
-                title="Balanced: Orderly fair value smile pricing" 
-              />
-              <div 
-                className="bar-segment bar-overhedged" 
-                style={{ width: `${activeData.hedging_diagnostics?.percentages?.overhedged_pct}%` }} 
-                title="Overhedged: Expensive crash puts / call FOMO" 
-              />
-            </div>
-          </div>
-
-          {/* Dealer Positioning & Flow Narrative */}
-          <div className="hedging-dealer-insight">
-            <div className="dealer-insight-title">
-              <Cpu style={{ width: '15px', height: '15px', color: '#00F0FF' }} />
-              <span>Dealer Gamma & Vanna Flow Dynamics:</span>
-            </div>
-            <p className="dealer-insight-text">
-              {activeData.hedging_diagnostics?.dealer_flow_insight}
-            </p>
-          </div>
-
-          {/* Actionable Overhedged vs Underhedged Strike Targets */}
-          <div className="hedging-targets-grid">
-            <div className="hedging-target-col overhedged-col">
-              <div className="col-header">
-                <span className="col-tag red-tag">🔴 OVERHEDGED STRIKES (SELL VOL / CREDIT)</span>
-                <span className="col-sub">Overpriced tail panic wings — Sell premium</span>
-              </div>
-              <div className="target-cards-list">
-                {activeData.hedging_diagnostics?.top_overhedged?.map((item, idx) => (
-                  <div key={idx} className="target-micro-card">
-                    <div className="tmc-top">
-                      <span className="tmc-strike">${item.strike} {item.type === 'otm_put' ? 'PUT' : 'CALL'}</span>
-                      <span className="tmc-exp">{item.expiry} {item.dte ? `(${item.dte}d)` : ''}</span>
-                      <span className="tmc-edge">+{item.dislocation_pct}% Rich</span>
-                    </div>
-                    <div className="tmc-strat">{item.strategy}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="hedging-target-col underhedged-col">
-              <div className="col-header">
-                <span className="col-tag green-tag">🟢 UNDERHEDGED VALLEYS (BUY CONVEXITY)</span>
-                <span className="col-sub">Depressed vol valleys & cheap wings — Buy gamma</span>
-              </div>
-              <div className="target-cards-list">
-                {activeData.hedging_diagnostics?.top_underhedged?.map((item, idx) => (
-                  <div key={idx} className="target-micro-card">
-                    <div className="tmc-top">
-                      <span className="tmc-strike">${item.strike} {item.type === 'otm_put' ? 'PUT' : 'CALL'}</span>
-                      <span className="tmc-exp">{item.expiry} {item.dte ? `(${item.dte}d)` : ''}</span>
-                      <span className="tmc-edge green-edge">{item.dislocation_pct}% Cheap</span>
-                    </div>
-                    <div className="tmc-strat">{item.strategy}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 2. THEN: 3D VOLATILITY SURFACE & DESK KPIS                                */}
+      {/* 1. FIRST: 3D VOLATILITY SURFACE STUDIO & DESK KPIS (SURFACE-FIRST)     */}
       {/* ========================================================================= */}
       <div 
         ref={surfaceCardRef}
@@ -2827,63 +3161,14 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           background: '#0a0e17',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: '16px',
-          padding: '22px',
+          padding: '18px',
           boxShadow: '0 12px 36px rgba(0, 0, 0, 0.5)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '18px'
+          gap: '14px'
         }}
       >
-        {/* Quick Visual Cheat Sheet: How to Read the 3D Volatility Surface */}
-        <div style={{
-          background: 'rgba(15, 23, 42, 0.85)',
-          border: '1px solid rgba(0, 240, 255, 0.25)',
-          borderRadius: '12px',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Info size={18} color="#00F0FF" />
-              <span style={{ color: '#00F0FF', fontFamily: "'JetBrains Mono', monospace", fontWeight: 'bold', fontSize: '13px', textTransform: 'uppercase' }}>
-                How to Read the 3D Volatility Surface ({ticker}):
-              </span>
-            </div>
-            <span style={{ color: '#94a3b8', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>
-              3 Axes Breakdown
-            </span>
-          </div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '12px'
-          }}>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #00F0FF' }}>
-              <strong style={{ color: '#00F0FF', fontSize: '12px', display: 'block', marginBottom: '4px' }}>1. X-Axis (Left-to-Right)</strong>
-              <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
-                <strong>Strike Prices ($):</strong> OTM Puts on the left, ATM Spot (${spot?.toFixed(2)}) in center, OTM Calls on the right.
-              </span>
-            </div>
-
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #fbbf24' }}>
-              <strong style={{ color: '#fbbf24', fontSize: '12px', display: 'block', marginBottom: '4px' }}>2. Y-Axis (Front-to-Back)</strong>
-              <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
-                <strong>Expiration Dates ({horizon_meta?.label || '1–2 Years'}):</strong> Near-term weeklies in front out to {horizon_meta?.max_dte || 730}D LEAPS in back.
-              </span>
-            </div>
-
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
-              <strong style={{ color: '#10b981', fontSize: '12px', display: 'block', marginBottom: '4px' }}>3. Z-Axis (Vertical Height)</strong>
-              <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
-                <strong>Implied Volatility (%):</strong> Higher peaks = expensive option premium. Low valleys = cheap option premium.
-              </span>
-            </div>
-          </div>
-        </div>
-        {/* Section Title + Multi-Year Horizon Selector (1M, 3M, 6M, 1Y, 2Y, All LEAPS) */}
+        {/* Studio Header: Title + Calibration Proof Pill + Axes Guide + Horizon Selector */}
         <div 
           className="vol-surface-header"
           style={{
@@ -2891,51 +3176,120 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: '12px',
-            paddingBottom: '14px',
+            gap: '10px',
+            paddingBottom: '12px',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
           }}
         >
-          <div className="vol-surface-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <Compass style={{ width: '18px', height: '18px', color: '#00F0FF' }} />
-            <h3 style={{ margin: 0, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#00F0FF' }}>
-              Quantitative Volatility Surface & Smile Topology ({horizon_meta?.label || '2 Years'})
+          <div className="vol-surface-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <Compass style={{ width: '17px', height: '17px', color: '#00F0FF' }} />
+            <h3 style={{ margin: 0, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#00F0FF' }}>
+              3D Volatility Surface Studio · {ticker} ({horizon_meta?.label || '2 Years'})
             </h3>
             <span style={{
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '11px',
-              padding: '3px 9px',
+              fontSize: '10.5px',
+              padding: '3px 8px',
               borderRadius: '6px',
               background: 'rgba(0, 240, 255, 0.12)',
               border: '1px solid rgba(0, 240, 255, 0.35)',
               color: '#00F0FF',
               fontWeight: 700
             }}>
-              {availableExpirations.length} Expirations · {horizon_meta?.min_dte || 1}D to {horizon_meta?.max_dte || 730}D ({availableExpirations[0]} → {availableExpirations[availableExpirations.length - 1]})
+              {availableExpirations.length} Exps · {horizon_meta?.min_dte || 1}D–{horizon_meta?.max_dte || 730}D
             </span>
+
+            {activeData.calibration_metrics && (
+              <button
+                type="button"
+                onClick={() => setShowCalibrationPanel(prev => !prev)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '3px 9px',
+                  borderRadius: '6px',
+                  border: showCalibrationPanel ? '1px solid #00E676' : '1px solid rgba(16, 185, 129, 0.4)',
+                  background: showCalibrationPanel ? 'rgba(16, 185, 129, 0.22)' : 'rgba(16, 185, 129, 0.10)',
+                  color: '#34d399',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '10.5px',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+                title="Inspect live SVI Arbitrage-Free Calibration Scorecard & 5Y Empirical Benchmarks"
+              >
+                <ShieldCheck size={12} />
+                SVI Arb-Free · RMSE {activeData.calibration_metrics.holdout_rmse_vp}v · No-Arb {activeData.calibration_metrics.butterfly_arb_free_pct}%
+                {showCalibrationPanel ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+            )}
+
+            <button
+              type="button"
+              data-testid="vol-surface-info-guide-btn"
+              onClick={() => setShowAxesGuide(prev => !prev)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                border: showAxesGuide ? '1px solid #00F0FF' : '1px solid rgba(255,255,255,0.14)',
+                background: showAxesGuide ? 'rgba(0, 240, 255, 0.14)' : 'rgba(255,255,255,0.04)',
+                color: showAxesGuide ? '#00F0FF' : '#94a3b8',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '10.5px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+              title="Toggle Surface, Axes & Local Volatility Info Guide"
+            >
+              <Info size={12} />
+              Info Guide
+            </button>
+
+            <a
+              href="#trade-ideas-section"
+              onClick={(e) => {
+                e.preventDefault();
+                const el = document.getElementById('trade-ideas-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '10.5px',
+                fontWeight: 700,
+                color: '#38bdf8',
+                textDecoration: 'underline',
+                textUnderlineOffset: '2px'
+              }}
+            >
+              Trade Ideas ↓
+            </a>
           </div>
 
           {/* Interactive Tenor Horizon Selector (1M, 3M, 6M, 1Y, 2Y, All LEAPS) */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '5px',
             flexWrap: 'wrap',
             background: 'rgba(15, 23, 42, 0.92)',
-            padding: '5px 8px',
-            borderRadius: '10px',
-            border: '1px solid rgba(0, 240, 255, 0.3)'
+            padding: '4px 7px',
+            borderRadius: '8px',
+            border: '1px solid rgba(0, 240, 255, 0.28)'
           }}>
             <span style={{
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '11px',
+              fontSize: '10px',
               fontWeight: 800,
               color: '#94a3b8',
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              paddingLeft: '4px'
+              letterSpacing: '0.04em',
+              paddingLeft: '2px'
             }}>
-              ⏳ Surface Horizon:
+              ⏳ Horizon:
             </span>
             {HORIZON_OPTIONS.map(opt => {
               const isSelected = tenorHorizon === opt.id;
@@ -2951,10 +3305,10 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                   title={opt.desc}
                   style={{
                     fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: '11px',
+                    fontSize: '10.5px',
                     fontWeight: 800,
-                    padding: '5px 11px',
-                    borderRadius: '6px',
+                    padding: '4px 9px',
+                    borderRadius: '5px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                     border: isSelected ? '1px solid #00F0FF' : '1px solid rgba(255,255,255,0.08)',
@@ -2962,7 +3316,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                       ? 'linear-gradient(135deg, rgba(0, 240, 255, 0.28), rgba(59, 130, 246, 0.32))'
                       : 'rgba(255, 255, 255, 0.04)',
                     color: isSelected ? '#ffffff' : '#94a3b8',
-                    boxShadow: isSelected ? '0 0 12px rgba(0, 240, 255, 0.25)' : 'none'
+                    boxShadow: isSelected ? '0 0 10px rgba(0, 240, 255, 0.25)' : 'none'
                   }}
                 >
                   {opt.label}
@@ -2972,43 +3326,221 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           </div>
         </div>
 
-        {/* QUANT VOLATILITY DESK KPI STRIP */}
-        <div 
-          className="vol-kpis-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '12px'
-          }}
-        >
+        {/* Collapsible Live SVI Calibration & 5Y Multi-Backtest Scorecard Drawer */}
+        {showCalibrationPanel && activeData.calibration_metrics && (() => {
+          const cm = activeData.calibration_metrics;
+          const eb = cm.empirical_benchmarks || {};
+          return (
+            <div className="vol-calibration-drawer">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', fontWeight: 800, color: '#34d399' }}>
+                  🔬 LIVE SURFACE CALIBRATION & 5-YEAR EMPIRICAL SCORECARD ({ticker})
+                </span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10.5px', color: '#94a3b8' }}>
+                  {cm.model_name} · {cm.slices_calibrated} slices · {cm.total_contracts_used} live B76 contracts ({cm.fit_ms_per_slice} ms/slice)
+                </span>
+              </div>
+              <div className="vol-cal-grid">
+                <div className="vol-cal-metric">
+                  <span className="k">Holdout RMSE / MedAE</span>
+                  <span className="v">{cm.holdout_rmse_vp}v / {cm.holdout_medae_vp}v</span>
+                  <span className="s">{cm.holdout_strikes_tested} unseen test strikes (Legacy: 5.35v)</span>
+                </div>
+                <div className="vol-cal-metric">
+                  <span className="k">Bid–Ask Containment</span>
+                  <span className="v" style={{ color: '#00F0FF' }}>{cm.bid_ask_hit_pct}%</span>
+                  <span className="s">vs Legacy 21.7% (Direct B76 Mid Solver)</span>
+                </div>
+                <div className="vol-cal-metric">
+                  <span className="k">No-Arbitrage Guarantees</span>
+                  <span className="v">{cm.butterfly_arb_free_pct}% Bfly · {cm.calendar_arb_free_pct}% Cal</span>
+                  <span className="s">Dupire σ_loc Stable: {cm.dupire_stable_pct}%</span>
+                </div>
+                <div className="vol-cal-metric">
+                  <span className="k">ATM Put-Call Parity Gap</span>
+                  <span className="v" style={{ color: '#fbbf24' }}>{cm.atm_parity_gap_vp}v</span>
+                  <span className="s">Legacy Vendor Gap was {cm.legacy_atm_gap_vp}v (Solved F_T=${cm.spot_parity_reconciled})</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.07)', fontFamily: "'JetBrains Mono', monospace", fontSize: '10.5px', color: '#cbd5e1' }}>
+                <span style={{ color: '#00F0FF', fontWeight: 800 }}>5Y Empirical Strategy Backtest ({eb.sample_period}):</span>
+                <span>• Contango VRP≥+3v Carry: <strong style={{ color: '#34d399' }}>{eb.short_vrp3_contango_win_pct}% win ({Number(eb.short_vrp3_contango_carry_vp) >= 0 ? '+' : ''}{Number(eb.short_vrp3_contango_carry_vp || 0).toFixed(2)}v avg)</strong></span>
+                <span>• Backwardation 10D Crush: <strong style={{ color: '#fbbf24' }}>{eb.backwardation_10d_crush_pct}% ({eb.backwardation_10d_avg_crush_vp}v avg)</strong></span>
+                <span>• Low IVP≤15% 21D Expand: <strong style={{ color: '#38bdf8' }}>{eb.low_ivp_le15_expand_pct}%</strong></span>
+                <span>• RV Estimator: <strong style={{ color: '#c084fc' }}>{eb.rv_winner}</strong></span>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Collapsible Surface, Axes, Local Vol & Heatmap Lenses Info Guide */}
+        {showAxesGuide && (
+          <div
+            data-testid="vol-surface-info-guide-panel"
+            style={{
+              background: 'rgba(15, 23, 42, 0.85)',
+              border: '1px solid rgba(0, 240, 255, 0.25)',
+              borderRadius: '12px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Info size={16} color="#00F0FF" />
+                <span style={{ color: '#00F0FF', fontFamily: "'JetBrains Mono', monospace", fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase' }}>
+                  3D Vol Surface, Dupire Local Vol &amp; Heatmap Info Guide ({ticker}):
+                </span>
+              </div>
+              <span style={{ color: '#94a3b8', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>
+                Axes · VRP · SVI · Local Vol · Playbooks
+              </span>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '10px'
+            }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '9px 11px', borderRadius: '8px', borderLeft: '3px solid #00F0FF' }}>
+                <strong style={{ color: '#00F0FF', fontSize: '11.5px', display: 'block', marginBottom: '3px' }}>1. X-Axis (Left-to-Right)</strong>
+                <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.35', display: 'block' }}>
+                  <strong>Strike Prices ($):</strong> OTM Puts left, ATM Spot (${spot?.toFixed(2)}) center, OTM Calls right.
+                </span>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '9px 11px', borderRadius: '8px', borderLeft: '3px solid #fbbf24' }}>
+                <strong style={{ color: '#fbbf24', fontSize: '11.5px', display: 'block', marginBottom: '3px' }}>2. Y-Axis (Front-to-Back)</strong>
+                <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.35', display: 'block' }}>
+                  <strong>Expiration Dates ({horizon_meta?.label || '1–2 Years'}):</strong> Near-term weeklies in front out to {horizon_meta?.max_dte || 730}D LEAPS in back.
+                </span>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '9px 11px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+                <strong style={{ color: '#10b981', fontSize: '11.5px', display: 'block', marginBottom: '3px' }}>3. Z-Axis (Vertical Height)</strong>
+                <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.35', display: 'block' }}>
+                  <strong>Implied Volatility (%):</strong> Higher peaks = expensive premium. Valleys = cheap convexity.
+                </span>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '10px'
+            }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '9px 11px', borderRadius: '8px', borderLeft: '3px solid #f59e0b' }}>
+                <strong style={{ color: '#fbbf24', fontSize: '11.5px', display: 'block', marginBottom: '3px' }}>4. What is VRP (Volatility Risk Premium)?</strong>
+                <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                  <strong>VRP = Implied Vol (IV) − HAR-YZ Realized Vol (RV):</strong> The insurance markup buyers pay over actual stock movement. <strong>VRP &gt; 0</strong> = expensive options (sell spreads/premium); <strong>VRP &lt; 0</strong> = discounted gamma (buy debit spreads/convexity).
+                </span>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '9px 11px', borderRadius: '8px', borderLeft: '3px solid #34d399' }}>
+                <strong style={{ color: '#34d399', fontSize: '11.5px', display: 'block', marginBottom: '3px' }}>5. What is SVI (Stochastic Volatility Inspired)?</strong>
+                <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                  Gatheral&apos;s 5-parameter arbitrage-free smile curve (<code>a, b, ρ, m, σ</code>) fitting fair total variance across strikes. <strong>SVI Edge</strong> measures <code>Market IV − SVI Fair − Half Spread</code> (sub-8Δ penny wings gated) to isolate Overhedged (+) vs. Underhedged (−) strikes.
+                </span>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '9px 11px', borderRadius: '8px', borderLeft: '3px solid #38bdf8' }}>
+                <strong style={{ color: '#38bdf8', fontSize: '11.5px', display: 'block', marginBottom: '3px' }}>6. What is Local Volatility (σ_loc(K, T))?</strong>
+                <span style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.4', display: 'block' }}>
+                  Instantaneous future volatility priced <strong>at date T and price K</strong> (stripped of prior path). Think of <strong>IV</strong> as <em>average speed</em> to T, vs. <strong>Local Vol</strong> as <em>instantaneous speed</em> right at (K, T) — ~2× steeper downside skew and sharp post-event drops.
+                </span>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(2, 6, 23, 0.65)',
+              border: '1px solid rgba(56, 189, 248, 0.2)',
+              borderRadius: '8px',
+              padding: '8px 11px',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '10.5px',
+              color: '#94a3b8',
+              lineHeight: '1.5',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px'
+            }}>
+              <div><strong style={{ color: '#fbbf24' }}>VRP:</strong> IV(T) − HAR-YZ RV(T) · <strong style={{ color: '#34d399' }}>SVI Smile:</strong> w(k) = a + b · [ ρ(k − m) + √((k − m)² + σ²) ]</div>
+              <div><strong style={{ color: '#38bdf8' }}>Dupire Local Vol (w = σ_IV²·T):</strong> σ_loc²(k, T) = (∂w/∂T) / [ (1 − k·w'/(2w))² − (w'²/4)(1/w + 1/4) + w''/2 ] · <span style={{ color: '#34d399' }}>Butterfly g(k) ≥ 0 &amp; PAVA ∂w/∂T ≥ 0 enforced.</span></div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '2px' }}>
+              <span style={{ color: '#34d399', fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>
+                How to Use This Data to Take a Trade (4 Core Playbooks + Gate):
+              </span>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '8px'
+              }}>
+                <div style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.28)', padding: '8px 10px', borderRadius: '8px' }}>
+                  <strong style={{ color: '#fb923c', fontSize: '11px', display: 'block', marginBottom: '3px' }}>A. Sell Rich VRP / Overhedge Peak</strong>
+                  <span style={{ color: '#cbd5e1', fontSize: '10.5px', lineHeight: '1.4', display: 'block' }}>
+                    <strong>Trigger:</strong> VRP ≥ +2.5v &amp; SVI Edge ≥ +0.40v (<code>RICH</code> chip). <strong>Trade:</strong> Short Vertical Credit Spread or Broken-Wing Fly selling the rich strike vs. adjacent fair wing; exit at 40–60% credit.
+                  </span>
+                </div>
+
+                <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.28)', padding: '8px 10px', borderRadius: '8px' }}>
+                  <strong style={{ color: '#34d399', fontSize: '11px', display: 'block', marginBottom: '3px' }}>B. Buy Cheap Convexity / Post-Crush</strong>
+                  <span style={{ color: '#cbd5e1', fontSize: '10.5px', lineHeight: '1.4', display: 'block' }}>
+                    <strong>Trigger:</strong> VRP ≤ −1.5v or <code>CHEAP</code> chip (Edge ≤ −0.40v) after a front vol crush. <strong>Trade:</strong> Long Debit Spread, Calendar, or 1×2 Backspread owning the discounted 15Δ–40Δ valley leg.
+                  </span>
+                </div>
+
+                <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.28)', padding: '8px 10px', borderRadius: '8px' }}>
+                  <strong style={{ color: '#38bdf8', fontSize: '11px', display: 'block', marginBottom: '3px' }}>C. Local Vol Event Cliff Calendar</strong>
+                  <span style={{ color: '#cbd5e1', fontSize: '10.5px', lineHeight: '1.4', display: 'block' }}>
+                    <strong>Trigger:</strong> Hot pre-event Local Vol row above cool post-event row (Term Twist ≥ +2.5v). <strong>Trade:</strong> Sell hot front expiry vs. cooler back expiry; take profits on post-event crush.
+                  </span>
+                </div>
+
+                <div style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.28)', padding: '8px 10px', borderRadius: '8px' }}>
+                  <strong style={{ color: '#c084fc', fontSize: '11px', display: 'block', marginBottom: '3px' }}>D. 4-Gate Execution Checklist</strong>
+                  <span style={{ color: '#cbd5e1', fontSize: '10.5px', lineHeight: '1.4', display: 'block' }}>
+                    1) Align with HAR-YZ VRP · 2) Check 1D–10D Interday <code>Sticky-Δ</code> trend · 3) Require <code>Tradable</code> liquidity &amp; tight Bid/Ask · 4) Size by B76 Vega/Theta (≤ 1–2% risk) &amp; Inspect on 3D.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* QUANT VOLATILITY DESK KPI STRIP (8 Tiles, Clean 4x2 Grid, Zero Clipping) */}
+        <div className="vol-kpis-grid">
           {/* SPOT PRICE */}
           <div className="vol-kpi-tile">
-            <span className="vol-kpi-label">Spot Price</span>
+            <span className="vol-kpi-label">Parity Spot</span>
             <span className="vol-kpi-val">${spot?.toFixed(2)}</span>
-            <span className="vol-kpi-sub">Underlying Asset</span>
+            <span className="vol-kpi-sub">B76 Forward Anchor</span>
           </div>
 
           {/* 30D ATM IV */}
           <div className="vol-kpi-tile featured">
-            <span className="vol-kpi-label">30D ATM IV</span>
+            <span className="vol-kpi-label">30D ATM IV {desk_metrics?.iv_percentile_1y !== undefined ? `(IVP ${Math.round(desk_metrics.iv_percentile_1y)}%)` : ''}</span>
             <span className="vol-kpi-val cyan">
               {desk_metrics?.atm_iv_30d?.toFixed(1)}%
             </span>
-            <span className="vol-kpi-sub cyan">Market Pricing</span>
+            <span className="vol-kpi-sub cyan">SVI Calibrated ATM</span>
           </div>
 
-          {/* 30D REALIZED HV & VOL RISK PREMIUM (VRP) */}
+          {/* 30D REALIZED HV (YANG-ZHANG) & VRP */}
           {(() => {
             const vrp = (desk_metrics?.atm_iv_30d !== undefined && desk_metrics?.realized_hv_30d !== undefined)
               ? Number((desk_metrics.atm_iv_30d - desk_metrics.realized_hv_30d).toFixed(1))
               : null;
-            const vrpSign = vrp !== null ? (vrp >= 0 ? `+${vrp}%` : `${vrp}%`) : null;
-            const isRich = vrp !== null && vrp > 1.5;
+            const vrpSign = vrp !== null ? (vrp >= 0 ? `+${vrp}v` : `${vrp}v`) : null;
+            const isRich = vrp !== null && vrp >= 3.0;
             const isCheap = vrp !== null && vrp < -1.5;
             return (
-              <div className="vol-kpi-tile" title="30D Trailing Realized Volatility benchmark vs current 30D ATM Implied Volatility (Volatility Risk Premium)">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="vol-kpi-label">30D Realized HV</span>
+              <div className="vol-kpi-tile" title="30D Yang-Zhang OHLC Realized Volatility vs 30D ATM IV (Close-to-Close: shows unbiased gap-adjusted RV)">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
+                  <span className="vol-kpi-label">30D YZ Realized HV</span>
                   {vrpSign && (
                     <span 
                       style={{
@@ -3017,6 +3549,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                         fontWeight: 700,
                         padding: '1px 5px',
                         borderRadius: '4px',
+                        whiteSpace: 'nowrap',
                         background: isRich ? 'rgba(244, 63, 94, 0.15)' : (isCheap ? 'rgba(0, 230, 118, 0.15)' : 'rgba(251, 191, 36, 0.15)'),
                         color: isRich ? '#f43f5e' : (isCheap ? '#00E676' : '#fbbf24'),
                         border: `1px solid ${isRich ? 'rgba(244, 63, 94, 0.3)' : (isCheap ? 'rgba(0, 230, 118, 0.3)' : 'rgba(251, 191, 36, 0.3)')}`
@@ -3036,7 +3569,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                     fontWeight: isRich || isCheap ? 600 : 400
                   }}
                 >
-                  {isRich ? `${vrpSign} Overpriced (Sell Vol)` : (isCheap ? `${vrpSign} Cheap Vega (Buy Vol)` : 'Equilibrium (Fair Vol)')}
+                  {isRich ? `${vrpSign} Rich (Sell Vol)` : (isCheap ? `${vrpSign} Discounted` : `Equilibrium (C-C ${desk_metrics?.realized_hv_cc_30d || '--'}%)`)}
                 </span>
               </div>
             );
@@ -3128,8 +3661,8 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
         >
           <div className="vol-view-tabs">
             <button
-              onClick={() => { setActiveViewMode('3d_surface'); setSurfaceColor('Plasma'); }}
-              className={`vol-view-btn ${activeViewMode === '3d_surface' && surfaceColor !== 'HedgingRegimes' ? 'active' : ''}`}
+              onClick={() => { setActiveViewMode('3d_surface'); if (surfaceColor === 'HedgingRegimes' || surfaceColor === 'LocalVol') setSurfaceColor('Plasma'); }}
+              className={`vol-view-btn ${activeViewMode === '3d_surface' && surfaceColor !== 'HedgingRegimes' && surfaceColor !== 'LocalVol' ? 'active' : ''}`}
             >
               3D Vol Surface
             </button>
@@ -3144,6 +3677,18 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
               }}
             >
               🛡️ Overhedge / Underhedge 3D
+            </button>
+            <button
+              onClick={() => { setActiveViewMode('3d_surface'); setSurfaceColor('LocalVol'); }}
+              className={`vol-view-btn ${activeViewMode === '3d_surface' && surfaceColor === 'LocalVol' ? 'active' : ''}`}
+              style={{
+                borderColor: surfaceColor === 'LocalVol' ? '#f59e0b' : 'rgba(245, 158, 11, 0.35)',
+                background: surfaceColor === 'LocalVol' ? 'rgba(245, 158, 11, 0.22)' : 'rgba(245, 158, 11, 0.06)',
+                color: surfaceColor === 'LocalVol' ? '#fbbf24' : '#fcd34d',
+                fontWeight: 800
+              }}
+            >
+              🔥 Dupire Local Vol 3D
             </button>
             <button
               onClick={() => setActiveViewMode('2d_skew')}
@@ -3200,77 +3745,109 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
             </select>
           )}
 
-          {activeViewMode === '3d_surface' && (
-            <div className="vol-legend-strip" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <div className="vol-shading-quick-toggle" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <button
-                  type="button"
-                  onClick={() => setSurfaceColor('Plasma')}
-                  style={{
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    border: 'none',
-                    background: surfaceColor !== 'HedgingRegimes' ? '#0284c7' : 'transparent',
-                    color: surfaceColor !== 'HedgingRegimes' ? '#fff' : '#94a3b8',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  🌈 Raw IV
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSurfaceColor('HedgingRegimes')}
-                  style={{
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    border: 'none',
-                    background: surfaceColor === 'HedgingRegimes' ? 'linear-gradient(90deg, #ef4444, #10b981)' : 'transparent',
-                    color: surfaceColor === 'HedgingRegimes' ? '#fff' : '#94a3b8',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  🛡️ Over/Under Regimes
-                </button>
-              </div>
+          {(activeViewMode === '3d_surface' || activeViewMode === 'heatmap') && (
+            <div className="vol-legend-strip" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {activeViewMode === '3d_surface' && (
+                <div className="vol-shading-quick-toggle" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSurfaceColor('Plasma')}
+                    style={{
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      background: (surfaceColor !== 'HedgingRegimes' && surfaceColor !== 'LocalVol') ? '#0284c7' : 'transparent',
+                      color: (surfaceColor !== 'HedgingRegimes' && surfaceColor !== 'LocalVol') ? '#fff' : '#94a3b8',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🌈 Raw IV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurfaceColor('HedgingRegimes')}
+                    style={{
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      background: surfaceColor === 'HedgingRegimes' ? 'linear-gradient(90deg, #ef4444, #10b981)' : 'transparent',
+                      color: surfaceColor === 'HedgingRegimes' ? '#fff' : '#94a3b8',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🛡️ Over/Under
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurfaceColor('LocalVol')}
+                    style={{
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      background: surfaceColor === 'LocalVol' ? 'rgba(245, 158, 11, 0.35)' : 'transparent',
+                      color: surfaceColor === 'LocalVol' ? '#fbbf24' : '#94a3b8',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                    title="Shade 3D Manifold by closed-form Dupire Local Volatility σ_loc(K, T)"
+                  >
+                    🔥 Local Vol
+                  </button>
+                </div>
+              )}
 
-              {/* 3D Ghost Surface & ΔIV Shift Overlay Selector (Last Few Days Vol Movement on 3D Surface) */}
+              {/* Ghost Surface & Intraday / Interday ΔIV Motion Selector (shared across 3D Surface & 2D Heatmap) */}
               <div
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '4px',
+                  flexWrap: 'wrap',
                   background: 'rgba(15, 23, 42, 0.85)',
                   padding: '3px 6px',
                   borderRadius: '7px',
                   border: volMoveLookback !== 'OFF' ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid rgba(255, 255, 255, 0.12)',
                   fontFamily: "'JetBrains Mono', monospace"
                 }}
-                title="Overlay a translucent 3D Ghost Surface from 1D, 3D, 5D, or 10D ago to see how implied volatility has shifted across strikes and tenors"
+                title="Inspect real Intraday (09:30 Open → Close/Live) or Multi-Day (1D–10D) implied volatility movement"
               >
                 <span style={{ fontSize: '10px', color: '#7dd3fc', fontWeight: 800, marginRight: '2px' }}>
-                  👻 3D Vol Move:
+                  👻 Vol Move:
                 </span>
                 {[
                   { id: 'OFF', label: 'Off' },
-                  { id: '1D', label: '1D Ago' },
-                  { id: '3D', label: '3D Ago' },
-                  { id: '5D', label: '5D Ago' },
-                  { id: '10D', label: '10D Ago' }
+                  { id: 'INTRADAY', label: '⏱ Intraday' },
+                  { id: '1D', label: '1D' },
+                  { id: '2D', label: '2D' },
+                  { id: '3D', label: '3D' },
+                  { id: '5D', label: '5D' },
+                  { id: '10D', label: '10D' }
                 ].map(opt => {
                   const isSelected = volMoveLookback === opt.id;
+                  const intraDisabled = opt.id === 'INTRADAY' && !data?.intraday_iv_motion?.available;
                   return (
                     <button
                       key={opt.id}
                       type="button"
+                      disabled={intraDisabled}
                       onClick={() => {
+                        setIsMotionPlaying(false);
                         setVolMoveLookback(opt.id);
                         if (opt.id === 'OFF') {
                           setVolMoveColorByDelta(false);
                           setInterdayShiftMode(false);
+                        } else {
+                          if (opt.id === 'INTRADAY') {
+                            setIntradayFrameIdx(-1);
+                            setInterdayShiftMode(true);
+                          } else if (activeViewMode === 'heatmap') {
+                            setInterdayShiftMode(true);
+                          }
                         }
                       }}
                       style={{
@@ -3278,10 +3855,10 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                         borderRadius: '4px',
                         border: isSelected ? '1px solid rgba(56, 189, 248, 0.6)' : 'none',
                         background: isSelected ? 'rgba(56, 189, 248, 0.22)' : 'transparent',
-                        color: isSelected ? '#38bdf8' : '#94a3b8',
+                        color: intraDisabled ? '#475569' : (isSelected ? '#38bdf8' : '#94a3b8'),
                         fontSize: '10.5px',
                         fontWeight: isSelected ? 800 : 600,
-                        cursor: 'pointer'
+                        cursor: intraDisabled ? 'not-allowed' : 'pointer'
                       }}
                     >
                       {opt.label}
@@ -3290,11 +3867,18 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                 })}
                 <button
                   type="button"
+                  data-testid="toggle-motion-surface"
                   onClick={() => {
                     const next = !interdayShiftMode;
+                    setIsMotionPlaying(false);
                     setInterdayShiftMode(next);
                     if (next && volMoveLookback === 'OFF') {
-                      setVolMoveLookback('1D');
+                      if (data?.intraday_iv_motion?.available) {
+                        setVolMoveLookback('INTRADAY');
+                        setIntradayFrameIdx(-1);
+                      } else {
+                        setVolMoveLookback('1D');
+                      }
                     }
                   }}
                   style={{
@@ -3308,11 +3892,11 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                     fontWeight: 800,
                     cursor: 'pointer'
                   }}
-                  title="Plot Z-Axis as Interday ΔIV Shift (Today - Prior Day) around a 0.0% Zero-Shift plane"
+                  title="Plot real ΔIV Motion Surface (Intraday 30m trajectory or 1D–10D bars) with 3D flow vectors"
                 >
-                  ⚡ Interday ΔIV Surface: {interdayShiftMode ? 'ON' : 'OFF'}
+                  ⚡ ΔIV Motion Surface: {interdayShiftMode ? 'ON' : 'OFF'}
                 </button>
-                {volMoveLookback !== 'OFF' && !interdayShiftMode && (
+                {activeViewMode === '3d_surface' && volMoveLookback !== 'OFF' && !interdayShiftMode && (
                   <button
                     type="button"
                     onClick={() => setVolMoveColorByDelta(prev => !prev)}
@@ -3334,124 +3918,89 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                 )}
               </div>
 
-              {/* Anti-Overlap 3D Pin Labels Toggle */}
-              <button
-                type="button"
-                onClick={() => setShow3dLabels(prev => !prev)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '4px 9px',
-                  borderRadius: '6px',
-                  border: show3dLabels ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
-                  background: show3dLabels ? 'rgba(0, 240, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)',
-                  color: show3dLabels ? '#00F0FF' : '#94a3b8',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: "'JetBrains Mono', monospace"
-                }}
-                title="Toggle text labels on 3D pins to prevent clutter"
-              >
-                <span>🏷️ Labels: {show3dLabels ? 'ON' : 'OFF'}</span>
-              </button>
-
-              {/* Exact Kinks vs Smooth Manifold Toggle */}
-              <button
-                type="button"
-                onClick={() => setSurfacePrecision(prev => (prev === 'exact' ? 'smooth' : 'exact'))}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '4px 9px',
-                  borderRadius: '6px',
-                  border: surfacePrecision === 'exact' ? '1px solid rgba(236, 72, 153, 0.55)' : '1px solid rgba(255, 255, 255, 0.12)',
-                  background: surfacePrecision === 'exact' ? 'rgba(236, 72, 153, 0.16)' : 'rgba(255, 255, 255, 0.04)',
-                  color: surfacePrecision === 'exact' ? '#f472b6' : '#94a3b8',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  fontFamily: "'JetBrains Mono', monospace"
-                }}
-                title="Exact Kinks disables cross-tenor blur so earnings-week humps and spikes remain 100% sharp"
-              >
-                <span>{surfacePrecision === 'exact' ? '⚡ Exact Kinks' : '🌊 Smooth'}</span>
-              </button>
-
-              {/* 3D Vertical Z-Relief Toggle */}
-              <button
-                type="button"
-                onClick={() => setZRelief(prev => (prev === '1.55' ? '1.15' : '1.55'))}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '4px 9px',
-                  borderRadius: '6px',
-                  border: zRelief === '1.55' ? '1px solid rgba(251, 191, 36, 0.55)' : '1px solid rgba(255, 255, 255, 0.12)',
-                  background: zRelief === '1.55' ? 'rgba(251, 191, 36, 0.14)' : 'rgba(255, 255, 255, 0.04)',
-                  color: zRelief === '1.55' ? '#fbbf24' : '#cbd5e1',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  fontFamily: "'JetBrains Mono', monospace"
-                }}
-                title="Boost 3D vertical elevation to inspect earnings humps and wing skews"
-              >
-                <span>⛰️ Relief {zRelief === '1.55' ? '1.5x' : '1.1x'}</span>
-              </button>
-              {surfaceColor === 'HedgingRegimes' ? (
+              {activeViewMode === '3d_surface' && (
                 <>
-                  <div className="vol-legend-item">
-                    <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444', marginRight: '5px' }} />
-                    🔴 Overhedged Peaks
-                  </div>
-                  <div className="vol-legend-item">
-                    <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: '#334155', marginRight: '5px' }} />
-                    ⚖️ Fair Value Smile
-                  </div>
-                  <div className="vol-legend-item">
-                    <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', marginRight: '5px' }} />
-                    🟢 Underhedged Valleys
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="vol-legend-item">
-                    <span className="vol-legend-dot atm" /> ATM Spine
-                  </div>
-                  <div className="vol-legend-item">
-                    <span className="vol-legend-dot overpriced" /> Overpriced
-                  </div>
-                  <div className="vol-legend-item">
-                    <span className="vol-legend-dot underpriced" /> Underpriced
-                  </div>
+                  {/* Anti-Overlap 3D Pin Labels Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShow3dLabels(prev => !prev)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      padding: '4px 9px',
+                      borderRadius: '6px',
+                      border: show3dLabels ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                      background: show3dLabels ? 'rgba(0, 240, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+                      color: show3dLabels ? '#00F0FF' : '#94a3b8',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      fontFamily: "'JetBrains Mono', monospace"
+                    }}
+                    title="Toggle text labels on 3D pins to prevent clutter"
+                  >
+                    <span>🏷️ Labels: {show3dLabels ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  {/* Exact Kinks vs Smooth Manifold Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setSurfacePrecision(prev => (prev === 'exact' ? 'smooth' : 'exact'))}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      padding: '4px 9px',
+                      borderRadius: '6px',
+                      border: surfacePrecision === 'exact' ? '1px solid rgba(236, 72, 153, 0.55)' : '1px solid rgba(255, 255, 255, 0.12)',
+                      background: surfacePrecision === 'exact' ? 'rgba(236, 72, 153, 0.16)' : 'rgba(255, 255, 255, 0.04)',
+                      color: surfacePrecision === 'exact' ? '#f472b6' : '#94a3b8',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      fontFamily: "'JetBrains Mono', monospace"
+                    }}
+                    title="Exact Kinks disables cross-tenor blur so earnings-week humps and spikes remain 100% sharp"
+                  >
+                    <span>{surfacePrecision === 'exact' ? '⚡ Exact Kinks' : '🌊 Smooth'}</span>
+                  </button>
+
+                  {/* 3D Vertical Z-Relief Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setZRelief(prev => (prev === '1.55' ? '1.15' : '1.55'))}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      padding: '4px 9px',
+                      borderRadius: '6px',
+                      border: zRelief === '1.55' ? '1px solid rgba(251, 191, 36, 0.55)' : '1px solid rgba(255, 255, 255, 0.12)',
+                      background: zRelief === '1.55' ? 'rgba(251, 191, 36, 0.14)' : 'rgba(255, 255, 255, 0.04)',
+                      color: zRelief === '1.55' ? '#fbbf24' : '#cbd5e1',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      fontFamily: "'JetBrains Mono', monospace"
+                    }}
+                    title="Boost 3D vertical elevation to inspect earnings humps and wing skews"
+                  >
+                    <span>⛰️ Relief {zRelief === '1.55' ? '1.5x' : '1.1x'}</span>
+                  </button>
                 </>
               )}
-              {focusedHotspot && (
-                <span className="vol-focus-badge">
-                  🎯 Focus Locked: {focusedHotspot.expiry} (${focusedHotspot.strike})
-                </span>
-              )}
-            </div>
-          )}
 
-          {activeViewMode === 'heatmap' && (
-            <div className="vol-legend-strip">
-              <div className="vol-legend-item">
-                <span style={{ display: 'inline-block', width: '9px', height: '9px', borderRadius: '50%', border: '2px solid #00F0FF', marginRight: '5px' }} />
-                🕳️ Air Pocket
-              </div>
-              <div className="vol-legend-item">
-                <span style={{ display: 'inline-block', width: '12px', height: '2px', borderTop: '2px dashed #00F0FF', marginRight: '5px' }} />
-                Spot Level (${spot?.toFixed(2)})
-              </div>
               {focusedHotspot && (
-                <span className="vol-focus-badge">
-                  🎯 Target Locked: {focusedHotspot.expiry} (${focusedHotspot.strike})
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setFocusedHotspot(null)}
+                  className="vol-focus-badge"
+                  style={{ cursor: 'pointer', border: '1px solid rgba(0, 240, 255, 0.5)' }}
+                  title="Click to clear Focus Lock"
+                >
+                  🎯 Target: {focusedHotspot.expiry} (${focusedHotspot.strike}) ×
+                </button>
               )}
             </div>
           )}
@@ -3644,6 +4193,24 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                   <span style={{ padding: '3px 8px', borderRadius: '5px', background: 'rgba(0,240,255,0.12)', border: '1px solid rgba(0,240,255,0.3)', color: '#00F0FF' }}>
                     25Δ Skew: <strong>{(activeTs.skew_25d ?? desk_metrics?.skew_spread ?? 0) >= 0 ? '+' : ''}{activeTs.skew_25d ?? desk_metrics?.skew_spread ?? 0}%</strong>
                   </span>
+                  <button
+                    type="button"
+                    data-testid="svi-chart-info-toggle"
+                    onClick={() => setShowSviChartInfo(v => !v)}
+                    style={{
+                      padding: '3px 9px',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      border: `1px solid ${showSviChartInfo ? '#fbbf24' : 'rgba(148, 163, 184, 0.3)'}`,
+                      background: showSviChartInfo ? 'rgba(251, 191, 36, 0.18)' : 'rgba(15, 23, 42, 0.75)',
+                      color: showSviChartInfo ? '#fde68a' : '#94a3b8'
+                    }}
+                  >
+                    🏷️ SVI On-Chart Info: {showSviChartInfo ? 'ON' : 'OFF'}
+                  </button>
                 </div>
               </div>
             );
@@ -3805,8 +4372,8 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           const mv = data.multi_day_vol_movement;
           const mvSum = mv.summary || {};
           const snaps = mv.historical_snapshots || {};
-          const effLb = volMoveLookback === 'OFF' ? '3D' : volMoveLookback;
-          const activeSnap = snaps[effLb] || snaps['3D'] || snaps['1D'] || {};
+          const effLb = (volMoveLookback === 'OFF' || volMoveLookback === 'INTRADAY') ? '1D' : volMoveLookback;
+          const activeSnap = snaps[effLb] || snaps['1D'] || snaps['3D'] || {};
           const snapTs = activeSnap.term_structure || [];
 
           // Compute Front (<=35D), Belly (36-120D), and Back/LEAPS (>120D) ΔIV shifts
@@ -4318,25 +4885,726 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
           );
         })()}
 
-        {/* Plotly Canvas Container */}
-        <div 
-          className="vol-canvas-container"
-          style={{
-            width: '100%',
-            minHeight: '580px',
-            background: surfaceBg,
-            borderRadius: '12px',
-            border: `1px solid ${surfaceBg === '#f8fafc' ? 'rgba(0,0,0,0.15)' : 'rgba(255, 255, 255, 0.08)'}`,
-            overflow: 'hidden',
+        {/* Real Intraday & Interday ΔIV Motion Control Deck + Sticky-Delta Decomposition Strip */}
+        {(activeViewMode === '3d_surface' || activeViewMode === 'heatmap') && interdayShiftMode && (() => {
+          const mv = data?.multi_day_vol_movement;
+          const intraM = data?.intraday_iv_motion;
+          const interV4 = data?.interday_iv_motion;
+          const r1d = mv?.real_delta_iv_1d;
+
+          const isIntra = volMoveLookback === 'INTRADAY' && Boolean(intraM?.available && intraM?.checkpoints?.length);
+          const cps = isIntra ? (intraM.checkpoints || []) : [];
+          const effCpIdx = isIntra ? ((intradayFrameIdx >= 0 && intradayFrameIdx < cps.length) ? intradayFrameIdx : cps.length - 1) : 0;
+          const activeCp = isIntra ? cps[effCpIdx] : null;
+
+          const replayOrder = (interV4?.available && Array.isArray(interV4.replay_order) && interV4.replay_order.length > 0)
+            ? interV4.replay_order
+            : ['10D', '5D', '3D', '2D', '1D'];
+          const activeInterLb = !isIntra && interV4?.available ? (interV4.lookbacks?.[volMoveLookback] || null) : null;
+          const snap = !isIntra ? mv?.historical_snapshots?.[volMoveLookback === 'OFF' ? '1D' : volMoveLookback] : null;
+          const isRealV4 = Boolean(activeCp || activeInterLb);
+          const isReal1d = Boolean(!isIntra && !activeInterLb && volMoveLookback === '1D' && r1d?.available);
+
+          const mSum = activeCp?.summary || activeInterLb?.summary || null;
+          const totalAtmD = Number(mSum?.atm_delta_iv ?? (isReal1d ? r1d.atm_delta_iv : (snap?.iv_shift_pts ?? 0)));
+          const pureAtmD = Number(mSum?.pure_vol_atm_delta ?? totalAtmD);
+          const slideAtmD = Number(mSum?.spot_slide_atm_delta ?? 0);
+          const putD = Number(mSum?.put_wing_delta_iv ?? (isReal1d ? r1d.put_wing_delta_iv : (snap ? +(Number(snap.iv_shift_pts || 0) + Number(snap.skew_shift_pts || 0) * 0.55).toFixed(2) : 0)));
+          const callD = Number(mSum?.call_wing_delta_iv ?? (isReal1d ? r1d.call_wing_delta_iv : (snap ? +(Number(snap.iv_shift_pts || 0) - Number(snap.skew_shift_pts || 0) * 0.45).toFixed(2) : 0)));
+          const twist = Number(mSum?.term_twist ?? (isReal1d ? r1d.term_twist : (snap?.slope_shift_pts ?? 0)));
+          const spotChg = Number(mSum?.spot_chg_pct ?? (isReal1d ? r1d.spot_chg_1d_pct : (snap?.spot_shift_pct ?? 0)));
+          const regimeBadge = mSum?.regime_badge || (isReal1d ? r1d.regime_headline : null);
+          const regimeColor = mSum?.regime_color || (isReal1d ? r1d.regime_color : '#38bdf8');
+          const takeawayTxt = mSum?.takeaway || (isReal1d ? r1d.actionable_takeaway : null);
+          const topExp = activeCp?.top_expanding || activeInterLb?.top_expanding || (isReal1d ? (r1d.top_expanding || []) : []);
+          const topCrush = activeCp?.top_crushing || activeInterLb?.top_crushing || (isReal1d ? (r1d.top_crushing || []) : []);
+
+          const fmtSigned = (v) => `${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`;
+
+          // Build timeline points for the interactive SVG sparkline & scrubber
+          const timelinePts = isIntra
+            ? (intraM.trajectory_tape || cps.map((c, idx) => ({ idx, label_et: c.label_et, spot: c.spot, spot_chg_pct: c.spot_chg_from_open_pct, atm_iv_30d: c.atm_iv_30d, atm_delta_iv: c.summary?.atm_delta_iv ?? 0, pure_vol_atm_delta: c.summary?.pure_vol_atm_delta ?? 0 })))
+            : (interV4?.available
+              ? replayOrder.map((lbK, idx) => {
+                  const lbObj = interV4.lookbacks?.[lbK];
+                  return {
+                    idx,
+                    lbKey: lbK,
+                    label_et: `${lbK} (${lbObj?.date?.slice(5) || ''})`,
+                    spot: lbObj?.spot_then || spot,
+                    spot_chg_pct: -(lbObj?.summary?.spot_chg_pct || 0),
+                    atm_iv_30d: lbObj?.atm_iv_then || 22,
+                    atm_delta_iv: lbObj?.summary?.atm_delta_iv || 0,
+                    pure_vol_atm_delta: lbObj?.summary?.pure_vol_atm_delta || 0,
+                  };
+                })
+              : []);
+
+          const activeTimelineIdx = isIntra
+            ? effCpIdx
+            : Math.max(0, replayOrder.indexOf(volMoveLookback));
+
+          // SVG dual-series path generator (normalized Spot vs ATM IV trajectory)
+          const svgW = 340;
+          const svgH = 44;
+          const buildSvgPath = (vals) => {
+            if (!vals || vals.length < 2) return { path: '', pts: [] };
+            const minV = Math.min(...vals);
+            const maxV = Math.max(...vals);
+            const span = Math.max(0.05, maxV - minV);
+            const coords = vals.map((v, i) => {
+              const x = 6 + (i * (svgW - 12)) / (vals.length - 1);
+              const y = svgH - 6 - ((v - minV) / span) * (svgH - 12);
+              return [Number(x.toFixed(1)), Number(y.toFixed(1))];
+            });
+            const path = coords.map((pt, idx) => `${idx === 0 ? 'M' : 'L'}${pt[0]},${pt[1]}`).join(' ');
+            return { path, pts: coords };
+          };
+          const ivCurveSvg = buildSvgPath(timelinePts.map(p => Number(p.atm_iv_30d || 20)));
+          const spotCurveSvg = buildSvgPath(timelinePts.map(p => Number(p.spot || spot || 100)));
+          const curSvgCoord = ivCurveSvg.pts[activeTimelineIdx] || null;
+
+          return (
+            <div
+              data-testid="real-delta-iv-strip"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.90))',
+                border: (isRealV4 || isReal1d) ? '1px solid rgba(16, 185, 129, 0.45)' : '1px solid rgba(251, 191, 36, 0.4)',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '11px'
+              }}
+            >
+              {/* Row 1: Data Source Badge, Coordinate Frame Switcher & 3D Visual Style */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
+                  <span
+                    data-testid="motion-source-badge"
+                    style={{
+                      padding: '3px 8px',
+                      borderRadius: '5px',
+                      background: (isRealV4 || isReal1d) ? 'rgba(16, 185, 129, 0.18)' : 'rgba(251, 191, 36, 0.16)',
+                      color: (isRealV4 || isReal1d) ? '#34d399' : '#fbbf24',
+                      border: (isRealV4 || isReal1d) ? '1px solid rgba(16, 185, 129, 0.45)' : '1px solid rgba(251, 191, 36, 0.45)',
+                      fontWeight: 800
+                    }}
+                  >
+                    {isIntra
+                      ? `🟢 REAL INTRADAY 30M (${cps.length} checkpoints · ${intraM.session_date} · n=${activeCp?.matched_contracts ?? 0})`
+                      : (activeInterLb
+                        ? `🟢 REAL INTERDAY BARS (${activeInterLb.label} · n=${activeInterLb.matched_contracts})`
+                        : (isReal1d ? `🟢 REAL PER-CONTRACT 1D ΔIV (${r1d.matched_nodes} live contracts)` : `📐 MODELED ${volMoveLookback} ΔIV SURFACE`))}
+                  </span>
+                  {regimeBadge && (
+                    <span
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '5px',
+                        background: 'rgba(15, 23, 42, 0.85)',
+                        border: `1px solid ${regimeColor}`,
+                        color: regimeColor,
+                        fontWeight: 800
+                      }}
+                    >
+                      {regimeBadge}
+                    </span>
+                  )}
+                  <span style={{ color: spotChg >= 0 ? '#34d399' : '#f87171', fontWeight: 700 }}>
+                    {isIntra
+                      ? `Spot: $${intraM.open_spot} → $${activeCp?.spot?.toFixed(2)} (${fmtSigned(spotChg)})`
+                      : `Spot vs ${volMoveLookback}: $${activeInterLb?.spot_then ?? snap?.spot ?? '--'} → $${spot?.toFixed?.(2) ?? spot} (${fmtSigned(spotChg)})`}
+                  </span>
+                </div>
+
+                {/* Right Controls: Coordinate Frame + Visual Style + 2D Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  {isRealV4 && activeViewMode === '3d_surface' && (
+                    <>
+                      <div style={{ display: 'inline-flex', background: 'rgba(15, 23, 42, 0.85)', padding: '2px', borderRadius: '5px', border: '1px solid rgba(255,255,255,0.12)' }} title="Separate fixed-strike contract ΔIV into Pure Vol Repricing (Sticky-Δ) vs Mechanical Spot-Slide along the smile">
+                        {[
+                          { id: 'sticky_strike', label: 'Sticky-Strike' },
+                          { id: 'sticky_delta', label: 'Pure Vol (Sticky-Δ)' },
+                          { id: 'spot_slide', label: 'Spot-Slide' }
+                        ].map(cf => (
+                          <button
+                            key={cf.id}
+                            type="button"
+                            onClick={() => setMotionCoordFrame(cf.id)}
+                            style={{
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              border: 'none',
+                              background: motionCoordFrame === cf.id ? 'rgba(0, 240, 255, 0.22)' : 'transparent',
+                              color: motionCoordFrame === cf.id ? '#00F0FF' : '#94a3b8',
+                              fontSize: '10px',
+                              fontWeight: 800,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {cf.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ display: 'inline-flex', background: 'rgba(15, 23, 42, 0.85)', padding: '2px', borderRadius: '5px', border: '1px solid rgba(255,255,255,0.12)' }}>
+                        {[
+                          { id: 'delta_relief', label: '⚡ ΔIV + Vectors' },
+                          { id: 'before_after', label: '👻 Before → After' }
+                        ].map(vs => (
+                          <button
+                            key={vs.id}
+                            type="button"
+                            onClick={() => setMotionVisualStyle(vs.id)}
+                            style={{
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              border: 'none',
+                              background: motionVisualStyle === vs.id ? 'rgba(251, 191, 36, 0.22)' : 'transparent',
+                              color: motionVisualStyle === vs.id ? '#fbbf24' : '#94a3b8',
+                              fontSize: '10px',
+                              fontWeight: 800,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {vs.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    data-testid="toggle-delta-iv-view"
+                    onClick={() => setActiveViewMode(activeViewMode === '3d_surface' ? 'heatmap' : '3d_surface')}
+                    style={{
+                      padding: '3px 9px',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(56, 189, 248, 0.55)',
+                      background: 'rgba(56, 189, 248, 0.16)',
+                      color: '#38bdf8',
+                      fontWeight: 800,
+                      fontSize: '10.5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {activeViewMode === '3d_surface' ? '📊 2D Matrix' : '🧊 3D Motion'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 2: Interactive Time-Lapse Replay Deck + Synchronized Spot-vs-IV Trajectory Sparkline */}
+              {timelinePts.length >= 2 && activeViewMode === '3d_surface' && (
+                <div
+                  data-testid="motion-replay-deck"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                    padding: '7px 10px',
+                    borderRadius: '8px',
+                    background: 'rgba(2, 6, 23, 0.65)',
+                    border: '1px solid rgba(56, 189, 248, 0.22)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 380px', minWidth: '280px' }}>
+                    <button
+                      type="button"
+                      data-testid="motion-play-btn"
+                      onClick={() => {
+                        if (!isMotionPlaying && isIntra && effCpIdx >= cps.length - 1) {
+                          setIntradayFrameIdx(0);
+                        }
+                        setIsMotionPlaying(prev => !prev);
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: isMotionPlaying ? '1px solid rgba(251, 191, 36, 0.7)' : '1px solid rgba(56, 189, 248, 0.6)',
+                        background: isMotionPlaying ? 'rgba(251, 191, 36, 0.2)' : 'rgba(56, 189, 248, 0.16)',
+                        color: isMotionPlaying ? '#fbbf24' : '#38bdf8',
+                        fontWeight: 900,
+                        fontSize: '10.5px',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {isMotionPlaying ? '⏸ Pause' : (isIntra ? '▶ Play Session' : '▶ Play 10D→1D')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMotionPlaySpeed(s => (s === 900 ? 480 : 900))}
+                      style={{
+                        padding: '3px 6px',
+                        borderRadius: '5px',
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        background: 'rgba(255,255,255,0.04)',
+                        color: '#94a3b8',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      title="Toggle replay speed (1x / 2x)"
+                    >
+                      {motionPlaySpeed === 900 ? '1x' : '2x'}
+                    </button>
+                    <input
+                      type="range"
+                      data-testid="motion-scrubber"
+                      min={0}
+                      max={timelinePts.length - 1}
+                      value={activeTimelineIdx}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setIsMotionPlaying(false);
+                        if (isIntra) {
+                          setIntradayFrameIdx(val);
+                        } else if (replayOrder[val]) {
+                          setVolMoveLookback(replayOrder[val]);
+                        }
+                      }}
+                      style={{ flex: 1, accentColor: '#00F0FF', cursor: 'pointer', minWidth: '120px' }}
+                    />
+                    <span
+                      data-testid="motion-frame-label"
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: '5px',
+                        background: 'rgba(0, 240, 255, 0.14)',
+                        border: '1px solid rgba(0, 240, 255, 0.4)',
+                        color: '#00F0FF',
+                        fontWeight: 900,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {isIntra ? `${activeCp?.label_et} (${effCpIdx + 1}/${cps.length})` : `${volMoveLookback} Ago (${activeInterLb?.date || ''})`}
+                    </span>
+                  </div>
+
+                  {/* Synchronized Clickable Dual-Line SVG Sparkline (Cyan Dashed = Spot Path, Amber = 30D ATM IV) */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '9.5px', color: '#94a3b8', lineHeight: 1.25 }}>
+                      <span><span style={{ color: '#fbbf24' }}>━</span> ATM IV: <b style={{ color: '#f8fafc' }}>{timelinePts[activeTimelineIdx]?.atm_iv_30d?.toFixed?.(1) ?? '--'}%</b></span>
+                      <span><span style={{ color: '#00F0FF' }}>╌</span> Spot: <b style={{ color: '#f8fafc' }}>${timelinePts[activeTimelineIdx]?.spot?.toFixed?.(2) ?? '--'}</b></span>
+                    </div>
+                    <svg
+                      width={svgW}
+                      height={svgH}
+                      viewBox={`0 0 ${svgW} ${svgH}`}
+                      style={{ background: 'rgba(15, 23, 42, 0.9)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', overflow: 'visible' }}
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const relX = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
+                        const pickIdx = Math.round(relX * (timelinePts.length - 1));
+                        setIsMotionPlaying(false);
+                        if (isIntra) {
+                          setIntradayFrameIdx(pickIdx);
+                        } else if (replayOrder[pickIdx]) {
+                          setVolMoveLookback(replayOrder[pickIdx]);
+                        }
+                      }}
+                      title="Click anywhere along the session trajectory to jump to that timestamp"
+                    >
+                      {spotCurveSvg.path && (
+                        <path d={spotCurveSvg.path} fill="none" stroke="#00F0FF" strokeWidth="1.5" strokeDasharray="3,2.5" opacity="0.72" />
+                      )}
+                      {ivCurveSvg.path && (
+                        <path d={ivCurveSvg.path} fill="none" stroke="#fbbf24" strokeWidth="2.2" />
+                      )}
+                      {curSvgCoord && (
+                        <>
+                          <line x1={curSvgCoord[0]} y1={2} x2={curSvgCoord[0]} y2={svgH - 2} stroke="#00F0FF" strokeWidth="1.4" opacity="0.8" />
+                          <circle cx={curSvgCoord[0]} cy={curSvgCoord[1]} r="4" fill="#fbbf24" stroke="#ffffff" strokeWidth="1.4" />
+                        </>
+                      )}
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+              {/* Row 3: Exact Sticky-Strike = Pure Vol (Sticky-Δ) + Spot-Slide Decomposition KPIs */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: '#f8fafc' }} title="Total Fixed-Strike ATM ΔIV = Pure Vol Repricing + Spot-Slide">
+                    ATM ΔIV: <b style={{ color: totalAtmD >= 0 ? '#fbbf24' : '#34d399' }}>{fmtSigned(totalAtmD)}</b>
+                    {isRealV4 && (
+                      <span style={{ color: '#94a3b8' }}> = Pure <b style={{ color: pureAtmD >= 0 ? '#f87171' : '#34d399' }}>{fmtSigned(pureAtmD)}</b> + Slide <b style={{ color: '#7dd3fc' }}>{fmtSigned(slideAtmD)}</b></span>
+                    )}
+                  </span>
+                  <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0' }}>
+                    Put Wing: <b style={{ color: putD >= 0 ? '#f87171' : '#34d399' }}>{fmtSigned(putD)}</b>
+                  </span>
+                  <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0' }}>
+                    Call Wing: <b style={{ color: callD >= 0 ? '#f87171' : '#34d399' }}>{fmtSigned(callD)}</b>
+                  </span>
+                  <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0' }}>
+                    Front−Back Twist: <b style={{ color: '#7dd3fc' }}>{fmtSigned(twist)}</b>
+                  </span>
+                  {isIntra && (
+                    <>
+                      <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1' }}>
+                        Session Range: <b style={{ color: '#fbbf24' }}>{intraM.intraday_vol_range_vp?.toFixed(2)}vp</b> ({intraM.low_atm_iv?.toFixed(1)}%→{intraM.high_atm_iv?.toFixed(1)}%)
+                      </span>
+                      <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1' }}>
+                        1h Vel: <b style={{ color: intraM.intraday_velocity_1h_vp >= 0 ? '#f87171' : '#34d399' }}>{fmtSigned(intraM.intraday_velocity_1h_vp)}</b>
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {(takeawayTxt || topExp.length > 0 || topCrush.length > 0) && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingTop: '4px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ color: '#cbd5e1', fontSize: '10.5px', maxWidth: '680px', lineHeight: 1.35 }}>
+                    {takeawayTxt || 'Active surface movement decomposed across Put Wing, ATM, Call Wing, and Front-to-Back Term Slope.'}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                    {topExp.slice(0, 3).map((item, idx) => {
+                      const isLocked = focusedHotspot?.strike === item.strike && focusedHotspot?.expiry === item.expiry;
+                      return (
+                        <button
+                          key={`exp-${idx}`}
+                          type="button"
+                          onClick={() => setFocusedHotspot(isLocked ? null : { expiry: item.expiry, strike: item.strike, iv: item.iv_now })}
+                          style={{
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            border: isLocked ? '1px solid #00F0FF' : '1px solid rgba(239, 68, 68, 0.5)',
+                            background: isLocked ? 'rgba(0, 240, 255, 0.18)' : 'rgba(239, 68, 68, 0.14)',
+                            color: '#fda4af',
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            cursor: 'pointer'
+                          }}
+                          title={`Lock target on ${item.expiry} $${item.strike} ${item.type} (Base IV ${item.iv_prev}% → ${item.iv_now}%)`}
+                        >
+                          🔥 ${item.strike} {item.expiry.slice(5)} ({item.delta_iv >= 0 ? '+' : ''}{Number(item.delta_iv).toFixed(1)}%)
+                        </button>
+                      );
+                    })}
+                    {topCrush.slice(0, 3).map((item, idx) => {
+                      const isLocked = focusedHotspot?.strike === item.strike && focusedHotspot?.expiry === item.expiry;
+                      return (
+                        <button
+                          key={`cr-${idx}`}
+                          type="button"
+                          onClick={() => setFocusedHotspot(isLocked ? null : { expiry: item.expiry, strike: item.strike, iv: item.iv_now })}
+                          style={{
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            border: isLocked ? '1px solid #00F0FF' : '1px solid rgba(16, 185, 129, 0.5)',
+                            background: isLocked ? 'rgba(0, 240, 255, 0.18)' : 'rgba(16, 185, 129, 0.14)',
+                            color: '#6ee7b7',
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            cursor: 'pointer'
+                          }}
+                          title={`Lock target on ${item.expiry} $${item.strike} ${item.type} (Base IV ${item.iv_prev}% → ${item.iv_now}%)`}
+                        >
+                          🧊 ${item.strike} {item.expiry.slice(5)} ({item.delta_iv >= 0 ? '+' : ''}{Number(item.delta_iv).toFixed(1)}%)
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Non-Overlapping Spot-Vol Regime Status Ribbon (when Spot-Vol Scatter is active) */}
+        {activeViewMode === 'spot_vol_scatter' && (() => {
+          const svc = Number(desk_metrics?.spot_vol_corr ?? -0.55);
+          const svColor = svc >= 0.15 ? '#10b981' : (svc <= -0.15 ? '#38bdf8' : '#fbbf24');
+          const svLabel = svc >= 0.15
+            ? 'POSITIVE SPOT-VOL REGIME (Call Squeeze Heavy)'
+            : (svc <= -0.15 ? 'CLASSIC EQUITY HEDGING REGIME (Inverse Correlation)' : 'DECOUPLED / SKEW BREAKDOWN REGIME');
+          return (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '8px',
+              padding: '8px 12px',
+              borderRadius: '9px',
+              background: 'rgba(15, 23, 42, 0.9)',
+              border: `1px solid ${svColor}55`,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '11px'
+            }}>
+              <span style={{ color: '#ffffff', fontWeight: 800 }}>
+                📊 Spot-Vol Correlation · {ticker} (ρ = {svc > 0 ? `+${svc.toFixed(2)}` : svc.toFixed(2)})
+              </span>
+              <span style={{ color: svColor, fontWeight: 800 }}>
+                {svLabel}
+              </span>
+            </div>
+          );
+        })()}
+
+        {/* Multi-Day Vol Movement Banner (Heatmap Studio renders its own synchronized header) */}
+
+        {activeViewMode === 'vol_movement' && (
+          <div style={{
             display: 'flex',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '8px',
-            transition: 'background 0.3s ease'
-          }}
-        >
-          <div ref={plotRef} style={{ width: '100%', minHeight: '560px' }} />
-        </div>
+            flexWrap: 'wrap',
+            gap: '8px',
+            padding: '7px 12px',
+            borderRadius: '8px',
+            background: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(56, 189, 248, 0.25)',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '11px',
+            color: '#e2e8f0'
+          }}>
+            <span style={{ fontWeight: 800 }}>
+              {multiDayChartSubmode === 'daily_iv_skew'
+                ? `Last 10 Days Volatility Trajectory · 30D ATM IV vs 10D Realized HV & 25Δ Skew (${ticker})`
+                : `Multi-Day Term Structure Evolution · Today vs 1D, 3D, 5D & 10D Ago (${ticker})`}
+            </span>
+            <span style={{ color: '#94a3b8', fontSize: '10px' }}>Dual-Axis Curve + ΔIV Bars</span>
+          </div>
+        )}
+
+        {activeViewMode === 'heatmap' ? (
+          <VolHeatmapStudio
+            data={data}
+            activeData={horizonData || data}
+            ticker={ticker}
+            spot={spot}
+            surfaceColor={surfaceColor}
+            setSurfaceColor={setSurfaceColor}
+            surfaceBg={surfaceBg}
+            strikeMode={strikeMode}
+            setStrikeMode={setStrikeMode}
+            heatmapFilter={heatmapFilter}
+            setHeatmapFilter={setHeatmapFilter}
+            volMoveLookback={volMoveLookback}
+            setVolMoveLookback={setVolMoveLookback}
+            interdayShiftMode={interdayShiftMode}
+            setInterdayShiftMode={setInterdayShiftMode}
+            focusedHotspot={focusedHotspot}
+            setFocusedHotspot={setFocusedHotspot}
+            detectedAirPockets={detectedAirPockets}
+            plotlyReady={plotlyReady}
+            onSwitchTo3DFocus={(cell) => {
+              if (cell) {
+                setFocusedHotspot({ strike: cell.strike, expiry: cell.expiry, iv: cell.iv });
+              }
+              setActiveViewMode('3d_surface');
+            }}
+            onRegisterExport={(fn) => {
+              heatmapExportRef.current = fn;
+            }}
+          />
+        ) : (
+          /* Plotly Canvas Container (Unique key + userSelect none prevents SVG IndexSizeError) */
+          <div 
+            key={`vol-canvas-${activeViewMode}`}
+            className="vol-canvas-container"
+            style={{
+              width: '100%',
+              minHeight: activeViewMode === '3d_surface' ? '568px' : '532px',
+              background: surfaceBg,
+              borderRadius: '12px',
+              border: `1px solid ${surfaceBg === '#f8fafc' ? 'rgba(0,0,0,0.15)' : 'rgba(255, 255, 255, 0.08)'}`,
+              overflow: 'hidden',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '6px',
+              userSelect: 'none',
+              transition: 'background 0.3s ease'
+            }}
+          >
+            <div ref={plotRef} style={{ width: '100%', minHeight: activeViewMode === '3d_surface' ? '556px' : (activeViewMode === '2d_skew' ? '555px' : '520px') }} />
+          </div>
+        )}
+
+        {/* Arb-Free SVI Fair Fit Live Playbook Deck (2D Skew Curve) */}
+        {activeViewMode === '2d_skew' && (() => {
+          const tsList = activeData.term_structure || [];
+          const bench30 = tsList.length > 0
+            ? tsList.reduce((p, c) => Math.abs((c.dte || 30) - 30) < Math.abs((p.dte || 30) - 30) ? c : p, tsList[0])
+            : null;
+          const activeExp = (selectedExpiry === 'All' || !availableExpirations.includes(selectedExpiry))
+            ? (bench30?.expiry || availableExpirations[0])
+            : selectedExpiry;
+          const activeTs = tsList.find(t => t.expiry === activeExp) || bench30 || {};
+          const activeSvi = (activeData.svi_slices || []).find(s => s.expiry === activeExp) || null;
+          const hvVal = Number(desk_metrics?.realized_hv_30d || 20);
+          const atmVal = Number(activeTs.atm_iv || desk_metrics?.atm_iv_30d || hvVal);
+          const vrpVal = +(atmVal - hvVal).toFixed(1);
+          const skewVal = Number(activeTs.skew_25d ?? desk_metrics?.skew_spread ?? 0);
+
+          const expPts = (activeData.surface || [])
+            .filter(p => p.expiry === activeExp && (!spot || Math.abs(p.strike - spot) / spot <= 0.16));
+          const getScore = (p) => Number(p.residual_vp ?? p.dislocation_pct ?? 0);
+          const richPool = expPts.filter(p => p.hedge_state === 'overhedged' || getScore(p) >= 0.45);
+          const cheapPool = expPts.filter(p => p.hedge_state === 'underhedged' || getScore(p) <= -0.45);
+          const topRich = (richPool.filter(p => p.hedge_state === 'overhedged').length ? richPool.filter(p => p.hedge_state === 'overhedged') : richPool)
+            .sort((a, b) => getScore(b) - getScore(a))[0] || null;
+          const topCheap = (cheapPool.filter(p => p.hedge_state === 'underhedged').length ? cheapPool.filter(p => p.hedge_state === 'underhedged') : cheapPool)
+            .sort((a, b) => getScore(a) - getScore(b))[0] || null;
+
+          return (
+            <div
+              data-testid="svi-fair-fit-deck"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: '10px',
+                marginTop: '4px'
+              }}
+            >
+              <div
+                data-testid="svi-card-what"
+                style={{
+                  background: 'rgba(10, 15, 28, 0.92)',
+                  border: '1px solid rgba(251, 191, 36, 0.35)',
+                  borderLeft: '3px solid #fbbf24',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <strong style={{ color: '#fbbf24', fontSize: '11.5px', fontFamily: "'JetBrains Mono', monospace" }}>
+                    🟡 What Is Arb-Free SVI Fair Fit?
+                  </strong>
+                  <span style={{ fontSize: '9.5px', color: '#fde68a', fontFamily: "'JetBrains Mono', monospace", background: 'rgba(251,191,36,0.12)', padding: '2px 6px', borderRadius: '4px' }}>
+                    {activeExp} · RMSE {activeData.calibration_metrics?.holdout_rmse_vp ?? '--'}v
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: '11px', color: '#cbd5e1', lineHeight: 1.45 }}>
+                  The gold curve is Gatheral&apos;s 5-parameter <strong>Stochastic Volatility Inspired (SVI)</strong> theoretical fair IV smile — stripping bid-ask quote noise and enforcing butterfly &amp; calendar no-arbitrage bounds across strikes.
+                </p>
+                {activeSvi && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", color: '#94a3b8' }}>
+                    <span>a <b>{activeSvi.svi_a}</b></span>
+                    <span>b <b>{activeSvi.svi_b}</b></span>
+                    <span>ρ <b style={{ color: '#f43f5e' }}>{activeSvi.svi_rho}</b></span>
+                    <span>m <b>{activeSvi.svi_m}</b></span>
+                    <span>σ <b>{activeSvi.svi_sigma}</b></span>
+                    <span>Fwd <b>${activeSvi.forward}</b></span>
+                  </div>
+                )}
+              </div>
+
+              <div
+                data-testid="svi-card-howto"
+                style={{
+                  background: 'rgba(10, 15, 28, 0.92)',
+                  border: '1px solid rgba(0, 240, 255, 0.28)',
+                  borderLeft: '3px solid #00F0FF',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <strong style={{ color: '#00F0FF', fontSize: '11.5px', fontFamily: "'JetBrains Mono', monospace" }}>
+                    🎯 How to Trade Dots vs. Gold SVI Curve
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: '#cbd5e1', lineHeight: 1.4 }}>
+                  <span><strong style={{ color: '#fda4af' }}>🔴 Dot ABOVE Gold:</strong> Implied Vol is rich / overhedged → <strong>SELL</strong> option premium (Credit Spreads / Short Wings).</span>
+                  <span><strong style={{ color: '#6ee7b7' }}>🟢 Dot BELOW Gold:</strong> Implied Vol is cheap / underhedged → <strong>BUY</strong> option convexity (Debit Spreads / Long Wings).</span>
+                  <span><strong style={{ color: '#7dd3fc' }}>⚖️ Pair Both:</strong> Buy Cheap (−SVI) strike + Sell Rich (+SVI) strike on the same expiry to capture pure smile mispricing.</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px', fontSize: '10px', fontFamily: "'JetBrains Mono', monospace" }}>
+                  {topRich && (
+                    <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.38)', color: '#fda4af' }}>
+                      SELL ${topRich.strike} (+{Math.abs(getScore(topRich)).toFixed(1)}v vs SVI)
+                    </span>
+                  )}
+                  {topCheap && (
+                    <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.38)', color: '#6ee7b7' }}>
+                      BUY ${topCheap.strike} (-{Math.abs(getScore(topCheap)).toFixed(1)}v vs SVI)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div
+                data-testid="svi-card-vrp"
+                style={{
+                  background: 'rgba(10, 15, 28, 0.92)',
+                  border: `1px solid ${vrpVal >= 1.5 ? 'rgba(244,63,94,0.35)' : (vrpVal <= -1.5 ? 'rgba(16,185,129,0.35)' : 'rgba(56,189,248,0.35)')}`,
+                  borderLeft: `3px solid ${vrpVal >= 1.5 ? '#f43f5e' : (vrpVal <= -1.5 ? '#10b981' : '#38bdf8')}`,
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <strong style={{ color: '#38bdf8', fontSize: '11.5px', fontFamily: "'JetBrains Mono', monospace" }}>
+                    📊 Live VRP &amp; Skew Trade Posture
+                  </strong>
+                  <span style={{ fontSize: '9.5px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: vrpVal >= 0 ? '#fda4af' : '#6ee7b7', background: 'rgba(15,23,42,0.85)', padding: '2px 6px', borderRadius: '4px' }}>
+                    VRP {vrpVal >= 0 ? `+${vrpVal}v` : `${vrpVal}v`}
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: '11px', color: '#cbd5e1', lineHeight: 1.45 }}>
+                  SVI ATM IV (<strong>{atmVal.toFixed(1)}%</strong>) vs. 30D Realized HV Floor (<strong>{hvVal.toFixed(1)}%</strong>){' '}
+                  {vrpVal >= 1.5
+                    ? `shows rich Variance Risk Premium (+${vrpVal}v): favor selling high-skew OTM spreads above SVI fair.`
+                    : (vrpVal <= -1.5
+                      ? `is trading below realized movement (${vrpVal}v): favor buying cheap under-SVI debit spreads or straddles.`
+                      : `is near fair equilibrium vs realized vol: focus on relative-value strike selection against the Gold SVI curve.`)}
+                </p>
+                <div style={{ fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", color: '#94a3b8' }}>
+                  25Δ Put−Call Skew: <strong style={{ color: skewVal >= 5 ? '#f43f5e' : '#00F0FF' }}>{skewVal >= 0 ? `+${skewVal}%` : `${skewVal}%`}</strong>
+                  {skewVal >= 5 ? ' (Steep downside put demand)' : (skewVal <= 1 ? ' (Flat / call wing bid)' : ' (Normal equity skew)')}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Studio Micro-Legend Strip below Canvas (replaces WebGL top-left legend box that overlapped peaks) */}
+        {activeViewMode === '3d_surface' && (
+          <div className="vol-canvas-micro-legend">
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <span><span style={{ color: '#fbbf24' }}>━●━</span> {interdayShiftMode ? (motionVisualStyle === 'before_after' ? 'ATM Spot Spine' : 'ATM ΔIV Spine') : 'ATM SVI Ridge Spine'}</span>
+              {interdayShiftMode ? (
+                <>
+                  <span><span style={{ color: '#ef4444' }}>▲</span> Rising IV Vector</span>
+                  <span><span style={{ color: '#10b981' }}>▼</span> Crushing IV Vector</span>
+                  <span><span style={{ color: '#94a3b8' }}>▭</span> {motionVisualStyle === 'before_after' ? 'Baseline Ghost Mesh' : '0.0% Zero-Shift Plane'}</span>
+                </>
+              ) : (
+                <>
+                  <span><span style={{ color: '#ef4444' }}>◆</span> Overhedged Rich (+SVI)</span>
+                  <span><span style={{ color: '#10b981' }}>◆</span> Underhedged Cheap (-SVI)</span>
+                  <span><span style={{ color: '#ff007a' }}>━━</span> Event Kink</span>
+                  <span><span style={{ color: '#00f0ff' }}>━━</span> Vol Valley</span>
+                  {showHvPlane && <span><span style={{ color: '#38bdf8' }}>▭</span> 30D Yang-Zhang HV Floor ({desk_metrics?.realized_hv_30d}%)</span>}
+                </>
+              )}
+              {surfaceColor === 'LocalVol' && !interdayShiftMode && (
+                <span style={{ color: '#fbbf24', fontWeight: 700 }}>🔥 Shaded by Dupire Local Vol σ_loc(K,T)</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#64748b' }}>
+              {focusedHotspot && <span style={{ color: '#00F0FF', fontWeight: 700 }}>✚ Target: ${focusedHotspot.strike} ({focusedHotspot.expiry})</span>}
+              <span>Drag orbit · Scroll zoom</span>
+            </div>
+          </div>
+        )}
 
         {/* MULTI-DAY VOLATILITY MOVEMENT SCORECARD & LAST-10-SESSIONS TAPE DECK */}
         {(activeViewMode === 'vol_movement' || (activeViewMode === '3d_surface' && volMoveLookback !== 'OFF')) && data?.multi_day_vol_movement && (() => {
@@ -4490,21 +5758,21 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                 })}
               </div>
 
-              {/* Last 10 Trading Sessions Volatility Tape Table */}
+              {/* Last 10 Trading Sessions Volatility Tape Table — Compact Zero-Overflow Layout */}
               {tape.length > 0 && (
                 <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'JetBrains Mono', monospace", fontSize: '11px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'JetBrains Mono', monospace", fontSize: '10px' }}>
                     <thead>
                       <tr style={{ background: 'rgba(15, 23, 42, 0.95)', color: '#94a3b8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                        <th style={{ padding: '7px 10px' }}>Session Date</th>
-                        <th style={{ padding: '7px 10px' }}>Spot ($)</th>
-                        <th style={{ padding: '7px 10px' }}>1D Spot %</th>
-                        <th style={{ padding: '7px 10px' }}>30D ATM IV</th>
-                        <th style={{ padding: '7px 10px' }}>1D ΔIV</th>
-                        <th style={{ padding: '7px 10px' }}>Shift to Today</th>
-                        <th style={{ padding: '7px 10px' }}>10D Realized HV</th>
-                        <th style={{ padding: '7px 10px' }}>25Δ Put Skew</th>
-                        <th style={{ padding: '7px 10px' }}>Daily Vol Regime</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>Date</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>Spot</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>1D%</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>30D IV</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>1D Δ</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>To Now</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>10D HV</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>25Δ Sk</th>
+                        <th style={{ padding: '6px 5px', whiteSpace: 'nowrap' }}>Regime</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -4512,6 +5780,13 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                         const dIv = Number(row.iv_chg_1d || 0);
                         const sChg = Number(row.spot_chg_1d_pct || 0);
                         const shiftNow = Number(row.iv_shift_to_today || 0);
+                        const rawBadge = String(row.regime_badge || '⚖️ Stable');
+                        const compactBadge = rawBadge
+                          .replace('Stable Variance', 'Stable')
+                          .replace('Vol Expansion', 'Vol Bid')
+                          .replace('Vol Crush', 'Crush')
+                          .replace('Call Squeeze Bid', 'Call Bid')
+                          .replace('Put Hedge Bid', 'Put Bid');
                         return (
                           <tr
                             key={row.date || idx}
@@ -4520,43 +5795,46 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                               background: idx === 0 ? 'rgba(0, 240, 255, 0.06)' : (idx % 2 === 0 ? 'rgba(30, 41, 59, 0.35)' : 'transparent')
                             }}
                           >
-                            <td style={{ padding: '6px 10px', fontWeight: idx === 0 ? 800 : 600, color: idx === 0 ? '#00F0FF' : '#e2e8f0' }}>
-                              {row.date} {idx === 0 ? '(Latest)' : ''}
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap', fontWeight: idx === 0 ? 800 : 600, color: idx === 0 ? '#00F0FF' : '#e2e8f0' }}>
+                              {String(row.date || '').slice(5)}{idx === 0 ? ' ★' : ''}
                             </td>
-                            <td style={{ padding: '6px 10px', color: '#f8fafc' }}>
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap', color: '#f8fafc' }}>
                               ${Number(row.spot || 0).toFixed(2)}
                             </td>
-                            <td style={{ padding: '6px 10px', color: sChg >= 0 ? '#34d399' : '#f87171', fontWeight: 700 }}>
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap', color: sChg >= 0 ? '#34d399' : '#f87171', fontWeight: 700 }}>
                               {sChg >= 0 ? `+${sChg.toFixed(2)}%` : `${sChg.toFixed(2)}%`}
                             </td>
-                            <td style={{ padding: '6px 10px', color: '#38bdf8', fontWeight: 800 }}>
-                              {Number(row.atm_iv_30d || 0).toFixed(2)}%
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap', color: '#38bdf8', fontWeight: 800 }}>
+                              {Number(row.atm_iv_30d || 0).toFixed(1)}%
                             </td>
-                            <td style={{ padding: '6px 10px', color: dIv > 0 ? '#fda4af' : (dIv < 0 ? '#6ee7b7' : '#94a3b8'), fontWeight: 700 }}>
-                              {dIv > 0 ? `+${dIv.toFixed(2)}%` : `${dIv.toFixed(2)}%`}
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap', color: dIv > 0 ? '#fda4af' : (dIv < 0 ? '#6ee7b7' : '#94a3b8'), fontWeight: 700 }}>
+                              {dIv > 0 ? `+${dIv.toFixed(1)}%` : `${dIv.toFixed(1)}%`}
                             </td>
-                            <td style={{ padding: '6px 10px', color: shiftNow > 0 ? '#fda4af' : (shiftNow < 0 ? '#6ee7b7' : '#94a3b8') }}>
-                              {idx === 0 ? '—' : (shiftNow > 0 ? `+${shiftNow.toFixed(2)}%` : `${shiftNow.toFixed(2)}%`)}
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap', color: shiftNow > 0 ? '#fda4af' : (shiftNow < 0 ? '#6ee7b7' : '#94a3b8') }}>
+                              {idx === 0 ? '—' : (shiftNow > 0 ? `+${shiftNow.toFixed(1)}%` : `${shiftNow.toFixed(1)}%`)}
                             </td>
-                            <td style={{ padding: '6px 10px', color: '#cbd5e1' }}>
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap', color: '#cbd5e1' }}>
                               {Number(row.hv_10d || 0).toFixed(1)}%
                             </td>
-                            <td style={{ padding: '6px 10px', color: '#fbbf24' }}>
-                              {Number(row.skew_25d || 0) >= 0 ? `+${Number(row.skew_25d || 0).toFixed(2)}%` : `${Number(row.skew_25d || 0).toFixed(2)}%`}
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap', color: '#fbbf24' }}>
+                              {Number(row.skew_25d || 0) >= 0 ? `+${Number(row.skew_25d || 0).toFixed(1)}%` : `${Number(row.skew_25d || 0).toFixed(1)}%`}
                             </td>
-                            <td style={{ padding: '6px 10px' }}>
+                            <td style={{ padding: '5px 5px', whiteSpace: 'nowrap' }}>
                               <span
+                                title={rawBadge}
                                 style={{
-                                  padding: '2px 7px',
+                                  display: 'inline-block',
+                                  whiteSpace: 'nowrap',
+                                  padding: '2px 5px',
                                   borderRadius: '4px',
                                   background: 'rgba(15, 23, 42, 0.75)',
                                   border: `1px solid ${row.regime_color || '#64748b'}`,
                                   color: row.regime_color || '#cbd5e1',
-                                  fontSize: '10px',
+                                  fontSize: '9.5px',
                                   fontWeight: 700
                                 }}
                               >
-                                {row.regime_badge || '⚖️ Vol Stable'}
+                                {compactBadge}
                               </span>
                             </td>
                           </tr>
@@ -4803,6 +6081,10 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                     <button
                       type="button"
                       onClick={() => {
+                        if (spot && Math.abs(pocket.strike - spot) / spot > 0.14) {
+                          setHeatmapFilter('all');
+                        }
+                        setActiveViewMode('heatmap');
                         setFocusedHotspot({ strike: pocket.strike, expiry: pocket.expiry, iv: pocket.iv });
                         if (surfaceCardRef.current) {
                           surfaceCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4841,7 +6123,456 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. IN LAST: ACTIONABLE VOLATILITY TRADE SETUPS MATRIX TABLE                */}
+      {/* 2. SECOND: INSTITUTIONAL OVERHEDGE / UNDERHEDGE RADAR & PLAYBOOK       */}
+      {/* ========================================================================= */}
+      {data.hedging_diagnostics && (
+        <div className="vol-hedging-card">
+          <div className="hedging-header-row">
+            <div className="hedging-title-group">
+              <div className="hedging-icon-badge">
+                <Shield style={{ width: '22px', height: '22px', color: data.hedging_diagnostics.badge_color }} />
+              </div>
+              <div>
+                <div className="hedging-main-title">
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#ffffff', fontFamily: "'JetBrains Mono', monospace" }}>
+                    Institutional Overhedge / Underhedge Radar
+                  </h3>
+                  <span 
+                    className="hedging-state-badge"
+                    style={{
+                      background: `${data.hedging_diagnostics.badge_color}20`,
+                      color: data.hedging_diagnostics.badge_color,
+                      borderColor: data.hedging_diagnostics.badge_color
+                    }}
+                  >
+                    {data.hedging_diagnostics.verdict_badge}
+                  </span>
+                </div>
+                <p className="hedging-subtitle">
+                  {data.hedging_diagnostics.net_hedging_state}
+                </p>
+              </div>
+            </div>
+
+            <div className="hedging-quick-stats">
+              <div className="hedging-stat-chip">
+                <span className="lbl">25Δ Put Skew:</span>
+                <span className="val" style={{ color: data.hedging_diagnostics.put_skew_25d > 1.25 ? '#ef4444' : '#38bdf8' }}>
+                  {data.hedging_diagnostics.put_skew_25d}x ATM
+                </span>
+              </div>
+              <div className="hedging-stat-chip">
+                <span className="lbl">25Δ Call Skew:</span>
+                <span className="val" style={{ color: data.hedging_diagnostics.call_skew_25d > 1.15 ? '#c084fc' : '#10b981' }}>
+                  {data.hedging_diagnostics.call_skew_25d}x ATM
+                </span>
+              </div>
+              <div className="hedging-stat-chip">
+                <span className="lbl">Crash Cushion:</span>
+                <span className="val" style={{ color: data.hedging_diagnostics.crash_cushion_score >= 70 ? '#10b981' : '#f59e0b' }}>
+                  {data.hedging_diagnostics.crash_cushion_score}/100
+                </span>
+              </div>
+              <div className="hedging-stat-chip">
+                <span className="lbl">Vanna Risk:</span>
+                <span className="val" style={{ color: '#f43f5e' }}>
+                  {data.hedging_diagnostics.vanna_squeeze_risk?.split(' ')[0] || 'NORMAL'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHedgingGuide(prev => !prev)}
+                className="hedging-guide-toggle-btn"
+                title="Toggle Trader Guide: What does Underhedge / Overhedge mean to a trader?"
+              >
+                <Info size={13} />
+                <span>Trader Guide: What is an Underhedge Valley?</span>
+                {showHedgingGuide ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Collapsible Trader Educational & Tactical Guide */}
+          {showHedgingGuide && (
+            <div className="hedging-trader-guide-box">
+              <div className="guide-box-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={14} style={{ color: '#10b981' }} />
+                  <strong style={{ color: '#ffffff', fontSize: '13px', fontFamily: "'JetBrains Mono', monospace" }}>
+                    Trader Playbook: What Does an "Underhedge Valley" Mean to You?
+                  </strong>
+                </div>
+                <span className="guide-tag green">TACTICAL DERIVATIVES INTEL</span>
+              </div>
+
+              <div className="guide-grid">
+                <div className="guide-card">
+                  <div className="guide-card-top">
+                    <span className="guide-card-icon">🏷️</span>
+                    <span className="guide-card-title">1. Cheap Convexity & Vega Discount</span>
+                  </div>
+                  <p className="guide-card-desc">
+                    An <strong>Underhedge Valley</strong> is where market implied volatility (IV) is trading significantly <em>below</em> the theoretical smile baseline.
+                    Options here are statistically underpriced: you pay minimal extrinsic value and theta burn for premium leverage.
+                  </p>
+                </div>
+
+                <div className="guide-card">
+                  <div className="guide-card-top">
+                    <span className="guide-card-icon">🕳️</span>
+                    <span className="guide-card-title">2. Complacency & Air Pocket</span>
+                  </div>
+                  <p className="guide-card-desc">
+                    Dealers and market participants have under-allocated protection to this strike zone. If the stock makes an unexpected move toward this valley, 
+                    dealers scramble to re-hedge gamma, triggering a violent <strong>IV expansion kick</strong> that multiplies option gains.
+                  </p>
+                </div>
+
+                <div className="guide-card">
+                  <div className="guide-card-top">
+                    <span className="guide-card-icon">⚖️</span>
+                    <span className="guide-card-title">3. Asymmetric Risk / Reward</span>
+                  </div>
+                  <p className="guide-card-desc">
+                    Downside risk is strictly limited to the discounted premium paid, while upside payoff is convex. 
+                    Buying cheap valley wings allows you to participate in explosive breakout or breakdown moves with superior risk/reward vs flat stock.
+                  </p>
+                </div>
+
+                <div className="guide-card highlight">
+                  <div className="guide-card-top">
+                    <span className="guide-card-icon">🎯</span>
+                    <span className="guide-card-title">4. Actionable Trader Playbooks</span>
+                  </div>
+                  <ul className="guide-card-bullets">
+                    <li><strong>Long Diagonals / Calendars:</strong> Buy the cheap underhedged month/strike, finance by selling an expensive overhedged strike.</li>
+                    <li><strong>Broken-Wing Butterflies:</strong> Buy the underhedged valley wing at a discount and sell adjacent overhedged strikes for credit.</li>
+                    <li><strong>Skew Arbitrage:</strong> Exploit the smile dislocation by going long underpriced IV and short overpriced IV.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Surface Hedging Distribution Spectrum Bar */}
+          <div className="hedging-spectrum-wrap">
+            <div className="spectrum-labels">
+              <span className="spec-lbl-green">
+                🟢 Underhedged Valleys: {activeData.hedging_diagnostics?.counts?.underhedged} strikes ({activeData.hedging_diagnostics?.percentages?.underhedged_pct}%) — Cheap Convexity
+              </span>
+              <span className="spec-lbl-slate">
+                ⚖️ Fair Value Balanced: {activeData.hedging_diagnostics?.counts?.balanced} strikes ({activeData.hedging_diagnostics?.percentages?.balanced_pct}%)
+              </span>
+              <span className="spec-lbl-red">
+                🔴 Overhedged Peaks: {activeData.hedging_diagnostics?.counts?.overhedged} strikes ({activeData.hedging_diagnostics?.percentages?.overhedged_pct}%) — Expensive Panic
+              </span>
+            </div>
+            <div className="hedging-bar-track">
+              <div 
+                className="bar-segment bar-underhedged" 
+                style={{ width: `${activeData.hedging_diagnostics?.percentages?.underhedged_pct}%` }} 
+                title="Underhedged: Cheap protection / convexity" 
+              />
+              <div 
+                className="bar-segment bar-balanced" 
+                style={{ width: `${activeData.hedging_diagnostics?.percentages?.balanced_pct}%` }} 
+                title="Balanced: Orderly fair value smile pricing" 
+              />
+              <div 
+                className="bar-segment bar-overhedged" 
+                style={{ width: `${activeData.hedging_diagnostics?.percentages?.overhedged_pct}%` }} 
+                title="Overhedged: Expensive crash puts / call FOMO" 
+              />
+            </div>
+          </div>
+
+          {/* Dealer Positioning & Flow Narrative */}
+          <div className="hedging-dealer-insight">
+            <div className="dealer-insight-title">
+              <Cpu style={{ width: '15px', height: '15px', color: '#00F0FF' }} />
+              <span>Dealer Gamma & Vanna Flow Dynamics:</span>
+            </div>
+            <p className="dealer-insight-text">
+              {activeData.hedging_diagnostics?.dealer_flow_insight}
+            </p>
+          </div>
+
+          {/* Actionable Overhedged vs Underhedged Strike Targets */}
+          <div className="hedging-targets-grid">
+            <div className="hedging-target-col overhedged-col">
+              <div className="col-header">
+                <span className="col-tag red-tag">🔴 OVERHEDGED STRIKES (SELL VOL / CREDIT)</span>
+                <span className="col-sub">Overpriced tail panic wings — Sell premium</span>
+              </div>
+              <div className="target-cards-list">
+                {activeData.hedging_diagnostics?.top_overhedged?.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="target-micro-card"
+                    onClick={() => {
+                      setActiveViewMode('3d_surface');
+                      setFocusedHotspot({ expiry: item.expiry, strike: item.strike, iv: item.iv });
+                      if (surfaceCardRef.current) surfaceCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    title="Click to lock & inspect this Overhedged Peak in the 3D Surface"
+                  >
+                    <div className="tmc-top">
+                      <span className="tmc-strike">${item.strike} {item.type === 'otm_put' ? 'PUT' : 'CALL'}</span>
+                      <span className="tmc-exp">{item.expiry} {item.dte ? `(${item.dte}d)` : ''}</span>
+                      <span className="tmc-edge">+{item.dislocation_pct}% Rich</span>
+                    </div>
+                    <div className="tmc-strat">{item.strategy}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="hedging-target-col underhedged-col">
+              <div className="col-header">
+                <span className="col-tag green-tag">🟢 UNDERHEDGED VALLEYS (BUY CONVEXITY)</span>
+                <span className="col-sub">Depressed vol valleys & cheap wings — Buy gamma</span>
+              </div>
+              <div className="target-cards-list">
+                {activeData.hedging_diagnostics?.top_underhedged?.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="target-micro-card"
+                    onClick={() => {
+                      setActiveViewMode('3d_surface');
+                      setFocusedHotspot({ expiry: item.expiry, strike: item.strike, iv: item.iv });
+                      if (surfaceCardRef.current) surfaceCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    title="Click to lock & inspect this Underhedged Valley in the 3D Surface"
+                  >
+                    <div className="tmc-top">
+                      <span className="tmc-strike">${item.strike} {item.type === 'otm_put' ? 'PUT' : 'CALL'}</span>
+                      <span className="tmc-exp">{item.expiry} {item.dte ? `(${item.dte}d)` : ''}</span>
+                      <span className="tmc-edge green-edge">{item.dislocation_pct}% Cheap</span>
+                    </div>
+                    <div className="tmc-strat">{item.strategy}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. THIRD: QUANT AI VOLATILITY INTELLIGENCE · SURFACE SYNTHESIS         */}
+      {/* ========================================================================= */}
+      <div 
+        className="vol-ai-card"
+        style={{
+          position: 'relative',
+          background: 'linear-gradient(135deg, #0a0e1c 0%, #060912 100%)',
+          border: '1px solid rgba(139, 92, 246, 0.35)',
+          borderRadius: '16px',
+          padding: '22px',
+          boxShadow: '0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Ambient Glow */}
+        <div className="vol-ai-glow-1" />
+        <div className="vol-ai-glow-2" />
+
+        {/* AI Header Ribbon */}
+        <div 
+          className="vol-ai-header"
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px',
+            paddingBottom: '16px',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+          }}
+        >
+          <div className="vol-ai-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div className="vol-ai-icon-badge">
+              <Brain style={{ width: '22px', height: '22px', color: '#00F0FF' }} />
+            </div>
+            <div className="vol-ai-titles">
+              <div className="vol-ai-main-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h2 style={{ margin: 0, fontFamily: "'JetBrains Mono', monospace", fontSize: '15px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#ffffff' }}>
+                  Quant AI Volatility Intelligence · {ticker} Surface Synthesis
+                </h2>
+                <span className="vol-ai-live-tag">
+                  <Sparkles style={{ width: '12px', height: '12px', color: '#00F0FF' }} />
+                  AI SYNTHESIS ACTIVE
+                </span>
+              </div>
+              <p className="vol-ai-subtitle" style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
+                Autonomous multi-tenor implied vs realized variance diagnostics · Volatility surface anomaly modeling
+              </p>
+            </div>
+          </div>
+
+          {/* AI Quant Conviction & Posture Ribbon */}
+          <div className="vol-ai-badges-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="vol-conviction-pill">
+              <span className="label">Conviction:</span>
+              <span className="score">{ai.conviction_score}/100</span>
+              <span className="vol-pulse-dot" />
+            </div>
+            <div className={`vol-posture-pill ${postureTheme}`}>
+              {ai.verdict_posture}
+            </div>
+          </div>
+        </div>
+
+        {/* Executive Synthesis Hero Box */}
+        <div 
+          className={`vol-hero-box ${postureTheme}`}
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            marginTop: '18px',
+            padding: '20px',
+            borderRadius: '14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '20px',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div className="vol-hero-text-wrap" style={{ flex: 1, minWidth: '280px', maxWidth: '820px' }}>
+            <div className="vol-hero-header-line" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+              <span className="vol-hero-badge">
+                {ai.verdict_badge}
+              </span>
+              <h3 className="vol-hero-title">
+                {ai.verdict_title}
+              </h3>
+            </div>
+            <p className="vol-hero-summary">
+              {ai.executive_summary}
+            </p>
+          </div>
+
+          {/* Implied Move Range Box */}
+          {ai.market_implied_move && (
+            <div className="vol-implied-box">
+              <div className="vol-implied-top">
+                <span>Market Implied Move</span>
+                <span className="vol-implied-tenor">{ai.market_implied_move.tenor}</span>
+              </div>
+              <div className="vol-implied-move-val">
+                {ai.market_implied_move.formatted}
+              </div>
+              <div className="vol-implied-targets">
+                <span>Low: <strong style={{ color: '#f43f5e' }}>${ai.market_implied_move.range_low}</strong></span>
+                <span>Spot: <strong style={{ color: '#ffffff' }}>${spot?.toFixed(2)}</strong></span>
+                <span>High: <strong style={{ color: '#00E676' }}>${ai.market_implied_move.range_high}</strong></span>
+              </div>
+              <div className="vol-implied-bar">
+                <div className="vol-implied-bar-low" />
+                <div className="vol-implied-bar-center" />
+                <div className="vol-implied-bar-high" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 4-Pillar AI Diagnostic Analysis Grid */}
+        <div 
+          className="vol-pillars-grid"
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '14px',
+            marginTop: '18px'
+          }}
+        >
+          {(ai.four_pillars || []).map((pillar) => {
+            const isEmerald = pillar.color === 'emerald';
+            const isRose = pillar.color === 'rose';
+            const isPurple = pillar.color === 'purple';
+            const colorClass = isEmerald ? 'emerald' : (isRose ? 'rose' : (isPurple ? 'purple' : 'cyan'));
+            const borderClass = isEmerald ? 'border-emerald' : (isRose ? 'border-rose' : (isPurple ? 'border-purple' : 'border-cyan'));
+
+            return (
+              <div 
+                key={pillar.id}
+                className={`vol-pillar-card ${borderClass}`}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <div>
+                  <div className="vol-pillar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px' }}>
+                    <span className="vol-pillar-title">
+                      {pillar.title}
+                    </span>
+                    <span className={`vol-pillar-status ${colorClass}`}>
+                      {pillar.status}
+                    </span>
+                  </div>
+                  <div className={`vol-pillar-metric ${colorClass}`}>
+                    {pillar.metric}
+                  </div>
+                  <p className="vol-pillar-takeaway">
+                    {pillar.takeaway}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Tail Risk & Microstructure Alert Ribbon */}
+        <div 
+          className="vol-risk-ribbon"
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            marginTop: '14px',
+            padding: '12px 18px',
+            borderRadius: '10px',
+            background: 'rgba(5, 8, 16, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '14px',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div className="vol-risk-left" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ShieldCheck style={{ width: '18px', height: '18px', color: '#00F0FF', flexShrink: 0 }} />
+            <span>
+              <strong style={{ color: '#ffffff', fontFamily: 'monospace' }}>Risk Directive:</strong> {ai.tail_risk_warning}
+            </span>
+          </div>
+          <a 
+            href="#trade-ideas-section"
+            onClick={(e) => {
+              e.preventDefault();
+              const el = document.getElementById('trade-ideas-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="vol-risk-jump-link"
+          >
+            Jump to Trade Ideas ↓
+          </a>
+        </div>
+
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 4. FOURTH: ACTIONABLE VOLATILITY TRADE SETUPS MATRIX TABLE             */}
       {/* ========================================================================= */}
       <div 
         id="trade-ideas-section"
@@ -4979,7 +6710,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                 </div>
               </div>
 
-              {/* Actionable Setups Institutional Table */}
+              {/* Actionable Setups Institutional Table — Zero-Overflow Responsive Layout */}
               <div 
                 className="vol-table-scroll-wrap"
                 style={{
@@ -4990,23 +6721,21 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                   background: 'rgba(5, 8, 16, 0.6)'
                 }}
               >
-                <table className="vol-matrix-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1050px', textAlign: 'left' }}>
+                <table className="vol-matrix-table" style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: 0, textAlign: 'left' }}>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'center', width: '130px' }}>Posture / Action</th>
-                      <th>Strategy & Structure</th>
-                      <th>Tenor / Expiry</th>
-                      <th>Strikes & Range</th>
-                      <th>Greeks Profile</th>
-                      <th>Quantitative Edge</th>
-                      <th style={{ textAlign: 'center' }}>Est. PoP / R:R</th>
-                      <th style={{ textAlign: 'right', width: '140px' }}>3D Focus</th>
+                      <th style={{ textAlign: 'center', width: '14%' }}>Action</th>
+                      <th style={{ width: '21%' }}>Strategy & Structure</th>
+                      <th style={{ width: '18%' }}>Tenor & Strikes</th>
+                      <th style={{ width: '25%' }}>B76 Greeks & Edge</th>
+                      <th style={{ textAlign: 'center', width: '11%' }}>PoP / R:R</th>
+                      <th style={{ textAlign: 'right', width: '11%' }}>3D Focus</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredSetups.length === 0 ? (
                       <tr>
-                        <td colSpan="8" style={{ padding: '36px', textAlign: 'center', color: '#94a3b8', fontFamily: 'monospace' }}>
+                        <td colSpan="6" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontFamily: 'monospace' }}>
                           No trade setups match the selected filter category.
                         </td>
                       </tr>
@@ -5028,12 +6757,12 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                             >
                               {/* 1. Posture & Action Badge */}
                               <td style={{ textAlign: 'center' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                                  <span className={`vol-action-badge ${badgeClass}`}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                                  <span className={`vol-action-badge ${badgeClass}`} style={{ fontSize: '9.5px', padding: '3px 7px' }}>
                                     <span className={`vol-action-dot ${badgeClass}`} />
                                     {setup.action}
                                   </span>
-                                  <span className="vol-action-badge-sub">
+                                  <span className="vol-action-badge-sub" style={{ fontSize: '8.5px' }}>
                                     {setup.badge}
                                   </span>
                                 </div>
@@ -5041,50 +6770,43 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
 
                               {/* 2. Strategy Name & Concrete Structure */}
                               <td>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <div>
-                                    <span className="vol-strategy-title">
-                                      {setup.name}
-                                    </span>
-                                    {setup.category && (
-                                      <span className="vol-strategy-cat-pill">
-                                        {setup.category}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className="vol-strategy-structure">
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <span className="vol-strategy-title" style={{ fontSize: '12px', lineHeight: 1.25 }}>
+                                    {setup.name}
+                                  </span>
+                                  <span className="vol-strategy-structure" style={{ fontSize: '11px' }}>
                                     {setup.structure}
                                   </span>
+                                  {setup.category && (
+                                    <span className="vol-strategy-cat-pill" style={{ marginLeft: 0, width: 'fit-content' }}>
+                                      {setup.category}
+                                    </span>
+                                  )}
                                 </div>
                               </td>
 
-                              {/* 3. Expiry & DTE */}
+                              {/* 3. Tenor, Strikes & Range */}
                               <td style={{ fontFamily: 'monospace' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '12px' }}>{setup.expiry}</span>
-                                  <span style={{ color: '#00F0FF', fontSize: '11px', marginTop: '2px' }}>
-                                    {typeof setup.dte === 'number' ? `${setup.dte} DTE` : (setup.dte || 'Target Tenor')}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '11px' }}>
+                                    {setup.expiry} <span style={{ color: '#00F0FF' }}>({typeof setup.dte === 'number' ? `${setup.dte}D` : (setup.dte || 'Target')})</span>
                                   </span>
-                                </div>
-                              </td>
-
-                              {/* 4. Strikes & Range */}
-                              <td style={{ fontFamily: 'monospace' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '12px' }}>{setup.strikes}</span>
-                                  <span style={{ color: '#94a3b8', fontSize: '10px', marginTop: '2px' }}>
+                                  <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '11px' }}>{setup.strikes}</span>
+                                  <span style={{ color: '#94a3b8', fontSize: '9.5px' }}>
                                     {setup.moneyness || 'ATM Centered'}
                                   </span>
                                 </div>
                               </td>
 
-                              {/* 5. Greeks Profile */}
+                              {/* 4. Black-76 Greeks Profile & Quantitative Edge */}
                               <td>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#c084fc', fontWeight: 600 }}>
-                                    {setup.bias}
-                                  </span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                                    {setup.edge_metric && (
+                                      <span className="vol-ai-live-tag" style={{ fontSize: '9px', padding: '2px 6px' }}>
+                                        {setup.edge_metric}
+                                      </span>
+                                    )}
                                     {setup.greeks?.theta && (
                                       <span className={`vol-greek-pill ${setup.greeks.theta.includes('+') ? 'pos' : 'neg'}`}>
                                         θ {setup.greeks.theta.split('/')[0]}
@@ -5096,57 +6818,48 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                                       </span>
                                     )}
                                   </div>
-                                </div>
-                              </td>
-
-                              {/* 6. Quantitative Edge */}
-                              <td style={{ maxWidth: '280px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  {setup.edge_metric && (
-                                    <span className="vol-ai-live-tag" style={{ width: 'fit-content' }}>
-                                      {setup.edge_metric}
-                                    </span>
-                                  )}
-                                  <p style={{ margin: 0, color: '#cbd5e1', fontSize: '12px', lineHeight: 1.4, fontFamily: '-apple-system, sans-serif' }}>
+                                  <p style={{ margin: 0, color: '#cbd5e1', fontSize: '11px', lineHeight: 1.35, fontFamily: '-apple-system, sans-serif' }}>
                                     {setup.edge}
                                   </p>
                                 </div>
                               </td>
 
-                              {/* 7. Modeled PoP / R:R */}
+                              {/* 5. Modeled PoP / R:R */}
                               <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#ffffff' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#ffffff' }}>
                                     {setup.pop_est || (popNum ? `${popNum}% PoP` : 'Defined')}
                                   </span>
-                                  <div className="vol-pop-bar-wrap">
+                                  <div className="vol-pop-bar-wrap" style={{ width: '64px' }}>
                                     <div 
                                       className="vol-pop-bar-fill"
                                       style={{ width: `${popNum}%` }}
                                     />
                                   </div>
-                                  <span style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
+                                  <span style={{ fontSize: '9.5px', color: '#94a3b8' }}>
                                     R:R {setup.rr_ratio || '1 : 2.5'}
                                   </span>
                                 </div>
                               </td>
 
-                              {/* 8. Interactive Focus in 3D & Expand Trigger */}
+                              {/* 6. Interactive Focus in 3D & Expand Trigger */}
                               <td style={{ textAlign: 'right' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                                   {setup.target_point && (
                                     <button
                                       onClick={(e) => handleFocusTrade(e, setup.target_point)}
                                       title="Orient 3D Volatility Surface camera directly to this setup"
                                       className="vol-focus-btn"
+                                      style={{ padding: '4px 8px', fontSize: '10px' }}
                                     >
-                                      <Crosshair style={{ width: '13px', height: '13px' }} />
-                                      Focus 3D
+                                      <Crosshair style={{ width: '11px', height: '11px' }} />
+                                      3D
                                     </button>
                                   )}
-                                  <div style={{ padding: '4px', color: '#94a3b8' }}>
-                                    {isExpanded ? <ChevronUp style={{ width: '16px', height: '16px' }} /> : <ChevronDown style={{ width: '16px', height: '16px' }} />}
-                                  </div>
+                                  <span style={{ fontSize: '9.5px', color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '2px', fontFamily: 'monospace' }}>
+                                    {isExpanded ? 'Hide' : 'Legs'}
+                                    {isExpanded ? <ChevronUp style={{ width: '13px', height: '13px' }} /> : <ChevronDown style={{ width: '13px', height: '13px' }} />}
+                                  </span>
                                 </div>
                               </td>
                             </tr>
@@ -5154,7 +6867,7 @@ const VolatilitySurface3D = ({ ticker = 'SPY', refreshKey = 0 }) => {
                             {/* Expandable Institutional Trade Architecture Drawer */}
                             {isExpanded && (
                               <tr>
-                                <td colSpan="8" className="vol-drawer-cell">
+                                <td colSpan="6" className="vol-drawer-cell">
                                   <div 
                                     className="vol-drawer-grid"
                                     style={{

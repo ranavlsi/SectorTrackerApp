@@ -491,16 +491,31 @@ export default function SectorFlowTopBottomPredictor({ onTickerClick }) {
                                 <div
                                     key={idx}
                                     style={{
-                                        background: 'rgba(30, 41, 59, 0.5)',
-                                        border: '1px solid rgba(148, 163, 184, 0.2)',
+                                        background: item.triggered ? 'rgba(16, 185, 129, 0.09)' : 'rgba(30, 41, 59, 0.5)',
+                                        border: item.triggered ? '1px solid rgba(16, 185, 129, 0.55)' : '1px solid rgba(148, 163, 184, 0.2)',
                                         borderRadius: '10px',
                                         padding: '12px'
                                     }}
                                 >
-                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f8fafc', marginBottom: '5px' }}>
-                                        {idx === 0 ? '🌊' : '🚀'} {item.path}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '5px' }}>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f8fafc' }}>
+                                            {idx === 0 ? '🌊' : '🚀'} {item.path}
+                                        </span>
+                                        {item.triggered && (
+                                            <span style={{
+                                                fontSize: '0.68rem',
+                                                fontWeight: 800,
+                                                color: '#10b981',
+                                                background: 'rgba(16, 185, 129, 0.16)',
+                                                border: '1px solid rgba(16, 185, 129, 0.45)',
+                                                padding: '2px 7px',
+                                                borderRadius: '999px'
+                                            }}>
+                                                ✅ TRIGGERED NOW
+                                            </span>
+                                        )}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 700, marginBottom: '5px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: item.triggered ? '#34d399' : '#38bdf8', fontWeight: 700, marginBottom: '5px' }}>
                                         Trigger Rule: {item.trigger}
                                     </div>
                                     <div style={{ fontSize: '0.74rem', color: '#cbd5e1', lineHeight: 1.45, marginBottom: '6px' }}>

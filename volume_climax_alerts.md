@@ -1,3 +1,112 @@
+## 🌋 Volume Climax Consolidation Scanner - November 26, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### HLN
+- **Current Price:** $9.43
+- **Climax Date:** 2026-10-29 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.2x avg | MCap: $41.3B | AvgVol: 21.3M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 26, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### HLN
+- **Current Price:** $9.43
+- **Climax Date:** 2026-10-29 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.2x avg | MCap: $41.3B | AvgVol: 21.3M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 25, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### HLN
+- **Current Price:** $9.43
+- **Climax Date:** 2026-10-29 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.2x avg | MCap: $41.3B | AvgVol: 21.3M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 25, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### HLN
+- **Current Price:** $9.43
+- **Climax Date:** 2026-10-29 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.2x avg | MCap: $41.3B | AvgVol: 21.3M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 24, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### HLN
+- **Current Price:** $9.27
+- **Climax Date:** 2026-10-29 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.2x avg | MCap: $40.6B | AvgVol: 21.3M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 24, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+### HLN
+- **Current Price:** $9.27
+- **Climax Date:** 2026-10-29 (Held the 50% midpoint since this date)
+- **Status:** Tight within 2% of highs | Climax Vol: 3.2x avg | MCap: $40.6B | AvgVol: 21.3M
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 23, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 23, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 20, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 20, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 20, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 20, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
+## 🌋 Volume Climax Consolidation Scanner - November 20, 2026
+Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
+
+*No Volume Climax setups perfectly coiled today.*
+
+---
+
 ## 🌋 Volume Climax Consolidation Scanner - November 19, 2026
 Stocks that printed their Highest Volume in a Year (massive accumulation) within the last 20 days, have quietly consolidated, and are tightly coiled for a breakout.
 

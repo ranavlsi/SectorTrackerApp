@@ -2,6 +2,7 @@ import os
 import json
 import time
 import sqlite3
+import threading
 import datetime
 from datetime import datetime, date, timedelta
 import numpy as np
@@ -9,8 +10,19 @@ import numpy as np
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 DB_PATH = os.path.join(DATA_DIR, 'options_intelligence.db')
 STATUS_PATH = os.path.join(DATA_DIR, 'options_dumper_status.json')
+LAKEHOUSE_PARQUET_PATH = os.path.join(DATA_DIR, 'daily_ohlcv.parquet')
+SUMMARY_CACHE_JSON = os.path.join(DATA_DIR, 'options_screener_summary_cache.json')
+SUMMARY_CACHE_META = os.path.join(DATA_DIR, 'options_screener_summary_cache.meta.json')
 
-_CACHE = {"timestamp": 0, "data": None}
+_SUMMARY_LOCK = threading.Lock()
+_CACHE = {
+    "timestamp": 0,
+    "db_mtime": 0.0,
+    "data": None,
+    "prewarmed_mtime": 0.0,
+    "sig": None,
+    "json_bytes": None,
+}
 
 def calculate_flow_impact(
     spot_price,
@@ -57,11 +69,18 @@ def calculate_flow_impact(
         net_gex_m = float(net_gex or 0.0)
     
     notional_flow = round(vol * spot * 100.0, 2)
+    # Conservative estimated dollar premium flow (share-equivalent * typical ~2.8% ATM-proxy option price weight)
+    est_premium_flow = round(notional_flow * 0.028, 2)
+    if unusual_contracts:
+        prem_sum = sum(float(c.get('est_premium', 0) or 0) for c in unusual_contracts)
+        if prem_sum > est_premium_flow:
+            est_premium_flow = round(prem_sum, 2)
     call_vol = vol * (call_pct / 100.0)
     put_vol = vol * ((100.0 - call_pct) / 100.0)
     net_delta_contracts = round(call_vol - put_vol, 0)
     net_delta_flow = round(net_delta_contracts * spot * 100.0, 2)
-    imbalance_ratio = round(max(call_vol, put_vol) / max(min(call_vol, put_vol), 1.0), 1)
+    raw_imbalance = max(call_vol, put_vol) / max(min(call_vol, put_vol), 1.0)
+    imbalance_ratio = round(min(raw_imbalance, 99.9), 1)
     
     # 1. Notional Component (0 - 40 pts): Log-scaled from $100k (4.5) to $100B (10.5)
     if notional_flow > 1e4:
@@ -104,15 +123,16 @@ def calculate_flow_impact(
         badge = "Normal Flow"
         color = "#94a3b8"
 
-    # Microstructural Regime Classification
-    is_cascade_regime = (
+    # Strict GEX-harmonized microstructural regime classification:
+    # Negative gamma cascade CANNOT trigger when aggregate net_gex_m >= 0
+    is_cascade_regime = (net_gex_m < 0.0) and (
         (cascade_score is not None and cascade_score >= 65) or
         (cascade_score is None and net_gex_m <= -0.2) or
         (cascade_score is not None and cascade_score >= 50 and net_gex_m < -0.05 and (squeeze_score is None or squeeze_score < 40))
     )
     
     is_squeeze_regime = (
-        (squeeze_score is not None and squeeze_score >= 60) or
+        (squeeze_score is not None and squeeze_score >= 60 and net_gex_m >= -0.05) or
         (squeeze_score is None and net_gex_m >= 0.1 and call_pct >= 65.0) or
         (squeeze_score is not None and squeeze_score >= 45 and net_gex_m >= 0.0 and (cascade_score is None or cascade_score < 50))
     )
@@ -121,35 +141,42 @@ def calculate_flow_impact(
         if is_cascade_regime:
             driver = "SPECULATIVE_CALL_DIVERGENCE"
             driver_label = "⚠️ Call Flow vs Bearish Cascade"
+            ng_txt = f"{'+' if net_gex_m >= 0 else '-'}${abs(net_gex_m):.2f}M"
             if cascade_score is not None:
-                implication = f"Elevated call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) is conflicting with a negative dealer gamma cascade (Cascade Risk {cascade_score}/100, Net GEX ${net_gex_m:+.2f}M). Speculative call delta is absorbed by dealer short hedging into weakness unless Zero Gamma (${zero_gamma or spot:.2f}) is reclaimed."
+                implication = f"Elevated call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) is conflicting with a negative dealer gamma cascade (Cascade Risk {cascade_score}/100, Net GEX {ng_txt}). Speculative call delta is absorbed by dealer short hedging into weakness unless Zero Gamma (${zero_gamma or spot:.2f}) is reclaimed."
             else:
-                implication = f"Elevated call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) is conflicting with negative dealer gamma (Net GEX ${net_gex_m:+.2f}M). Speculative call buying is facing structural dealer selling into weakness."
+                implication = f"Elevated call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) is conflicting with negative dealer gamma (Net GEX {ng_txt}). Speculative call buying is facing structural dealer selling into weakness."
         else:
             driver = "CALL_GAMMA_SQUEEZE"
             driver_label = "🚀 Call Gamma Squeeze Vector"
             implication = f"Massive call dominance ({call_pct:.0f}% C, {imbalance_ratio}x ratio) with supportive dealer gamma forcing market makers into aggressive long share hedging"
     elif call_pct <= 35.0 and total_score >= 45.0:
-        if is_cascade_regime or (cascade_score is not None and cascade_score >= 50) or net_gex_m < 0:
+        ng_txt = f"{'+' if net_gex_m >= 0 else '-'}${abs(net_gex_m):.2f}M"
+        if is_cascade_regime or net_gex_m < 0:
             driver = "PUT_DELTA_CASCADE"
             driver_label = "🛡️ Put Delta Cascade Vector"
             implication = f"Heavy put dominance ({100-call_pct:.0f}% P, {imbalance_ratio}x ratio) reinforcing negative dealer gamma, accelerating protective underlying equity short hedging"
         else:
             driver = "PROTECTIVE_PUT_HEDGE"
             driver_label = "🛡️ Institutional Put Hedge (Buffered)"
-            implication = f"Heavy put flow ({100-call_pct:.0f}% P, {imbalance_ratio}x ratio) represents institutional downside insurance; positive dealer gamma (${net_gex_m:+.2f}M) acts as a structural shock absorber"
+            implication = f"Heavy put flow ({100-call_pct:.0f}% P, {imbalance_ratio}x ratio) represents institutional downside insurance; positive dealer gamma ({ng_txt}) acts as a structural shock absorber"
     elif is_cascade_regime and total_score >= 45.0:
+        ng_txt = f"{'+' if net_gex_m >= 0 else '-'}${abs(net_gex_m):.2f}M"
         driver = "NEGATIVE_GAMMA_CASCADE"
         driver_label = "🌪️ Negative Gamma Cascade Vector"
-        implication = f"Dealers are short gamma (${net_gex_m:+.2f}M) in a high cascade risk regime ({cascade_score if cascade_score is not None else 'Elevated'}), accelerating directional selling pressure"
+        implication = f"Dealers are short gamma ({ng_txt}) in a high cascade risk regime ({cascade_score if cascade_score is not None else 'Elevated'}), accelerating directional selling pressure"
     elif is_squeeze_regime and total_score >= 45.0:
         driver = "CALL_GAMMA_SQUEEZE"
         driver_label = "🚀 Call Gamma Squeeze Vector"
         implication = f"Spot is pressing Call Wall (${call_wall or spot:.2f}) with elevated squeeze score ({squeeze_score if squeeze_score is not None else 'Active'}), triggering forced dealer share buying"
+    elif net_gex_m > 0.0 and total_score >= 45.0 and cascade_score is not None and cascade_score >= 60:
+        driver = "POSITIVE_GAMMA_PIN"
+        driver_label = "🛡️ Positive Gamma Support Cushion"
+        implication = f"Dealers hold net positive gamma (+${net_gex_m:.2f}M) near Put Wall (${put_wall or spot:.2f}); stabilizing dip-buying flows counterbalance elevated downside volume"
     elif notional_flow >= 5e9:
         driver = "MEGA_NOTIONAL_ANCHOR"
         driver_label = "🏛️ Mega-Cap Notional Anchor"
-        implication = f"Institutional mega-notional flow (${notional_flow/1e9:.1f}B) dictating dealer liquidity and market-wide rebalancing"
+        implication = f"Institutional mega-notional flow (${notional_flow/1e9:.1f}B share-eq) dictating dealer liquidity and market-wide rebalancing"
     elif has_whale_sweep or any(c.get('vol_oi_ratio', 0) >= 2.0 for c in unusual_contracts):
         driver = "WHALE_SWEEP_SURGE"
         driver_label = "🐋 Whale Block Sweeps"
@@ -161,30 +188,142 @@ def calculate_flow_impact(
         
     return {
         "score": total_score,
+        "impact_score": total_score,
         "level": level,
+        "impact_level": level,
         "badge": badge,
         "color": color,
         "notional_flow": notional_flow,
+        "share_eq_notional": notional_flow,
+        "est_premium_flow": est_premium_flow,
         "net_delta_flow": net_delta_flow,
         "net_delta_contracts": net_delta_contracts,
         "call_vol_pct": round(call_pct, 1),
         "imbalance_ratio": imbalance_ratio,
         "driver": driver,
+        "primary_driver": driver,
         "driver_label": driver_label,
         "implication": implication
     }
 
+def _get_options_db_mtime():
+    """Returns latest mtime of options_intelligence.db (including WAL file) for cache validation."""
+    if not os.path.exists(DB_PATH):
+        return 0.0
+    mtime = os.path.getmtime(DB_PATH)
+    wal_path = DB_PATH + "-wal"
+    if os.path.exists(wal_path):
+        try:
+            mtime = max(mtime, os.path.getmtime(wal_path))
+        except OSError:
+            pass
+    return mtime
+
+
+def _get_summary_source_sig():
+    """Returns rounded (db_mtime, parquet_mtime) signature for disk + RAM cache validation."""
+    db_m = round(_get_options_db_mtime(), 3)
+    pq_m = 0.0
+    if os.path.exists(LAKEHOUSE_PARQUET_PATH):
+        try:
+            pq_m = round(os.path.getmtime(LAKEHOUSE_PARQUET_PATH), 3)
+        except OSError:
+            pq_m = 0.0
+    return (db_m, pq_m)
+
+
+def _atomic_write_bytes(path: str, raw: bytes) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp_path = f"{path}.tmp.{os.getpid()}.{threading.get_ident()}"
+    with open(tmp_path, 'wb') as f:
+        f.write(raw)
+    os.replace(tmp_path, path)
+
+
+def get_options_screener_summary_json_bytes(force_refresh=False) -> bytes:
+    """
+    Fastest path for /api/options_screener/summary:
+    Serves pre-serialized UTF-8 JSON bytes from RAM or mtime-validated disk snapshot
+    so even cold server restarts return 6,000+ stocks in < 0.1s.
+    """
+    sig = _get_summary_source_sig()
+    now = time.time()
+    if (
+        not force_refresh
+        and _CACHE.get("json_bytes") is not None
+        and _CACHE.get("sig") == sig
+        and (now - _CACHE["timestamp"] < 300)
+    ):
+        return _CACHE["json_bytes"]
+
+    with _SUMMARY_LOCK:
+        sig = _get_summary_source_sig()
+        now = time.time()
+        if (
+            not force_refresh
+            and _CACHE.get("json_bytes") is not None
+            and _CACHE.get("sig") == sig
+            and (now - _CACHE["timestamp"] < 300)
+        ):
+            return _CACHE["json_bytes"]
+
+        if not force_refresh and os.path.exists(SUMMARY_CACHE_META) and os.path.exists(SUMMARY_CACHE_JSON):
+            try:
+                with open(SUMMARY_CACHE_META, 'r') as mf:
+                    meta = json.load(mf)
+                cached_sig = (
+                    round(float(meta.get("db_mtime", -1.0)), 3),
+                    round(float(meta.get("parquet_mtime", -1.0)), 3),
+                )
+                if cached_sig == sig:
+                    with open(SUMMARY_CACHE_JSON, 'rb') as jf:
+                        raw_bytes = jf.read()
+                    if raw_bytes:
+                        _CACHE["json_bytes"] = raw_bytes
+                        _CACHE["sig"] = sig
+                        _CACHE["db_mtime"] = sig[0]
+                        _CACHE["timestamp"] = time.time()
+                        return raw_bytes
+            except Exception:
+                pass
+
+        _build_options_screener_summary(_get_options_db_mtime())
+        if _CACHE.get("json_bytes") is not None:
+            return _CACHE["json_bytes"]
+        return json.dumps({"dates_count": 0, "records": []}).encode('utf-8')
+
+
 def get_options_screener_summary(force_refresh=False):
     """
     Analyzes the rolling 30-day options history in options_intelligence.db.
-    Calculates multi-day OI trend, unusual volume relative to 20-day baseline,
-    30-day IV Rank/Percentile, 30-day Skew Rank, and institutional flow archetypes.
+    Uses singleflight locking and a 300s mtime-validated cache so concurrent
+    browser loads never stampede SQLite/DuckDB while fresh dumps appear immediately.
     """
-    global _CACHE
-    import time
-    if not force_refresh and _CACHE["data"] and (time.time() - _CACHE["timestamp"] < 25):
+    db_mtime = _get_options_db_mtime()
+    now = time.time()
+    if (
+        not force_refresh
+        and _CACHE["data"] is not None
+        and _CACHE["db_mtime"] == db_mtime
+        and (now - _CACHE["timestamp"] < 300)
+    ):
         return _CACHE["data"]
 
+    with _SUMMARY_LOCK:
+        db_mtime = _get_options_db_mtime()
+        now = time.time()
+        if (
+            not force_refresh
+            and _CACHE["data"] is not None
+            and _CACHE["db_mtime"] == db_mtime
+            and (now - _CACHE["timestamp"] < 300)
+        ):
+            return _CACHE["data"]
+        return _build_options_screener_summary(db_mtime)
+
+
+def _build_options_screener_summary(db_mtime):
+    """Builds and caches the full 30-day options screener summary payload."""
     if not os.path.exists(DB_PATH):
         return {"error": "Options database not initialized.", "records": []}
         
@@ -933,22 +1072,35 @@ def get_options_screener_summary(force_refresh=False):
         "records": results
     }
     
-    _CACHE["data"] = payload
-    _CACHE["timestamp"] = time.time()
-
-    # Pre-warm deep analytics cache for top 12 symbols in background thread
+    sig = _get_summary_source_sig()
     try:
-        import threading
-        top_syms = [r["ticker"] for r in results[:12]]
-        def _bg_prewarm(sym_list):
-            for s in sym_list:
-                try:
-                    get_deep_options_analytics(s)
-                except Exception:
-                    pass
-        threading.Thread(target=_bg_prewarm, args=(top_syms,), daemon=True).start()
+        raw_bytes = json.dumps(payload, default=str).encode('utf-8')
+        _CACHE["json_bytes"] = raw_bytes
+        _CACHE["sig"] = sig
+        _atomic_write_bytes(SUMMARY_CACHE_JSON, raw_bytes)
+        meta_bytes = json.dumps({"db_mtime": sig[0], "parquet_mtime": sig[1]}).encode('utf-8')
+        _atomic_write_bytes(SUMMARY_CACHE_META, meta_bytes)
     except Exception:
         pass
+
+    _CACHE["data"] = payload
+    _CACHE["timestamp"] = time.time()
+    _CACHE["db_mtime"] = db_mtime
+
+    # Pre-warm deep analytics cache at most once per DB update for top 6 symbols
+    if _CACHE.get("prewarmed_mtime") != db_mtime:
+        _CACHE["prewarmed_mtime"] = db_mtime
+        try:
+            top_syms = [r["ticker"] for r in results[:6]]
+            def _bg_prewarm(sym_list):
+                for s in sym_list:
+                    try:
+                        get_deep_options_analytics(s)
+                    except Exception:
+                        pass
+            threading.Thread(target=_bg_prewarm, args=(top_syms,), daemon=True).start()
+        except Exception:
+            pass
 
     return payload
 
@@ -976,8 +1128,14 @@ def get_ticker_30d_history(ticker):
     history = []
     latest_unusual = []
     for r in rows:
+        d_str = r[0]
+        try:
+            if datetime.strptime(str(d_str)[:10], "%Y-%m-%d").weekday() >= 5:
+                continue
+        except Exception:
+            pass
         history.append({
-            "date": r[0],
+            "date": d_str,
             "spot_price": r[1] or 0.0,
             "call_oi": r[2] or 0.0,
             "put_oi": r[3] or 0.0,
@@ -999,12 +1157,14 @@ def get_ticker_30d_history(ticker):
             except Exception:
                 pass
 
-    # Sanitize historical skew_25d: forward-fill and backfill any 0.0 gaps
+    # Sanitize historical skew_25d and unseeded 0.0 max_pain gaps
     last_valid_sk = None
     valid_sks = [h["skew_25d"] for h in history if h.get("skew_25d") not in (0.0, None)]
     fallback_sk = float(np.median(valid_sks)) if valid_sks else None
 
     for h in history:
+        if not h.get("max_pain") or h["max_pain"] <= 0:
+            h["max_pain"] = h["spot_price"]
         sk = h.get("skew_25d")
         if sk is None or sk == 0.0:
             if last_valid_sk is not None:
@@ -1026,20 +1186,34 @@ def get_ticker_30d_history(ticker):
 _DEEP_ANALYTICS_CACHE = {}
 _DEEP_CACHE_TTL = 180  # 3 minutes
 
-def get_deep_options_analytics(ticker):
+def get_deep_options_analytics(ticker, force_refresh=False):
     """
     Unified institutional options intelligence endpoint.
     Aggregates:
     1. 30-day historical time-series of Spot, OI, Volume, ATM IV, 25-Delta Skew, Net GEX, Max Pain.
     2. Live full-chain CBOE Greeks (Gamma, Delta, Vega, Theta/Charm).
-    3. Color-coded Greek & flow trend indicators with direction arrows and percentage shifts.
+    3. Realized Volatility (HV20/HV30), VRP (IV30 - HV20), and Weinstein/Minervini Stage alignment.
     4. Strike-level Greeks curve (GEX & DEX per strike) and Term Structure.
-    5. Institutional AI Options Recommendation with conviction score, optimal strategy, execution strikes, and plain-English microstructure rationale.
+    5. Institutional AI Options Playbook with BS POP/POT, listed strikes, and calibrated conviction.
     """
     import math
+    import sys
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    if backend_dir not in sys.path:
+        sys.path.insert(0, backend_dir)
+    from options_terminal_engine import (
+        sanitize_json,
+        is_etf_symbol,
+        compute_realized_vol_and_stage,
+        compute_vrp_metrics,
+        compute_true_iv_percentile,
+        compute_exact_expected_moves,
+        build_institutional_ai_playbook,
+    )
+
     sym = ticker.upper().strip()
     now = time.time()
-    if sym in _DEEP_ANALYTICS_CACHE:
+    if (not force_refresh) and sym in _DEEP_ANALYTICS_CACHE:
         cached_entry, cached_time = _DEEP_ANALYTICS_CACHE[sym]
         if now - cached_time < _DEEP_CACHE_TTL:
             return cached_entry
@@ -1052,17 +1226,13 @@ def get_deep_options_analytics(ticker):
     # 2. Live GEX and CBOE Greeks
     gex_data = {}
     try:
-        import sys
-        backend_dir = os.path.dirname(os.path.abspath(__file__))
-        if backend_dir not in sys.path:
-            sys.path.insert(0, backend_dir)
         from gex_engine import get_gex_profile
         gex_data = get_gex_profile(sym)
     except Exception as e:
         print(f"Error fetching live GEX profile for {sym}: {e}")
         
     # Spot price
-    spot_price = gex_data.get("spot_price") or (history[-1]["spot_price"] if history else 0.0)
+    spot_price = float(gex_data.get("spot_price") or (history[-1]["spot_price"] if history else 0.0) or 0.0)
     
     # Key levels & Risk scores
     key_levels = gex_data.get("key_levels", {})
@@ -1080,59 +1250,93 @@ def get_deep_options_analytics(ticker):
     cascade_score = risk_scores.get("cascade_score", 30)
     
     totals = gex_data.get("totals", {})
-    net_gex = totals.get("total_net_gex", (history[-1].get("net_gex", 0.0) * 1e6) if history else 0.0)
-    net_dex = totals.get("total_net_dex", 0.0)
-    net_vex = totals.get("total_net_vex", 0.0)
-    net_cex = totals.get("total_net_cex", 0.0)
-    call_gex = totals.get("total_call_gex", 0.0)
-    put_gex = totals.get("total_put_gex", 0.0)
-    call_oi_tot = totals.get("total_call_oi", history[-1].get("call_oi", 0) if history else 0)
-    put_oi_tot = totals.get("total_put_oi", history[-1].get("put_oi", 0) if history else 0)
-    call_vol_tot = totals.get("total_call_vol", history[-1].get("call_vol", 0) if history else 0)
-    put_vol_tot = totals.get("total_put_vol", history[-1].get("put_vol", 0) if history else 0)
+    net_gex = float(totals.get("total_net_gex", (history[-1].get("net_gex", 0.0) * 1e6) if history else 0.0) or 0.0)
+    net_dex = float(totals.get("total_net_dex", 0.0) or 0.0)
+    net_vex = float(totals.get("total_net_vex", 0.0) or 0.0)
+    net_cex = float(totals.get("total_net_cex", 0.0) or 0.0)
+    call_gex = float(totals.get("total_call_gex", 0.0) or 0.0)
+    put_gex = float(totals.get("total_put_gex", 0.0) or 0.0)
+    call_oi_tot = float(totals.get("total_call_oi", history[-1].get("call_oi", 0) if history else 0) or 0)
+    put_oi_tot = float(totals.get("total_put_oi", history[-1].get("put_oi", 0) if history else 0) or 0)
+    call_vol_tot = float(totals.get("total_call_vol", history[-1].get("call_vol", 0) if history else 0) or 0)
+    put_vol_tot = float(totals.get("total_put_vol", history[-1].get("put_vol", 0) if history else 0) or 0)
     
-    # If SQLite rolling history has full-chain volume, use full-chain numbers
+    # If SQLite rolling history has larger full-chain volume/OI, keep counts and PCR 100% synced
     if history and history[-1].get("total_vol", 0) > (call_vol_tot + put_vol_tot):
-        call_vol_tot = history[-1].get("call_vol", call_vol_tot)
-        put_vol_tot = history[-1].get("put_vol", put_vol_tot)
+        call_vol_tot = float(history[-1].get("call_vol", call_vol_tot) or 0)
+        put_vol_tot = float(history[-1].get("put_vol", put_vol_tot) or 0)
         if history[-1].get("call_oi", 0) > 0:
-            call_oi_tot = history[-1].get("call_oi", call_oi_tot)
-            put_oi_tot = history[-1].get("put_oi", put_oi_tot)
+            call_oi_tot = float(history[-1].get("call_oi", call_oi_tot) or 0)
+            put_oi_tot = float(history[-1].get("put_oi", put_oi_tot) or 0)
 
-    pcr_oi = totals.get("put_call_oi_ratio", history[-1].get("pcr_oi", 1.0) if history else 1.0)
-    pcr_vol = totals.get("put_call_vol_ratio", history[-1].get("pcr_vol", 1.0) if history else 1.0)
+    # Strict PCR synchronization with updated Call/Put totals
+    pcr_oi = round(put_oi_tot / call_oi_tot, 2) if call_oi_tot > 0 else float(totals.get("put_call_oi_ratio", 1.0) or 1.0)
+    pcr_vol = round(put_vol_tot / call_vol_tot, 2) if call_vol_tot > 0 else float(totals.get("put_call_vol_ratio", 1.0) or 1.0)
     
-    # Expected move & 25D Skew
+    # Exact log-normal Expected Moves (sqrt(1/252), sqrt(5/252), sqrt(21/252)) & 25D Skew
     exp_move = gex_data.get("expected_move", {})
-    atm_iv = exp_move.get("atm_iv_pct") or (history[-1]["atm_iv_30d"] if history else 35.0)
+    atm_iv = float(exp_move.get("atm_iv_pct") or (history[-1]["atm_iv_30d"] if history else 35.0) or 35.0)
     live_skew_25d = exp_move.get("skew_25d")
-    move_1d = exp_move.get("move_1d", round(spot_price * (atm_iv / 100.0) / 16.0, 2))
-    move_1d_pct = exp_move.get("move_1d_pct", round((atm_iv / 16.0), 1))
-    move_5d = exp_move.get("move_5d", round(spot_price * (atm_iv / 100.0) * math.sqrt(5/252), 2))
-    move_5d_pct = exp_move.get("move_5d_pct", round((atm_iv * math.sqrt(5/252)), 1))
+    exact_em = compute_exact_expected_moves(spot_price, atm_iv)
+    move_1d = exact_em["expected_move_1d"]
+    move_1d_pct = exact_em["expected_move_1d_pct"]
+    move_5d = exact_em["expected_move_5d"]
+    move_5d_pct = exact_em["expected_move_5d_pct"]
+    move_30d = exact_em["expected_move_30d"]
+    move_30d_pct = exact_em["expected_move_30d_pct"]
     
-    # 3. Multi-Session Trend Calculation (30-day baseline)
+    # 3. Realized Vol (HV20/HV30), VRP, and Equity Stage Confluence
+    equity_context = compute_realized_vol_and_stage(sym, spot_fallback=spot_price)
+    net_gex_m = round(net_gex / 1e6, 2)
+    vrp_metrics = compute_vrp_metrics(
+        atm_iv_pct=atm_iv,
+        hv_20d=equity_context.get("hv_20d"),
+        hv_30d=equity_context.get("hv_30d"),
+        net_gex_millions=net_gex_m,
+    )
+
+    # 3b. Multi-Session Trend Calculation (30-day baseline)
     N = len(history)
     iv_history = [h["atm_iv_30d"] for h in history] if history else [atm_iv]
     
-    # Extract historical skews, filtering out unseeded 0.0 values if valid non-zero skews exist
     raw_skew_history = [h["skew_25d"] for h in history] if history else [0.0]
     valid_skews = [s for s in raw_skew_history if s != 0.0]
     skew_history = valid_skews if valid_skews else raw_skew_history
     
-    oi_history = [h["total_oi"] for h in history] if history else [call_oi_tot + put_oi_tot]
-    vol_history = [h["total_vol"] for h in history] if history else [call_vol_tot + put_vol_tot]
-    
     iv_min, iv_max = min(iv_history), max(iv_history)
     iv_rank = round(((atm_iv - iv_min) / max(iv_max - iv_min, 0.01)) * 100, 1) if (iv_max - iv_min) > 0.05 else 50.0
     iv_rank = max(0.0, min(100.0, iv_rank))
+    iv_percentile = compute_true_iv_percentile(iv_history, atm_iv)
     
     skew_min, skew_max = min(skew_history), max(skew_history)
-    curr_skew = live_skew_25d if (live_skew_25d is not None and live_skew_25d != 0.0) else (skew_history[-1] if skew_history else 0.0)
+    curr_skew = float(live_skew_25d) if (live_skew_25d is not None and live_skew_25d != 0.0) else float(skew_history[-1] if skew_history else 0.0)
     if history and curr_skew != 0.0:
         history[-1]["skew_25d"] = curr_skew
     skew_rank = round(((curr_skew - skew_min) / max(skew_max - skew_min, 0.1)) * 100, 1) if (skew_max - skew_min) > 0.2 else 50.0
     skew_rank = max(0.0, min(100.0, skew_rank))
+
+    # Harmonize latest session in history_30d with live GEX metrics so Tab 2 and Tab 3 NEVER disagree
+    curr_total_vol = float(call_vol_tot + put_vol_tot)
+    if history:
+        latest_h = history[-1]
+        latest_h["live_synced"] = True
+        if spot_price > 0:
+            latest_h["spot_price"] = round(spot_price, 2)
+        if gex_data:
+            latest_h["net_gex"] = net_gex_m
+            latest_h["atm_iv_30d"] = round(atm_iv, 1)
+            latest_h["max_pain"] = round(float(max_pain or spot_price), 2)
+        if call_oi_tot + put_oi_tot > 0:
+            latest_h["call_oi"] = call_oi_tot
+            latest_h["put_oi"] = put_oi_tot
+            latest_h["total_oi"] = call_oi_tot + put_oi_tot
+            latest_h["pcr_oi"] = pcr_oi
+        if curr_total_vol > 0:
+            latest_h["call_vol"] = call_vol_tot
+            latest_h["put_vol"] = put_vol_tot
+            latest_h["total_vol"] = curr_total_vol
+            latest_h["pcr_vol"] = pcr_vol
+            latest_h["call_vol_pct"] = round((call_vol_tot / curr_total_vol) * 100.0, 1)
     
     # 5-day delta trends
     ref_idx = -5 if N >= 5 else 0
@@ -1141,8 +1345,7 @@ def get_deep_options_analytics(ticker):
     put_oi_5d = round((history[-1]["put_oi"] if history else put_oi_tot) - (history[ref_idx]["put_oi"] if history else put_oi_tot), 0)
     net_call_accum_5d = call_oi_5d - put_oi_5d
     
-    avg_vol_20d = float(np.mean([h["total_vol"] for h in history[:-1][-20:]])) if N > 1 else float(call_vol_tot + put_vol_tot)
-    curr_total_vol = float(call_vol_tot + put_vol_tot)
+    avg_vol_20d = float(np.mean([h["total_vol"] for h in history[:-1][-20:]])) if N > 1 else float(curr_total_vol)
     vol_ratio = round(curr_total_vol / max(avg_vol_20d, 100.0), 2)
     
     # 4. Color-Coded Trend Indicators
@@ -1240,30 +1443,30 @@ def get_deep_options_analytics(ticker):
             "desc": "Standard equity skew curve with balanced crash risk premium."
         }
 
-    # D. Gamma Exposure Regime Trend (Refined for true dealer microstructural postures)
+    # D. Gamma Exposure Regime Trend (Strict invariant: CASCADE_RISK ONLY when net_gex < 0)
     dist_to_put_wall_pct = abs(spot_price - put_wall) / spot_price if spot_price > 0 else 0.1
-    if squeeze_score >= 70:
+    if squeeze_score >= 70 and net_gex >= -1e5:
         gamma_trend = {
             "regime": "SQUEEZE_RISK",
             "badge": "GAMMA SQUEEZE ACTIVE 🚀",
             "color": "#00E676",
             "desc": f"Spot pressing Call Wall (${call_wall}). Dealers forced into pro-cyclical share buying on upticks."
         }
-    elif cascade_score >= 70 and (spot_price < zero_gamma or net_gex < 0):
+    elif cascade_score >= 70 and net_gex < 0:
         gamma_trend = {
             "regime": "CASCADE_RISK",
             "badge": "CASCADE VULNERABILITY ⚠️",
             "color": "#f43f5e",
-            "desc": f"Spot testing Put Wall (${put_wall}) in negative gamma. Dealers dump shares into declines to hedge delta."
+            "desc": f"Spot testing Put Wall (${put_wall}) in negative gamma (-${abs(net_gex/1e6):.2f}M). Dealers dump shares into declines to hedge delta."
         }
     elif dist_to_put_wall_pct <= 0.02 and net_gex >= 0 and spot_price >= zero_gamma:
         gamma_trend = {
             "regime": "LONG_GAMMA_SUPPORT",
             "badge": "PUT WALL CUSHION 🛡️",
             "color": "#10b981",
-            "desc": f"Spot testing Put Wall (${put_wall}) in positive gamma. Dealers buy dips, providing structural price support."
+            "desc": f"Spot testing Put Wall (${put_wall}) in positive gamma (+${net_gex/1e6:.2f}M). Dealers buy dips, providing structural price support."
         }
-    elif pin_score >= 70:
+    elif pin_score >= 70 and net_gex >= 0:
         gamma_trend = {
             "regime": "PIN_EQUILIBRIUM",
             "badge": "HIGH PIN EQUILIBRIUM 🧲",
@@ -1272,17 +1475,17 @@ def get_deep_options_analytics(ticker):
         }
     elif net_gex >= 0:
         gamma_trend = {
-            "regime": "LONG_GAMMA",
-            "badge": "LONG GAMMA CUSHION 🛡️",
+            "regime": "LONG_GAMMA_SUPPORT" if spot_price < zero_gamma else "LONG_GAMMA",
+            "badge": "POSITIVE GEX (PUT WALL TEST) 🛡️" if spot_price < zero_gamma else "LONG GAMMA CUSHION 🛡️",
             "color": "#38bdf8",
-            "desc": "Market makers are long gamma. Volatility is dampened as dealers buy dips and sell rips."
+            "desc": f"Market makers hold net positive gamma (+${net_gex/1e6:.2f}M). Volatility is dampened as dealers buy dips and sell rips."
         }
     else:
         gamma_trend = {
             "regime": "SHORT_GAMMA",
             "badge": "SHORT GAMMA ACCELERATOR 🌪️",
             "color": "#f59e0b",
-            "desc": "Market makers are short gamma. Price swings are amplified directionally."
+            "desc": f"Market makers are short gamma (-${abs(net_gex/1e6):.2f}M). Price swings are amplified directionally."
         }
 
     # E. Unusual Volume Pace Trend
@@ -1399,15 +1602,21 @@ def get_deep_options_analytics(ticker):
                 "pcr_oi": pcr_oi
             })
 
-    # Synthesize 3-Day Multi-Session Term Structure History
+    # Anchor 3-Day Multi-Session Term Structure History to real SQLite history (weekdays only, zero synthetic GEX decay)
     recent_hist = history[-4:] if len(history) >= 4 else history
     term_structure_history = []
     
     if recent_hist and term_structure:
+        today_base_gex = float(recent_hist[-1].get('net_gex', 0.0) or 0.0)
         for i, h in enumerate(reversed(recent_hist)):
             day_label = 'Today' if i == 0 else f'{i}D Ago'
-            base_iv = h.get('atm_iv_30d', atm_iv)
-            diff_from_today = base_iv - recent_hist[-1].get('atm_iv_30d', atm_iv)
+            base_iv = float(h.get('atm_iv_30d', atm_iv) or atm_iv)
+            diff_from_today = base_iv - float(recent_hist[-1].get('atm_iv_30d', atm_iv) or atm_iv)
+            hist_gex = h.get('net_gex')
+            if i == 0 or abs(today_base_gex) < 0.05 or hist_gex is None:
+                gex_scale = 1.0
+            else:
+                gex_scale = float(np.clip(float(hist_gex) / today_base_gex, 0.25, 2.0))
             
             cycles_hist = []
             for c in term_structure:
@@ -1418,18 +1627,19 @@ def get_deep_options_analytics(ticker):
                     'expiry': c.get('expiry'),
                     'dte': c_dte,
                     'atm_iv': shifted_iv,
-                    'net_gex_millions': round(c.get('net_gex_millions', 0.0) * (1.0 - i * 0.08), 2)
+                    'net_gex_millions': round(c.get('net_gex_millions', 0.0) * gex_scale, 2)
                 })
             term_structure_history.append({
                 'date': h.get('date'),
                 'label': day_label,
                 'days_ago': i,
+                'is_modeled_curve': i > 0,
                 'spot_price': h.get('spot_price', spot_price),
                 'base_iv': base_iv,
                 'cycles': cycles_hist
             })
 
-    # Compute 3-Day Volatility Shift & Regime
+    # Compute 3-Day Volatility Shift & ETF-Aware Slope-Consistent Regime
     front_today = term_structure[0]['atm_iv'] if term_structure else atm_iv
     back_today = term_structure[-1]['atm_iv'] if term_structure else atm_iv
     front_3d = term_structure_history[-1]['cycles'][0]['atm_iv'] if term_structure_history and term_structure_history[-1]['cycles'] else front_today
@@ -1441,37 +1651,42 @@ def get_deep_options_analytics(ticker):
     slope_3d = round(back_3d - front_3d, 1)
     slope_delta = round(slope_today - slope_3d, 1)
 
-    # Check for Event / Post-Earnings Backwardation (intermediate peak with downward forward slope)
     peak_cycle = max(term_structure, key=lambda c: c.get('atm_iv', 0)) if term_structure else None
     peak_iv = peak_cycle.get('atm_iv', front_today) if peak_cycle else front_today
     post_peak_cycles = [c for c in term_structure if c.get('dte', 0) > peak_cycle.get('dte', 0)] if peak_cycle else []
     min_post_iv = min((c.get('atm_iv', peak_iv) for c in post_peak_cycles), default=peak_iv)
     post_peak_drop = round(peak_iv - min_post_iv, 1)
+    is_etf = is_etf_symbol(sym)
+    catalyst_noun = "Macro / OpEx catalyst" if is_etf else "Earnings / catalyst"
 
-    if front_today > back_today + 3.0:
+    if front_today > back_today + 2.5:
         regime_badge = "INVERTED BACKWARDATION 🚨"
         regime_color = "#f43f5e"
-        regime_desc = f"Front-month IV ({front_today}%) is sharply inverted above back-month ({back_today}%). Market aggressively bidding near-term tail risk protection."
-    elif peak_cycle and peak_cycle.get('dte', 0) <= 60 and post_peak_drop >= 3.5:
-        regime_badge = "EVENT BACKWARDATION 🚨"
+        regime_desc = f"Front-month IV ({front_today:.1f}%) is inverted above back-month ({back_today:.1f}%). Market aggressively bidding near-term tail risk protection."
+    elif peak_cycle and peak_cycle.get('dte', 0) <= 60 and post_peak_drop >= 3.5 and slope_today < 1.0:
+        regime_badge = "MACRO BACKWARDATION 🚨" if is_etf else "EVENT BACKWARDATION 🚨"
         regime_color = "#f43f5e"
-        regime_desc = f"Earnings/catalyst spike on {peak_cycle.get('expiry')} ({peak_iv}%) drives steep backwardation: forward IV drops by -{post_peak_drop}% down to {min_post_iv}% as market prices post-event IV crush."
+        regime_desc = f"{catalyst_noun} peak on {peak_cycle.get('expiry')} ({peak_iv:.1f}%) drives steep backwardation: forward IV drops by -{post_peak_drop:.1f}% down to {min_post_iv:.1f}%."
+    elif peak_cycle and peak_cycle.get('dte', 0) <= 60 and post_peak_drop >= 3.5 and slope_today >= 1.0:
+        regime_badge = "CATALYST KINK / NET CONTANGO ⚖️"
+        regime_color = "#fbbf24"
+        regime_desc = f"Overall curve stays in net contango (+{slope_today:.1f}% back vs front), with a localized {catalyst_noun.lower()} kink on {peak_cycle.get('expiry')} ({peak_iv:.1f}%)."
     elif front_delta < -3.0 and back_delta < -1.5:
         regime_badge = "VOLATILITY CRUSH 📉"
         regime_color = "#38bdf8"
-        regime_desc = f"IV collapsed by {front_delta}% across front expiries over the last 3 sessions. Post-catalyst implied volatility crush is underway."
+        regime_desc = f"IV compressed by {front_delta:.1f}% across front expiries over the last 3 sessions."
     elif slope_delta > 1.5:
         regime_badge = "CONTANGO STEEPENING 📈"
         regime_color = "#10b981"
-        regime_desc = f"Term structure steepened (+{slope_delta}% slope drift). Front-month IV softened relative to back-month, confirming tranquil market regime."
+        regime_desc = f"Term structure steepened (+{slope_delta:.1f}% slope drift). Front-month IV softened relative to back-month."
     elif slope_delta < -1.5:
         regime_badge = "FLATTENING REGIME ⚠️"
         regime_color = "#fbbf24"
-        regime_desc = f"Term structure flattened by {abs(slope_delta)}% over 3 days. Elevated short-term hedging activity compressing forward contango."
+        regime_desc = f"Term structure flattened by {abs(slope_delta):.1f}% over 3 days due to elevated near-term hedging demand."
     else:
-        regime_badge = "STABLE CONTANGO ⚖️"
+        regime_badge = "STABLE CONTANGO ⚖️" if slope_today >= 0 else "FLAT CURVE ⚖️"
         regime_color = "#94a3b8"
-        regime_desc = f"Term structure has remained balanced over the last 3 trading sessions with normal time decay posture."
+        regime_desc = f"Term structure remained balanced over the last 3 trading sessions ({slope_today:+.1f}% back-to-front slope)."
 
     volatility_shift_summary = {
         "front_iv_shift_3d": front_delta,
@@ -1481,7 +1696,8 @@ def get_deep_options_analytics(ticker):
         "slope_delta": slope_delta,
         "regime_badge": regime_badge,
         "regime_color": regime_color,
-        "regime_desc": regime_desc
+        "regime_desc": regime_desc,
+        "is_etf": is_etf,
     }
 
     # 7. Harmonized Options Flow Impact Calculation
@@ -1502,92 +1718,91 @@ def get_deep_options_analytics(ticker):
         put_wall=put_wall
     )
 
-    # 8. Institutional AI Options Recommendation
-    trade_setup = gex_data.get("trade_setup")
-    if trade_setup and trade_setup.get("strategy_name"):
-        base_tactic = trade_setup.get("execution_tactic") or (
-            f"Dealer positioning on {sym} shows key resistance at Call Wall (${call_wall}) and floor at Put Wall (${put_wall}). "
-            f"Given {gamma_trend['badge']} and {oi_trend['badge']}, institutional order flow favors {trade_setup.get('strategy_name')}."
-        )
-        if flow_impact_data.get("driver") == "SPECULATIVE_CALL_DIVERGENCE":
-            divergence_note = f" Regime Divergence Notice: Despite high intraday call volume ({flow_impact_data['call_vol_pct']}% Calls), aggregate dealer gamma is negative (${net_gex/1e6:+.2f}M) with elevated cascade risk ({cascade_score}/100). Dealer delta hedging into weakness absorbs speculative call demand unless Zero Gamma (${zero_gamma}) is reclaimed."
-            full_rationale = f"{base_tactic} {divergence_note}"
-        else:
-            full_rationale = base_tactic
+    # 8. Conflict-Aware, VRP-Gated, Stage-Aligned Institutional AI Options Playbook
+    ai_recommendation = build_institutional_ai_playbook(
+        ticker=sym,
+        spot_price=spot_price,
+        net_gex_millions=net_gex_m,
+        call_wall=call_wall,
+        put_wall=put_wall,
+        zero_gamma=zero_gamma,
+        max_pain=max_pain,
+        atm_iv_pct=atm_iv,
+        iv_rank_30d=iv_rank,
+        curr_skew=curr_skew,
+        pcr_vol=pcr_vol,
+        pcr_oi=pcr_oi,
+        call_vol_pct=(call_vol_tot / max(curr_total_vol, 1.0)) * 100.0,
+        net_delta_flow=float(flow_impact_data.get("net_delta_flow", 0.0) or 0.0),
+        net_call_accum_5d=net_call_accum_5d,
+        vol_ratio=vol_ratio,
+        squeeze_score=squeeze_score,
+        pin_score=pin_score,
+        cascade_score=cascade_score,
+        vrp_metrics=vrp_metrics,
+        equity_context=equity_context,
+        strike_distribution=filtered_strikes,
+        gamma_trend=gamma_trend,
+        flow_impact_data=flow_impact_data,
+    )
 
-        ai_recommendation = {
-            "title": trade_setup.get("setup_name", "Quantitative Options Playbook"),
-            "bias": trade_setup.get("bias", "TACTICAL OPPORTUNITY"),
-            "conviction_score": min(96, max(68, int(80 + (squeeze_score if squeeze_score > 60 else (cascade_score if cascade_score > 60 else pin_score)) * 0.15))),
-            "strategy": trade_setup.get("strategy_name"),
-            "options_spec": trade_setup.get("options_spec"),
-            "ideal_entry": trade_setup.get("ideal_entry"),
-            "entry_range": f"${trade_setup.get('entry_range', [spot_price, spot_price])[0]} – ${trade_setup.get('entry_range', [spot_price, spot_price])[1]}",
-            "stop_loss": trade_setup.get("stop_loss"),
-            "target_primary": trade_setup.get("target_primary"),
-            "risk_reward": trade_setup.get("risk_reward", "1:2.5"),
-            "expected_holding": trade_setup.get("expected_holding", "5 to 15 Trading Days"),
-            "trigger_condition": trade_setup.get("trigger_condition"),
-            "invalidation_condition": trade_setup.get("invalidation_condition"),
-            "microstructure_rationale": full_rationale,
-            "execution_checklist": trade_setup.get("execution_checklist", [])
-        }
-    else:
-        # Algorithmic fallback recommendation
-        if net_call_accum_5d > 0 and vol_ratio >= 1.2:
-            rec_strat = "Bull Call Debit Spread (21-35 DTE)"
-            rec_spec = f"Buy ${round(spot_price, 1)} Call / Sell ${round(call_wall, 1)} Call"
-            rec_bias = "BULLISH BREAKOUT"
-            rec_conv = 82
-            rec_rationale = f"Persistent call accumulation (+{int(net_call_accum_5d):,} contracts) alongside {vol_ratio}x volume pace indicates institutional smart money positioning for an upside test toward Call Wall (${call_wall})."
-        elif put_oi_5d > call_oi_5d and cascade_score > 55:
-            rec_strat = "Bear Put Debit Spread (14-28 DTE)"
-            rec_spec = f"Buy ${round(spot_price, 1)} Put / Sell ${round(put_wall, 1)} Put"
-            rec_bias = "BEARISH CASCADE HEDGE"
-            rec_conv = 78
-            rec_rationale = f"Spike in put open interest and elevated downside skew indicate protective hedging. Invalidation is a reclaim above Zero Gamma (${zero_gamma})."
-        elif pin_score >= 65:
-            rec_strat = "Iron Condor / Short Put Spread (7-14 DTE)"
-            rec_spec = f"Sell ${round(put_wall, 1)} Put / Sell ${round(call_wall, 1)} Call"
-            rec_bias = "NEUTRAL PIN HARVEST"
-            rec_conv = 85
-            rec_rationale = f"Spot price is tightly bracketed between Put Wall (${put_wall}) and Call Wall (${call_wall}) with strong gravitational pull toward Max Pain (${max_pain}). Ideal for theta decay capture."
+    # 9. Enrich Unusual Contracts (DTE, ITM/ATM/OTM Moneyness, & Whale Summary)
+    enriched_unusual = []
+    tot_whale_prem = 0.0
+    call_whale_prem = 0.0
+    put_whale_prem = 0.0
+    vol_ois = []
+    today_dt = date.today()
+    for c in (unusual_contracts or []):
+        c_copy = dict(c)
+        strike_val = float(c_copy.get("strike") or 0.0)
+        c_type = str(c_copy.get("type") or "CALL").upper()
+        exp_str = str(c_copy.get("expiration") or "")[:10]
+        dte_val = None
+        if len(exp_str) == 10:
+            try:
+                dte_val = max(0, (datetime.strptime(exp_str, "%Y-%m-%d").date() - today_dt).days)
+            except Exception:
+                dte_val = None
+        pct_otm = round(((strike_val - spot_price) / spot_price) * 100.0, 1) if spot_price > 0 else 0.0
+        if spot_price > 0 and abs(strike_val - spot_price) / spot_price <= 0.015:
+            moneyness = "ATM"
+        elif c_type == "CALL":
+            moneyness = "ITM" if strike_val < spot_price else "OTM"
         else:
-            rec_strat = "Long Call or Put Debit Spread (14-28 DTE)"
-            rec_spec = f"Targeting Call Wall (${call_wall}) vs Put Wall (${put_wall})"
-            rec_bias = "DIRECTIONAL SWING"
-            rec_conv = 74
-            rec_rationale = f"Options market is balanced with 30D IV Rank at {iv_rank}%. Defined-risk vertical spreads offer the most asymmetric risk/reward."
-            
-        ai_recommendation = {
-            "title": f"{rec_bias} PLAYBOOK 🎯",
-            "bias": rec_bias,
-            "conviction_score": rec_conv,
-            "strategy": rec_strat,
-            "options_spec": rec_spec,
-            "ideal_entry": spot_price,
-            "entry_range": f"${round(spot_price * 0.99, 2)} – ${round(spot_price * 1.01, 2)}",
-            "stop_loss": round(put_wall * 0.98 if 'Bull' in rec_strat else call_wall * 1.02, 2),
-            "target_primary": round(call_wall if 'Bull' in rec_strat else put_wall, 2),
-            "risk_reward": "1:2.4",
-            "expected_holding": "5 to 20 Trading Days",
-            "trigger_condition": f"Confirming volume expansion above {vol_ratio}x baseline.",
-            "invalidation_condition": f"Violation of key Greek boundary (${put_wall if 'Bull' in rec_strat else call_wall}).",
-            "microstructure_rationale": rec_rationale,
-            "execution_checklist": [
-                {"phase": "Phase 1: Pre-Trade Greek Audit", "detail": f"Confirm spot (${spot_price}) vs Call Wall (${call_wall}) and Put Wall (${put_wall})."},
-                {"phase": "Phase 2: Execution", "detail": f"Enter {rec_strat} with defined risk."},
-                {"phase": "Phase 3: Risk Management", "detail": f"Close if spot violates invalidation boundary."}
-            ]
-        }
+            moneyness = "ITM" if strike_val > spot_price else "OTM"
+        prem_val = float(c_copy.get("est_premium") or 0.0)
+        tot_whale_prem += prem_val
+        if c_type == "CALL":
+            call_whale_prem += prem_val
+        else:
+            put_whale_prem += prem_val
+        if c_copy.get("vol_oi_ratio") is not None:
+            vol_ois.append(float(c_copy["vol_oi_ratio"]))
+        c_copy["dte"] = dte_val
+        c_copy["moneyness"] = moneyness
+        c_copy["pct_otm"] = pct_otm
+        enriched_unusual.append(c_copy)
+
+    unusual_summary = {
+        "count": len(enriched_unusual),
+        "total_est_premium": round(tot_whale_prem, 2),
+        "call_premium": round(call_whale_prem, 2),
+        "put_premium": round(put_whale_prem, 2),
+        "call_premium_pct": round((call_whale_prem / tot_whale_prem) * 100.0, 1) if tot_whale_prem > 0 else 50.0,
+        "whale_bias": "CALL HEAVY" if call_whale_prem > put_whale_prem * 1.25 else ("PUT HEAVY" if put_whale_prem > call_whale_prem * 1.25 else "BALANCED"),
+        "avg_vol_oi": round(float(np.mean(vol_ois)), 2) if vol_ois else 0.0,
+    }
 
     payload = {
         "ticker": sym,
-        "spot_price": spot_price,
+        "spot_price": round(spot_price, 2),
         "history": history,
+        "history_30d": history,
+        "equity_context": equity_context,
         "greeks_matrix": {
             "gamma": {
-                "net_gex_millions": round(net_gex / 1e6, 2),
+                "net_gex_millions": net_gex_m,
                 "call_gex_millions": round(call_gex / 1e6, 2),
                 "put_gex_millions": round(put_gex / 1e6, 2),
                 "call_wall": call_wall,
@@ -1601,26 +1816,46 @@ def get_deep_options_analytics(ticker):
                 "absolute_delta_strike": abs_delta
             },
             "vega_volatility": {
-                "atm_iv_pct": atm_iv,
+                "atm_iv_pct": round(atm_iv, 1),
                 "iv_rank_30d": iv_rank,
-                "iv_percentile_30d": iv_rank,
+                "iv_percentile_30d": iv_percentile,
                 "iv_5d_chg": iv_5d_chg,
-                "skew_25d": curr_skew,
+                "skew_25d": round(curr_skew, 2),
                 "skew_rank_30d": skew_rank,
                 "expected_move_1d": move_1d,
                 "expected_move_1d_pct": move_1d_pct,
                 "expected_move_5d": move_5d,
-                "expected_move_5d_pct": move_5d_pct
+                "expected_move_5d_pct": move_5d_pct,
+                "expected_move_30d": move_30d,
+                "expected_move_30d_pct": move_30d_pct,
+                "hv_20d": vrp_metrics["hv_20d"],
+                "hv_30d": vrp_metrics["hv_30d"],
+                "vrp_spread": vrp_metrics["vrp_spread"],
+                "vrp_ratio": vrp_metrics["vrp_ratio"],
+                "vrp_regime": vrp_metrics["vrp_regime"],
+                "vrp_label": vrp_metrics["vrp_label"],
+                "vrp_color": vrp_metrics["vrp_color"],
+                "empirical_calibration": vrp_metrics["empirical_calibration"],
             },
             "charm_theta": {
                 "net_cex_millions": round(net_cex / 1e6, 2),
                 "charm_pin_strike": charm_pin,
                 "max_pain": max_pain
             },
+            "theta_charm": {
+                "net_cex_millions": round(net_cex / 1e6, 2),
+                "charm_pin_strike": charm_pin,
+                "max_pain": max_pain,
+                "expected_move_1d": move_1d,
+                "expected_move_5d": move_5d,
+                "expected_move_30d": move_30d,
+            },
             "order_flow": {
                 "total_volume": curr_total_vol,
                 "call_volume": call_vol_tot,
                 "put_volume": put_vol_tot,
+                "call_vol": call_vol_tot,
+                "put_vol": put_vol_tot,
                 "vol_ratio_20d": vol_ratio,
                 "pcr_vol": pcr_vol,
                 "total_oi": call_oi_tot + put_oi_tot,
@@ -1668,16 +1903,18 @@ def get_deep_options_analytics(ticker):
             "badge": gamma_trend["badge"],
             "regime": gamma_trend["regime"],
             "color": gamma_trend["color"],
-            "net_gex_millions": round(net_gex / 1e6, 2)
+            "net_gex_millions": net_gex_m
         },
         "strike_distribution": filtered_strikes,
         "term_structure": term_structure,
         "term_structure_history": term_structure_history,
         "volatility_shift_summary": volatility_shift_summary,
-        "unusual_contracts": unusual_contracts,
+        "unusual_contracts": enriched_unusual,
+        "unusual_summary": unusual_summary,
         "flow_impact": flow_impact_data,
         "ai_recommendation": ai_recommendation
     }
+    payload = sanitize_json(payload)
     _DEEP_ANALYTICS_CACHE[sym] = (payload, now)
     return payload
 
